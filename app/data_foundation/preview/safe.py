@@ -30,7 +30,12 @@ def classify_fields(columns: list[str]) -> tuple[list[str], list[str], list[str]
         if _ID.search(column) or column.lower() in {"password", "secret", "token"}:
             omitted.append(column)
             continue
-        if _EMAIL.search(column) or _PHONE.search(column) or _NAME.search(column) or _ADDRESS.search(column):
+        if (
+            _EMAIL.search(column)
+            or _PHONE.search(column)
+            or _NAME.search(column)
+            or _ADDRESS.search(column)
+        ):
             masked.append(column)
             keep.append(column)
             continue
@@ -78,7 +83,8 @@ def compile_source_preview(
         rows.append(
             DataPreviewRow(
                 values={
-                    column: _mask_value(column, row[column], masked_set) for column in preview.columns
+                    column: _mask_value(column, row[column], masked_set)
+                    for column in preview.columns
                 }
             )
         )
@@ -92,8 +98,7 @@ def compile_source_preview(
             columns=tuple(keep),
             partition_field=verified_time,
             partition_start=None,
-            policy=policy
-            or QueryBudgetPolicy(require_partition_predicate=False, sample_limit=5),
+            policy=policy or QueryBudgetPolicy(require_partition_predicate=False, sample_limit=5),
             estimated_bytes=bytes_used,
         )
         sql = compiled.sql
@@ -133,7 +138,9 @@ def preview_from_output(
     masked_set = set(masked)
     rows = [
         DataPreviewRow(
-            values={column: _mask_value(column, row[column], masked_set) for column in subset.columns}
+            values={
+                column: _mask_value(column, row[column], masked_set) for column in subset.columns
+            }
         )
         for _, row in subset.iterrows()
     ]

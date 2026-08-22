@@ -14,12 +14,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.business_iq.service import BusinessIqService
 from app.config import Settings, load_settings
 from app.control_plane.repository import ControlPlaneRepository
-from app.business_iq.service import BusinessIqService
 from app.data_foundation.service import DataFoundationService
 from app.data_foundation.warehouse import FoundationWarehouse
-from app.service.product_stores import build_product_stores
 from app.integrations.google.adapters import (
     FakeBigQueryClient,
     FakeDriveClient,
@@ -55,11 +54,12 @@ from app.service.import_governance import ImportGovernanceService
 from app.service.middleware import RequestIdMiddleware, current_request_id
 from app.service.models import PlanCatalogResponse
 from app.service.object_store import FakeObjectStore, GcsObjectStore, ObjectStore
+from app.service.product_stores import build_product_stores
 from app.service.publish_governance import PublishGovernanceService
 from app.service.routers import (
     billing,
-    catalog,
     business_iq,
+    catalog,
     data_foundation,
     datasets,
     evaluations,
@@ -119,12 +119,14 @@ def create_app(
         summary="PreM3 authenticated product API",
         description=(
             "Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, "
-            "Google connection, import/publish governance, Business IQ, and Data Foundation contracts. "
-            "Clerk session tokens are verified when the identity provider is configured. "
-            "Creating an Evaluation returns 202 Accepted for resource creation only; durable "
-            "ADK dispatch is not started from this HTTP boundary. Tenant identity is never "
-            "accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, "
-            "DATA_FOUNDATION_READY, MODEL_READY, and PUBLISH_READY are distinct deterministic states."
+            "Google connection, import/publish governance, Business IQ, and "
+            "Data Foundation contracts. Clerk session tokens are verified when the "
+            "identity provider is configured. Creating an Evaluation returns 202 "
+            "Accepted for resource creation only; durable "
+            "ADK dispatch is not started from this HTTP boundary. Tenant identity "
+            "is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, "
+            "DATA_FOUNDATION_READY, MODEL_READY, and PUBLISH_READY are distinct "
+            "deterministic states."
         ),
         docs_url=None,
         redoc_url=None,

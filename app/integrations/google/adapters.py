@@ -97,9 +97,7 @@ class BigQueryClient(Protocol):
         location: str,
     ) -> dict[str, Any]: ...
 
-    def can_write_dataset(
-        self, *, access_token: str, project_id: str, dataset_id: str
-    ) -> bool: ...
+    def can_write_dataset(self, *, access_token: str, project_id: str, dataset_id: str) -> bool: ...
 
     def query_preview(
         self, *, access_token: str, sql: str, max_rows: int = 5
@@ -162,9 +160,7 @@ class FakeDriveClient:
         del access_token
         return self.files.get(file_id)
 
-    def create_folder(
-        self, *, access_token: str, name: str, parent_id: str | None
-    ) -> DriveFile:
+    def create_folder(self, *, access_token: str, name: str, parent_id: str | None) -> DriveFile:
         del access_token
         file_id = f"folder_{len(self.files) + 1:04d}"
         folder = DriveFile(
@@ -190,7 +186,7 @@ class FakeDriveClient:
         found = self.files.get(file_id)
         if found is None:
             raise KeyError("Drive file not found.")
-        return f"{found.name}".encode("utf-8")
+        return f"{found.name}".encode()
 
     def trash(self, file_id: str) -> None:
         existing = self.files.get(file_id)
@@ -295,9 +291,7 @@ class FakeBigQueryClient:
             "write_ok": write_ok,
         }
 
-    def can_write_dataset(
-        self, *, access_token: str, project_id: str, dataset_id: str
-    ) -> bool:
+    def can_write_dataset(self, *, access_token: str, project_id: str, dataset_id: str) -> bool:
         self.discovery_tokens.append(access_token)
         dataset = self.datasets.get(f"{project_id}.{dataset_id}")
         return bool(dataset and dataset.get("write_ok"))
@@ -348,17 +342,21 @@ class RestGoogleOAuthProvider:
         self._client_secret = client_secret
 
     def authorization_url(self, *, state: str, scopes: tuple[str, ...], redirect_uri: str) -> str:
-        return GOOGLE_AUTH_URL + "?" + urlencode(
-            {
-                "client_id": self._client_id,
-                "response_type": "code",
-                "access_type": "offline",
-                "include_granted_scopes": "true",
-                "prompt": "consent",
-                "state": state,
-                "redirect_uri": redirect_uri,
-                "scope": " ".join(scopes),
-            }
+        return (
+            GOOGLE_AUTH_URL
+            + "?"
+            + urlencode(
+                {
+                    "client_id": self._client_id,
+                    "response_type": "code",
+                    "access_type": "offline",
+                    "include_granted_scopes": "true",
+                    "prompt": "consent",
+                    "state": state,
+                    "redirect_uri": redirect_uri,
+                    "scope": " ".join(scopes),
+                }
+            )
         )
 
     def exchange_code(self, *, code: str, redirect_uri: str) -> GoogleTokenSet:
@@ -446,9 +444,7 @@ class RestDriveClient:
             return None
         return _drive_file_from_json(payload)
 
-    def create_folder(
-        self, *, access_token: str, name: str, parent_id: str | None
-    ) -> DriveFile:
+    def create_folder(self, *, access_token: str, name: str, parent_id: str | None) -> DriveFile:
         body = {
             "name": name,
             "mimeType": "application/vnd.google-apps.folder",
@@ -469,7 +465,10 @@ class RestDriveClient:
         query = urlencode(
             {
                 "q": f"'{folder_id}' in parents and trashed=false",
-                "fields": "files(id,name,mimeType,parents,md5Checksum,headRevisionId,version,size,trashed)",
+                "fields": (
+                    "files(id,name,mimeType,parents,md5Checksum,"
+                    "headRevisionId,version,size,trashed)"
+                ),
                 "pageSize": "200",
             }
         )
@@ -480,7 +479,9 @@ class RestDriveClient:
         return [_drive_file_from_json(item) for item in files if isinstance(item, dict)]
 
     def download_file(self, *, access_token: str, file_id: str) -> bytes:
-        return _authorized_bytes(f"{DRIVE_FILES_URL}/{file_id}?alt=media", access_token=access_token)
+        return _authorized_bytes(
+            f"{DRIVE_FILES_URL}/{file_id}?alt=media", access_token=access_token
+        )
 
 
 class RestBigQueryClient:
@@ -597,12 +598,13 @@ class RestBigQueryClient:
             raise ValueError("BigQuery dataset create failed.")
         return payload
 
-    def can_write_dataset(
-        self, *, access_token: str, project_id: str, dataset_id: str
-    ) -> bool:
-        return self.get_dataset(
-            access_token=access_token, project_id=project_id, dataset_id=dataset_id
-        ) is not None
+    def can_write_dataset(self, *, access_token: str, project_id: str, dataset_id: str) -> bool:
+        return (
+            self.get_dataset(
+                access_token=access_token, project_id=project_id, dataset_id=dataset_id
+            )
+            is not None
+        )
 
     def query_preview(
         self, *, access_token: str, sql: str, max_rows: int = 5
@@ -631,10 +633,17 @@ class RestBigQueryClient:
             json_body={"query": sql, "useLegacySql": False, "maxResults": max_rows},
         )
         rows = []
-        schema = [field.get("name") for field in ((payload or {}).get("schema") or {}).get("fields") or []]
+        schema = [
+            field.get("name") for field in ((payload or {}).get("schema") or {}).get("fields") or []
+        ]
         for row in (payload or {}).get("rows") or []:
             values = [cell.get("v") for cell in row.get("f") or []]
-            rows.append({str(schema[index]): values[index] if index < len(values) else None for index in range(len(schema))})
+            rows.append(
+                {
+                    str(schema[index]): values[index] if index < len(values) else None
+                    for index in range(len(schema))
+                }
+            )
         return rows
 
     def get_table_physical(
@@ -658,7 +667,9 @@ class RestBigQueryClient:
             "etag": str(payload.get("etag") or ""),
             "partitioning_type": partitioning.get("type") if ref_type != "VIEW" else None,
             "partitioning_field": partitioning.get("field") if ref_type != "VIEW" else None,
-            "clustering_fields": tuple(clustering.get("fields") or ()) if ref_type != "VIEW" else (),
+            "clustering_fields": tuple(clustering.get("fields") or ())
+            if ref_type != "VIEW"
+            else (),
         }
 
 
@@ -705,4 +716,3 @@ def _authorized_bytes(url: str, *, access_token: str) -> bytes:
     request.add_header("Authorization", f"Bearer {access_token}")
     with urlopen(request, timeout=20) as response:
         return response.read()
-

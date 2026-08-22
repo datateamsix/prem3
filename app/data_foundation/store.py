@@ -7,9 +7,9 @@ from typing import Protocol, runtime_checkable
 from app.data_foundation.contracts import (
     CanonicalPreview,
     CoverageAssessment,
-    DataIntelligenceBrief,
     CrossSourceAlignmentAssessment,
     DataFoundationReadyReceipt,
+    DataIntelligenceBrief,
     DataPreview,
     DiscoveryHints,
     DriveFileRecord,

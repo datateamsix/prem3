@@ -6,11 +6,11 @@ from datetime import UTC, datetime
 
 import pandas as pd
 
+from app.business_iq.contracts import BusinessProfileSnapshot as IqSnapshot
 from app.core.tenancy import require_tenant
 from app.data_foundation.alignment import assess_alignment
 from app.data_foundation.bigquery.discovery import candidates_for_tables, discover_tables
 from app.data_foundation.context import DataFoundationContext
-from app.business_iq.contracts import BusinessProfileSnapshot as IqSnapshot
 from app.data_foundation.contracts import (
     REGISTRY_CONTRACT_VERSION,
     BusinessProfileSnapshot,
@@ -35,17 +35,15 @@ from app.data_foundation.contracts import (
     UserDecision,
 )
 from app.data_foundation.coverage.engine import assess_coverage
-from app.data_foundation.drive.grouping import group_file_series
-from app.data_foundation.intelligence_brief import compile_data_intelligence_brief
 from app.data_foundation.discovery.candidates import build_inventory, candidate_from_drive_file
 from app.data_foundation.discovery.physical import physical_from_drive_files, physical_from_table
 from app.data_foundation.discovery.requirements import compile_evidence_requirements
 from app.data_foundation.discovery.scope import infer_source_scope
 from app.data_foundation.discovery.snapshot_adapter import (
-    channel_effective_dates,
     snapshot_from_business_iq,
 )
 from app.data_foundation.drive.files import register_file
+from app.data_foundation.drive.grouping import group_file_series
 from app.data_foundation.drive.ingestion import parse_drive_payload
 from app.data_foundation.drive.root import ensure_layout
 from app.data_foundation.enums import (
@@ -61,6 +59,7 @@ from app.data_foundation.enums import (
     TransformId,
 )
 from app.data_foundation.ids import new_approval_id, new_cycle_id, new_receipt_id, new_source_id
+from app.data_foundation.intelligence_brief import compile_data_intelligence_brief
 from app.data_foundation.preview.safe import compile_source_preview, preview_from_output
 from app.data_foundation.provisioning.executor import execute_foundation_plan
 from app.data_foundation.provisioning.planner import compile_foundation_plan
@@ -380,7 +379,9 @@ class DataFoundationService:
         )
         markets = ()
         if reqs:
-            markets = next((item.market_scope for item in reqs.requirements if item.market_scope), ())
+            markets = next(
+                (item.market_scope for item in reqs.requirements if item.market_scope), ()
+            )
         self.store.put_scope(
             source_id,
             infer_source_scope(
@@ -834,7 +835,9 @@ class DataFoundationService:
     def reauthorize_source(self, context: DataFoundationContext, source_id: str) -> object:
         return self.reevaluate_health(context, source_id)
 
-    def get_source_health(self, context: DataFoundationContext, source_id: str) -> dict[str, object]:
+    def get_source_health(
+        self, context: DataFoundationContext, source_id: str
+    ) -> dict[str, object]:
         assessment = self.get_source_assessment(context, source_id)
         receipt = self.store.get_current_source_receipt(source_id)
         return {
@@ -845,7 +848,9 @@ class DataFoundationService:
 
     def require_material_reapproval(self, context: DataFoundationContext, plan_id: str) -> None:
         self._authorize(context)
-        plan = self.store.get_foundation_plan(plan_id) or self.store.get_transformation_plan(plan_id)
+        plan = self.store.get_foundation_plan(plan_id) or self.store.get_transformation_plan(
+            plan_id
+        )
         if plan is None:
             raise KeyError("Unknown plan.")
         approval = self.store.get_approval_for_plan(plan_id)
@@ -962,7 +967,9 @@ class DataFoundationService:
 
     def list_cycles(self, context: DataFoundationContext) -> list[MeasurementCycle]:
         self._authorize(context)
-        return self.store.list_cycles(tenant_id=context.tenant_id, workspace_id=context.workspace_id)
+        return self.store.list_cycles(
+            tenant_id=context.tenant_id, workspace_id=context.workspace_id
+        )
 
     def compute_coverage(
         self,
@@ -1005,7 +1012,9 @@ class DataFoundationService:
             raise KeyError("Coverage has not been computed.")
         return found
 
-    def get_coverage_gap(self, context: DataFoundationContext, cycle_id: str, gap_id: str) -> object:
+    def get_coverage_gap(
+        self, context: DataFoundationContext, cycle_id: str, gap_id: str
+    ) -> object:
         coverage = self.get_coverage(context, cycle_id)
         for gap in coverage.gaps:
             if gap.gap_id == gap_id:

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import UTC, date, datetime
-from typing import Iterable
 
 import pandas as pd
 
@@ -55,7 +55,9 @@ def _observed_months(frame: pd.DataFrame, date_field: str | None) -> dict[str, d
     parsed = frame.copy()
     parsed["_period"] = pd.to_datetime(parsed[date_field], errors="coerce").dt.strftime("%Y-%m")
     parsed = parsed.dropna(subset=["_period"])
-    spend_col = next((name for name in ("spend", "revenue", "value") if name in parsed.columns), None)
+    spend_col = next(
+        (name for name in ("spend", "revenue", "value") if name in parsed.columns), None
+    )
     out: dict[str, dict[str, float]] = {}
     for period, group in parsed.groupby("_period"):
         spend = float(group[spend_col].sum()) if spend_col else float(len(group))
@@ -140,7 +142,13 @@ def assess_coverage(
     for requirement in selected:
         binding = binding_by_req.get(requirement.requirement_id)
         dates = channel_dates.get(requirement.channel_id or requirement.concept, (None, None))
-        observed = _observed_months(frames.get(binding.source_id, pd.DataFrame()), binding.contract.date_field) if binding else {}
+        observed = (
+            _observed_months(
+                frames.get(binding.source_id, pd.DataFrame()), binding.contract.date_field
+            )
+            if binding
+            else {}
+        )
         buckets: list[CoverageBucket] = []
         present_expected: list[str] = []
         for period in universe:

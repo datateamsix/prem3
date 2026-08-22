@@ -85,7 +85,9 @@ async def patch_profile(
 ) -> dict[str, Any]:
     del tenant
     ctx = require_tenant()
-    payload = {key: value for key, value in body.model_dump(mode="json").items() if value not in (None, [])}
+    payload = {
+        key: value for key, value in body.model_dump(mode="json").items() if value not in (None, [])
+    }
     try:
         return service.patch_profile(
             tenant_id=ctx.tenant_id,

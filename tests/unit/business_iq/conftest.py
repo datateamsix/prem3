@@ -1,8 +1,8 @@
-from app.core.tenancy import AuthState, TenantContext, bind_tenant
+import pytest
+
 from app.business_iq.service import BusinessIqService
 from app.business_iq.store import InMemoryBusinessIqStore
-
-import pytest
+from app.core.tenancy import AuthState, TenantContext, bind_tenant
 
 
 @pytest.fixture

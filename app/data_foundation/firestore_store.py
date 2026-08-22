@@ -8,9 +8,9 @@ from app.control_plane.serialization import document_to_model, model_to_document
 from app.data_foundation.contracts import (
     CanonicalPreview,
     CoverageAssessment,
-    DataIntelligenceBrief,
     CrossSourceAlignmentAssessment,
     DataFoundationReadyReceipt,
+    DataIntelligenceBrief,
     DataPreview,
     DiscoveryHints,
     DriveFileRecord,
@@ -68,12 +68,16 @@ class FirestoreDataFoundationStore:
         data = snap.to_dict() or {}
         return str(data["tenant_id"]), str(data["workspace_id"])
 
-    def _put(self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model: Any) -> None:
+    def _put(
+        self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model: Any
+    ) -> None:
         self._ws(tenant_id, workspace_id).collection(collection).document(doc_id).set(
             model_to_document(model)
         )
 
-    def _get(self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model_type: Any):
+    def _get(
+        self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model_type: Any
+    ):
         snap = self._ws(tenant_id, workspace_id).collection(collection).document(doc_id).get()
         if not snap.exists:
             return None
@@ -95,8 +99,12 @@ class FirestoreDataFoundationStore:
         self._put(value.tenant_id, value.workspace_id, "df_requirements", "current", value)
         return value
 
-    def get_requirements(self, *, tenant_id: str, workspace_id: str) -> EvidenceRequirementSet | None:
-        return self._get(tenant_id, workspace_id, "df_requirements", "current", EvidenceRequirementSet)
+    def get_requirements(
+        self, *, tenant_id: str, workspace_id: str
+    ) -> EvidenceRequirementSet | None:
+        return self._get(
+            tenant_id, workspace_id, "df_requirements", "current", EvidenceRequirementSet
+        )
 
     def put_layout(self, value: DriveFoundationLayout) -> DriveFoundationLayout:
         self._put(value.tenant_id, value.workspace_id, "df_layouts", "current", value)
@@ -110,7 +118,9 @@ class FirestoreDataFoundationStore:
         return value
 
     def get_inventory(self, *, tenant_id: str, workspace_id: str) -> SourceCoverageInventory | None:
-        return self._get(tenant_id, workspace_id, "df_inventories", "current", SourceCoverageInventory)
+        return self._get(
+            tenant_id, workspace_id, "df_inventories", "current", SourceCoverageInventory
+        )
 
     def put_candidate(self, value: SourceCandidate) -> SourceCandidate:
         self._put(value.tenant_id, value.workspace_id, "df_candidates", value.candidate_id, value)
@@ -143,7 +153,9 @@ class FirestoreDataFoundationStore:
     def get_assessment(self, source_id: str) -> SourceAssessment | None:
         return self._get_indexed("assessment", source_id, "df_assessments", SourceAssessment)
 
-    def put_alignment(self, value: CrossSourceAlignmentAssessment) -> CrossSourceAlignmentAssessment:
+    def put_alignment(
+        self, value: CrossSourceAlignmentAssessment
+    ) -> CrossSourceAlignmentAssessment:
         loc = self._lookup("workspace", value.workspace_id)
         if loc is None:
             raise KeyError("Workspace index is missing for alignment.")
@@ -154,13 +166,17 @@ class FirestoreDataFoundationStore:
         loc = self._lookup("workspace", workspace_id)
         if loc is None:
             return None
-        return self._get(loc[0], workspace_id, "df_alignments", "current", CrossSourceAlignmentAssessment)
+        return self._get(
+            loc[0], workspace_id, "df_alignments", "current", CrossSourceAlignmentAssessment
+        )
 
     def put_transformation_plan(self, value: TransformationPlan) -> TransformationPlan:
         binding = self.get_binding(value.source_id)
         if binding is None:
             raise KeyError("Transform plan requires a bound source.")
-        self._put(binding.tenant_id, binding.workspace_id, "df_transform_plans", value.plan_id, value)
+        self._put(
+            binding.tenant_id, binding.workspace_id, "df_transform_plans", value.plan_id, value
+        )
         self._index("tplan", value.plan_id, binding.tenant_id, binding.workspace_id)
         return value
 
@@ -222,7 +238,9 @@ class FirestoreDataFoundationStore:
         ]
 
     def put_file(self, value: DriveFileRecord) -> DriveFileRecord:
-        self._db.collection("df_drive_files").document(value.drive_file_id).set(model_to_document(value))
+        self._db.collection("df_drive_files").document(value.drive_file_id).set(
+            model_to_document(value)
+        )
         return value
 
     def get_file(self, drive_file_id: str) -> DriveFileRecord | None:
@@ -247,9 +265,13 @@ class FirestoreDataFoundationStore:
         return value
 
     def get_current_source_receipt(self, source_id: str) -> SourceFoundationReceipt | None:
-        return self._get_indexed("source_receipt", source_id, "df_source_receipts", SourceFoundationReceipt)
+        return self._get_indexed(
+            "source_receipt", source_id, "df_source_receipts", SourceFoundationReceipt
+        )
 
-    def put_foundation_receipt(self, value: DataFoundationReadyReceipt) -> DataFoundationReadyReceipt:
+    def put_foundation_receipt(
+        self, value: DataFoundationReadyReceipt
+    ) -> DataFoundationReadyReceipt:
         self._put(value.tenant_id, value.workspace_id, "df_foundation_receipts", "current", value)
         self._put(value.tenant_id, value.workspace_id, "df_receipts", value.receipt_id, value)
         self._index("workspace", value.workspace_id, value.tenant_id, value.workspace_id)
@@ -258,7 +280,9 @@ class FirestoreDataFoundationStore:
     def get_current_foundation_receipt(
         self, *, tenant_id: str, workspace_id: str
     ) -> DataFoundationReadyReceipt | None:
-        return self._get(tenant_id, workspace_id, "df_foundation_receipts", "current", DataFoundationReadyReceipt)
+        return self._get(
+            tenant_id, workspace_id, "df_foundation_receipts", "current", DataFoundationReadyReceipt
+        )
 
     def put_assessment_receipt(self, value: SourceAssessmentReceipt) -> SourceAssessmentReceipt:
         self._put(value.tenant_id, value.workspace_id, "df_receipts", value.receipt_id, value)
@@ -291,7 +315,11 @@ class FirestoreDataFoundationStore:
         if loc is None:
             return None
         found = self._get(
-            loc[0], loc[1], "df_transform_receipts", f"{source_id}__{plan_id}", TransformationReceipt
+            loc[0],
+            loc[1],
+            "df_transform_receipts",
+            f"{source_id}__{plan_id}",
+            TransformationReceipt,
         )
         if (
             found is None
@@ -394,7 +422,9 @@ class FirestoreDataFoundationStore:
     def get_intelligence_brief(
         self, *, tenant_id: str, workspace_id: str
     ) -> DataIntelligenceBrief | None:
-        return self._get(tenant_id, workspace_id, "df_intelligence_briefs", "current", DataIntelligenceBrief)
+        return self._get(
+            tenant_id, workspace_id, "df_intelligence_briefs", "current", DataIntelligenceBrief
+        )
 
     def put_scope(self, source_id: str, value: SourceScope) -> SourceScope:
         loc = self._lookup("binding", source_id)

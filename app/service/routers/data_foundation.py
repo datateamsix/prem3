@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
@@ -9,8 +10,6 @@ from fastapi import APIRouter, Depends, Request
 from app.control_plane.models import Workspace
 from app.core.tenancy import TenantContext, require_tenant
 from app.data_foundation.context import DataFoundationContext, context_from_tenant
-from datetime import UTC, datetime
-
 from app.data_foundation.contracts import (
     BusinessProfileSnapshot,
     DiscoveryHints,
@@ -32,12 +31,12 @@ from app.service.data_foundation_models import (
     BindSourceRequest,
     CompileFoundationPlanRequest,
     CompileTransformRequest,
-    MaterializeDriveRequest,
     CreateCycleRequest,
     DataFoundationOverviewResponse,
     DiscoveryHintsRequest,
     ExecutePlanRequest,
     LoadSnapshotRequest,
+    MaterializeDriveRequest,
     ReplaceSourceRequest,
     ResolveDecisionRequest,
     ReviseCycleRequest,
@@ -267,7 +266,9 @@ async def get_drive_layout(
         raise resource_not_found() from exc
 
 
-@router.post("/sources/{source_id}/materialize-drive", operation_id="materializeDataFoundationDriveSource")
+@router.post(
+    "/sources/{source_id}/materialize-drive", operation_id="materializeDataFoundationDriveSource"
+)
 async def materialize_drive_source(
     source_id: str,
     body: MaterializeDriveRequest,
@@ -308,9 +309,7 @@ async def approve_plan(
     service: Annotated[DataFoundationService, Depends(get_data_foundation)],
 ) -> dict[str, Any]:
     sections = (
-        tuple(FoundationPlanSection(item) for item in body.sections)
-        if body.sections
-        else None
+        tuple(FoundationPlanSection(item) for item in body.sections) if body.sections else None
     )
     return service.approve_plan(
         _context(workspace, tenant, request), plan_id=body.plan_id, sections=sections
@@ -436,7 +435,9 @@ async def update_cycle(
     request: Request,
     service: Annotated[DataFoundationService, Depends(get_data_foundation)],
 ) -> dict[str, Any]:
-    updates = {key: value for key, value in body.model_dump(mode="json").items() if value is not None}
+    updates = {
+        key: value for key, value in body.model_dump(mode="json").items() if value is not None
+    }
     if "cadence" in updates:
         updates["cadence"] = CycleCadence(updates["cadence"])
     if "cutoff_origin" in updates:
@@ -504,7 +505,9 @@ async def get_shared_window(
         raise resource_not_found() from exc
 
 
-@router.get("/cycles/{cycle_id}/coverage/gaps/{gap_id}", operation_id="getMeasurementCycleCoverageGap")
+@router.get(
+    "/cycles/{cycle_id}/coverage/gaps/{gap_id}", operation_id="getMeasurementCycleCoverageGap"
+)
 async def get_gap(
     cycle_id: str,
     gap_id: str,
@@ -664,7 +667,9 @@ async def canonical_preview(
         raise validation_error([]) from exc
 
 
-@router.get("/sources/{source_id}/quality-overview", operation_id="getDataFoundationQualityOverview")
+@router.get(
+    "/sources/{source_id}/quality-overview", operation_id="getDataFoundationQualityOverview"
+)
 async def quality_overview(
     source_id: str,
     workspace: Annotated[Workspace, Depends(authorized_workspace)],
@@ -673,9 +678,9 @@ async def quality_overview(
     service: Annotated[DataFoundationService, Depends(get_data_foundation)],
 ) -> dict[str, Any]:
     try:
-        return service.get_quality_overview(_context(workspace, tenant, request), source_id).model_dump(
-            mode="json"
-        )
+        return service.get_quality_overview(
+            _context(workspace, tenant, request), source_id
+        ).model_dump(mode="json")
     except KeyError as exc:
         raise resource_not_found() from exc
 
