@@ -1,0 +1,8 @@
+{
+  "historical_source": "drive:prem3-modeling/sources/meta_ads/incoming",
+  "ongoing_source": "bigquery:acme_analytics.marketing.meta_ads_campaign_daily",
+  "cutoff": "2026-01-01",
+  "overlap_handling": "REVIEW",
+  "reconciliation_required": true,
+  "canonical_precedence": "ongoing_after_cutoff"
+}

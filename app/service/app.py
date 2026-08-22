@@ -16,9 +16,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import Settings, load_settings
 from app.control_plane.repository import ControlPlaneRepository
+from app.business_iq.service import BusinessIqService
+from app.data_foundation.service import DataFoundationService
+from app.data_foundation.warehouse import FoundationWarehouse
+from app.service.product_stores import build_product_stores
 from app.integrations.google.adapters import (
     FakeBigQueryClient,
     FakeDriveClient,
+    RestBigQueryClient,
+    RestDriveClient,
     RestGoogleOAuthProvider,
 )
 from app.integrations.google.vault import ControlPlaneCredentialVault, InMemoryCredentialVault
@@ -53,6 +59,8 @@ from app.service.publish_governance import PublishGovernanceService
 from app.service.routers import (
     billing,
     catalog,
+    business_iq,
+    data_foundation,
     datasets,
     evaluations,
     google_integrations,
@@ -111,12 +119,12 @@ def create_app(
         summary="PreM3 authenticated product API",
         description=(
             "Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, "
-            "Google connection, and import/publish governance contracts. Clerk session "
-            "tokens are verified when the identity provider is configured. Creating an "
-            "Evaluation returns 202 Accepted for resource creation only; durable ADK "
-            "dispatch is not started from this HTTP boundary. Tenant identity is never "
-            "accepted from the client. IMPORT_READY, MODEL_READY, and PUBLISH_READY are "
-            "distinct deterministic states."
+            "Google connection, import/publish governance, Business IQ, and Data Foundation contracts. "
+            "Clerk session tokens are verified when the identity provider is configured. "
+            "Creating an Evaluation returns 202 Accepted for resource creation only; durable "
+            "ADK dispatch is not started from this HTTP boundary. Tenant identity is never "
+            "accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, "
+            "DATA_FOUNDATION_READY, MODEL_READY, and PUBLISH_READY are distinct deterministic states."
         ),
         docs_url=None,
         redoc_url=None,
@@ -135,9 +143,7 @@ def create_app(
     app.state.billing_config = billing_config
     if billing_gateway is None and cfg.stripe_secret_key:
         provider = RealStripeProvider(billing_config)
-        billing_gateway = StripeBillingGateway(
-            provider=provider, repo=repo, config=billing_config
-        )
+        billing_gateway = StripeBillingGateway(provider=provider, repo=repo, config=billing_config)
         if billing_webhook_processor is None and cfg.stripe_webhook_secret:
             billing_webhook_processor = BillingWebhookProcessor(
                 provider=provider, repo=repo, config=billing_config
@@ -166,6 +172,14 @@ def create_app(
     app.state.google_credential_vault = google_services["vault"]
     app.state.google_drive_client = google_services["drive_client"]
     app.state.google_bigquery_client = google_services["bq_client"]
+    business_iq_store, data_foundation_store = build_product_stores(repo)
+    app.state.business_iq = BusinessIqService(store=business_iq_store)
+    app.state.data_foundation = DataFoundationService(
+        store=data_foundation_store,
+        warehouse=FoundationWarehouse(),
+        bigquery_client=google_services["bq_client"],
+        drive_client=google_services["drive_client"],
+    )
 
     app.add_middleware(RequestIdMiddleware)
     app.include_router(health.router)
@@ -179,6 +193,8 @@ def create_app(
     app.include_router(google_oauth.router)
     app.include_router(google_integrations.router)
     app.include_router(import_governance.router)
+    app.include_router(business_iq.router)
+    app.include_router(data_foundation.router)
     app.include_router(billing.router)
     app.include_router(identity_webhooks.router)
 
@@ -324,11 +340,7 @@ def _default_google_services(
     bigquery_client,
 ) -> dict:
     oauth = oauth_provider
-    if (
-        oauth is None
-        and settings.google_oauth_client_id
-        and settings.google_oauth_client_secret
-    ):
+    if oauth is None and settings.google_oauth_client_id and settings.google_oauth_client_secret:
         oauth = RestGoogleOAuthProvider(
             client_id=settings.google_oauth_client_id,
             client_secret=settings.google_oauth_client_secret,
@@ -345,8 +357,9 @@ def _default_google_services(
         )
     if resolved_vault is None:
         resolved_vault = InMemoryCredentialVault()
-    drive = drive_client or FakeDriveClient()
-    bq = bigquery_client or FakeBigQueryClient()
+    live_google = bool(settings.google_oauth_client_id and settings.google_oauth_client_secret)
+    drive = drive_client or (RestDriveClient() if live_google else FakeDriveClient())
+    bq = bigquery_client or (RestBigQueryClient() if live_google else FakeBigQueryClient())
     redirect_uri = settings.google_oauth_redirect_uri or (
         "http://localhost:8080/v1/integrations/google/oauth/callback"
     )

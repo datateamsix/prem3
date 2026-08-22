@@ -1,0 +1,4 @@
+start_date,end_date,name,discount
+2026-03-01,2026-03-15,Spring sale,20%
+2026-03-10,2026-03-20,Overlap promo,15
+2026-04-01,2026-04-07,Clearance,.25

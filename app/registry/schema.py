@@ -74,6 +74,11 @@ class ProviderRegistryEntry(BaseModel):
     provider: str | None = None
     typical_grain: list[str] | None = None
     typical_date_fields: list[str] | None = None
+    discovery_signatures: list[str] = Field(default_factory=list)
+    provisioning_capability: str | None = None
+    native_transfer_type: str | None = None
+    expected_unique_keys: list[str] = Field(default_factory=list)
+    supported_file_patterns: list[str] = Field(default_factory=list)
 
     def resolved_grain(self) -> list[str]:
         return self.grain or self.typical_grain or []

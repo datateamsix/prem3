@@ -91,6 +91,10 @@ class FirestoreControlPlaneRepository:
     def __init__(self, client: firestore.Client) -> None:
         self._db = client
 
+    @property
+    def client(self) -> firestore.Client:
+        return self._db
+
     @classmethod
     def from_settings(
         cls,

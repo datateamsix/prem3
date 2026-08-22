@@ -1,5 +1,22 @@
 components:
   schemas:
+    ApprovePlanRequest:
+      additionalProperties: false
+      properties:
+        plan_id:
+          title: Plan Id
+          type: string
+        sections:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Sections
+      required:
+      - plan_id
+      title: ApprovePlanRequest
+      type: object
     BigQueryBindingResponse:
       additionalProperties: false
       properties:
@@ -179,6 +196,182 @@ components:
       - url
       title: BillingSessionResponse
       type: object
+    BindSourceRequest:
+      additionalProperties: false
+      properties:
+        candidate_id:
+          title: Candidate Id
+          type: string
+        currency:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Currency
+        date_field:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date Field
+        date_format:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date Format
+        governance_import_ready:
+          default: false
+          title: Governance Import Ready
+          type: boolean
+        grain:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Grain
+        required_fields:
+          default: []
+          items:
+            type: string
+          title: Required Fields
+          type: array
+        requirement_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Requirement Id
+        timezone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Timezone
+        unique_keys:
+          default: []
+          items:
+            type: string
+          title: Unique Keys
+          type: array
+      required:
+      - candidate_id
+      title: BindSourceRequest
+      type: object
+    BusinessProfileRequest:
+      additionalProperties: false
+      properties:
+        business_identity:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Business Identity
+        commercial_driver_notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Commercial Driver Notes
+        competition_notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Competition Notes
+        customer_journey_notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Customer Journey Notes
+        decision_process_notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Decision Process Notes
+        economics_notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Economics Notes
+        events:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Events
+          type: array
+        facts:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Facts
+          type: array
+        hypotheses:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Hypotheses
+          type: array
+        knowledge_gaps:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Knowledge Gaps
+          type: array
+        kpi:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Kpi
+        kpi_custom_text:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Kpi Custom Text
+        kpi_definition:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Kpi Definition
+        marketing_portfolio:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Marketing Portfolio
+          type: array
+        markets:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Markets
+          type: array
+        measurement_objectives:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Measurement Objectives
+          type: array
+        metadata:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Metadata
+        prior_evidence:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Prior Evidence
+          type: array
+        relationships:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Relationships
+          type: array
+      title: BusinessProfileRequest
+      type: object
     CheckoutSessionRequest:
       additionalProperties: false
       properties:
@@ -193,6 +386,78 @@ components:
       required:
       - plan_id
       title: CheckoutSessionRequest
+      type: object
+    ClarificationAnswerRequest:
+      additionalProperties: false
+      properties:
+        answer:
+          title: Answer
+          type: string
+        observed_evidence:
+          additionalProperties: true
+          default: {}
+          title: Observed Evidence
+          type: object
+      required:
+      - answer
+      title: ClarificationAnswerRequest
+      type: object
+    ClarificationCreateRequest:
+      additionalProperties: false
+      properties:
+        coverage_gap_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Coverage Gap Id
+        fact_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Fact Id
+        question:
+          title: Question
+          type: string
+      required:
+      - question
+      title: ClarificationCreateRequest
+      type: object
+    CompileFoundationPlanRequest:
+      additionalProperties: false
+      properties:
+        dv360:
+          default: false
+          title: Dv360
+          type: boolean
+        include_drive:
+          default: false
+          title: Include Drive
+          type: boolean
+      title: CompileFoundationPlanRequest
+      type: object
+    CompileTransformRequest:
+      additionalProperties: false
+      properties:
+        action_ids:
+          items:
+            type: string
+          title: Action Ids
+          type: array
+        parameters:
+          anyOf:
+          - additionalProperties:
+              additionalProperties: true
+              type: object
+            type: object
+          - type: 'null'
+          title: Parameters
+        source_id:
+          title: Source Id
+          type: string
+      required:
+      - source_id
+      - action_ids
+      title: CompileTransformRequest
       type: object
     CompleteUploadResponse:
       additionalProperties: false
@@ -228,6 +493,48 @@ components:
       - status
       - files
       title: CompleteUploadResponse
+      type: object
+    CreateCycleRequest:
+      additionalProperties: false
+      properties:
+        business_profile_snapshot_id:
+          title: Business Profile Snapshot Id
+          type: string
+        cadence:
+          title: Cadence
+          type: string
+        cutoff_origin:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cutoff Origin
+        data_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Cutoff
+        name:
+          title: Name
+          type: string
+        target_window_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Window End
+        target_window_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Window Start
+        target_window_status:
+          default: PROVISIONAL
+          title: Target Window Status
+          type: string
+      required:
+      - name
+      - cadence
+      - business_profile_snapshot_id
+      title: CreateCycleRequest
       type: object
     CreateDatasetRequest:
       additionalProperties: false
@@ -278,6 +585,47 @@ components:
       required:
       - name
       title: CreateWorkspaceRequest
+      type: object
+    DataFoundationOverviewResponse:
+      additionalProperties: false
+      properties:
+        candidate_count:
+          title: Candidate Count
+          type: integer
+        connections:
+          items:
+            additionalProperties: true
+            type: object
+          title: Connections
+          type: array
+        foundation_ready:
+          title: Foundation Ready
+          type: boolean
+        live_cloud_proof:
+          title: Live Cloud Proof
+          type: string
+        phase:
+          title: Phase
+          type: string
+        requirement_count:
+          title: Requirement Count
+          type: integer
+        source_ready_count:
+          title: Source Ready Count
+          type: integer
+        workspace_id:
+          title: Workspace Id
+          type: string
+      required:
+      - workspace_id
+      - phase
+      - requirement_count
+      - candidate_count
+      - source_ready_count
+      - foundation_ready
+      - live_cloud_proof
+      - connections
+      title: DataFoundationOverviewResponse
       type: object
     DatasetImportBindingRequest:
       additionalProperties: false
@@ -399,6 +747,27 @@ components:
       - created_at
       - updated_at
       title: DatasetResponse
+      type: object
+    DiscoveryHintsRequest:
+      additionalProperties: false
+      properties:
+        datasets_to_prioritize:
+          default: []
+          items:
+            type: string
+          title: Datasets To Prioritize
+          type: array
+        drive_sources_or_paths_to_prioritize:
+          default: []
+          items:
+            type: string
+          title: Drive Sources Or Paths To Prioritize
+          type: array
+        only_inspect_prioritized_datasets:
+          default: false
+          title: Only Inspect Prioritized Datasets
+          type: boolean
+      title: DiscoveryHintsRequest
       type: object
     DriveBindingResponse:
       additionalProperties: false
@@ -529,6 +898,16 @@ components:
       - status
       - created_at
       title: EvaluationResponse
+      type: object
+    ExecutePlanRequest:
+      additionalProperties: false
+      properties:
+        plan_id:
+          title: Plan Id
+          type: string
+      required:
+      - plan_id
+      title: ExecutePlanRequest
       type: object
     GoogleConnectionListResponse:
       additionalProperties: false
@@ -762,6 +1141,32 @@ components:
       - provider
       title: ImportRoleAssignmentRequest
       type: object
+    LoadSnapshotRequest:
+      additionalProperties: false
+      properties:
+        snapshot:
+          additionalProperties: true
+          title: Snapshot
+          type: object
+      required:
+      - snapshot
+      title: LoadSnapshotRequest
+      type: object
+    MaterializeDriveRequest:
+      additionalProperties: false
+      properties:
+        drive_file_id:
+          title: Drive File Id
+          type: string
+        sheet_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sheet Name
+      required:
+      - drive_file_id
+      title: MaterializeDriveRequest
+      type: object
     MeOrganization:
       additionalProperties: false
       properties:
@@ -979,6 +1384,37 @@ components:
       - request_id
       title: ProblemDetail
       type: object
+    ProposalCreateRequest:
+      additionalProperties: false
+      properties:
+        observed_evidence:
+          additionalProperties: true
+          default: {}
+          title: Observed Evidence
+          type: object
+        previous_fact:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Previous Fact
+        proposed_fact:
+          additionalProperties: true
+          default: {}
+          title: Proposed Fact
+          type: object
+      title: ProposalCreateRequest
+      type: object
+    ProposalDecideRequest:
+      additionalProperties: false
+      properties:
+        accept:
+          title: Accept
+          type: boolean
+      required:
+      - accept
+      title: ProposalDecideRequest
+      type: object
     PublishReadinessReceiptResponse:
       additionalProperties: false
       properties:
@@ -1073,6 +1509,180 @@ components:
       - status
       - dependencies
       title: ReadyResponse
+      type: object
+    ReplaceSourceRequest:
+      additionalProperties: false
+      properties:
+        candidate_id:
+          title: Candidate Id
+          type: string
+        currency:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Currency
+        date_field:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date Field
+        date_format:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date Format
+        governance_import_ready:
+          default: false
+          title: Governance Import Ready
+          type: boolean
+        grain:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Grain
+        required_fields:
+          default: []
+          items:
+            type: string
+          title: Required Fields
+          type: array
+        timezone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Timezone
+        unique_keys:
+          default: []
+          items:
+            type: string
+          title: Unique Keys
+          type: array
+      required:
+      - candidate_id
+      title: ReplaceSourceRequest
+      type: object
+    ResolveDecisionRequest:
+      additionalProperties: false
+      properties:
+        kind:
+          title: Kind
+          type: string
+        source_id:
+          title: Source Id
+          type: string
+        value:
+          title: Value
+          type: string
+      required:
+      - source_id
+      - kind
+      - value
+      title: ResolveDecisionRequest
+      type: object
+    ReviseCycleRequest:
+      additionalProperties: false
+      properties:
+        business_profile_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Profile Snapshot Id
+        cutoff_origin:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cutoff Origin
+        data_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Cutoff
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        target_window_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Window End
+        target_window_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Window Start
+      title: ReviseCycleRequest
+      type: object
+    TransitionRequest:
+      additionalProperties: false
+      properties:
+        canonical_precedence:
+          default: ongoing_after_cutoff
+          title: Canonical Precedence
+          type: string
+        cutoff:
+          title: Cutoff
+          type: string
+        historical_source_id:
+          title: Historical Source Id
+          type: string
+        ongoing_source_id:
+          title: Ongoing Source Id
+          type: string
+        overlap_handling:
+          default: REVIEW
+          title: Overlap Handling
+          type: string
+        reconciliation_required:
+          default: true
+          title: Reconciliation Required
+          type: boolean
+      required:
+      - historical_source_id
+      - ongoing_source_id
+      - cutoff
+      title: TransitionRequest
+      type: object
+    UpdateCycleRequest:
+      additionalProperties: false
+      properties:
+        cadence:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cadence
+        cutoff_origin:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cutoff Origin
+        data_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Cutoff
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        target_window_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Window End
+        target_window_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Window Start
+        target_window_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Window Status
+      title: UpdateCycleRequest
       type: object
     UploadFileInstruction:
       additionalProperties: false
@@ -1305,10 +1915,11 @@ components:
       scheme: bearer
       type: http
 info:
-  description: Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, Google connection, and import/publish
-    governance contracts. Clerk session tokens are verified when the identity provider is configured. Creating an Evaluation
-    returns 202 Accepted for resource creation only; durable ADK dispatch is not started from this HTTP boundary. Tenant identity
-    is never accepted from the client. IMPORT_READY, MODEL_READY, and PUBLISH_READY are distinct deterministic states.
+  description: Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, Google connection, import/publish
+    governance, Business IQ, and Data Foundation contracts. Clerk session tokens are verified when the identity provider is
+    configured. Creating an Evaluation returns 202 Accepted for resource creation only; durable ADK dispatch is not started
+    from this HTTP boundary. Tenant identity is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY,
+    MODEL_READY, and PUBLISH_READY are distinct deterministic states.
   summary: PreM3 authenticated product API
   title: prem3-api
   version: 0.1.0
@@ -1664,6 +2275,1939 @@ paths:
       summary: Get Workspace
       tags:
       - workspaces
+  /v1/workspaces/{workspace_id}/business-iq/brief:
+    get:
+      operationId: getBusinessIntelligenceBrief
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getbusinessintelligencebrief
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Brief
+      tags:
+      - business-iq
+    post:
+      operationId: regenerateBusinessIntelligenceBrief
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Regeneratebusinessintelligencebrief
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Regenerate Brief
+      tags:
+      - business-iq
+  /v1/workspaces/{workspace_id}/business-iq/clarifications:
+    post:
+      operationId: createBusinessClarification
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClarificationCreateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createbusinessclarification
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Clarification
+      tags:
+      - business-iq
+  /v1/workspaces/{workspace_id}/business-iq/clarifications/{clarification_id}/answer:
+    post:
+      operationId: answerBusinessClarification
+      parameters:
+      - in: path
+        name: clarification_id
+        required: true
+        schema:
+          title: Clarification Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClarificationAnswerRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Answerbusinessclarification
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Answer Clarification
+      tags:
+      - business-iq
+  /v1/workspaces/{workspace_id}/business-iq/profile:
+    get:
+      operationId: getBusinessProfile
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getbusinessprofile
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Profile
+      tags:
+      - business-iq
+    patch:
+      operationId: patchBusinessProfile
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessProfileRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Patchbusinessprofile
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Patch Profile
+      tags:
+      - business-iq
+    post:
+      operationId: createBusinessProfile
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessProfileRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createbusinessprofile
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Profile
+      tags:
+      - business-iq
+  /v1/workspaces/{workspace_id}/business-iq/profile/snapshots/{snapshot_id}:
+    get:
+      operationId: getBusinessProfileSnapshot
+      parameters:
+      - in: path
+        name: snapshot_id
+        required: true
+        schema:
+          title: Snapshot Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getbusinessprofilesnapshot
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Snapshot
+      tags:
+      - business-iq
+  /v1/workspaces/{workspace_id}/business-iq/profile/versions:
+    get:
+      operationId: listBusinessProfileVersions
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listbusinessprofileversions
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Versions
+      tags:
+      - business-iq
+  /v1/workspaces/{workspace_id}/business-iq/proposals:
+    get:
+      operationId: listBusinessProfileProposals
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listbusinessprofileproposals
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Proposals
+      tags:
+      - business-iq
+    post:
+      operationId: createBusinessProfileProposal
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProposalCreateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createbusinessprofileproposal
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Proposal
+      tags:
+      - business-iq
+  /v1/workspaces/{workspace_id}/business-iq/proposals/{proposal_id}/decide:
+    post:
+      operationId: decideBusinessProfileProposal
+      parameters:
+      - in: path
+        name: proposal_id
+        required: true
+        schema:
+          title: Proposal Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProposalDecideRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Decidebusinessprofileproposal
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Decide Proposal
+      tags:
+      - business-iq
+  /v1/workspaces/{workspace_id}/business-iq/ready:
+    get:
+      operationId: evaluateBusinessContextReady
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Evaluatebusinesscontextready
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Evaluate Ready
+      tags:
+      - business-iq
+  /v1/workspaces/{workspace_id}/data-foundation:
+    get:
+      operationId: getDataFoundationOverview
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataFoundationOverviewResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Overview
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/alignment:
+    get:
+      operationId: getDataFoundationAlignment
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getdatafoundationalignment
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Alignment
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/candidates:
+    get:
+      operationId: listDataFoundationCandidates
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listdatafoundationcandidates
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Candidates
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/canonical-preview:
+    get:
+      operationId: getDataFoundationCanonicalPreview
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getdatafoundationcanonicalpreview
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Canonical Preview
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/cycles:
+    get:
+      operationId: listMeasurementCycles
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listmeasurementcycles
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Cycles
+      tags:
+      - data-foundation
+    post:
+      operationId: createMeasurementCycle
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCycleRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createmeasurementcycle
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Cycle
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/cycles/{cycle_id}:
+    get:
+      operationId: getMeasurementCycle
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getmeasurementcycle
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle
+      tags:
+      - data-foundation
+    patch:
+      operationId: updateMeasurementCycle
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCycleRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Updatemeasurementcycle
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Update Cycle
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/cycles/{cycle_id}/coverage:
+    get:
+      operationId: getMeasurementCycleCoverage
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getmeasurementcyclecoverage
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Coverage
+      tags:
+      - data-foundation
+    post:
+      operationId: computeMeasurementCycleCoverage
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      - in: query
+        name: view
+        required: false
+        schema:
+          default: REQUIRED_EVIDENCE
+          title: View
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Computemeasurementcyclecoverage
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Compute Coverage
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/cycles/{cycle_id}/coverage/gaps/{gap_id}:
+    get:
+      operationId: getMeasurementCycleCoverageGap
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: gap_id
+        required: true
+        schema:
+          title: Gap Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getmeasurementcyclecoveragegap
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Gap
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/cycles/{cycle_id}/requirements:
+    get:
+      operationId: getMeasurementCycleRequirements
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getmeasurementcyclerequirements
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Requirements
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/cycles/{cycle_id}/revise:
+    post:
+      operationId: reviseMeasurementCycle
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviseCycleRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Revisemeasurementcycle
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Revise Cycle
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/cycles/{cycle_id}/shared-window:
+    get:
+      operationId: getMeasurementCycleSharedWindow
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getmeasurementcyclesharedwindow
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Shared Window
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/decisions:
+    post:
+      operationId: resolveDataFoundationDecision
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveDecisionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Resolvedatafoundationdecision
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Resolve Decision
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/discover:
+    post:
+      operationId: discoverDataFoundation
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Discoverdatafoundation
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Discover
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/discover/hints:
+    post:
+      operationId: setDataFoundationDiscoveryHints
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryHintsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Setdatafoundationdiscoveryhints
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Set Hints
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/drive/layout:
+    get:
+      operationId: getDataFoundationDriveLayout
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getdatafoundationdrivelayout
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Drive Layout
+      tags:
+      - data-foundation
+    post:
+      operationId: ensureDataFoundationDriveLayout
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Ensuredatafoundationdrivelayout
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Ensure Drive Layout
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/file-series:
+    get:
+      operationId: listDataFoundationFileSeries
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listdatafoundationfileseries
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List File Series
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/intelligence-brief:
+    get:
+      operationId: getDataIntelligenceBrief
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getdataintelligencebrief
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Intelligence Brief
+      tags:
+      - data-foundation
+    post:
+      operationId: compileDataIntelligenceBrief
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Compiledataintelligencebrief
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Compile Intelligence Brief
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/plans:
+    post:
+      operationId: compileDataFoundationPlan
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompileFoundationPlanRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Compiledatafoundationplan
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Compile Foundation Plan
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/plans/approve:
+    post:
+      operationId: approveDataFoundationPlan
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovePlanRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Approvedatafoundationplan
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Approve Plan
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/plans/execute:
+    post:
+      operationId: executeDataFoundationPlan
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutePlanRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Executedatafoundationplan
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Execute Plan
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/ready:
+    post:
+      operationId: evaluateDataFoundationReady
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Evaluatedatafoundationready
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Evaluate Ready
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/receipts:
+    get:
+      operationId: listDataFoundationReceipts
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listdatafoundationreceipts
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Receipts
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/requirements:
+    get:
+      operationId: getDataFoundationRequirements
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getdatafoundationrequirements
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Requirements
+      tags:
+      - data-foundation
+    post:
+      operationId: loadDataFoundationRequirements
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoadSnapshotRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Loaddatafoundationrequirements
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Load Requirements
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources:
+    post:
+      operationId: bindDataFoundationSource
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindSourceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Binddatafoundationsource
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Bind Source
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/assess:
+    post:
+      operationId: assessDataFoundationSource
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Assessdatafoundationsource
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Assess Source
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/health:
+    get:
+      operationId: getDataFoundationSourceHealth
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getdatafoundationsourcehealth
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Source Health
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/materialize-drive:
+    post:
+      operationId: materializeDataFoundationDriveSource
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterializeDriveRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Materializedatafoundationdrivesource
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Materialize Drive Source
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/physical:
+    get:
+      operationId: getDataFoundationSourcePhysical
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getdatafoundationsourcephysical
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Physical
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/preview:
+    get:
+      operationId: previewDataFoundationSource
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Previewdatafoundationsource
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Preview Source
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/quality-overview:
+    get:
+      operationId: getDataFoundationQualityOverview
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getdatafoundationqualityoverview
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Quality Overview
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/ready:
+    post:
+      operationId: evaluateDataFoundationSourceReady
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Evaluatedatafoundationsourceready
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Source Ready
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/reauthorize:
+    post:
+      operationId: reauthorizeDataFoundationSource
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Reauthorizedatafoundationsource
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Reauthorize Source
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/replace:
+    post:
+      operationId: replaceDataFoundationSource
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceSourceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Replacedatafoundationsource
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Replace Source
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/retire:
+    post:
+      operationId: retireDataFoundationSource
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Retiredatafoundationsource
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Retire Source
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/sources/{source_id}/scope:
+    get:
+      operationId: getDataFoundationSourceScope
+      parameters:
+      - in: path
+        name: source_id
+        required: true
+        schema:
+          title: Source Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getdatafoundationsourcescope
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Scope
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/transformation-plans:
+    post:
+      operationId: compileDataFoundationTransformPlan
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompileTransformRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Compiledatafoundationtransformplan
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Compile Transform
+      tags:
+      - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/transitions:
+    post:
+      operationId: putDataFoundationSourceTransition
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Putdatafoundationsourcetransition
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Put Transition
+      tags:
+      - data-foundation
   /v1/workspaces/{workspace_id}/datasets:
     get:
       operationId: listDatasets

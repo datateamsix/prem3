@@ -1,0 +1,23 @@
+{
+  "snapshot_id": "bps_acme00000000000001",
+  "tenant_id": "tenant-a",
+  "workspace_id": "wsp_test00000000000001",
+  "version": "Business Profile v3",
+  "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "business_context_ready": true,
+  "kpi": "Revenue",
+  "kpi_definition": "Completed ecommerce orders net of refunds.",
+  "objective": "Allocate budget across marketing channels",
+  "markets": ["United States"],
+  "channels": [
+    {"channel_name": "Paid Search", "role": "demand capture", "material": true},
+    {"channel_name": "Paid Social", "role": "multiple roles", "material": true}
+  ],
+  "promotions_relevant": true,
+  "inventory_relevant": true,
+  "competition_relevant": true,
+  "seasonality_relevant": true,
+  "events": [],
+  "prior_evidence": [],
+  "unknowns": []
+}

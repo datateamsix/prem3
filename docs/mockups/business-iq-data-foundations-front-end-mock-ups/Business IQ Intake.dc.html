@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<template id="__bundler_thumbnail" data-bg-color="#f5f7fa">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#f5f7fa"/>
+    <rect x="300" y="180" width="600" height="180" rx="28" fill="#fff" stroke="#d5daf8" stroke-width="6"/>
+    <rect x="348" y="228" width="360" height="34" rx="17" fill="#1a1f4b"/>
+    <rect x="348" y="290" width="120" height="40" rx="20" fill="#3b4bdb"/>
+    <rect x="488" y="290" width="120" height="40" rx="20" fill="#eef0fd"/>
+    <rect x="628" y="290" width="120" height="40" rx="20" fill="#eef0fd"/>
+    <rect x="300" y="400" width="600" height="180" rx="28" fill="#fff" stroke="#e6eaf1" stroke-width="6"/>
+    <rect x="348" y="448" width="280" height="34" rx="17" fill="#c3cadd"/>
+    <rect x="348" y="510" width="120" height="40" rx="20" fill="#f5f7fa" stroke="#9aa3b8" stroke-width="4" stroke-dasharray="12 10"/>
+  </svg>
+</template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+@font-face { font-family: "Satoshi"; src: url("assets/Satoshi-Variable.woff2") format("woff2"); font-weight: 300 900; font-display: swap; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #f5f7fa; }
+button { font: inherit; cursor: pointer; }
+input, textarea { font: inherit; }
+a { color: #3b4bdb; text-decoration: none; }
+a:hover { color: #1a1f4b; text-decoration: underline; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes sheetIn { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #f5f7fa; color: #1a1f4b; font-family: Inter, ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased;">
+
+  <header style="background: #fff; border-bottom: 1px solid #e6eaf1; position: sticky; top: 0; z-index: 20;">
+    <div style="max-width: 1360px; margin: 0 auto; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <img src="assets/prem3-icon.png" alt="PreM3" style="height: 26px; width: auto; display: block;">
+        <span style="font-family: Satoshi, Inter, sans-serif; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">PreM3</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500;">
+        <span style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: #eef0fd; color: #3b4bdb; border: 1px solid #d5daf8;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-4 10.5c.7.8 1 1.4 1 2.5h6c0-1.1.3-1.7 1-2.5A6 6 0 0012 3z"></path></svg>Business IQ
+        </span>
+        <span style="color: #b4bdd0;">→</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; color: #6d768f; border: 1px solid #e6eaf1; background: #fff;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M20 12c0 1.7-3.6 3-8 3s-8-1.3-8-3"></path></svg>Data Foundation
+        </span>
+        <span style="color: #b4bdd0;">→</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; color: #8a93aa; border: 1px solid #eff2f7; background: #fff;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 18a7 7 0 110-14 7 7 0 010 14zM21 21l-5-5"></path></svg>Pre-Modeling
+        </span>
+        <span style="color: #b4bdd0;">→</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; color: #8a93aa; border: 1px solid #eff2f7; background: #fff;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16M8 16l4-5 3 3 5-7"></path></svg>Modeling
+        </span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: #6d768f;">
+        <span>{{ companyName }}</span>
+        <span style="width: 26px; height: 26px; border-radius: 50%; background: #1a1f4b; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600;">{{ initials }}</span>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1360px; margin: 0 auto; display: flex; align-items: flex-start; gap: 0;">
+
+    <aside style="width: 268px; flex: 0 0 268px; padding: 40px 28px 40px 32px; position: sticky; top: 64px; align-self: flex-start;">
+      <div style="margin-bottom: 26px; padding-bottom: 22px; border-bottom: 1px solid #e6eaf1; display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <div style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #b4bdd0; margin-bottom: 8px;">Foundation</div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; background: #eef0fd; font-size: 13.5px; font-weight: 600; color: #1a1f4b;">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#3b4bdb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-4 10.5c.7.8 1 1.4 1 2.5h6c0-1.1.3-1.7 1-2.5A6 6 0 0012 3z"></path></svg>Business Intelligence
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; font-size: 13.5px; color: #6d768f;">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#a3abbf" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M20 12c0 1.7-3.6 3-8 3s-8-1.3-8-3"></path></svg>Data Foundation
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #b4bdd0; margin-bottom: 8px;">Measurement</div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 10px; border-radius: 8px; font-size: 13.5px; color: #a3abbf;">
+              <span style="display: flex; align-items: center; gap: 10px;">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#c3cadd" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 18a7 7 0 110-14 7 7 0 010 14zM21 21l-5-5"></path></svg>Pre-Modeling
+              </span>
+              <span style="font-size: 10px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: #b4bdd0;">Locked</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 10px; border-radius: 8px; font-size: 13.5px; color: #a3abbf;">
+              <span style="display: flex; align-items: center; gap: 10px;">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#c3cadd" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16M8 16l4-5 3 3 5-7"></path></svg>Modeling
+              </span>
+              <span style="font-size: 10px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: #b4bdd0;">Locked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #8a93aa; margin-bottom: 16px;">Business baseline</div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <sc-for list="{{ rail }}" as="g" hint-placeholder-count="7">
+          <button onClick="{{ g.onGo }}" style="width: 100%; text-align: left; border: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13.5px; background: {{ g.bg }}; color: {{ g.color }}; font-weight: {{ g.fw }}; cursor: {{ g.cursor }};" style-hover="background: #f2f4f9;">
+            <span style="display: flex; align-items: center; gap: 11px; min-width: 0;">
+              <svg viewBox="0 0 24 24" width="15" height="15" style="flex: 0 0 15px;" fill="none" stroke="{{ g.iconColor }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ g.icon }}"></path></svg>
+              <span>{{ g.label }}</span>
+            </span>
+            <span style="flex: 0 0 auto; font-size: 11px; color: {{ g.markColor }};">{{ g.mark }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ showPct }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e6eaf1;">
+          <div style="height: 4px; border-radius: 999px; background: #e6eaf1; overflow: hidden;">
+            <div style="height: 100%; background: #3b4bdb; width: {{ pct }};"></div>
+          </div>
+          <div style="margin-top: 9px; font-size: 11.5px; color: #8a93aa; line-height: 1.5;">{{ pctLabel }}</div>
+        </div>
+      </sc-if>
+      <div style="margin-top: 20px; font-size: 11.5px; color: #8a93aa; line-height: 1.6;">Answers save as you go. “Not sure” is a real answer — it becomes explicit profile state.</div>
+    </aside>
+
+    <main style="flex: 1 1 auto; min-width: 0; padding: 40px 32px 120px; max-width: 860px;">
+
+      <sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+        <div style="animation: cardIn 0.3s ease both;">
+          <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #3b4bdb;">Business IQ</div>
+          <h1 style="font-family: Satoshi, Inter, sans-serif; font-size: 34px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; margin: 10px 0 0; text-wrap: pretty; max-width: 20ch;">Before we look at your data, tell PreM3 how your business works.</h1>
+          <p style="margin: 16px 0 0; font-size: 15.5px; line-height: 1.6; color: #4f5872; max-width: 60ch; text-wrap: pretty;">Marketing data shows what happened. Business context helps PreM3 understand why it may have happened, and what actually matters for your model.</p>
+          <div style="margin-top: 30px; display: flex; align-items: center; gap: 14px; padding: 18px 20px; border: 1px solid #e6eaf1; background: #fff; border-radius: 10px; font-size: 13px; font-weight: 500;">
+            <span style="display: inline-flex; align-items: center; gap: 8px; color: #3b4bdb;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #3b4bdb;"></span>Business IQ</span>
+            <span style="flex: 1 1 auto; height: 1px; background: #e6eaf1;"></span>
+            <span style="color: #8a93aa;">Data Foundation</span>
+            <span style="flex: 1 1 auto; height: 1px; background: #e6eaf1;"></span>
+            <span style="color: #8a93aa;">Pre-Modeling</span>
+            <span style="flex: 1 1 auto; height: 1px; background: #e6eaf1;"></span>
+            <span style="color: #8a93aa;">Modeling</span>
+          </div>
+          <div style="margin-top: 26px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+            <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 10px; padding: 16px 18px;">
+              <div style="font-size: 13.5px; font-weight: 600;">About 10 minutes for most businesses</div>
+              <div style="margin-top: 5px; font-size: 13px; line-height: 1.55; color: #6d768f;">PreM3 only asks a follow-up when the answer can materially improve planning or measurement.</div>
+            </div>
+            <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 10px; padding: 16px 18px;">
+              <div style="font-size: 13.5px; font-weight: 600;">“I’m not sure” is fine</div>
+              <div style="margin-top: 5px; font-size: 13px; line-height: 1.55; color: #6d768f;">An honest unknown is recorded as an unknown. Nothing is silently assumed.</div>
+            </div>
+            <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 10px; padding: 16px 18px;">
+              <div style="font-size: 13.5px; font-weight: 600;">Durable, not one-time</div>
+              <div style="margin-top: 5px; font-size: 13px; line-height: 1.55; color: #6d768f;">Your Business Profile keeps evolving. Add a channel or a market later without redoing intake.</div>
+            </div>
+            <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 10px; padding: 16px 18px;">
+              <div style="font-size: 13.5px; font-weight: 600;">Nothing confidential required</div>
+              <div style="margin-top: 5px; font-size: 13px; line-height: 1.55; color: #6d768f;">PreM3 asks whether something matters before it ever asks for a number.</div>
+            </div>
+          </div>
+          <p style="margin: 20px 0 0; font-size: 13.5px; line-height: 1.6; color: #8a93aa; max-width: 62ch;">As PreM3 learns from your data later, it may ask a small number of additional questions to clarify what the evidence means.</p>
+          <button onClick="{{ onNext }}" style="margin-top: 26px; border: none; border-radius: 9px; background: #3b4bdb; color: #fff; font-size: 14.5px; font-weight: 600; padding: 13px 22px;" style-hover="background: #3140bd;">Build my Business Profile</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showHead }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-bottom: 26px;">
+          <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #3b4bdb;">{{ eyebrow }}</div>
+          <h1 style="font-family: Satoshi, Inter, sans-serif; font-size: 27px; line-height: 1.25; font-weight: 600; letter-spacing: -0.02em; margin: 9px 0 0;">{{ title }}</h1>
+          <p style="margin: 9px 0 0; font-size: 14.5px; line-height: 1.6; color: #6d768f; max-width: 62ch; text-wrap: pretty;">{{ sub }}</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCards }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <sc-for list="{{ cards }}" as="card" hint-placeholder-count="2">
+            <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 22px 24px; box-shadow: 0 1px 2px rgba(26, 31, 75, 0.04); animation: cardIn 0.28s ease both;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+                <div style="font-size: 16.5px; font-weight: 600; line-height: 1.45; letter-spacing: -0.01em; text-wrap: pretty;">{{ card.prompt }}</div>
+                <sc-if value="{{ card.optional }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex: 0 0 auto; font-size: 11px; font-weight: 500; color: #8a93aa; border: 1px solid #e6eaf1; border-radius: 999px; padding: 3px 9px;">Optional</span>
+                </sc-if>
+              </div>
+              <sc-if value="{{ card.help }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 7px; font-size: 13.5px; line-height: 1.55; color: #6d768f; max-width: 62ch;">{{ card.help }}</div>
+              </sc-if>
+
+              <sc-if value="{{ card.isOptions }}" hint-placeholder-val="{{ true }}">
+                <div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;">
+                  <sc-for list="{{ card.options }}" as="opt" hint-placeholder-count="4">
+                    <button onClick="{{ opt.onPick }}" style="display: inline-flex; align-items: center; gap: 7px; border-width: 1px; border-radius: 8px; padding: 9px 13px; font-size: 13.5px; font-weight: 500; text-align: left; transition: all 0.14s ease; background: {{ opt.bg }}; border-color: {{ opt.bc }}; border-style: {{ opt.bs }}; color: {{ opt.color }};">
+                      <sc-if value="{{ opt.mark }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size: 11px; color: #3b4bdb;">{{ opt.mark }}</span>
+                      </sc-if>
+                      <span>{{ opt.label }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ card.otherOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                    <input onChange="{{ card.onOther }}" value="{{ card.otherValue }}" placeholder="{{ card.otherPlaceholder }}" style="flex: 1 1 auto; min-width: 0; max-width: 420px; border: 1px solid #9aa3b8; border-style: dashed; border-radius: 8px; padding: 10px 13px; font-size: 13.5px; background: #fff; color: #1a1f4b; outline: none;" style-focus="border-color: #3b4bdb; border-style: solid;">
+                    <span style="font-size: 12px; color: #8a93aa;">Kept in your words</span>
+                  </div>
+                </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ card.isPicker }}" hint-placeholder-val="{{ false }}">
+                <div>
+                  <div style="margin-top: 16px; display: flex; align-items: center; gap: 12px;">
+                    <input onChange="{{ card.onSearch }}" value="{{ card.search }}" placeholder="{{ card.searchPlaceholder }}" style="flex: 1 1 auto; min-width: 0; max-width: 340px; border: 1px solid #e6eaf1; border-radius: 8px; padding: 9px 12px; font-size: 13.5px; background: #fbfcfe; outline: none;" style-focus="border-color: #3b4bdb; background: #fff;">
+                    <span style="font-size: 12.5px; color: #8a93aa;">{{ card.countLabel }}</span>
+                    <sc-if value="{{ card.hasSelection }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ card.onSelOnly }}" style="border: 1px solid {{ card.selOnlyBc }}; background: {{ card.selOnlyBg }}; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; font-weight: 500; color: {{ card.selOnlyColor }};">{{ card.selOnlyLabel }}</button>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ card.hasSelection }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top: 13px; padding: 13px 15px; border: 1px solid #d5daf8; background: #f7f8fe; border-radius: 10px;">
+                      <div style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #3b4bdb;">{{ card.chipsTitle }}</div>
+                      <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 7px;">
+                        <sc-for list="{{ card.chips }}" as="c" hint-placeholder-count="3">
+                          <span style="display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #c9d0f0; border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 12.5px; font-weight: 500; color: #1a1f4b;">
+                            <span>{{ c.label }}</span>
+                            <button onClick="{{ c.onRemove }}" title="Remove" style="border: none; background: #eef0fd; border-radius: 50%; width: 17px; height: 17px; display: inline-flex; align-items: center; justify-content: center; padding: 0; color: #3b4bdb; font-size: 12px; line-height: 1;" style-hover="background: #3b4bdb; color: #fff;">×</button>
+                          </span>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+                  <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 15px;">
+                    <sc-for list="{{ card.groups }}" as="g" hint-placeholder-count="3">
+                      <div>
+                        <button onClick="{{ g.onToggle }}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: none; background: none; padding: 0 0 9px; text-align: left;">
+                          <span style="display: flex; align-items: baseline; gap: 9px; min-width: 0;">
+                            <svg viewBox="0 0 24 24" width="13" height="13" style="flex: 0 0 13px; align-self: center; transform: {{ g.rotate }}; transition: transform 0.15s ease;" fill="none" stroke="#3b4bdb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
+                            <span style="font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; color: #1a1f4b;">{{ g.label }}</span>
+                          </span>
+                          <span style="font-size: 11.5px; font-weight: {{ g.countWeight }}; color: {{ g.countColor }};">{{ g.count }}</span>
+                        </button>
+                        <sc-if value="{{ g.open }}" hint-placeholder-val="{{ false }}">
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 2px;">
+                          <sc-for list="{{ g.options }}" as="opt" hint-placeholder-count="4">
+                            <button onClick="{{ opt.onPick }}" title="{{ opt.help }}" style="display: inline-flex; align-items: center; gap: 7px; border-width: 1px; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 500; transition: all 0.14s ease; background: {{ opt.bg }}; border-color: {{ opt.bc }}; border-style: {{ opt.bs }}; color: {{ opt.color }};">
+                              <sc-if value="{{ opt.mark }}" hint-placeholder-val="{{ false }}">
+                                <span style="font-size: 11px; color: #3b4bdb;">{{ opt.mark }}</span>
+                              </sc-if>
+                              <span>{{ opt.label }}</span>
+                            </button>
+                          </sc-for>
+                        </div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ card.noMatches }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top: 6px; font-size: 13px; color: #8a93aa;">Nothing predefined matches that. Add it as your own below — PreM3 keeps your wording.</div>
+                  </sc-if>
+                  <div style="margin-top: 16px; display: flex; align-items: center; gap: 10px;">
+                    <input onChange="{{ card.onCustomDraft }}" value="{{ card.customDraft }}" placeholder="{{ card.customPlaceholder }}" style="flex: 1 1 auto; min-width: 0; max-width: 340px; border: 1px dashed #9aa3b8; border-radius: 8px; padding: 9px 12px; font-size: 13px; background: #fff; outline: none;" style-focus="border-color: #3b4bdb; border-style: solid;">
+                    <button onClick="{{ card.onCustomAdd }}" style="border: 1px solid #e6eaf1; background: #fff; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: #3b4bdb;" style-hover="border-color: #3b4bdb;">Add</button>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ card.isMatrix }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 14px;">
+                  <sc-for list="{{ card.rows }}" as="row" hint-placeholder-count="3">
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-top: 1px solid #eff2f7;">
+                      <span style="font-size: 14px; font-weight: 500;">{{ row.label }}</span>
+                      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        <sc-for list="{{ row.opts }}" as="opt" hint-placeholder-count="3">
+                          <button onClick="{{ opt.onPick }}" style="border-width: 1px; border-radius: 7px; padding: 6px 11px; font-size: 12.5px; font-weight: 500; transition: all 0.14s ease; background: {{ opt.bg }}; border-color: {{ opt.bc }}; border-style: {{ opt.bs }}; color: {{ opt.color }};">{{ opt.label }}</button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ card.isText }}" hint-placeholder-val="{{ false }}">
+                <textarea onChange="{{ card.onText }}" value="{{ card.textValue }}" placeholder="{{ card.placeholder }}" rows="3" style="margin-top: 14px; width: 100%; resize: vertical; border: 1px solid #e6eaf1; border-radius: 9px; padding: 11px 13px; font-size: 14px; line-height: 1.55; color: #1a1f4b; background: #fbfcfe; outline: none;" style-focus="border-color: #3b4bdb; background: #fff;"></textarea>
+              </sc-if>
+
+              <sc-if value="{{ card.note }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 15px; border: 1px solid #d5daf8; background: #f7f8fe; border-radius: 9px; padding: 14px 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #3b4bdb;">From your description</div>
+                  <div style="margin-top: 9px; display: flex; flex-direction: column; gap: 5px;">
+                    <sc-for list="{{ card.noteBullets }}" as="b" hint-placeholder-count="2">
+                      <div style="font-size: 13.5px; line-height: 1.5; color: #2b3350;">— {{ b }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 16px;">
+                <sc-if value="{{ card.why }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ card.onWhy }}" style="display: inline-flex; align-items: center; gap: 7px; border: none; background: none; padding: 0; font-size: 12.5px; font-weight: 500; color: #3b4bdb;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 110-18 9 9 0 010 18zM12 16v-5M12 8h.01"></path></svg>
+                    <span>Why PreM3 asks {{ card.whyChevron }}</span>
+                  </button>
+                </sc-if>
+                <sc-if value="{{ card.agent }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ card.onAgent }}" style="border: 1px dashed #c3cadd; background: #fff; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; font-weight: 500; color: #4f5872;" style-hover="border-color: #3b4bdb; color: #3b4bdb;">{{ card.agent }}</button>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ card.whyOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 12px; border-left: 2px solid #3b4bdb; padding: 2px 0 2px 14px; font-size: 13.5px; line-height: 1.6; color: #4f5872; max-width: 66ch;">{{ card.why }}</div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isEvents }}" hint-placeholder-val="{{ false }}">
+        <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 22px 24px; box-shadow: 0 1px 2px rgba(26, 31, 75, 0.04);">
+          <div style="font-size: 16.5px; font-weight: 600; line-height: 1.45; letter-spacing: -0.01em;">Were there any major business or marketing changes during the period you expect to analyze?</div>
+          <div style="margin-top: 7px; font-size: 13.5px; line-height: 1.55; color: #6d768f; max-width: 62ch;">Pick a type to add it. Approximate timing is fine — a quarter or a month is far more useful than nothing.</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;">
+            <sc-for list="{{ eventTypes }}" as="opt" hint-placeholder-count="6">
+              <button onClick="{{ opt.onPick }}" style="border-width: 1px; border-radius: 8px; padding: 9px 13px; font-size: 13.5px; font-weight: 500; transition: all 0.14s ease; background: {{ opt.bg }}; border-color: {{ opt.bc }}; border-style: {{ opt.bs }}; color: {{ opt.color }};">{{ opt.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ draftOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 16px; border: 1px solid #d5daf8; background: #f7f8fe; border-radius: 10px; padding: 18px;">
+              <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #3b4bdb;">{{ draftType }}</div>
+              <sc-if value="{{ draftCustom }}" hint-placeholder-val="{{ false }}">
+                <input onChange="{{ onDraftCustomType }}" value="{{ draftCustomType }}" placeholder="Name this event type" style="margin-top: 10px; width: 100%; max-width: 360px; border: 1px dashed #9aa3b8; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; background: #fff; outline: none;" style-focus="border-color: #3b4bdb; border-style: solid;">
+              </sc-if>
+              <input onChange="{{ onDraftName }}" value="{{ draftName }}" placeholder="What happened?" style="margin-top: 12px; width: 100%; border: 1px solid #dbe0ec; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; background: #fff; outline: none;" style-focus="border-color: #3b4bdb;">
+
+              <div style="margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                <span style="font-size: 12.5px; color: #6d768f;">Timing</span>
+                <sc-for list="{{ precisionOpts }}" as="opt" hint-placeholder-count="2">
+                  <button onClick="{{ opt.onPick }}" style="border-width: 1px; border-radius: 7px; padding: 6px 11px; font-size: 12.5px; font-weight: 500; background: {{ opt.bg }}; border-color: {{ opt.bc }}; border-style: {{ opt.bs }}; color: {{ opt.color }};">{{ opt.label }}</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ draftExact }}" hint-placeholder-val="{{ true }}">
+                <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 400px;">
+                  <input onChange="{{ onDraftStart }}" value="{{ draftStart }}" type="date" style="border: 1px solid #dbe0ec; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; background: #fff; color: #1a1f4b; outline: none;" style-focus="border-color: #3b4bdb;">
+                  <input onChange="{{ onDraftEnd }}" value="{{ draftEnd }}" type="date" style="border: 1px solid #dbe0ec; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; background: #fff; color: #1a1f4b; outline: none;" style-focus="border-color: #3b4bdb;">
+                </div>
+              </sc-if>
+              <sc-if value="{{ draftApprox }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                  <input onChange="{{ onDraftApproxText }}" value="{{ draftApproxText }}" placeholder="e.g. Q2 2025, or March–May 2026" style="flex: 1 1 auto; min-width: 0; max-width: 320px; border: 1px solid #dbe0ec; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; background: #fff; outline: none;" style-focus="border-color: #3b4bdb;">
+                  <span style="font-size: 12px; color: #8a93aa;">Recorded as approximate</span>
+                </div>
+              </sc-if>
+
+              <div style="margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                <span style="font-size: 12.5px; color: #6d768f;">One-time or recurring?</span>
+                <sc-for list="{{ recurOpts }}" as="opt" hint-placeholder-count="3">
+                  <button onClick="{{ opt.onPick }}" style="border-width: 1px; border-radius: 7px; padding: 6px 11px; font-size: 12.5px; font-weight: 500; background: {{ opt.bg }}; border-color: {{ opt.bc }}; border-style: {{ opt.bs }}; color: {{ opt.color }};">{{ opt.label }}</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ draftRecurring }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 8px; font-size: 12.5px; line-height: 1.5; color: #3b4bdb;">Saved as a recurring business pattern instead of a one-off event, so an annual promotion does not become a dozen isolated entries.</div>
+              </sc-if>
+
+              <textarea onChange="{{ onDraftNote }}" value="{{ draftNote }}" rows="2" placeholder="Anything PreM3 should know about it? (optional)" style="margin-top: 12px; width: 100%; resize: vertical; border: 1px solid #dbe0ec; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; line-height: 1.55; background: #fff; outline: none;" style-focus="border-color: #3b4bdb;"></textarea>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px;">
+                <button onClick="{{ onAddEvent }}" style="border: none; border-radius: 8px; background: #3b4bdb; color: #fff; font-size: 13px; font-weight: 600; padding: 9px 15px;">Add event</button>
+                <button onClick="{{ onCancelDraft }}" style="border: none; background: none; font-size: 13px; font-weight: 500; color: #6d768f; padding: 0;">Cancel</button>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ hasEvents }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 18px; border-top: 1px solid #eff2f7; padding-top: 6px;">
+              <sc-for list="{{ eventList }}" as="ev" hint-placeholder-count="2">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 13px 0; border-bottom: 1px solid #f2f4f9;">
+                  <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <span style="margin-top: 1px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #3b4bdb; background: #eef0fd; border-radius: 5px; padding: 4px 8px; white-space: nowrap;">{{ ev.type }}</span>
+                    <div>
+                      <div style="font-size: 14px; font-weight: 500;">{{ ev.name }}</div>
+                      <div style="margin-top: 3px; display: flex; align-items: center; gap: 9px;">
+                        <span style="font-size: 12.5px; color: #8a93aa; font-family: 'IBM Plex Mono', monospace;">{{ ev.range }}</span>
+                        <sc-if value="{{ ev.tag }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-size: 11px; font-weight: 500; color: #6d768f; border: 1px solid #e6eaf1; border-radius: 999px; padding: 2px 8px;">{{ ev.tag }}</span>
+                        </sc-if>
+                      </div>
+                      <sc-if value="{{ ev.note }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top: 5px; font-size: 13px; color: #6d768f; line-height: 1.5;">{{ ev.note }}</div>
+                      </sc-if>
+                    </div>
+                  </div>
+                  <button onClick="{{ ev.onRemove }}" style="border: none; background: none; font-size: 12.5px; color: #8a93aa; padding: 0;" style-hover="color: #1a1f4b;">Remove</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <div style="margin-top: 18px;">
+            <button onClick="{{ onNoEvents }}" style="border-width: 1px; border-radius: 8px; padding: 9px 13px; font-size: 13.5px; font-weight: 500; background: {{ noneBg }}; border-color: {{ noneBc }}; border-style: {{ noneBs }}; color: {{ noneColor }};">None that I know of</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPriors }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 22px 24px; box-shadow: 0 1px 2px rgba(26, 31, 75, 0.04);">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+              <div style="font-size: 16.5px; font-weight: 600; line-height: 1.45; letter-spacing: -0.01em; max-width: 52ch; text-wrap: pretty;">Do you already have credible evidence about the impact of any marketing activity?</div>
+              <span style="flex: 0 0 auto; font-size: 11px; font-weight: 500; color: #8a93aa; border: 1px solid #e6eaf1; border-radius: 999px; padding: 3px 9px;">Optional</span>
+            </div>
+            <div style="margin-top: 7px; font-size: 13.5px; line-height: 1.55; color: #6d768f; max-width: 62ch;">Geo or holdout experiments, platform lift studies, a previous MMM, an attribution study, an internal benchmark, or informed expert judgment all count.</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;">
+              <sc-for list="{{ priorLead }}" as="opt" hint-placeholder-count="3">
+                <button onClick="{{ opt.onPick }}" style="border-width: 1px; border-radius: 8px; padding: 9px 15px; font-size: 13.5px; font-weight: 500; transition: all 0.14s ease; background: {{ opt.bg }}; border-color: {{ opt.bc }}; border-style: {{ opt.bs }}; color: {{ opt.color }};">{{ opt.label }}</button>
+              </sc-for>
+            </div>
+            <div style="margin-top: 18px; border: 1px solid #e6eaf1; background: #fbfcfe; border-radius: 10px; padding: 16px 18px;">
+              <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #6d768f;">Example of useful evidence</div>
+              <div style="margin-top: 9px; font-size: 13.5px; line-height: 1.6; color: #2b3350; max-width: 64ch; font-style: italic;">“We ran a geo holdout for Paid Search in Q2 2025. The test suggested Search drove approximately 8–12% incremental revenue lift in the tested markets. The experiment covered six weeks and the US only.”</div>
+              <div style="margin-top: 13px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #3b4bdb;">What PreM3 can read from that</div>
+              <div style="margin-top: 9px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;">
+                <sc-for list="{{ exampleFields }}" as="f" hint-placeholder-count="6">
+                  <div style="border: 1px solid #bbebd3; background: #f6fefa; border-radius: 8px; padding: 8px 10px;">
+                    <div style="font-size: 11px; color: #6f9e8a;">{{ f.label }}</div>
+                    <div style="margin-top: 3px; font-size: 12.5px; font-weight: 500; color: #1a1f4b;">{{ f.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top: 12px; font-size: 12.5px; line-height: 1.55; color: #6d768f; max-width: 64ch;">Evidence does not need to be perfect or formatted. PreM3 structures what you give it and preserves the uncertainty around it.</div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-top: 16px;">
+              <button onClick="{{ onToggleExamples }}" style="border: none; background: none; padding: 0; font-size: 12.5px; font-weight: 500; color: #3b4bdb;">See more examples {{ examplesChevron }}</button>
+              <button onClick="{{ onTogglePriors }}" style="display: inline-flex; align-items: center; gap: 7px; border: none; background: none; padding: 0; font-size: 12.5px; font-weight: 500; color: #3b4bdb;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 110-18 9 9 0 010 18zM12 16v-5M12 8h.01"></path></svg>
+                <span>What are priors? {{ priorsChevron }}</span>
+              </button>
+            </div>
+
+            <sc-if value="{{ examplesOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <sc-for list="{{ evidenceExamples }}" as="x" hint-placeholder-count="5">
+                  <div style="border-left: 2px solid #d5daf8; padding: 2px 0 2px 14px;">
+                    <div style="font-size: 12.5px; font-weight: 600; color: #3b4bdb;">{{ x.type }}</div>
+                    <div style="margin-top: 4px; font-size: 13.5px; line-height: 1.55; color: #4f5872; max-width: 64ch;">{{ x.text }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ priorsExplainOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 14px; border-left: 2px solid #3b4bdb; padding: 2px 0 2px 14px; max-width: 66ch;">
+                <div style="font-size: 13.5px; line-height: 1.6; color: #4f5872;">PreM3 models are Bayesian. A prior represents what we reasonably believe about a parameter before the current model sees the data. Experiments, previous MMMs, and credible historical evidence can sometimes help inform those assumptions.</div>
+                <div style="margin-top: 8px; font-size: 13.5px; line-height: 1.6; color: #1a1f4b; font-weight: 500;">You do not need to choose a probability distribution here.</div>
+                <div style="margin-top: 8px; font-size: 13px; line-height: 1.6; color: #6d768f;">Have evidence but not the file yet? Add the description now — reports, prior models and experiment files can be attached during Data Foundation or later during model design.</div>
+              </div>
+            </sc-if>
+
+            <div style="margin-top: 16px; border-left: 2px solid #c3cadd; padding: 2px 0 2px 14px; font-size: 13px; line-height: 1.6; color: #6d768f; max-width: 66ch;">No prior evidence is a valid starting point. PreM3 keeps external evidence clearly separate from assumptions inferred later from your own data.</div>
+          </div>
+
+          <sc-if value="{{ priorsYes }}" hint-placeholder-val="{{ false }}">
+            <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 22px 24px; box-shadow: 0 1px 2px rgba(26, 31, 75, 0.04); animation: cardIn 0.28s ease both;">
+              <div style="font-size: 16.5px; font-weight: 600; line-height: 1.45;">Add what you know, in your own words</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;">
+                <sc-for list="{{ evidenceTypes }}" as="opt" hint-placeholder-count="4">
+                  <button onClick="{{ opt.onPick }}" style="border-width: 1px; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 500; transition: all 0.14s ease; background: {{ opt.bg }}; border-color: {{ opt.bc }}; border-style: {{ opt.bs }}; color: {{ opt.color }};">{{ opt.label }}</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ evTypeCustom }}" hint-placeholder-val="{{ false }}">
+                <input onChange="{{ onEvTypeCustom }}" value="{{ evTypeCustomText }}" placeholder="Name the evidence type" style="margin-top: 10px; width: 100%; max-width: 340px; border: 1px dashed #9aa3b8; border-radius: 8px; padding: 9px 12px; font-size: 13px; background: #fff; outline: none;" style-focus="border-color: #3b4bdb; border-style: solid;">
+              </sc-if>
+              <textarea onChange="{{ onEvText }}" value="{{ evText }}" rows="3" placeholder="e.g. A Q2 2025 geo holdout in the US showed Paid Search revenue ROI around 1.5." style="margin-top: 12px; width: 100%; resize: vertical; border: 1px solid #e6eaf1; border-radius: 9px; padding: 11px 13px; font-size: 14px; line-height: 1.55; background: #fbfcfe; outline: none;" style-focus="border-color: #3b4bdb; background: #fff;"></textarea>
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 12px;">
+                <button onClick="{{ onAddEvidence }}" style="border: none; border-radius: 8px; background: #3b4bdb; color: #fff; font-size: 13px; font-weight: 600; padding: 9px 15px;">Add evidence</button>
+                <span style="font-size: 12.5px; color: #8a93aa;">Attach the supporting file later in Data Foundation.</span>
+              </div>
+              <sc-if value="{{ hasEvidence }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 12px;">
+                  <sc-for list="{{ evidenceList }}" as="e" hint-placeholder-count="1">
+                    <div style="border: 1px solid {{ e.border }}; background: {{ e.bg }}; border-radius: 10px; padding: 16px 18px;">
+                      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;">
+                        <div style="min-width: 0;">
+                          <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #3b4bdb; background: #eef0fd; border-radius: 5px; padding: 4px 8px;">{{ e.type }}</span>
+                          <div style="margin-top: 9px; font-size: 13.5px; line-height: 1.55; color: #2b3350; max-width: 60ch;">{{ e.text }}</div>
+                        </div>
+                        <button onClick="{{ e.onRemove }}" style="border: none; background: none; font-size: 12.5px; color: #8a93aa; padding: 0;">Remove</button>
+                      </div>
+                      <sc-if value="{{ e.proposed }}" hint-placeholder-val="{{ true }}">
+                        <div>
+                          <div style="margin-top: 14px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #3b4bdb;">What PreM3 read from that — needs confirmation</div>
+                          <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                            <sc-for list="{{ e.fields }}" as="f" hint-placeholder-count="4">
+                              <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 8px; padding: 9px 11px;">
+                                <div style="font-size: 11px; color: #8a93aa;">{{ f.label }}</div>
+                                <div style="margin-top: 3px; font-size: 13px; font-weight: 500; color: {{ f.color }};">{{ f.value }}</div>
+                              </div>
+                            </sc-for>
+                          </div>
+                          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px;">
+                            <button onClick="{{ e.onConfirm }}" style="border: none; border-radius: 8px; background: #3b4bdb; color: #fff; font-size: 12.5px; font-weight: 600; padding: 8px 14px;">Confirm</button>
+                            <button onClick="{{ e.onUnstructured }}" style="border: 1px solid #e6eaf1; background: #fff; border-radius: 8px; padding: 8px 13px; font-size: 12.5px; font-weight: 500; color: #4f5872;">Leave unstructured for now</button>
+                          </div>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ e.statusLine }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top: 12px; font-size: 12.5px; color: #6d768f;">{{ e.statusLine }}</div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 22px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px; min-width: 0;">
+              <span style="width: 52px; height: 52px; flex: 0 0 52px; border-radius: 12px; background: #1a1f4b; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-family: Satoshi, Inter, sans-serif; font-size: 18px; font-weight: 600; letter-spacing: 0.02em;">{{ initials }}</span>
+              <div style="min-width: 0;">
+                <div style="font-family: Satoshi, Inter, sans-serif; font-size: 21px; font-weight: 600; letter-spacing: -0.01em;">{{ companyName }}</div>
+                <div style="margin-top: 3px; font-size: 13.5px; color: #6d768f;">Business Intelligence Profile</div>
+                <div style="margin-top: 9px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+                  <span style="font-size: 11.5px; color: #6d768f; background: #f5f7fa; border: 1px solid #e6eaf1; border-radius: 6px; padding: 4px 9px;">Updated {{ updatedLabel }}</span>
+                  <span style="font-size: 11.5px; color: #6d768f; background: #f5f7fa; border: 1px solid #e6eaf1; border-radius: 6px; padding: 4px 9px;">{{ versionLabel }}</span>
+                  <span style="font-size: 11.5px; color: #6d768f; background: #f5f7fa; border: 1px solid #e6eaf1; border-radius: 6px; padding: 4px 9px;">Scope: {{ scopeLabel }}</span>
+                </div>
+              </div>
+            </div>
+            <span style="display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; font-size: 12.5px; font-weight: 600; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 999px; padding: 6px 13px;">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 110-18 9 9 0 010 18zM8.5 12.5l2.5 2.5 4.5-5"></path></svg>Business context ready
+            </span>
+          </div>
+
+          <div style="border: 1px solid #d5daf8; background: linear-gradient(180deg, #f7f8fe, #fff); border-radius: 11px; padding: 24px 26px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #3b4bdb;">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-4 10.5c.7.8 1 1.4 1 2.5h6c0-1.1.3-1.7 1-2.5A6 6 0 0012 3z"></path></svg>
+              PreM3 Intelligence Brief
+            </div>
+            <p style="margin: 12px 0 0; font-size: 16.5px; line-height: 1.6; color: #1a1f4b; max-width: 68ch; text-wrap: pretty;">{{ briefSummary }}</p>
+            <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ briefBullets }}" as="b" hint-placeholder-count="4">
+                <div style="display: flex; align-items: flex-start; gap: 11px; max-width: 68ch;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" style="flex: 0 0 16px; margin-top: 4px;" fill="none" stroke="{{ b.dot }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ b.icon }}"></path></svg>
+                  <span style="font-size: 14.5px; line-height: 1.6; color: #2b3350; text-wrap: pretty;"><span style="font-weight: 600;">{{ b.lead }}</span>{{ b.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #e2e6f7; display: flex; flex-wrap: wrap; gap: 10px;">
+              <sc-for list="{{ briefStats }}" as="s" hint-placeholder-count="4">
+                <span style="display: inline-flex; align-items: baseline; gap: 7px; background: {{ s.bg }}; border: 1px solid {{ s.border }}; border-radius: 999px; padding: 6px 13px;">
+                  <span style="font-size: 14px; font-weight: 600; color: {{ s.valueColor }};">{{ s.value }}</span>
+                  <span style="font-size: 12.5px; color: {{ s.labelColor }};">{{ s.label }}</span>
+                </span>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-if value="{{ hasMatters }}" hint-placeholder-val="{{ true }}">
+            <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 22px 24px;">
+              <div style="display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#3b4bdb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 110-18 9 9 0 010 18zM12 17a5 5 0 110-10 5 5 0 010 10zM12 13.2a1.2 1.2 0 110-2.4 1.2 1.2 0 010 2.4z"></path></svg>
+                What matters most for measurement
+              </div>
+              <div style="margin-top: 4px; font-size: 13.5px; line-height: 1.55; color: #6d768f; max-width: 62ch;">Ranked by how much each one is likely to affect the model, not by the order you answered.</div>
+              <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 2px;">
+                <sc-for list="{{ matters }}" as="m" hint-placeholder-count="3">
+                  <div style="padding: 17px 0; border-top: 1px solid #f2f4f9; display: flex; align-items: flex-start; gap: 16px;">
+                    <span style="flex: 0 0 30px; width: 30px; height: 30px; border-radius: 8px; background: #eef0fd; border: 1px solid #d5daf8; display: inline-flex; align-items: center; justify-content: center; font-family: Satoshi, Inter, sans-serif; font-size: 14px; font-weight: 600; color: #3b4bdb;">{{ m.n }}</span>
+                    <div style="min-width: 0;">
+                      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                        <span style="font-size: 15px; font-weight: 600; line-height: 1.45;">{{ m.title }}</span>
+                        <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 999px; padding: 3px 9px; background: {{ m.rankBg }}; color: {{ m.rankColor }}; border: 1px solid {{ m.rankBorder }};">{{ m.rank }}</span>
+                      </div>
+                      <div style="margin-top: 11px; max-width: 64ch;">
+                        <div style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #a3abbf;">What you told PreM3</div>
+                        <div style="margin-top: 3px; font-size: 13.5px; line-height: 1.55; color: #2b3350;">{{ m.fact }}</div>
+                      </div>
+                      <div style="margin-top: 11px; border-left: 2px solid #d5daf8; padding-left: 13px; max-width: 62ch;">
+                        <div style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #3b4bdb;">Why it matters</div>
+                        <div style="margin-top: 3px; font-size: 13.5px; line-height: 1.55; color: #4f5872;">{{ m.why }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasModelCons }}" hint-placeholder-val="{{ true }}">
+            <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 22px 24px;">
+              <div style="display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#3b4bdb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16M8 16l4-5 3 3 5-7"></path></svg>
+                Modeling considerations
+              </div>
+              <div style="margin-top: 4px; font-size: 13.5px; line-height: 1.55; color: #6d768f; max-width: 64ch;">Based on the context you provided, PreM3 will carry these into Data Foundation and Pre-Modeling. They are recommendations, not requirements.</div>
+              <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+                <sc-for list="{{ modelCons }}" as="c" hint-placeholder-count="3">
+                  <div style="border: 1px solid #e6eaf1; border-radius: 10px; padding: 16px 18px;">
+                    <div style="font-size: 14.5px; font-weight: 600; line-height: 1.45;">{{ c.title }}</div>
+                    <div style="margin-top: 10px; font-size: 13.5px; line-height: 1.55; color: #4f5872; max-width: 64ch;"><span style="color: #8a93aa;">Consideration — </span>{{ c.consideration }}</div>
+                    <div style="margin-top: 10px; border-left: 2px solid #3b4bdb; padding: 2px 0 2px 13px; max-width: 64ch;">
+                      <div style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #3b4bdb;">PreM3 recommendation</div>
+                      <div style="margin-top: 5px; font-size: 13.5px; line-height: 1.55; color: #2b3350;">{{ c.rec }}</div>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 13px;">
+                      <button onClick="{{ c.onToggle }}" style="border: none; background: none; padding: 0; font-size: 12.5px; font-weight: 500; color: #3b4bdb;">{{ c.basisLabel }} {{ c.chevron }}</button>
+                      <sc-if value="{{ c.conceptTerm }}" hint-placeholder-val="{{ false }}">
+                        <button onClick="{{ c.onConcept }}" style="border: none; background: none; padding: 0; font-size: 12.5px; font-weight: 500; color: #6d768f;" style-hover="color: #3b4bdb;">Quick concept — {{ c.conceptTerm }} {{ c.conceptChevron }}</button>
+                      </sc-if>
+                    </div>
+                    <sc-if value="{{ c.open }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top: 12px; border-top: 1px solid #f2f4f9;">
+                        <sc-for list="{{ c.basis }}" as="b" hint-placeholder-count="3">
+                          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid #f7f8fb;">
+                            <div style="min-width: 0;">
+                              <div style="font-size: 11.5px; color: #8a93aa;">{{ b.label }}</div>
+                              <div style="margin-top: 2px; font-size: 13.5px; color: {{ b.color }};">{{ b.value }}</div>
+                            </div>
+                            <button onClick="{{ b.onEdit }}" style="flex: 0 0 auto; border: 1px solid #e6eaf1; background: #fff; border-radius: 7px; padding: 5px 11px; font-size: 12px; font-weight: 500; color: #3b4bdb;" style-hover="border-color: #3b4bdb;">Edit</button>
+                          </div>
+                        </sc-for>
+                        <div style="margin-top: 10px; font-size: 12px; color: #8a93aa;">Knowledge source: Business IQ · user-confirmed</div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ c.conceptOpen }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top: 12px; background: #fbfcfe; border: 1px solid #e6eaf1; border-radius: 9px; padding: 13px 15px; font-size: 13px; line-height: 1.6; color: #4f5872; max-width: 66ch;">{{ c.conceptCopy }}</div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasFocus }}" hint-placeholder-val="{{ true }}">
+            <div style="border: 1px solid #d5daf8; background: #f7f8fe; border-radius: 11px; padding: 20px 24px;">
+              <div style="display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#3b4bdb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
+                Recommended next focus
+              </div>
+              <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 7px;">
+                <sc-for list="{{ nextFocus }}" as="f" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; line-height: 1.55; color: #2b3350; max-width: 66ch;">
+                    <span style="flex: 0 0 auto; margin-top: 6px; width: 5px; height: 5px; border-radius: 50%; background: #3b4bdb;"></span><span>{{ f }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasForecast }}" hint-placeholder-val="{{ false }}">
+            <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 22px 24px;">
+              <div style="display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#3b4bdb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l4.5-5 3.5 3.5L20 5M20 5v5M20 5h-5M3 20h18"></path></svg>
+                Forecasting considerations
+              </div>
+              <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 2px;">
+                <sc-for list="{{ forecastCons }}" as="f" hint-placeholder-count="2">
+                  <div style="padding: 13px 0; border-top: 1px solid #f2f4f9;">
+                    <div style="font-size: 14px; font-weight: 500;">{{ f.title }}</div>
+                    <div style="margin-top: 5px; font-size: 13.5px; line-height: 1.55; color: #6d768f; max-width: 66ch;">{{ f.copy }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasFlags }}" hint-placeholder-val="{{ false }}">
+            <div style="border: 1px solid #fde68a; background: #fffbeb; border-radius: 11px; padding: 18px 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600; color: #92400e;">{{ flagTitle }}</div>
+                <div style="margin-top: 5px; font-size: 13.5px; line-height: 1.55; color: #7c5a1a; max-width: 62ch;">{{ flagCopy }}</div>
+              </div>
+              <button onClick="{{ onOpenFlags }}" style="flex: 0 0 auto; border: 1px solid #e0b64d; background: #fff; border-radius: 8px; padding: 8px 14px; font-size: 12.5px; font-weight: 600; color: #92400e;" style-hover="border-color: #92400e;">Review flagged facts</button>
+            </div>
+          </sc-if>
+
+          <div style="margin-top: 6px; display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#3b4bdb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9zM9 5.5H7A1 1 0 006 6.5v13.5a1 1 0 001 1h10a1 1 0 001-1V6.5a1 1 0 00-1-1h-2M9.5 13.5l2 2 3.5-4"></path></svg>
+            The facts behind this
+          </div>
+          <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; overflow: hidden; margin-top: -6px;">
+            <sc-for list="{{ reviewSections }}" as="s" hint-placeholder-count="6">
+              <div style="border-bottom: 1px solid #eff2f7;">
+                <button onClick="{{ s.onToggle }}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: none; border: none; padding: 15px 22px; text-align: left;" style-hover="background: #fbfcfe;">
+                  <span style="display: flex; align-items: center; gap: 11px;">
+                    <span style="font-size: 11px; color: #b4bdd0; width: 9px;">{{ s.chevron }}</span>
+                    <span style="font-size: 14.5px; font-weight: 500;">{{ s.label }}</span>
+                  </span>
+                  <span style="font-size: 12px; font-weight: 500; border-radius: 999px; padding: 4px 10px; white-space: nowrap; background: {{ s.pillBg }}; color: {{ s.pillColor }}; border: 1px solid {{ s.pillBorder }};">{{ s.status }}</span>
+                </button>
+                <sc-if value="{{ s.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding: 4px 22px 18px 42px;">
+                    <sc-for list="{{ s.facts }}" as="f" hint-placeholder-count="2">
+                      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid #f2f4f9;">
+                        <div style="min-width: 0;">
+                          <div style="font-size: 12px; color: #8a93aa;">{{ f.label }}</div>
+                          <div style="margin-top: 3px; font-size: 14px; line-height: 1.5; color: {{ f.valueColor }};">{{ f.value }}</div>
+                          <sc-if value="{{ f.note }}" hint-placeholder-val="{{ false }}">
+                            <div style="margin-top: 6px; border-left: 2px solid {{ f.provBorder }}; padding-left: 10px; font-size: 12.5px; line-height: 1.5; color: #6d768f; max-width: 58ch;">{{ f.note }}</div>
+                          </sc-if>
+                        </div>
+                        <span style="flex: 0 0 auto; font-size: 11.5px; font-weight: 500; color: {{ f.provColor }}; border: 1px solid {{ f.provBorder }}; background: {{ f.provBg }}; border-radius: 999px; padding: 3px 9px; white-space: nowrap;">{{ f.prov }}</span>
+                      </div>
+                    </sc-for>
+                    <button onClick="{{ s.onEdit }}" style="margin-top: 14px; border: 1px solid #e6eaf1; background: #fff; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; font-weight: 500; color: #3b4bdb;" style-hover="border-color: #3b4bdb;">{{ s.editLabel }}</button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 22px 24px;">
+            <div style="display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#3b4bdb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 110-18 9 9 0 010 18zM9.6 9.4a2.4 2.4 0 114 1.8c-.9.7-1.6 1.2-1.6 2.3M12 17h.01"></path></svg>
+              Open questions
+            </div>
+            <div style="margin-top: 4px; font-size: 13.5px; line-height: 1.55; color: #6d768f; max-width: 62ch;">{{ openQuestionsCopy }}</div>
+            <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
+              <sc-for list="{{ openBuckets }}" as="b" hint-placeholder-count="3">
+                <div style="border: 1px solid #e6eaf1; border-radius: 9px; padding: 13px 15px;">
+                  <div style="font-family: Satoshi, Inter, sans-serif; font-size: 22px; font-weight: 600; color: {{ b.color }};">{{ b.n }}</div>
+                  <div style="margin-top: 3px; font-size: 12.5px; line-height: 1.5; color: #6d768f;">{{ b.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ hasOpenExamples }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 6px;">
+                <sc-for list="{{ openExamples }}" as="q" hint-placeholder-count="3">
+                  <div style="font-size: 13.5px; line-height: 1.55; color: #4f5872;">• {{ q }}</div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="border: 1px solid #d5daf8; background: linear-gradient(180deg, #f7f8fe, #fff); border-radius: 11px; padding: 22px 24px;">
+            <div style="display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#3b4bdb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 6v6c0 1.7 3.6 3 8 3M4 12v6c0 1.7 3.6 3 8 3M20 6v5M17.5 20a3 3 0 110-6 3 3 0 010 6zM22 22l-2.3-2.3"></path></svg>
+              Next, PreM3 will look for
+            </div>
+            <div style="margin-top: 4px; font-size: 13.5px; line-height: 1.55; color: #6d768f; max-width: 64ch;">Data Foundation uses this profile to guide discovery. You will not need to re-enter any of it.</div>
+            <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 9px 20px;">
+              <sc-for list="{{ nextEvidence }}" as="n" hint-placeholder-count="6">
+                <div style="display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: {{ n.color }};">
+                  <span style="font-size: 12px; color: {{ n.markColor }};">{{ n.mark }}</span><span>{{ n.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e2e6f7; font-size: 13.5px; line-height: 1.6; color: #4f5872; max-width: 66ch;">Business IQ provides the meaning. Data Foundation now looks for the evidence — discovering likely sources, identifying what is missing, and establishing the governed foundation Pre-Modeling depends on.</div>
+          </div>
+
+          <sc-if value="{{ hasConcepts }}" hint-placeholder-val="{{ false }}">
+            <div style="padding: 4px 4px 0;">
+              <button onClick="{{ onToggleConcepts }}" style="border: none; background: none; padding: 0; font-size: 12.5px; font-weight: 500; color: #8a93aa;" style-hover="color: #3b4bdb;">{{ conceptsLabel }} {{ conceptsChevron }}</button>
+              <sc-if value="{{ conceptsOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+                  <sc-for list="{{ conceptsSurfaced }}" as="c" hint-placeholder-count="3">
+                    <div style="font-size: 13px; line-height: 1.55; color: #6d768f;">— {{ c }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isReady }}" hint-placeholder-val="{{ false }}">
+        <div style="animation: cardIn 0.3s ease both;">
+          <div style="display: inline-flex; align-items: center; gap: 9px; font-size: 12.5px; font-weight: 600; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 999px; padding: 6px 13px;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 110-18 9 9 0 010 18zM8.5 12.5l2.5 2.5 4.5-5"></path></svg>Business context ready
+          </div>
+          <h1 style="font-family: Satoshi, Inter, sans-serif; font-size: 31px; line-height: 1.22; font-weight: 600; letter-spacing: -0.02em; margin: 18px 0 0; max-width: 26ch; text-wrap: pretty;">PreM3 understands how your business operates to begin evaluating the evidence behind it.</h1>
+          <p style="margin: 14px 0 0; font-size: 15.5px; line-height: 1.6; color: #4f5872; max-width: 62ch; text-wrap: pretty;">{{ readyCopy }}</p>
+
+          <div style="margin-top: 26px; border: 1px solid #e6eaf1; background: #fff; border-radius: 11px; padding: 20px 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 22px;">
+              <sc-for list="{{ readySummary }}" as="r" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: {{ r.color }};">
+                  <span style="font-size: 12px; color: {{ r.markColor }};">{{ r.mark }}</span>
+                  <span>{{ r.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #eff2f7; font-size: 13.5px; line-height: 1.6; color: #6d768f;">{{ gapsCopy }}</div>
+          </div>
+
+          <div style="margin-top: 22px; border: 1px solid #d5daf8; background: linear-gradient(180deg, #f7f8fe, #fff); border-radius: 11px; padding: 22px 24px;">
+            <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #3b4bdb;">Next</div>
+            <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3b4bdb" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M20 12c0 1.7-3.6 3-8 3s-8-1.3-8-3"></path></svg>
+              Data Foundation
+            </div>
+            <p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #4f5872; max-width: 60ch;">Connect, discover and organize the evidence PreM3 will use. Data Foundation works out what data you actually have — you do not need to classify your own data maturity first.</p>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px;">
+              <button onClick="{{ onContinue }}" style="border: none; border-radius: 9px; background: #3b4bdb; color: #fff; font-size: 14.5px; font-weight: 600; padding: 13px 22px;" style-hover="background: #3140bd;">Continue to Data Foundation</button>
+              <button onClick="{{ onReviewProfile }}" style="border: 1px solid #e6eaf1; background: #fff; border-radius: 9px; padding: 13px 20px; font-size: 14px; font-weight: 500; color: #4f5872;" style-hover="border-color: #3b4bdb; color: #3b4bdb;">Review my Business Profile</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 18px; font-size: 13.5px; line-height: 1.6; color: #8a93aa; max-width: 62ch;">Your Business Profile stays editable. When Data Foundation finds evidence that disagrees with it, PreM3 proposes the change and shows you the receipt before anything is written.</div>
+          <sc-if value="{{ routedCopy }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 16px; font-size: 13.5px; color: #3b4bdb; font-family: 'IBM Plex Mono', monospace;">{{ routedCopy }}</div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #e6eaf1;">
+          <button onClick="{{ onBack }}" style="border: 1px solid #e2e6ee; background: #eef1f6; border-radius: 9px; padding: 10px 16px; font-size: 13.5px; font-weight: 500; color: #4f5872;" style-hover="background: #e4e8f0; border-color: #c3cadd;">Back</button>
+          <div style="display: flex; align-items: center; gap: 18px;">
+            <span style="font-size: 12.5px; color: #8a93aa;">{{ navHint }}</span>
+            <button onClick="{{ onNext }}" disabled="{{ nextDisabled }}" style="border: none; border-radius: 9px; padding: 11px 20px; font-size: 14px; font-weight: 600; color: #fff; background: {{ nextBg }}; cursor: {{ nextCursor }};">{{ nextLabel }}</button>
+          </div>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; justify-content: flex-end; background: rgba(26, 31, 75, 0.28);">
+      <div onClick="{{ onSheetClose }}" style="flex: 1 1 auto;"></div>
+      <div style="background: #fff; border-top: 1px solid #e6eaf1; box-shadow: 0 -12px 40px rgba(26, 31, 75, 0.14); animation: sheetIn 0.24s ease both;">
+        <div style="max-width: 860px; margin: 0 auto; padding: 22px 32px 30px;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;">
+            <div>
+              <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #3b4bdb;">{{ sheetContext }}</div>
+              <div style="margin-top: 8px; font-size: 17px; font-weight: 600; line-height: 1.45; max-width: 60ch; text-wrap: pretty;">{{ sheetQuestion }}</div>
+            </div>
+            <button onClick="{{ onSheetClose }}" style="border: none; background: none; font-size: 13px; color: #8a93aa; padding: 0;">Close</button>
+          </div>
+
+          <sc-if value="{{ sheetInput }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <textarea onChange="{{ onSheetText }}" value="{{ sheetText }}" rows="3" placeholder="Answer in your own words. One topic at a time." style="margin-top: 16px; width: 100%; resize: vertical; border: 1px solid #dbe0ec; border-radius: 10px; padding: 13px 15px; font-size: 14.5px; line-height: 1.55; background: #fbfcfe; outline: none;" style-focus="border-color: #3b4bdb; background: #fff;"></textarea>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 12px;">
+                <span style="font-size: 12.5px; color: #8a93aa;">PreM3 will show you what it understood before anything is saved.</span>
+                <button onClick="{{ onSheetSend }}" disabled="{{ sheetEmpty }}" style="border: none; border-radius: 9px; color: #fff; font-size: 13.5px; font-weight: 600; padding: 10px 18px; background: {{ sheetSendBg }}; cursor: {{ sheetSendCursor }};">Send to PreM3</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ sheetResult }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="margin-top: 16px; border: 1px solid #e6eaf1; background: #fbfcfe; border-radius: 10px; padding: 15px 17px;">
+                <div style="font-size: 12.5px; color: #8a93aa;">You said</div>
+                <div style="margin-top: 6px; font-size: 14px; line-height: 1.55; color: #4f5872;">“{{ sheetText }}”</div>
+              </div>
+              <div style="margin-top: 12px; border: 1px solid #d5daf8; background: #f7f8fe; border-radius: 10px; padding: 16px 18px;">
+                <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #3b4bdb;">Here is what I understood</div>
+                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 7px;">
+                  <sc-for list="{{ sheetBullets }}" as="b" hint-placeholder-count="3">
+                    <div style="font-size: 14px; line-height: 1.5; color: #2b3350;">— {{ b }}</div>
+                  </sc-for>
+                </div>
+                <div style="margin-top: 12px; font-size: 12.5px; line-height: 1.55; color: #6d768f;">Recorded as your description of how the business works — not as a proven causal relationship.</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+                <button onClick="{{ onSheetConfirm }}" style="border: none; border-radius: 9px; background: #3b4bdb; color: #fff; font-size: 13.5px; font-weight: 600; padding: 10px 18px;">Yes, save this</button>
+                <button onClick="{{ onSheetRetry }}" style="border: 1px solid #e6eaf1; background: #fff; border-radius: 9px; padding: 10px 16px; font-size: 13.5px; font-weight: 500; color: #4f5872;">Edit my answer</button>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;companyName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Acme Outdoors&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;lastUpdated&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Aug 20, 2026 · 10:18 PM&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Business Profile&quot;},&quot;profileVersion&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Business Profile v3&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Business Profile&quot;},&quot;scenario&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Blank&quot;,&quot;A — single-market ecommerce&quot;,&quot;B — mostly unsure&quot;,&quot;C — enterprise, 12 channels&quot;],&quot;default&quot;:&quot;Blank&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype scenario&quot;},&quot;expandAllWhy&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prototype scenario&quot;},&quot;showCoverage&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prototype scenario&quot;},&quot;showFlags&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prototype scenario&quot;}}">
+const UNK = ["Not sure", "Not sure yet", "Not applicable", "Answer later", "None that I know of", "Not sure / needs review"];
+const CUSTOM_PREFIX = "Add your own";
+
+const CHANNEL_GROUPS = [
+  { label: "Search", options: [{ label: "Paid Search" }, { label: "Shopping / Product Listing Ads" }, { label: "Organic Search / SEO" }] },
+  { label: "Social", options: [{ label: "Paid Social" }, { label: "Organic Social" }] },
+  { label: "Video & television", options: [{ label: "Online Video" }, { label: "Connected TV / Streaming TV", help: "e.g. streaming platforms, OTT inventory" }, { label: "Linear TV" }, { label: "Addressable TV" }] },
+  { label: "Audio", options: [{ label: "Streaming Audio / Digital Audio", help: "e.g. Spotify, Pandora, digital radio" }, { label: "Podcast Advertising" }, { label: "Terrestrial Radio" }] },
+  { label: "Display & programmatic", options: [{ label: "Programmatic Display" }, { label: "Direct Display / Publisher Media" }, { label: "Native Advertising" }] },
+  { label: "Retail & commerce media", options: [{ label: "Retail Media" }, { label: "Marketplace Advertising" }, { label: "Affiliate / Partner Marketing" }] },
+  { label: "CRM & owned", options: [{ label: "Email" }, { label: "SMS / Messaging" }, { label: "Push / App Messaging" }, { label: "Direct Mail" }, { label: "Loyalty / CRM Marketing" }] },
+  { label: "Offline & traditional", options: [{ label: "Out-of-Home / OOH" }, { label: "Digital Out-of-Home / DOOH" }, { label: "Print" }, { label: "Cinema" }, { label: "Sponsorships" }, { label: "Events / Experiential" }] },
+  { label: "Partnerships & influence", options: [{ label: "Influencer / Creator" }, { label: "Partnerships" }, { label: "Referral" }] }
+];
+
+const REGION_GROUPS = [
+  { label: "Global regions", options: [
+    { label: "NA — North America", help: "Commonly US and Canada. PreM3 will not silently assume where Mexico belongs." },
+    { label: "LATAM — Latin America", help: "Mexico, Central America, the Caribbean where relevant, and South America" },
+    { label: "EMEA — Europe, Middle East & Africa" },
+    { label: "APAC — Asia-Pacific" },
+    { label: "Americas", help: "North, Central and South American markets" }
+  ] },
+  { label: "Business clusters & sub-regions", options: [
+    { label: "MENA — Middle East & North Africa" }, { label: "GCC — Gulf Cooperation Council" }, { label: "ASEAN" },
+    { label: "SEA — Southeast Asia" }, { label: "ANZ — Australia & New Zealand" }, { label: "Greater China" },
+    { label: "APJ — Asia-Pacific & Japan" }, { label: "SSA — Sub-Saharan Africa" }, { label: "DACH — Germany, Austria & Switzerland" },
+    { label: "Benelux" }, { label: "CEE — Central & Eastern Europe" }, { label: "CALA — Caribbean & Latin America" }
+  ] },
+  { label: "Countries", options: [
+    { label: "United States" }, { label: "Canada" }, { label: "Mexico" }, { label: "Brazil" }, { label: "United Kingdom" },
+    { label: "Ireland" }, { label: "Germany" }, { label: "France" }, { label: "Spain" }, { label: "Italy" },
+    { label: "Netherlands" }, { label: "Sweden" }, { label: "Poland" }, { label: "United Arab Emirates" }, { label: "Saudi Arabia" },
+    { label: "South Africa" }, { label: "India" }, { label: "Japan" }, { label: "China" }, { label: "Singapore" },
+    { label: "Australia" }, { label: "New Zealand" }
+  ] }
+];
+
+const ROLE_COLS = ["Demand creation", "Demand capture", "Retargeting", "Retention / lifecycle", "Brand building", "Partner / retail support", "Multiple roles", "Not sure"];
+const DRIVER_ROWS = ["Pricing", "Promotions", "Seasonality", "Inventory / availability", "Product launches / assortment", "Distribution / store footprint", "External / macro events", "Competitor activity"];
+const RELEVANCE = ["Important", "Somewhat important", "Not material", "Not sure"];
+const EVENT_TYPES = ["Promotion", "Pricing change", "Product launch", "Product retirement", "Market launch / exit", "Store opening or closure", "Media channel launch", "Media channel pause", "Budget policy change", "Marketing strategy change", "Inventory constraint", "Tracking / measurement change", "Competitor event", "Distribution change", "Org / sales-process change", "Add your own event type"];
+const EVIDENCE_TYPES = ["Geo experiment", "Holdout / randomized experiment", "Platform lift study", "Previous MMM", "Attribution study", "Internal benchmark", "Expert / planning knowledge", "Add your own evidence type"];
+
+const ICONS = {
+  Business: "M3 21h18M5 21V7l7-4v18M19 21V11l-7-4M9 10h.01M9 14h.01",
+  Objective: "M12 21a9 9 0 110-18 9 9 0 010 18zM12 17a5 5 0 110-10 5 5 0 010 10zM12 13.2a1.2 1.2 0 110-2.4 1.2 1.2 0 010 2.4z",
+  Markets: "M12 21a9 9 0 110-18 9 9 0 010 18zM3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z",
+  Marketing: "M3 11v2a1 1 0 001 1h2l5 4V6L6 10H4a1 1 0 00-1 1zM16 8.5a5 5 0 010 7M19.5 6a9 9 0 010 12",
+  "Business drivers": "M4 18a8 8 0 1116 0M12 18l4.5-6M12 18h.01",
+  Evidence: "M9 3h6M10 3v6.2L5.2 18A2 2 0 007 21h10a2 2 0 001.8-3L14 9.2V3M7.8 14.5h8.4",
+  Review: "M9 4h6v3H9zM9 5.5H7A1 1 0 006 6.5v13.5a1 1 0 001 1h10a1 1 0 001-1V6.5a1 1 0 00-1-1h-2M9.5 13.5l2 2 3.5-4"
+};
+
+const SCREENS = [
+  { id: "welcome", kind: "welcome" },
+  {
+    id: "business", kind: "cards", group: "Business", eyebrow: "Business baseline", title: "Core Business Attributes ",
+    sub: "Three quick things, so PreM3 knows what kind of commercial system your marketing operates inside.",
+    cards: [
+      { id: "bm", type: "single", prompt: "Which description best matches how your business primarily generates revenue?", options: ["Ecommerce", "Subscription", "Marketplace", "Retail / physical locations", "Lead generation", "Professional / managed services", "Franchise / multi-location", "Advertising / media", "Usage-based / transactional", "Add your own", "Not sure"], otherPlaceholder: "e.g. Franchise-based home services marketplace" },
+      { id: "ind", type: "single", prompt: "Which industry or category best describes the business in scope?", help: "Closest fit is fine. You can refine this later.", options: ["Apparel & accessories", "Consumer electronics", "Home & garden", "Beauty & personal care", "Food & beverage", "Financial services", "Travel & hospitality", "Healthcare", "B2B software", "Add your own category", "Not sure"], otherPlaceholder: "Name your category" },
+      { id: "ctype", type: "single", prompt: "Who do you primarily sell to?", options: ["Consumers", "Businesses", "Both consumers and businesses", "Add your own", "Not sure"], otherPlaceholder: "Describe who you sell to" }
+    ]
+  },
+  {
+    id: "measure", kind: "cards", group: "Objective", eyebrow: "Business baseline", title: "What are we trying to measure?",
+    sub: "Lead with the decision. PreM3 checks later whether your data can actually support it.",
+    cards: [
+      { id: "obj", type: "single", prompt: "What decision do you most want measurement to improve?", options: ["Allocate budget across marketing channels", "Understand incremental channel impact", "Improve marketing efficiency / ROI", "Plan future spend", "Understand geographic performance", "Evaluate a specific channel or strategy", "Reconcile conflicting measurement signals", "Add your own objective", "Not sure yet"], otherPlaceholder: "Describe the decision in your own words" },
+      { id: "kpi", type: "single", prompt: "What business outcome matters most for this analysis?", options: ["Revenue", "Orders / transactions", "Leads", "Qualified leads", "Bookings", "Subscriptions", "Trials", "Pipeline", "New customers", "App installs / activations", "Add your own KPI", "Not sure"], otherPlaceholder: "Name the outcome metric" },
+      { id: "kpidef", type: "text", optional: true, prompt: "How does your organization define this outcome?", help: "Tell us what this metric means inside your business. PreM3 evaluates the actual data later.", placeholder: "e.g. Revenue means completed ecommerce orders net of refunds.", why: "Two companies can both say “revenue” and mean different things. The definition changes how PreM3 reads your data — not whether your data is usable." },
+      { id: "econ", type: "single", optional: true, prompt: "Do you evaluate marketing using a different financial outcome than the KPI above?", help: "Common when the modeled KPI is orders or leads but the decision is made on revenue or margin.", options: ["No", "Yes", "Not sure"], why: "The metric a model predicts and the metric an investment decision is judged on are often different. Knowing both lets PreM3 keep the model honest and the recommendation relevant." },
+      { id: "econwhat", type: "text", showIf: (a) => a.econ === "Yes", prompt: "What financial outcome do you actually decide on?", placeholder: "e.g. Contribution margin after fulfilment and returns." }
+    ]
+  },
+  {
+    id: "markets", kind: "cards", group: "Markets", eyebrow: "Business baseline", title: "Markets in scope",
+    sub: "Pick regions, countries, or your own internal market groups. There does not have to be one primary market.",
+    cards: [
+      { id: "mkts", type: "picker", groups: REGION_GROUPS, prompt: "Which markets are in scope for this measurement program?", help: "Select as many as apply. A macro-region and specific countries can both be selected if that reflects how you operate.", searchPlaceholder: "Search regions or countries", customPlaceholder: "Add a market or region not listed", unit: "market", why: "Scope tells PreM3 which markets the model has to explain. Whether usable market-level evidence exists is a Data Foundation question, checked separately." },
+      { id: "geo", type: "single", prompt: "Do meaningful differences between these markets affect how you sell, price, advertise, or serve customers?", options: ["Yes", "No", "Sometimes", "Not sure"] },
+      { id: "geowhat", type: "multi", showIf: (a) => a.geo === "Yes" || a.geo === "Sometimes", prompt: "What tends to differ by market?", options: ["Marketing spend / channel mix", "Pricing", "Promotions", "Product mix", "Distribution / availability", "Customer behavior", "Competition", "Brand maturity", "Sales / revenue level", "Add your own", "Not sure"], otherPlaceholder: "Describe the difference" }
+    ]
+  },
+  {
+    id: "journey", kind: "cards", group: "Markets", eyebrow: "Business baseline", title: "Customer journey",
+    sub: "How customers actually reach the outcome you picked, and roughly how long it takes.",
+    cards: [
+      { id: "jrny", type: "single", prompt: "Which description best matches the path from marketing exposure to the business outcome?", options: ["Mostly immediate / same-session purchase", "Short consideration cycle", "Longer consideration cycle", "Lead → sales process", "Online marketing → offline purchase", "Subscription / recurring relationship", "Mixed journeys", "Add your own", "Not sure"], otherPlaceholder: "Describe the journey" },
+      { id: "lag", type: "single", showIf: (a) => ["Short consideration cycle", "Longer consideration cycle", "Lead → sales process", "Online marketing → offline purchase", "Subscription / recurring relationship", "Mixed journeys"].indexOf(a.jrny) >= 0, prompt: "Roughly how long is it usually between meaningful marketing exposure and the business outcome?", options: ["Same day", "A few days", "1–4 weeks", "1–3 months", "More than 3 months", "Varies widely", "Not sure"], why: "The timing between marketing and the outcome affects how PreM3 later interprets lagged media effects, attribution paths, experiments, and forecasts." },
+      { id: "ar", type: "single", prompt: "Do acquisition and retention marketing play meaningfully different roles in your business?", options: ["Yes", "No", "Somewhat", "Not sure"] },
+      { id: "arhow", type: "multi", showIf: (a) => a.ar === "Yes" || a.ar === "Somewhat", prompt: "How are they different?", options: ["Different channels", "Different audiences", "Different KPIs", "Different budgets", "Different teams", "Different economics", "Add your own"], otherPlaceholder: "Describe the difference" }
+    ]
+  },
+  {
+    id: "portfolio", kind: "cards", group: "Marketing", eyebrow: "Business baseline", title: "Marketing portfolio",
+    sub: "Channel concepts, not platform names. Providers like Google, Meta or Spotify are identified later in Data Foundation.",
+    cards: [
+      { id: "ch", type: "picker", groups: CHANNEL_GROUPS, prompt: "Which channels are material to this business?", help: "Search, or browse the families. Add anything that is not listed — PreM3 keeps your wording.", searchPlaceholder: "Search channels", customPlaceholder: "Add a channel not listed", unit: "channel" }
+    ]
+  },
+  {
+    id: "roles", kind: "cards", group: "Marketing", eyebrow: "Business baseline", title: "What each channel is for",
+    sub: "Broad role only. This is one of the highest-value things PreM3 can know before it sees a single row of data.",
+    cards: [
+      {
+        id: "roles", type: "matrix", rowsFrom: "ch", cols: ROLE_COLS,
+        prompt: "What role does each channel primarily play in your marketing strategy?",
+        help: "If a channel does not fit these options, tell PreM3 in your own words.",
+        why: "Channels that capture existing demand can behave very differently from channels intended to create demand. That distinction can affect later causal interpretation.",
+        agent: "Tell PreM3 in your own words",
+        agentQ: "How does your channel mix actually work? Anything that does not fit the options above?",
+        agentBullets: ["Paid Search is mainly demand capture, weighted to branded queries.", "Paid Social runs prospecting and retargeting in the same accounts.", "Connected TV is bought for brand outcomes, not last-click performance."]
+      },
+      { id: "srchmix", type: "single", showIf: (a) => (a.ch || []).indexOf("Paid Search") >= 0, prompt: "How much of Paid Search is branded vs non-branded?", options: ["Mostly branded", "Mostly non-branded", "Meaningful mix of both", "We separate them operationally", "We do not separate them", "Not sure"], why: "Search can capture demand that already exists. Understanding how spend responds to query demand helps PreM3 interpret Search correctly." },
+      { id: "srchdmd", type: "single", showIf: (a) => (a.ch || []).indexOf("Paid Search") >= 0, prompt: "Can stronger customer search demand cause Paid Search spend or delivery to increase?", options: ["Yes", "No", "Sometimes", "Not sure"], why: "Search activity may rise because demand is already increasing. PreM3 needs to distinguish demand capture from incremental demand creation when reviewing later model assumptions." },
+      { id: "srchauto", type: "single", showIf: (a) => (a.ch || []).indexOf("Paid Search") >= 0, prompt: "Do automated bidding or budget systems respond to recent demand, conversions, ROAS, or similar performance signals?", options: ["Yes", "No", "Some campaigns do", "Not sure"] }
+    ]
+  },
+  {
+    id: "budget", kind: "cards", group: "Marketing", eyebrow: "Business baseline", title: "How marketing decisions are made",
+    sub: "Why spend changes matters as much as how much is spent.",
+    cards: [
+      {
+        id: "bdrv", type: "multi", prompt: "What typically causes marketing spend or delivery to change?",
+        options: ["Annual / quarterly plan", "Seasonality", "Promotions", "Product launches", "Changes in customer demand", "Recent marketing performance", "Inventory / availability", "Competitor activity", "Agency recommendations", "Platform automation", "Executive / management discretion", "Contractual commitments", "Market expansion / contraction", "Add your own", "Not sure"],
+        otherPlaceholder: "What else changes spend?",
+        why: "If spend increases because demand is already rising, PreM3 needs to consider that relationship when estimating incremental impact.",
+        agent: "Tell PreM3 in your own words",
+        agentQ: "How does your team decide what to spend, and what can change it mid-period?",
+        agentExample: "We set a quarterly Search budget, but Google can spend more during high-demand periods as long as ROAS stays above target.",
+        agentBullets: ["Budget is planned quarterly.", "Delivered spend can increase when demand increases.", "Automated efficiency targets constrain the increase."],
+        agentApply: { bdrv: ["Annual / quarterly plan", "Changes in customer demand", "Platform automation"] }
+      },
+      { id: "bdip", type: "single", showIf: (a) => (a.bdrv || []).indexOf("Recent marketing performance") >= 0, prompt: "Can strong or weak results cause spend to change during the same planning period?", options: ["Yes", "No", "Sometimes", "Not sure"], why: "This is the difference between media driving demand and demand driving media. PreM3 records it as context for review, not as a proven relationship." },
+      { id: "bddem", type: "single", showIf: (a) => (a.bdrv || []).indexOf("Changes in customer demand") >= 0, prompt: "Can stronger demand increase media spend or delivery even before your team explicitly changes the budget?", help: "Search volume, auction availability, and automated systems can increase delivered spend even when the planned budget has not changed.", options: ["Yes", "No", "Sometimes", "Not sure"] },
+      { id: "bdauto", type: "multi", showIf: (a) => (a.bdrv || []).indexOf("Platform automation") >= 0, prompt: "What signals can automated bidding or budget systems respond to?", options: ["Conversion volume", "Conversion value / revenue", "ROAS / efficiency targets", "Search / query demand", "Audience availability", "Cost / auction conditions", "Inventory / product availability", "Add your own", "Not sure"], otherPlaceholder: "Name the signal" },
+      { id: "cadence", type: "single", prompt: "How often are meaningful marketing allocation decisions typically made?", options: ["Daily", "Weekly", "Monthly", "Quarterly", "Annually", "Mostly fixed once planned", "Ad hoc / event-driven", "Varies by channel", "Not sure"], why: "Decision cadence tells PreM3 how quickly media can respond to the business — which matters when separating what marketing caused from what it reacted to." }
+    ]
+  },
+  {
+    id: "drivers", kind: "cards", group: "Business drivers", eyebrow: "Conditional context", title: "Commercial drivers",
+    sub: "Which non-media forces materially move your results, or move your marketing decisions?",
+    cards: [
+      { id: "cdm", type: "matrix", rows: DRIVER_ROWS, rowsExtra: "cdadd", cols: RELEVANCE, prompt: "Which factors materially change business outcomes or marketing activity?", help: "PreM3 only asks follow-ups about the ones you mark important.", why: "Pricing, promotions and seasonality have different modeling implications, so they are never collapsed into one question." },
+      { id: "cdadd", type: "text", optional: true, prompt: "Any driver specific to your business that is missing?", placeholder: "e.g. Weather-dependent installation capacity", help: "Anything you add appears in the list above so you can rate it." }
+    ]
+  },
+  {
+    id: "driverdetail", kind: "cards", group: "Business drivers", eyebrow: "Conditional context", title: "The drivers that matter",
+    sub: "Only the ones you marked important or somewhat important.",
+    cards: [
+      { id: "seasonp", type: "multi", showIf: (a) => matters(a, "Seasonality"), prompt: "What recurring periods tend to materially change demand or customer behavior?", options: ["Holiday / Q4", "Back-to-school", "Summer", "Winter", "Tax season", "Weather-driven periods", "Weekly / day-of-week cycle", "Month-end / quarter-end", "Industry-specific season", "Add your own recurring period", "Not sure"], otherPlaceholder: "Name the recurring period", why: "Recurring demand patterns help later models distinguish normal business movement from marketing effects." },
+      { id: "seasons", type: "single", showIf: (a) => matters(a, "Seasonality"), prompt: "Is the seasonal pattern relatively stable from year to year?", options: ["Mostly stable", "Changes somewhat", "Changes materially", "Not sure"] },
+      { id: "seasonnote", type: "text", optional: true, showIf: (a) => matters(a, "Seasonality"), prompt: "Anything unusual about your seasonal pattern?", placeholder: "e.g. Our Q4 peak has shifted two weeks earlier each of the last three years." },
+      { id: "promoc", type: "single", showIf: (a) => matters(a, "Promotions"), prompt: "Do promotions usually run independently of paid media, or are they intentionally coordinated with marketing?", options: ["Usually independent", "Usually coordinated", "Sometimes coordinated", "Varies by promotion", "Not sure"], why: "Promotions can change demand directly and may also change how much media you run." },
+      { id: "promod", type: "single", showIf: (a) => matters(a, "Promotions"), prompt: "Can strong or weak demand change when promotions are launched?", options: ["Yes", "No", "Sometimes", "Not sure"] },
+      { id: "promor", type: "single", showIf: (a) => matters(a, "Promotions"), prompt: "Are the biggest promotions recurring or one-time?", options: ["Mostly recurring", "Mostly one-time", "Mix of both", "Not sure"] },
+      { id: "priced", type: "single", showIf: (a) => matters(a, "Pricing"), prompt: "How are major price changes typically determined?", options: ["Planned independently in advance", "Coordinated with promotions", "Respond to demand", "Respond to inventory", "Respond to competitor pricing", "Product / assortment driven", "Mix of several factors", "Add your own", "Not sure"], otherPlaceholder: "Describe how pricing is decided" },
+      { id: "pricet", type: "single", optional: true, showIf: (a) => matters(a, "Pricing"), prompt: "Do major price changes often occur at the same time as major marketing changes?", options: ["Yes", "No", "Sometimes", "Not sure"] },
+      { id: "invq", type: "single", showIf: (a) => matters(a, "Inventory / availability"), prompt: "Can inventory or product availability change how much marketing you run?", options: ["Yes", "No", "Sometimes", "Not sure"], why: "Inventory can affect both sales and media decisions. A media pause caused by a stockout looks identical to a budget cut until someone tells PreM3 which it was." },
+      { id: "invr", type: "single", showIf: (a) => matters(a, "Inventory / availability") && (a.invq === "Yes" || a.invq === "Sometimes"), prompt: "What usually happens when inventory is constrained?", options: ["Reduce / pause media", "Shift spend to other products", "Shift spend to other markets", "Continue media unchanged", "Depends on channel", "Add your own", "Not sure"], otherPlaceholder: "Describe what happens" }
+    ]
+  },
+  {
+    id: "competitive", kind: "cards", group: "Business drivers", eyebrow: "Conditional context", title: "Competitive landscape",
+    sub: "One question. PreM3 goes deeper only if competition genuinely moves your system.",
+    cards: [
+      { id: "clr", type: "single", prompt: "Does competitor activity materially affect customer demand, pricing, or your marketing decisions?", options: ["Yes", "No", "Sometimes", "Not sure"], why: "Competitor activity can affect customer demand and your own media decisions at the same time." },
+      { id: "clm", type: "multi", showIf: (a) => a.clr === "Yes" || a.clr === "Sometimes", prompt: "What can competitor activity affect?", options: ["Customer demand", "Search demand", "Paid media costs", "Pricing", "Promotions", "Product positioning", "Marketing spend", "Market entry / exit decisions", "Add your own", "Not sure"], otherPlaceholder: "Describe the effect" },
+      { id: "cln", type: "text", optional: true, showIf: (a) => a.clr === "Yes" || a.clr === "Sometimes", prompt: "Are there specific competitors or categories PreM3 should know about?", help: "Optional. A market position is often enough — nothing confidential is required.", placeholder: "e.g. two national retailers plus a fast-growing DTC challenger." }
+    ]
+  },
+  { id: "events", kind: "events", group: "Business drivers", eyebrow: "Conditional context", title: "Important business changes", sub: "Time-bounded changes are how PreM3 explains unusual periods in your data later." },
+  { id: "priors", kind: "priors", group: "Evidence", eyebrow: "Optional enrichment", title: "Existing evidence", sub: "High value if you have it, and entirely skippable if you don’t." },
+  { id: "review", kind: "review", group: "Review", eyebrow: "Business profile", title: "What PreM3 understands about your business", sub: "Open anything to correct it, mark it unknown, or check where it came from." },
+  { id: "ready", kind: "ready", group: "Review" }
+];
+
+function matters(a, driver) {
+  const v = (a.cdm || {})[driver];
+  return v === "Important" || v === "Somewhat important";
+}
+
+const SCENARIO_A = {
+  bm: "Ecommerce", ind: "Apparel & accessories", ctype: "Consumers",
+  obj: "Allocate budget across marketing channels", kpi: "Revenue", kpidef: "Revenue means completed ecommerce orders net of refunds.", econ: "No",
+  mkts: ["NA — North America", "United States"], geo: "No",
+  jrny: "Mostly immediate / same-session purchase", ar: "Yes", arhow: ["Different channels", "Different KPIs"],
+  ch: ["Paid Search", "Paid Social", "Connected TV / Streaming TV", "Email"],
+  roles: { "Paid Search": "Demand capture", "Paid Social": "Multiple roles", "Connected TV / Streaming TV": "Demand creation", "Email": "Retention / lifecycle" },
+  srchmix: "Meaningful mix of both", srchdmd: "Yes", srchauto: "Some campaigns do",
+  bdrv: ["Annual / quarterly plan", "Recent marketing performance", "Promotions", "Platform automation"], bdip: "Yes", bdauto: ["Conversion value / revenue", "ROAS / efficiency targets"], cadence: "Monthly",
+  cdm: { "Pricing": "Not material", "Promotions": "Important", "Seasonality": "Important", "Inventory / availability": "Important", "Product launches / assortment": "Somewhat important", "Distribution / store footprint": "Not material", "External / macro events": "Not material", "Competitor activity": "Somewhat important" },
+  seasonp: ["Holiday / Q4", "Back-to-school"], seasons: "Mostly stable",
+  promoc: "Usually coordinated", promod: "Sometimes", promor: "Mostly recurring",
+  invq: "Yes", invr: "Reduce / pause media",
+  clr: "Yes", clm: ["Customer demand", "Paid media costs"], cln: "Two national retailers plus a fast-growing DTC challenger."
+};
+
+const SCENARIO_B = {
+  bm: "Ecommerce", ind: "Home & garden", ctype: "Both consumers and businesses",
+  obj: "Understand incremental channel impact", kpi: "Orders / transactions",
+  mkts: ["United States"], geo: "Not sure", jrny: "Mixed journeys", lag: "Not sure", ar: "Not sure",
+  ch: ["Paid Search", "Paid Social", "Linear TV"],
+  roles: { "Paid Search": "Not sure", "Paid Social": "Not sure", "Linear TV": "Brand building" },
+  srchmix: "Not sure", srchdmd: "Not sure", srchauto: "Not sure",
+  bdrv: ["Not sure"], cadence: "Not sure",
+  cdm: { "Pricing": "Not sure", "Promotions": "Important", "Seasonality": "Important", "Inventory / availability": "Not sure", "Product launches / assortment": "Not sure", "Distribution / store footprint": "Not sure", "External / macro events": "Not sure", "Competitor activity": "Not sure" },
+  seasonp: ["Not sure"], seasons: "Not sure", promoc: "Not sure", promod: "Not sure", promor: "Not sure",
+  clr: "Not sure"
+};
+
+const SCENARIO_C = {
+  bm: "Retail / physical locations", ind: "Consumer electronics", ctype: "Consumers",
+  obj: "Understand geographic performance", kpi: "Revenue", kpidef: "Net revenue across retail and ecommerce, excluding trade.", econ: "Yes", econwhat: "Contribution margin after fulfilment and returns.",
+  mkts: ["NA — North America", "EMEA — Europe, Middle East & Africa", "APAC — Asia-Pacific", "DACH — Germany, Austria & Switzerland"], geo: "Yes",
+  geowhat: ["Marketing spend / channel mix", "Pricing", "Product mix", "Brand maturity"],
+  jrny: "Mixed journeys", lag: "1–4 weeks", ar: "Yes", arhow: ["Different channels", "Different budgets", "Different teams"],
+  ch: ["Paid Search", "Paid Social", "Connected TV / Streaming TV", "Streaming Audio / Digital Audio", "Retail Media", "Programmatic Display", "Linear TV", "Out-of-Home / OOH", "Email", "Affiliate / Partner Marketing", "Influencer / Creator", "Direct Mail"],
+  roles: { "Paid Search": "Demand capture", "Paid Social": "Multiple roles", "Connected TV / Streaming TV": "Demand creation", "Streaming Audio / Digital Audio": "Brand building", "Retail Media": "Partner / retail support", "Programmatic Display": "Retargeting", "Linear TV": "Brand building", "Out-of-Home / OOH": "Brand building", "Email": "Retention / lifecycle", "Affiliate / Partner Marketing": "Demand capture", "Influencer / Creator": "Demand creation", "Direct Mail": "Retention / lifecycle" },
+  srchmix: "We separate them operationally", srchdmd: "Yes", srchauto: "Yes",
+  bdrv: ["Annual / quarterly plan", "Seasonality", "Changes in customer demand", "Platform automation", "Contractual commitments", "Market expansion / contraction"],
+  bddem: "Yes", bdauto: ["Conversion volume", "ROAS / efficiency targets", "Search / query demand"], cadence: "Varies by channel",
+  cdm: { "Pricing": "Important", "Promotions": "Important", "Seasonality": "Important", "Inventory / availability": "Somewhat important", "Product launches / assortment": "Important", "Distribution / store footprint": "Somewhat important", "External / macro events": "Somewhat important", "Competitor activity": "Important" },
+  seasonp: ["Holiday / Q4", "Back-to-school", "Month-end / quarter-end"], seasons: "Changes somewhat",
+  promoc: "Usually coordinated", promod: "Yes", promor: "Mix of both",
+  priced: "Respond to competitor pricing", pricet: "Sometimes",
+  invq: "Sometimes", invr: "Shift spend to other markets",
+  clr: "Yes", clm: ["Customer demand", "Paid media costs", "Pricing"], cln: "Two global manufacturers and the retailer’s own private label."
+};
+
+const FLAGS_A = {
+  kpidef: { kind: "May need updating", note: "Recorded seven months ago. Finance changed how returns are netted in March — confirm this definition still holds." },
+  "roles:Paid Social": { kind: "Needs review", note: "Data Foundation found six weeks with no Paid Social spend. This profile describes it as always-on prospecting and retargeting." },
+  invq: { kind: "May need updating", note: "Answered before the warehouse constraint was resolved in May." }
+};
+
+class Component extends DCLogic {
+  state = {
+    step: 0, a: {}, meta: {}, why: {}, notes: {}, other: {}, flags: {}, search: {}, customDraft: {}, custom: {},
+    events: [], draft: null, evidence: [], evType: "", evTypeCustom: "", evText: "",
+    sheet: null, sheetText: "", sheetPhase: "input",
+    openGroups: {}, selOnly: {}, openInsight: "", openConcept: "", examplesOpen: false, priorsExplainOpen: false, conceptsOpen: false,
+    openReview: "biz", routed: "", scenarioApplied: ""
+  };
+
+  componentDidMount() { this.maybeScenario(); }
+  componentDidUpdate() { this.maybeScenario(); }
+
+  maybeScenario() {
+    const s = this.props.scenario || "Blank";
+    if (s === this.state.scenarioApplied) return;
+    const review = SCREENS.length - 2;
+    if (s.charAt(0) === "A") {
+      this.setState({
+        scenarioApplied: s, a: Object.assign({}, SCENARIO_A), step: review, openReview: "biz", flags: FLAGS_A,
+        events: [
+          { type: "Product launch", name: "Spring trail collection", precision: "exact", start: "2026-03-02", end: "", recur: "One-time event", note: "" },
+          { type: "Media channel pause", name: "Paid Social paused during inventory gap", precision: "approx", approx: "Apr 1 – May 15, 2026", recur: "One-time event", note: "Warehouse constraint, not a budget decision." }
+        ],
+        evidence: [{ type: "Geo experiment", text: "A Q2 2025 geo holdout in the US showed Paid Search revenue ROI around 1.5.", status: "confirmed" }]
+      });
+    } else if (s.charAt(0) === "B") {
+      this.setState({ scenarioApplied: s, a: Object.assign({}, SCENARIO_B), step: review, openReview: "bd", events: [], evidence: [], flags: {} });
+    } else if (s.charAt(0) === "C") {
+      this.setState({ scenarioApplied: s, a: Object.assign({}, SCENARIO_C), step: review, openReview: "pf", events: [], evidence: [], flags: {} });
+    } else {
+      this.setState({ scenarioApplied: s });
+    }
+  }
+
+  screen() { return SCREENS[this.state.step]; }
+  isUnknown(v) { return UNK.indexOf(v) >= 0; }
+  isCustom(v) { return typeof v === "string" && v.indexOf(CUSTOM_PREFIX) === 0; }
+  otherText(id) { return (this.state.other || {})[id] || ""; }
+  otherActive(card) {
+    const v = this.state.a[card.id];
+    if (card.type === "multi") return (v || []).filter((x) => this.isCustom(x)).length > 0;
+    return this.isCustom(v);
+  }
+  setOther(id, txt) {
+    const o = Object.assign({}, this.state.other); o[id] = txt;
+    const meta = Object.assign({}, this.state.meta); meta[id] = "user";
+    this.setState({ other: o, meta: meta });
+  }
+  flagsOn() { return this.props.showFlags === false ? {} : (this.state.flags || {}); }
+  val(id) {
+    const v = this.state.a[id], t = this.otherText(id).trim();
+    if (Array.isArray(v)) return v.map((x) => (this.isCustom(x) ? t : x)).filter((x) => !!x).join(", ");
+    return this.isCustom(v) && t ? t : v;
+  }
+
+  visibleCards(sc) { return (sc.cards || []).filter((c) => !c.showIf || c.showIf(this.state.a)); }
+
+  cardsFor(sc) {
+    const raw = this.visibleCards(sc);
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+      out.push(raw[i]);
+      if (!raw[i].optional && !this.answered(raw[i])) break;
+    }
+    return out;
+  }
+
+  rowsOf(card) {
+    let rows = [];
+    if (card.rows) rows = card.rows.slice();
+    else if (card.rowsFrom) rows = (this.state.a[card.rowsFrom] || []).slice();
+    if (card.rowsExtra) {
+      const x = (this.state.a[card.rowsExtra] || "").trim();
+      if (x) rows = rows.concat([x]);
+    }
+    return rows;
+  }
+
+  answered(card) {
+    const v = this.state.a[card.id];
+    if (this.otherActive(card) && !this.otherText(card.id).trim()) return false;
+    if (card.type === "multi" || card.type === "picker") return !!v && v.length > 0;
+    if (card.type === "text") return true;
+    if (card.type === "matrix") {
+      const rows = this.rowsOf(card);
+      if (rows.length === 0) return false;
+      return rows.every((r) => v && v[r]);
+    }
+    return !!v;
+  }
+
+  set(id, v) {
+    const a = Object.assign({}, this.state.a); a[id] = v;
+    const meta = Object.assign({}, this.state.meta); meta[id] = "user";
+    this.setState({ a: a, meta: meta });
+  }
+  toggle(id, v) {
+    const cur = (this.state.a[id] || []).slice();
+    const i = cur.indexOf(v);
+    if (i >= 0) cur.splice(i, 1); else cur.push(v);
+    const unknown = this.isUnknown(v);
+    this.set(id, unknown ? (i >= 0 ? [] : [v]) : cur.filter((x) => !this.isUnknown(x)));
+  }
+  setMatrix(id, row, col) {
+    const cur = Object.assign({}, this.state.a[id] || {}); cur[row] = col;
+    this.set(id, cur);
+  }
+  addCustom(card) {
+    const txt = (this.state.customDraft[card.id] || "").trim();
+    if (!txt) return;
+    const cur = (this.state.a[card.id] || []).slice();
+    if (cur.indexOf(txt) < 0) cur.push(txt);
+    const custom = Object.assign({}, this.state.custom);
+    custom[card.id] = (custom[card.id] || []).concat(custom[card.id] && custom[card.id].indexOf(txt) >= 0 ? [] : [txt]);
+    const draft = Object.assign({}, this.state.customDraft); draft[card.id] = "";
+    this.setState({ custom: custom, customDraft: draft });
+    this.set(card.id, cur);
+  }
+
+  matStyle(col, selected) {
+    if (!selected) return { bg: "#fff", bc: "#e6eaf1", bs: "solid", color: "#2b3350" };
+    if (col === "Important") return { bg: "#ecfdf5", bc: "#10b981", bs: "solid", color: "#065f46" };
+    if (this.isUnknown(col)) return { bg: "#f5f7fa", bc: "#9aa3b8", bs: "dashed", color: "#4f5872" };
+    if (col === "Not material") return { bg: "#f5f7fa", bc: "#c3cadd", bs: "solid", color: "#4f5872" };
+    return { bg: "#eef0fd", bc: "#3b4bdb", bs: "solid", color: "#1a1f4b" };
+  }
+
+  optStyle(selected, unknown) {
+    if (selected && unknown) return { bg: "#f5f7fa", bc: "#9aa3b8", bs: "dashed", color: "#4f5872" };
+    if (selected) return { bg: "#eef0fd", bc: "#3b4bdb", bs: "solid", color: "#1a1f4b" };
+    return { bg: "#fff", bc: "#e6eaf1", bs: "solid", color: "#2b3350" };
+  }
+
+  optionViews(card) {
+    const a = this.state.a;
+    return card.options.map((label) => {
+      const unknown = this.isUnknown(label);
+      const selected = card.type === "multi" ? (a[card.id] || []).indexOf(label) >= 0 : a[card.id] === label;
+      const st = this.isCustom(label) ? (selected ? { bg: "#ecfdf5", bc: "#10b981", bs: "dashed", color: "#065f46" } : { bg: "#f2fdf7", bc: "#bbebd3", bs: "dashed", color: "#3f7a63" }) : this.optStyle(selected, unknown);
+      return Object.assign({
+        label: label, mark: card.type === "multi" && selected ? "\u2713" : "",
+        onPick: () => (card.type === "multi" ? this.toggle(card.id, label) : this.set(card.id, label))
+      }, st);
+    });
+  }
+
+  pickerGroups(card) {
+    const q = (this.state.search[card.id] || "").trim().toLowerCase();
+    const sel = this.state.a[card.id] || [];
+    const groups = card.groups.map((g) => ({
+      label: g.label,
+      selected: g.options.filter((o) => sel.indexOf(o.label) >= 0).length,
+      options: g.options.filter((o) => !q || o.label.toLowerCase().indexOf(q) >= 0).map((o) => Object.assign({
+        label: o.label, help: o.help || "", mark: sel.indexOf(o.label) >= 0 ? "\u2713" : "",
+        onPick: () => this.toggle(card.id, o.label)
+      }, this.optStyle(sel.indexOf(o.label) >= 0, false)))
+    })).filter((g) => g.options.length > 0);
+    const own = (this.state.custom[card.id] || []).filter((o) => !q || o.toLowerCase().indexOf(q) >= 0);
+    if (own.length) {
+      groups.push({
+        label: "Your own",
+        selected: own.filter((o) => sel.indexOf(o) >= 0).length,
+        options: own.map((o) => Object.assign({ label: o, help: "Kept in your words", mark: sel.indexOf(o) >= 0 ? "\u2713" : "", onPick: () => this.toggle(card.id, o) }, this.optStyle(sel.indexOf(o) >= 0, false)))
+      });
+    }
+    const selOnly = !!this.state.selOnly[card.id];
+    if (selOnly) {
+      return groups.map((g) => Object.assign({}, g, { options: g.options.filter((o) => sel.indexOf(o.label) >= 0) })).filter((g) => g.options.length > 0)
+        .map((g) => Object.assign({}, g, { open: true, rotate: "rotate(90deg)", count: "\u2713 " + g.selected + " selected", countColor: "#047857", countWeight: "600", onToggle: () => {} }));
+    }
+    return groups.map((g) => {
+      const key = card.id + ":" + g.label;
+      const open = !!q || !!this.state.openGroups[key];
+      return Object.assign({}, g, {
+        open: open, rotate: open ? "rotate(90deg)" : "none",
+        count: g.selected ? "\u2713 " + g.selected + " selected" : g.options.length + (g.options.length === 1 ? " option" : " options"),
+        countColor: g.selected ? "#047857" : "#a3abbf",
+        countWeight: g.selected ? "600" : "500",
+        onToggle: () => { const o = Object.assign({}, this.state.openGroups); o[key] = !o[key]; this.setState({ openGroups: o }); }
+      });
+    });
+  }
+
+  pill(kind) {
+    if (kind === "good") return { pillBg: "#ecfdf5", pillColor: "#047857", pillBorder: "#a7f3d0" };
+    if (kind === "info") return { pillBg: "#eef0fd", pillColor: "#3b4bdb", pillBorder: "#d5daf8" };
+    if (kind === "warn") return { pillBg: "#fffbeb", pillColor: "#92400e", pillBorder: "#fde68a" };
+    if (kind === "alert") return { pillBg: "#fef3f2", pillColor: "#b42318", pillBorder: "#fecdca" };
+    return { pillBg: "#f5f7fa", pillColor: "#6d768f", pillBorder: "#e6eaf1" };
+  }
+
+  fact(label, value, prov, key) {
+    const missing = !value;
+    const unknown = this.isUnknown(value);
+    const flag = key ? this.flagsOn()[key] : null;
+    let p = prov || "Provided by you";
+    if (missing) p = "Not answered";
+    else if (unknown) p = "Unknown";
+    let tone = missing || unknown ? { provColor: "#6d768f", provBorder: "#e6eaf1", provBg: "#f5f7fa" } : p === "From your description" ? { provColor: "#3b4bdb", provBorder: "#d5daf8", provBg: "#f7f8fe" } : { provColor: "#047857", provBorder: "#a7f3d0", provBg: "#ecfdf5" };
+    let note = "";
+    if (flag && !missing) {
+      p = flag.kind;
+      note = flag.note;
+      tone = flag.kind === "Needs review" ? { provColor: "#b42318", provBorder: "#fecdca", provBg: "#fef3f2" } : { provColor: "#92400e", provBorder: "#fde68a", provBg: "#fffbeb" };
+    }
+    return Object.assign({ label: label, value: missing ? "\u2014" : value, valueColor: missing ? "#8a93aa" : "#1a1f4b", prov: p, note: note }, tone);
+  }
+
+  stepOf(id) { for (let i = 0; i < SCREENS.length; i++) { if (SCREENS[i].id === id) return i; } return 0; }
+
+  reviewData() {
+    const a = this.state.a, m = this.state.meta, S = this.state;
+    const prov = (id) => (m[id] === "agent" ? "From your description" : "Provided by you");
+    const channels = a.ch || [];
+    return [
+      { id: "biz", label: "Business & operating model", step: this.stepOf("business"), facts: [this.fact("Business model", this.val("bm"), prov("bm"), "bm"), this.fact("Category", this.val("ind"), prov("ind"), "ind"), this.fact("Sells to", this.val("ctype"), prov("ctype"), "ctype")] },
+      { id: "obj", label: "Measurement objective", step: this.stepOf("measure"), facts: [this.fact("Decision to support", this.val("obj"), prov("obj"), "obj"), this.fact("Modeled KPI", this.val("kpi"), prov("kpi"), "kpi"), this.fact("KPI definition", a.kpidef, prov("kpidef"), "kpidef")].concat(a.econ === "Yes" ? [this.fact("Economic decision metric", a.econwhat, prov("econwhat"))] : []) },
+      { id: "mkt", label: "Markets & customer journey", step: this.stepOf("markets"), facts: [this.fact("Markets in scope", (a.mkts || []).join(", "), prov("mkts"), "mkts"), this.fact("Market differences matter", a.geo, prov("geo"), "geo"), this.fact("What differs by market", this.val("geowhat"), prov("geowhat")), this.fact("Customer journey", this.val("jrny"), prov("jrny"), "jrny"), this.fact("Typical exposure-to-outcome lag", a.lag, prov("lag")), this.fact("Acquisition vs retention differ", a.ar, prov("ar"))] },
+      { id: "pf", label: "Marketing portfolio", step: this.stepOf("roles"), editLabel: "Manage marketing mix", facts: (channels.length ? channels.map((c) => this.fact(c, (a.roles || {})[c], prov("roles"), "roles:" + c)) : [this.fact("Material channels", "", "")]).concat(channels.indexOf("Paid Search") >= 0 ? [this.fact("Paid Search brand mix", a.srchmix, prov("srchmix")), this.fact("Search demand can raise spend", a.srchdmd, prov("srchdmd")), this.fact("Automated bidding responds to signals", a.srchauto, prov("srchauto"))] : []) },
+      { id: "bd", label: "Decision process", step: this.stepOf("budget"), facts: [this.fact("What changes spend", this.val("bdrv"), prov("bdrv"), "bdrv"), this.fact("In-period change on results", a.bdip, prov("bdip")), this.fact("Demand can raise delivery pre-budget", a.bddem, prov("bddem")), this.fact("Automation responds to", this.val("bdauto"), prov("bdauto")), this.fact("Decision cadence", a.cadence, prov("cadence"))] },
+      { id: "cd", label: "Commercial drivers", step: this.stepOf("drivers"), facts: this.rowsOf({ rows: DRIVER_ROWS, rowsExtra: "cdadd" }).map((r) => this.fact(r, (a.cdm || {})[r], prov("cdm"), "cdm:" + r)).concat(matters(a, "Seasonality") ? [this.fact("Recurring periods", this.val("seasonp"), prov("seasonp")), this.fact("Seasonal stability", a.seasons, prov("seasons"))] : []).concat(matters(a, "Promotions") ? [this.fact("Promotions vs media", a.promoc, prov("promoc")), this.fact("Demand can shift promo timing", a.promod, prov("promod")), this.fact("Promotion recurrence", a.promor, prov("promor"))] : []).concat(matters(a, "Pricing") ? [this.fact("How price changes are set", this.val("priced"), prov("priced"))] : []).concat(matters(a, "Inventory / availability") ? [this.fact("Inventory can change marketing", a.invq, prov("invq"), "invq"), this.fact("Response to constraint", this.val("invr"), prov("invr"))] : []) },
+      { id: "cl", label: "Competitive landscape", step: this.stepOf("competitive"), facts: [this.fact("Materially affects the business", a.clr, prov("clr")), this.fact("What it affects", this.val("clm"), prov("clm")), this.fact("Named competitors", a.cln, prov("cln"))] },
+      { id: "ev", label: "Business events", step: this.stepOf("events"), facts: S.events.length ? S.events.map((e) => this.fact(e.type, e.name + " · " + this.eventRange(e), "Provided by you")) : [this.fact("Recorded events", "", "")] },
+      { id: "pk", label: "Prior evidence", step: this.stepOf("priors"), facts: S.evidence.length ? S.evidence.map((e) => this.fact(e.type, e.text, e.status === "confirmed" ? "Confirmed by you" : "Provided by you")) : [this.fact("Evidence sources", "", "")] }
+    ];
+  }
+
+  eventRange(e) {
+    if (e.precision === "approx") return e.approx || "approximate";
+    return e.start ? e.start + (e.end ? "  \u2192  " + e.end : "") : "date approximate";
+  }
+
+  statusFor(sec) {
+    const answered = sec.facts.filter((f) => f.prov !== "Not answered");
+    const unknown = sec.facts.filter((f) => f.prov === "Unknown");
+    const conflicting = sec.facts.filter((f) => f.prov === "Needs review");
+    const stale = sec.facts.filter((f) => f.prov === "May need updating");
+    if (conflicting.length) return { text: "Needs review", kind: "alert" };
+    if (stale.length) return { text: stale.length > 1 ? stale.length + " may need updating" : "May need updating", kind: "warn" };
+    if (sec.id === "ev") return this.state.events.length ? { text: this.state.events.length + " recorded", kind: "info" } : { text: this.state.a.evAck === "none" ? "None reported" : "Not provided", kind: "muted" };
+    if (sec.id === "pk") return this.state.evidence.length ? { text: this.state.evidence.length + " evidence source" + (this.state.evidence.length > 1 ? "s" : ""), kind: "info" } : { text: "Not provided", kind: "muted" };
+    if (answered.length === 0) return { text: "Not provided", kind: "muted" };
+    if (unknown.length === sec.facts.length) return { text: "Unknown acknowledged", kind: "muted" };
+    if (answered.length < sec.facts.length || unknown.length > 0) return { text: "Known with gaps", kind: "muted" };
+    return { text: "Confirmed", kind: "good" };
+  }
+
+  insights() {
+    const a = this.state.a, S = this.state, roles = a.roles || {};
+    const F = (label, value, screen) => ({ label: label, value: value || "Not answered", color: value ? "#1a1f4b" : "#8a93aa", step: this.stepOf(screen) });
+    const out = [];
+    const searchOn = (a.ch || []).indexOf("Paid Search") >= 0;
+
+    if (searchOn && (a.srchdmd === "Yes" || a.srchdmd === "Sometimes" || roles["Paid Search"] === "Demand capture")) {
+      out.push({
+        id: "search", rank: "Key consideration", title: "Search may respond to existing demand",
+        fact: "Paid Search delivery can increase when customer demand rises" + (a.srchauto && a.srchauto !== "No" && a.srchauto !== "Not sure" ? ", and automated bidding responds to performance signals." : "."),
+        why: "Search may capture demand that already exists, which increases confounding risk when isolating incremental impact.",
+        rec: "Evaluate branded vs non-branded Search, demand controls, and Search sensitivity before final model specification.",
+        basis: [F("Paid Search role", roles["Paid Search"], "roles"), F("Branded vs non-branded", a.srchmix, "roles"), F("Demand can raise Search spend", a.srchdmd, "roles"), F("Automated bidding responds", a.srchauto, "roles")],
+        concept: { term: "Confounding", copy: "A confounder can influence both marketing activity and the business outcome. If demand raises Search spend and revenue at the same time, the model needs enough evidence to separate the two effects." }
+      });
+    }
+    if (matters(a, "Promotions")) {
+      out.push({
+        id: "promo", rank: "Key consideration", title: "Promotions materially change demand",
+        fact: "Promotions are a material commercial driver" + (a.promoc === "Usually coordinated" || a.promoc === "Sometimes coordinated" ? " and are coordinated with marketing." : "."),
+        why: "Promotion effects may need to be represented separately so media is not credited for demand the promotion created.",
+        rec: "Locate promotion history during Data Foundation and evaluate it as a candidate non-media control.",
+        basis: [F("Promotions materiality", (a.cdm || {})["Promotions"], "drivers"), F("Promotions vs media", a.promoc, "driverdetail"), F("Demand can shift promo timing", a.promod, "driverdetail")],
+        forecast: { title: "Promotions", copy: "Promotional periods may need separate features, because they materially change demand rather than reflecting baseline growth." }
+      });
+    }
+    if (matters(a, "Seasonality")) {
+      const periods = (a.seasonp || []).filter((p) => !this.isUnknown(p));
+      out.push({
+        id: "season", rank: "Key consideration", title: "Strong recurring seasonality",
+        fact: periods.length ? periods.slice(0, 3).join(", ") + " materially change demand." : "Recurring seasonal periods materially change demand.",
+        why: "The model needs enough temporal flexibility to represent recurring demand patterns rather than crediting them to advertising.",
+        rec: "Verify sufficient historical coverage across those periods and preserve temporal flexibility in the model specification.",
+        basis: [F("Seasonality materiality", (a.cdm || {})["Seasonality"], "drivers"), F("Recurring periods", periods.join(", "), "driverdetail"), F("Year-to-year stability", a.seasons, "driverdetail")],
+        concept: { term: "Seasonality", copy: "Recurring demand patterns need to be represented explicitly so the model does not mistakenly assign normal seasonal growth to advertising." },
+        forecast: { title: "Recurring seasonality", copy: "Peak periods differ materially from baseline. Forecasting should preserve seasonal structure rather than reading recent peak growth as a permanent trend." }
+      });
+    }
+    if (matters(a, "Inventory / availability") && (a.invq === "Yes" || a.invq === "Sometimes")) {
+      out.push({
+        id: "inv", rank: "Worth reviewing", title: "Inventory can change how much marketing runs",
+        fact: "When inventory is constrained, the usual response is: " + (this.val("invr") || "not specified") + ".",
+        why: "A media pause caused by a stockout looks identical to a budget cut in the data until the business explains which it was.",
+        rec: "Locate inventory or availability history so constrained periods can be distinguished from deliberate budget decisions.",
+        basis: [F("Inventory materiality", (a.cdm || {})["Inventory / availability"], "drivers"), F("Inventory can change marketing", a.invq, "driverdetail"), F("Response to constraint", this.val("invr"), "driverdetail")],
+        forecast: { title: "Inventory constraints", copy: "Historical demand may understate unconstrained demand during stockout periods, which can bias a naive forecast downward." }
+      });
+    }
+    if (a.bdip === "Yes" || a.bddem === "Yes") {
+      out.push({
+        id: "budget", rank: "Key consideration", title: "Spend can respond inside the planning period",
+        fact: (a.bdip === "Yes" ? "Strong or weak results can change spend within the same period. " : "") + (a.bddem === "Yes" ? "Stronger demand can raise delivery before the budget is explicitly changed." : ""),
+        why: "When media reacts to the business, part of the observed correlation runs the other way.",
+        rec: "Review in-period budget behavior alongside demand signals before treating spend as an exogenous input.",
+        basis: [F("What changes spend", this.val("bdrv"), "budget"), F("In-period change on results", a.bdip, "budget"), F("Demand can raise delivery", a.bddem, "budget"), F("Decision cadence", a.cadence, "budget")]
+      });
+    }
+    if (a.geo === "Yes" && (a.mkts || []).length > 1) {
+      out.push({
+        id: "geo", rank: "Worth reviewing", title: "Markets behave differently",
+        fact: "Markets differ on: " + (this.val("geowhat") || "several dimensions") + ".",
+        why: "A single pooled read could average away real differences between markets.",
+        rec: "Check whether market-level evidence is available at sufficient granularity before deciding on pooling or separate models.",
+        basis: [F("Markets in scope", (a.mkts || []).join(", "), "markets"), F("Differences matter", a.geo, "markets"), F("What differs", this.val("geowhat"), "markets")]
+      });
+    }
+    if (a.lag === "1–3 months" || a.lag === "More than 3 months" || a.lag === "Varies widely") {
+      out.push({
+        id: "lag", rank: "Worth reviewing", title: "Outcomes lag marketing exposure",
+        fact: "Typical time from exposure to outcome: " + a.lag + ".",
+        why: "Lagged effects can be missed entirely if the modeling window and aggregation are too short.",
+        rec: "Confirm the data covers enough history and choose an aggregation period consistent with that lag.",
+        basis: [F("Customer journey", this.val("jrny"), "journey"), F("Exposure-to-outcome lag", a.lag, "journey")]
+      });
+    }
+    if (S.evidence.length) {
+      out.push({
+        id: "prior", rank: "Context", title: "Prior evidence is available",
+        fact: S.evidence.length + " external evidence source" + (S.evidence.length === 1 ? "" : "s") + " recorded: " + S.evidence.map((e) => e.type).join(", ") + ".",
+        why: "External evidence can contain information the current dataset cannot show.",
+        rec: "Evaluate whether this evidence is compatible with the eventual model scope before using it to inform a prior or calibration decision.",
+        basis: S.evidence.map((e) => F(e.type, e.text, "priors")),
+        concept: { term: "Prior", copy: "A Bayesian prior expresses a reasonable belief before the current model sees the data. Credible experiments can sometimes help inform it — they never replace the data." }
+      });
+    }
+    if (a.clr === "Not sure") {
+      out.push({
+        id: "comp", rank: "Context", title: "Competitive effects are unknown",
+        fact: "Whether competitor activity moves demand or your decisions is explicitly recorded as unknown.",
+        why: "An acknowledged unknown is better than a silent assumption — PreM3 will look for competitive-demand signals rather than assume there are none.",
+        rec: "Treat competition as an open question in Data Foundation rather than an assumed-zero effect.",
+        basis: [F("Competitor activity affects the business", a.clr, "competitive")]
+      });
+    }
+    const order = { "Key consideration": 0, "Worth reviewing": 1, "Context": 2 };
+    return out.sort((x, y) => order[x.rank] - order[y.rank]);
+  }
+
+  rankTone(rank) {
+    if (rank === "Key consideration") return { rankBg: "#eef0fd", rankColor: "#3b4bdb", rankBorder: "#d5daf8" };
+    if (rank === "Worth reviewing") return { rankBg: "#fffbeb", rankColor: "#92400e", rankBorder: "#fde68a" };
+    return { rankBg: "#f5f7fa", rankColor: "#6d768f", rankBorder: "#e6eaf1" };
+  }
+
+  briefSummary() {
+    const a = this.state.a, ch = a.ch || [], mkts = a.mkts || [];
+    const scope = mkts.length === 0 ? "" : mkts.length === 1 ? mkts[0] + " " : "multi-market ";
+    let s = (this.props.companyName || "This business") + " is a " + scope + (this.val("bm") || "").toLowerCase() + " business focused on " + (this.val("kpi") || "its primary outcome").toLowerCase() + (mkts.length > 1 ? ", operating across " + mkts.slice(0, 3).join(", ") + (mkts.length > 3 ? " and " + (mkts.length - 3) + " more markets" : "") : "") + ".";
+    if (ch.length) s += " " + ch.length + " channel" + (ch.length === 1 ? " is" : "s are") + " material to the mix" + (this.val("obj") ? ", and the decision to support is to " + this.val("obj").toLowerCase() : "") + ".";
+    return s;
+  }
+
+  briefBullets() {
+    const a = this.state.a, roles = a.roles || {}, ch = a.ch || [];
+    const GLYPH = {
+      "Channel roles": "M3 11v2a1 1 0 001 1h2l5 4V6L6 10H4a1 1 0 00-1 1zM16 8.5a5 5 0 010 7M19.5 6a9 9 0 010 12",
+      "Material drivers": "M4 18a8 8 0 1116 0M12 18l4.5-6M12 18h.01",
+      "Market maturity": "M12 21a9 9 0 110-18 9 9 0 010 18zM3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z",
+      "Search behavior": "M11 18a7 7 0 110-14 7 7 0 010 14zM21 21l-5-5",
+      "Budget behavior": "M4 20V4M4 20h16M8 16l4-5 3 3 5-7",
+      "Market differences": "M9 20l-5-2V5l5 2m0 13l6-2m-6 2V7m6 11l5 2V7l-5-2m0 13V5m0 0L9 7",
+      "Response timing": "M12 21a9 9 0 110-18 9 9 0 010 18zM12 7v5l3.5 2",
+      "Prior evidence": "M9 3h6M10 3v6.2L5.2 18A2 2 0 007 21h10a2 2 0 001.8-3L14 9.2V3M7.8 14.5h8.4",
+      "Acknowledged unknowns": "M12 21a9 9 0 110-18 9 9 0 010 18zM9.6 9.4a2.4 2.4 0 114 1.8c-.9.7-1.6 1.2-1.6 2.3M12 17h.01"
+    };
+    const B = (lead, text, dot) => ({ lead: lead + " — ", text: text, dot: dot || "#3b4bdb", icon: GLYPH[lead] || GLYPH["Material drivers"] });
+    const out = [];
+    const join = (list) => (list.length <= 1 ? (list[0] || "") : list.slice(0, -1).join(", ") + " and " + list[list.length - 1]);
+    const capture = ch.filter((c) => roles[c] === "Demand capture");
+    const create = ch.filter((c) => roles[c] === "Demand creation" || roles[c] === "Brand building");
+    if (capture.length || create.length) {
+      out.push(B("Channel roles", (capture.length ? join(capture.slice(0, 2)) + (capture.length > 2 ? " and others" : "") + (capture.length === 1 ? " plays" : " play") + " a demand-capture role" : "") + (capture.length && create.length ? ", while " : "") + (create.length ? join(create.slice(0, 3)) + (create.length === 1 ? " carries" : " carry") + " demand creation and brand roles" : "") + "."));
+    }
+    const drivers = Object.keys(a.cdm || {}).filter((k) => (a.cdm || {})[k] === "Important");
+    if (drivers.length) out.push(B("Material drivers", join(drivers.slice(0, 4).map((d) => d.toLowerCase())) + " materially move" + (drivers.length === 1 ? "s" : "") + " demand or marketing activity."));
+    out.push(B("Market maturity", a.clr === "Yes" ? "Reads as a competitive, mature category — competitor activity moves demand and media costs. PreM3 will corroborate this in Data Foundation using historical demand patterns, search behavior and category context." : a.clr === "No" ? "Reads as a less contested or emerging category — competitor activity does not materially move demand. PreM3 will corroborate this in Data Foundation using historical demand patterns, search behavior and category context." : "PreM3 does not yet know whether this is a mature or emerging category. It will look for evidence in Data Foundation such as historical demand patterns, search behavior and category context.", a.clr === "Yes" ? "#3b4bdb" : "#b4bdd0"));
+    if (a.srchdmd === "Yes" || a.srchdmd === "Sometimes") out.push(B("Search behavior", "Search spend can respond to customer demand, which matters when estimating incremental Search impact."));
+    if (a.bdip === "Yes" || a.bddem === "Yes") out.push(B("Budget behavior", "Spend can change inside the planning period in response to results or demand" + (a.cadence && !this.isUnknown(a.cadence) ? ", with allocation decisions made " + a.cadence.toLowerCase() + "." : ".")));
+    if (a.geo === "Yes") out.push(B("Market differences", "Markets differ on " + (this.val("geowhat") || "several dimensions").toLowerCase() + ", so a single pooled read would be misleading."));
+    if (a.lag && !this.isUnknown(a.lag) && a.lag !== "Same day") out.push(B("Response timing", "Typical time from marketing exposure to outcome is " + a.lag.toLowerCase() + "."));
+    if (this.state.evidence.length) out.push(B("Prior evidence", this.state.evidence.length + " external source" + (this.state.evidence.length === 1 ? "" : "s") + " recorded and carried into Data Foundation."));
+    const unknownish = [];
+    if (a.clr === "Not sure") unknownish.push("competitive effects");
+    if (a.geo === "Not sure") unknownish.push("market differences");
+    if ((a.bdrv || []).indexOf("Not sure") >= 0) unknownish.push("what changes spend");
+    if ((a.ch || []).filter((c) => roles[c] === "Not sure").length) unknownish.push("some channel roles");
+    if (unknownish.length) out.push(B("Acknowledged unknowns", join(unknownish) + (unknownish.length === 1 ? " is" : " are") + " intentionally unresolved and can be clarified later from the data.", "#b4bdd0"));
+    return out.slice(0, 7);
+  }
+
+  synthesis() {
+    const a = this.state.a;
+    const ch = a.ch || [];
+    const mkts = a.mkts || [];
+    const bits = [];
+    const extra = ch.length - 3;
+    const tail = extra > 0 ? " and " + (extra === 1 ? "one more channel" : extra + " more channels") : "";
+    const scope = mkts.length === 0 ? "a business" : mkts.length === 1 ? "a " + mkts[0] + " business" : "a business operating across " + mkts.slice(0, 3).join(", ") + (mkts.length > 3 ? " and " + (mkts.length - 3) + " more markets" : "");
+    bits.push("PreM3 understands that you are " + scope + " running a " + (this.val("bm") || "").toLowerCase() + " model, optimizing " + (this.val("kpi") || "your primary outcome").toLowerCase() + (ch.length ? " across " + ch.slice(0, 3).join(", ") + tail : "") + ".");
+    const capture = ch.filter((c) => (a.roles || {})[c] === "Demand capture");
+    if (capture.length) bits.push(capture[0] + " is primarily demand capture.");
+    if (a.srchdmd === "Yes") bits.push("Search delivery can rise with query demand, so Search is treated as partly demand-responsive.");
+    if (a.bdip === "Yes" || a.bddem === "Yes") bits.push("Budgets can respond to performance or demand inside the period.");
+    if (a.promoc === "Usually coordinated") bits.push("Promotions are deliberately coordinated with media, so the two move together.");
+    if (a.geo === "Yes") bits.push("Markets differ enough that a single global read would be misleading.");
+    if (a.clr === "Not sure") bits.push("Competitive effects are explicitly recorded as unknown rather than assumed away.");
+    return bits.join(" ");
+  }
+
+  extract(text, type) {
+    const t = (text || "").toLowerCase();
+    const chans = [];
+    CHANNEL_GROUPS.forEach((g) => g.options.forEach((o) => { if (t.indexOf(o.label.split(" /")[0].toLowerCase()) >= 0) chans.push(o.label); }));
+    const q = (text || "").match(/Q[1-4]\s?20\d{2}/i);
+    const yr = (text || "").match(/20\d{2}/);
+    const mkts = ["United States", "US", "UK", "United Kingdom", "Canada", "Germany", "France", "Australia", "EMEA", "APAC", "LATAM"].filter((m) => new RegExp("\\b" + m + "\\b", "i").test(text || ""));
+    const kpis = ["revenue", "orders", "leads", "conversions", "sign-ups", "subscriptions", "pipeline", "installs"].filter((k) => t.indexOf(k) >= 0);
+    const mk = (label, v) => ({ label: label, value: v || "Not detected", color: v ? "#1a1f4b" : "#8a93aa" });
+    return [
+      mk("Applies to", chans[0]),
+      mk("Evidence period", q ? q[0] : yr ? yr[0] : ""),
+      mk("Market", mkts[0]),
+      mk("Outcome", kpis[0] ? kpis[0].charAt(0).toUpperCase() + kpis[0].slice(1) : ""),
+      mk("Evidence source", type)
+    ];
+  }
+
+  openAgent(card) { this.setState({ sheet: card, sheetPhase: "input", sheetText: card.agentExample || "" }); }
+
+  confirmAgent() {
+    const card = this.state.sheet;
+    if (!card || !this.state.sheetText.trim()) return;
+    const a = Object.assign({}, this.state.a);
+    const meta = Object.assign({}, this.state.meta);
+    const apply = card.agentApply || {};
+    Object.keys(apply).forEach((k) => {
+      const cur = a[k];
+      a[k] = Array.isArray(apply[k]) && Array.isArray(cur) ? cur.filter((x) => !this.isUnknown(x)).concat(apply[k].filter((x) => cur.indexOf(x) < 0)) : apply[k];
+      meta[k] = "agent";
+    });
+    meta[card.id] = "agent";
+    const notes = Object.assign({}, this.state.notes);
+    notes[card.id] = { text: this.state.sheetText, bullets: card.agentBullets || [] };
+    this.setState({ a: a, meta: meta, notes: notes, sheet: null, sheetPhase: "input" });
+  }
+
+  go(dir) {
+    let i = this.state.step;
+    const last = SCREENS.length - 1;
+    do { i += dir; } while (i > 0 && i < last && SCREENS[i].kind === "cards" && this.visibleCards(SCREENS[i]).length === 0);
+    this.setState({ step: Math.max(0, Math.min(last, i)) });
+  }
+
+  renderVals() {
+    const S = this.state, a = S.a, sc = this.screen();
+    const groups = [];
+    SCREENS.forEach((s, i) => {
+      if (!s.group) return;
+      let g = groups.filter((x) => x.label === s.group)[0];
+      if (!g) { g = { label: s.group, first: i, last: i }; groups.push(g); }
+      g.last = i;
+    });
+    const rail = groups.map((g) => {
+      const done = S.step > g.last;
+      const active = S.step >= g.first && S.step <= g.last;
+      return {
+        label: g.label, icon: ICONS[g.label] || ICONS.Business,
+        mark: done ? "\u2713" : active ? "\u25cf" : "\u25cb",
+        markColor: done ? "#047857" : active ? "#3b4bdb" : "#d5daf8",
+        iconColor: done ? "#4f5872" : active ? "#3b4bdb" : "#b4bdd0",
+        bg: active ? "#eef0fd" : "transparent",
+        color: done ? "#4f5872" : active ? "#1a1f4b" : "#8a93aa",
+        fw: active ? "600" : "500",
+        cursor: done || active ? "pointer" : "default",
+        onGo: () => { if (S.step >= g.first) this.setState({ step: g.first }); }
+      };
+    });
+
+    const cards = (sc.kind === "cards" ? this.cardsFor(sc) : []).map((c) => {
+      const rows = c.type === "matrix" ? this.rowsOf(c).map((r) => ({
+        label: r,
+        opts: c.cols.map((col) => {
+          const selected = (a[c.id] || {})[r] === col;
+          return Object.assign({ label: col, onPick: () => this.setMatrix(c.id, r, col) }, c.id === "cdm" ? this.matStyle(col, selected) : this.optStyle(selected, this.isUnknown(col)));
+        })
+      })) : [];
+      const note = S.notes[c.id];
+      const picked = Array.isArray(a[c.id]) ? a[c.id] : [];
+      const sel = picked.length;
+      const pgroups = c.type === "picker" ? this.pickerGroups(c) : [];
+      return {
+        prompt: c.prompt, help: c.help || "", optional: !!c.optional,
+        isOptions: c.type === "single" || c.type === "multi",
+        isMatrix: c.type === "matrix", isText: c.type === "text", isPicker: c.type === "picker",
+        options: c.type === "single" || c.type === "multi" ? this.optionViews(c) : [],
+        rows: rows,
+        groups: pgroups,
+        noMatches: c.type === "picker" && pgroups.length === 0,
+        search: S.search[c.id] || "", searchPlaceholder: c.searchPlaceholder || "Search",
+        onSearch: (e) => { const s2 = Object.assign({}, S.search); s2[c.id] = e.target.value; this.setState({ search: s2 }); },
+        customDraft: S.customDraft[c.id] || "", customPlaceholder: c.customPlaceholder || "Add your own",
+        onCustomDraft: (e) => { const d = Object.assign({}, S.customDraft); d[c.id] = e.target.value; this.setState({ customDraft: d }); },
+        onCustomAdd: () => this.addCustom(c),
+        countLabel: sel === 0 ? "Nothing selected yet" : sel + " " + (c.unit || "item") + (sel === 1 ? "" : "s") + " selected",
+        hasSelection: sel > 0,
+        chipsTitle: "Your " + (c.unit || "item") + (sel === 1 ? "" : "s"),
+        chips: picked.map((v) => ({ label: v, onRemove: () => this.toggle(c.id, v) })),
+        selOnlyLabel: S.selOnly[c.id] ? "Show all" : "View selected only",
+        selOnlyBg: S.selOnly[c.id] ? "#eef0fd" : "#fff",
+        selOnlyBc: S.selOnly[c.id] ? "#3b4bdb" : "#e6eaf1",
+        selOnlyColor: S.selOnly[c.id] ? "#1a1f4b" : "#4f5872",
+        onSelOnly: () => { const o = Object.assign({}, S.selOnly); o[c.id] = !o[c.id]; this.setState({ selOnly: o }); },
+        textValue: a[c.id] || "", placeholder: c.placeholder || "",
+        onText: (e) => this.set(c.id, e.target.value),
+        why: c.why || "", whyOpen: !!S.why[c.id] || !!this.props.expandAllWhy,
+        whyChevron: S.why[c.id] ? "\u2193" : "\u2192",
+        onWhy: () => { const w = Object.assign({}, S.why); w[c.id] = !w[c.id]; this.setState({ why: w }); },
+        agent: c.agent || "", onAgent: () => this.openAgent(c),
+        otherOpen: this.otherActive(c),
+        otherValue: this.otherText(c.id),
+        otherPlaceholder: c.otherPlaceholder || "Type it in your own words",
+        onOther: (e) => this.setOther(c.id, e.target.value),
+        note: note ? note.text : "", noteBullets: note ? note.bullets : []
+      };
+    });
+
+    const visible = this.visibleCards(sc);
+    let canNext = true;
+    if (sc.kind === "cards") canNext = visible.every((c) => c.optional || this.answered(c));
+    if (sc.kind === "events") canNext = S.events.length > 0 || a.evAck === "none";
+
+    const data = this.reviewData();
+    const secs = data.map((s) => {
+      const st = this.statusFor(s);
+      return Object.assign({
+        label: s.label, status: st.text, facts: s.facts,
+        open: S.openReview === s.id, chevron: S.openReview === s.id ? "\u25be" : "\u25b8",
+        editLabel: s.editLabel || "Edit this section",
+        onToggle: () => this.setState({ openReview: S.openReview === s.id ? "" : s.id }),
+        onEdit: () => this.setState({ step: s.step })
+      }, this.pill(st.kind));
+    });
+    const openQ = data.reduce((n, s) => n + s.facts.filter((f) => f.prov === "Not answered" || f.prov === "Unknown").length, 0);
+    const conflicts = data.reduce((n, s) => n + s.facts.filter((f) => f.prov === "Needs review").length, 0);
+    const stales = data.reduce((n, s) => n + s.facts.filter((f) => f.prov === "May need updating").length, 0);
+    const firstFlagged = data.filter((s) => s.facts.filter((f) => f.prov === "Needs review" || f.prov === "May need updating").length > 0)[0];
+
+    const insights = this.insights();
+    const forecasts = insights.filter((i) => i.forecast).slice(0, 3).map((i) => i.forecast);
+    const conceptList = insights.slice(0, 4).filter((i) => i.concept).map((i) => i.concept.term + " — " + i.concept.copy);
+    const confirmedFacts = data.reduce((n, s) => n + s.facts.filter((f) => f.prov === "Provided by you" || f.prov === "From your description" || f.prov === "Confirmed by you").length, 0);
+    const importantDrivers = Object.keys(a.cdm || {}).filter((k) => (a.cdm || {})[k] === "Important").length;
+    const gapIn = (ids) => data.filter((s) => ids.indexOf(s.id) >= 0).reduce((n, s) => n + s.facts.filter((f) => f.prov === "Not answered" || f.prov === "Unknown").length, 0);
+    const beforeModeling = gapIn(["obj", "pf", "bd"]);
+    const fromData = gapIn(["mkt", "cd", "ev"]);
+    const FOCUS = { search: "Clarify whether Search spend responds to demand, and whether branded and non-branded can be separated", promo: "Locate promotion history and evaluate it as a non-media control", season: "Confirm historical coverage of the recurring seasonal periods", inv: "Locate inventory or availability history for constrained periods", budget: "Document in-period budget behavior alongside demand signals", geo: "Check whether market-level evidence exists at usable granularity", lag: "Confirm the data window covers the exposure-to-outcome lag", prior: "Attach the supporting files behind your prior evidence", comp: "Look for a usable competitive or category-demand signal" };
+    const nextFocus = insights.map((i) => FOCUS[i.id]).filter((x) => !!x).slice(0, 5);
+    const openExamples = [];
+    if ((a.ch || []).indexOf("Paid Search") >= 0) openExamples.push("Whether branded and non-branded Search are separately available");
+    if (matters(a, "Promotions")) openExamples.push("Whether promotion history exists at the level the model needs");
+    if (matters(a, "Inventory / availability")) openExamples.push("Whether inventory constraints are recorded historically");
+    if (a.clr === "Not sure" || a.clr === "Yes") openExamples.push("Whether any competitive-demand signal is obtainable");
+    const nextEvidence = [{ mark: "\u2713", label: (this.val("kpi") || "Outcome") + " history", color: "#2b3350", markColor: "#047857" }]
+      .concat((a.ch || []).slice(0, 6).map((c) => ({ mark: "\u2713", label: c + " spend and execution", color: "#2b3350", markColor: "#047857" })))
+      .concat(matters(a, "Promotions") ? [{ mark: "\u2713", label: "Promotion calendar", color: "#2b3350", markColor: "#047857" }] : [])
+      .concat(matters(a, "Seasonality") ? [{ mark: "\u2713", label: "Seasonal history", color: "#2b3350", markColor: "#047857" }] : [])
+      .concat(matters(a, "Inventory / availability") ? [{ mark: "\u2713", label: "Inventory / availability records", color: "#2b3350", markColor: "#047857" }] : [])
+      .concat(a.clr === "Yes" || a.clr === "Not sure" ? [{ mark: "?", label: "Competitive-demand evidence", color: "#6d768f", markColor: "#b4bdd0" }] : [])
+      .concat([{ mark: "?", label: "Signals of category or market maturity", color: "#6d768f", markColor: "#b4bdd0" }])
+      .concat(S.evidence.length ? [{ mark: "?", label: "Supporting files for your prior evidence", color: "#6d768f", markColor: "#b4bdd0" }] : []);
+
+    const readySummary = data.filter((s) => ["biz", "obj", "mkt", "pf", "bd", "cd"].indexOf(s.id) >= 0).map((s) => {
+      const st = this.statusFor(s);
+      const good = st.kind === "good" || st.kind === "info";
+      return { label: s.label, mark: good ? "\u2713" : "\u25cb", markColor: good ? "#047857" : "#b4bdd0", color: good ? "#2b3350" : "#6d768f" };
+    });
+
+    const eventDraft = S.draft || {};
+    const answeredCount = SCREENS.filter((s) => s.kind === "cards").reduce((n, s) => n + this.visibleCards(s).filter((c) => this.answered(c)).length, 0);
+    const totalCount = SCREENS.filter((s) => s.kind === "cards").reduce((n, s) => n + this.visibleCards(s).length, 0);
+    const pctNum = Math.min(100, Math.round((answeredCount / Math.max(1, totalCount)) * 100));
+
+    return {
+      companyName: this.props.companyName || "Acme Outdoors",
+      initials: (this.props.companyName || "Acme Outdoors").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
+      rail: rail,
+      showPct: this.props.showCoverage !== false,
+      pct: pctNum + "%",
+      pctLabel: "Coverage is secondary. Readiness is about which concepts have been acknowledged.",
+      isWelcome: sc.kind === "welcome", isCards: sc.kind === "cards", isEvents: sc.kind === "events",
+      isPriors: sc.kind === "priors", isReview: sc.kind === "review", isReady: sc.kind === "ready",
+      showHead: sc.kind !== "welcome" && sc.kind !== "ready",
+      eyebrow: sc.eyebrow || "", title: sc.title || "",
+      sub: sc.id === "driverdetail" ? (function (n) { return n === 1 ? "One of those factors needs a little more context." : n + " of those factors need a little more context."; })(Object.keys(a.cdm || {}).filter((k) => matters(a, k)).length) : (sc.sub || ""),
+      cards: cards,
+
+      showNav: sc.kind !== "welcome" && sc.kind !== "ready",
+      onBack: () => this.go(-1),
+      onNext: () => this.go(1),
+      nextLabel: sc.kind === "review" ? "Continue to Data Foundation" : "Continue",
+      nextDisabled: !canNext,
+      nextBg: canNext ? "#3b4bdb" : "#c3cadd",
+      nextCursor: canNext ? "pointer" : "not-allowed",
+      navHint: canNext ? (sc.kind === "priors" ? "Nothing here is required" : "Autosaved") : "Answer above to continue",
+
+      eventTypes: EVENT_TYPES.map((t) => Object.assign({ label: t, onPick: () => this.setState({ draft: { type: t, custom: this.isCustom(t), name: "", precision: "exact", start: "", end: "", approx: "", recur: "", note: "" } }) }, this.optStyle(eventDraft.type === t, false))),
+      draftOpen: !!S.draft, draftType: eventDraft.custom ? "Custom event type" : (eventDraft.type || ""),
+      draftCustom: !!eventDraft.custom, draftCustomType: eventDraft.customType || "",
+      onDraftCustomType: (e) => this.setState({ draft: Object.assign({}, S.draft, { customType: e.target.value }) }),
+      draftName: eventDraft.name || "", draftStart: eventDraft.start || "", draftEnd: eventDraft.end || "", draftNote: eventDraft.note || "",
+      draftExact: eventDraft.precision !== "approx", draftApprox: eventDraft.precision === "approx", draftApproxText: eventDraft.approx || "",
+      draftRecurring: eventDraft.recur === "Recurs regularly",
+      precisionOpts: [{ k: "exact", l: "Exact dates" }, { k: "approx", l: "Approximate" }].map((o) => Object.assign({ label: o.l, onPick: () => this.setState({ draft: Object.assign({}, S.draft, { precision: o.k }) }) }, this.optStyle((eventDraft.precision || "exact") === o.k, false))),
+      recurOpts: ["One-time event", "Recurs regularly", "Not sure"].map((o) => Object.assign({ label: o, onPick: () => this.setState({ draft: Object.assign({}, S.draft, { recur: o }) }) }, this.optStyle(eventDraft.recur === o, this.isUnknown(o)))),
+      onDraftName: (e) => this.setState({ draft: Object.assign({}, S.draft, { name: e.target.value }) }),
+      onDraftStart: (e) => this.setState({ draft: Object.assign({}, S.draft, { start: e.target.value }) }),
+      onDraftEnd: (e) => this.setState({ draft: Object.assign({}, S.draft, { end: e.target.value }) }),
+      onDraftApproxText: (e) => this.setState({ draft: Object.assign({}, S.draft, { approx: e.target.value }) }),
+      onDraftNote: (e) => this.setState({ draft: Object.assign({}, S.draft, { note: e.target.value }) }),
+      onAddEvent: () => {
+        if (!S.draft || !S.draft.name) return;
+        const d = Object.assign({}, S.draft);
+        if (d.custom) d.type = (d.customType || "Custom event").trim();
+        this.setState({ events: S.events.concat([d]), draft: null });
+      },
+      onCancelDraft: () => this.setState({ draft: null }),
+      hasEvents: S.events.length > 0,
+      eventList: S.events.map((e, i) => ({
+        type: e.type, name: e.name, note: e.note || "",
+        range: this.eventRange(e),
+        tag: e.recur === "Recurs regularly" ? "Recurring pattern" : e.precision === "approx" ? "Approximate" : "",
+        onRemove: () => this.setState({ events: S.events.filter((_, j) => j !== i) })
+      })),
+      onNoEvents: () => this.set("evAck", a.evAck === "none" ? "" : "none"),
+      noneBg: a.evAck === "none" ? "#f5f7fa" : "#fff", noneBc: a.evAck === "none" ? "#9aa3b8" : "#e6eaf1",
+      noneBs: a.evAck === "none" ? "dashed" : "solid", noneColor: a.evAck === "none" ? "#4f5872" : "#2b3350",
+
+      priorLead: ["Yes", "No", "Not sure"].map((l) => Object.assign({ label: l, onPick: () => this.set("pk", l) }, this.optStyle(a.pk === l, this.isUnknown(l)))),
+      priorsYes: a.pk === "Yes",
+      evidenceTypes: EVIDENCE_TYPES.map((t) => Object.assign({ label: t, onPick: () => this.setState({ evType: t }) }, this.optStyle(S.evType === t, false))),
+      evTypeCustom: this.isCustom(S.evType), evTypeCustomText: S.evTypeCustom,
+      onEvTypeCustom: (e) => this.setState({ evTypeCustom: e.target.value }),
+      evText: S.evText,
+      onEvText: (e) => this.setState({ evText: e.target.value }),
+      onAddEvidence: () => {
+        if (!S.evType || !S.evText.trim()) return;
+        const type = this.isCustom(S.evType) ? (S.evTypeCustom || "Custom evidence").trim() : S.evType;
+        this.setState({ evidence: S.evidence.concat([{ type: type, text: S.evText, status: "proposed" }]), evType: "", evTypeCustom: "", evText: "" });
+      },
+      hasEvidence: S.evidence.length > 0,
+      evidenceList: S.evidence.map((e, i) => ({
+        type: e.type, text: e.text,
+        proposed: e.status === "proposed",
+        fields: this.extract(e.text, e.type),
+        border: e.status === "proposed" ? "#d5daf8" : "#e6eaf1",
+        bg: e.status === "proposed" ? "#f7f8fe" : "#fff",
+        statusLine: e.status === "confirmed" ? "Confirmed by you · recorded as evidence, not a model prior" : e.status === "unstructured" ? "Kept as free text · PreM3 can structure it later" : "",
+        onConfirm: () => this.setState({ evidence: S.evidence.map((x, j) => (j === i ? Object.assign({}, x, { status: "confirmed" }) : x)) }),
+        onUnstructured: () => this.setState({ evidence: S.evidence.map((x, j) => (j === i ? Object.assign({}, x, { status: "unstructured" }) : x)) }),
+        onRemove: () => this.setState({ evidence: S.evidence.filter((_, j) => j !== i) })
+      })),
+
+      synthesis: this.synthesis(),
+      updatedLabel: this.props.lastUpdated || "Aug 20, 2026 · 10:18 PM",
+      versionLabel: this.props.profileVersion || "Business Profile v3",
+      scopeLabel: (a.mkts || []).length ? (a.mkts.length > 2 ? a.mkts.length + " markets" : a.mkts.join(", ")) : "Not set",
+      briefSummary: this.briefSummary(),
+      briefBullets: this.briefBullets(),
+      briefStats: [
+        { value: confirmedFacts, label: "confirmed business facts", bg: "#fff", border: "#d5daf8", valueColor: "#1a1f4b", labelColor: "#6d768f" },
+        { value: (a.ch || []).length, label: "material channels", bg: "#fff", border: "#d5daf8", valueColor: "#1a1f4b", labelColor: "#6d768f" },
+        { value: importantDrivers, label: "important drivers", bg: "#fff", border: "#d5daf8", valueColor: "#1a1f4b", labelColor: "#6d768f" },
+        { value: beforeModeling, label: "high-priority open questions", bg: "#fff", border: "#d5daf8", valueColor: "#1a1f4b", labelColor: "#6d768f" },
+        { value: Math.max(0, openQ - beforeModeling), label: "lower-priority unknowns · most clarify from data", bg: "transparent", border: "#e6eaf1", valueColor: "#8a93aa", labelColor: "#a3abbf" }
+      ],
+      hasMatters: insights.length > 0,
+      matters: insights.filter((i) => i.rank !== "Context").slice(0, 4).map((i, n) => Object.assign({ n: n + 1, title: i.title, fact: i.fact, why: i.why, rank: i.rank }, this.rankTone(i.rank))),
+      hasModelCons: insights.length > 0,
+      modelCons: insights.slice(0, 4).map((i) => ({
+        title: i.title, consideration: i.fact, rec: i.rec,
+        basisLabel: "Based on " + i.basis.length + " Business IQ fact" + (i.basis.length === 1 ? "" : "s"),
+        chevron: S.openInsight === i.id ? "\u2193" : "\u2192",
+        open: S.openInsight === i.id,
+        onToggle: () => this.setState({ openInsight: S.openInsight === i.id ? "" : i.id }),
+        basis: i.basis.map((b) => Object.assign({}, b, { onEdit: () => this.setState({ step: b.step }) })),
+        conceptTerm: i.concept ? i.concept.term : "", conceptCopy: i.concept ? i.concept.copy : "",
+        conceptOpen: S.openConcept === i.id, conceptChevron: S.openConcept === i.id ? "\u2193" : "\u2192",
+        onConcept: () => this.setState({ openConcept: S.openConcept === i.id ? "" : i.id })
+      })),
+      hasFocus: nextFocus.length > 0,
+      nextFocus: nextFocus,
+      hasForecast: forecasts.length > 0,
+      forecastCons: forecasts,
+      openBuckets: [
+        { n: beforeModeling, label: "worth resolving before modeling", color: beforeModeling ? "#3b4bdb" : "#b4bdd0" },
+        { n: fromData, label: "PreM3 will try to resolve from your data", color: "#4f5872" },
+        { n: Math.max(0, openQ - beforeModeling - fromData), label: "optional or lower priority", color: "#8a93aa" }
+      ],
+      hasOpenExamples: openExamples.length > 0,
+      openExamples: openExamples,
+      nextEvidence: nextEvidence,
+      hasConcepts: conceptList.length > 0,
+      conceptsLabel: conceptList.length + " modeling concept" + (conceptList.length === 1 ? "" : "s") + " surfaced by your profile",
+      conceptsChevron: S.conceptsOpen ? "\u2193" : "\u2192",
+      conceptsOpen: S.conceptsOpen,
+      onToggleConcepts: () => this.setState({ conceptsOpen: !S.conceptsOpen }),
+      conceptsSurfaced: conceptList,
+      exampleFields: [
+        { label: "Evidence type", value: "Geo experiment" }, { label: "Channel", value: "Paid Search" }, { label: "Market", value: "United States" },
+        { label: "Period", value: "Q2 2025" }, { label: "Outcome", value: "Revenue" }, { label: "Finding", value: "Positive incremental effect" }, { label: "Supporting range", value: "8–12% lift" }
+      ],
+      evidenceExamples: [
+        { type: "Geo / holdout experiment", text: "“We held out Paid Social in 12 DMAs for four weeks and observed a measurable decline in new-customer orders.”" },
+        { type: "Platform lift study", text: "“Meta ran a conversion-lift study last year and reported positive incremental purchases.”" },
+        { type: "Previous MMM", text: "“Our previous MMM estimated TV was efficient at current spend but showed Search becoming saturated.”" },
+        { type: "Internal benchmark", text: "“Historically, when we launch in a new market, branded search grows after upper-funnel campaigns begin.”" },
+        { type: "Expert / planning knowledge", text: "“Our team believes most branded search captures existing demand rather than creating new demand.”" }
+      ],
+      examplesOpen: S.examplesOpen, examplesChevron: S.examplesOpen ? "\u2193" : "\u2192",
+      onToggleExamples: () => this.setState({ examplesOpen: !S.examplesOpen }),
+      priorsExplainOpen: S.priorsExplainOpen, priorsChevron: S.priorsExplainOpen ? "\u2193" : "\u2192",
+      onTogglePriors: () => this.setState({ priorsExplainOpen: !S.priorsExplainOpen }),
+      reviewSections: secs,
+      hasFlags: conflicts + stales > 0,
+      flagTitle: conflicts ? (conflicts === 1 ? "1 fact conflicts with the evidence" : conflicts + " facts conflict with the evidence") : (stales === 1 ? "1 fact may be out of date" : stales + " facts may be out of date"),
+      flagCopy: (conflicts ? "Data Foundation found evidence that disagrees with what this profile says. Confirm which is right — PreM3 will not overwrite your answer. " : "") + (stales ? (stales === 1 ? "One answer" : stales + " answers") + " predate a change in the business and should be re-confirmed." : ""),
+      onOpenFlags: () => this.setState({ openReview: firstFlagged ? firstFlagged.id : S.openReview }),
+      openQuestions: openQ,
+      openQuestionsCopy: openQ === 0 ? "Nothing is outstanding. You can still revise any fact later." : "Sorted by consequence rather than completeness. None of these block you from continuing.",
+
+      readyCopy: "Business IQ is never “complete” — it keeps learning. What matters is that PreM3 now has enough context to interpret the evidence it is about to look at.",
+      readySummary: readySummary,
+      gapsCopy: (openQ === 0 ? "No known gaps." : openQ + " known gap" + (openQ === 1 ? "" : "s") + " recorded as explicit unknowns.") + (S.evidence.length === 0 ? " Prior evidence can still be added later." : " " + S.evidence.length + " evidence source" + (S.evidence.length === 1 ? "" : "s") + " carried forward."),
+      onContinue: () => this.setState({ routed: "Opening Data Foundation \u00b7 access + discovery\u2026" }),
+      onReviewProfile: () => this.setState({ step: this.stepOf("review") }),
+      routedCopy: S.routed,
+
+      sheetOpen: !!S.sheet,
+      sheetContext: S.sheet ? "Tell PreM3 in your own words" : "",
+      sheetQuestion: S.sheet ? S.sheet.agentQ || S.sheet.prompt : "",
+      sheetInput: !!S.sheet && S.sheetPhase === "input",
+      sheetResult: !!S.sheet && S.sheetPhase === "result",
+      sheetText: S.sheetText,
+      sheetBullets: S.sheet ? S.sheet.agentBullets || [] : [],
+      onSheetText: (e) => this.setState({ sheetText: e.target.value }),
+      sheetEmpty: !S.sheetText.trim(),
+      sheetSendBg: S.sheetText.trim() ? "#3b4bdb" : "#c3cadd",
+      sheetSendCursor: S.sheetText.trim() ? "pointer" : "not-allowed",
+      onSheetSend: () => { if (!S.sheetText.trim()) return; this.setState({ sheetPhase: "result" }); },
+      onSheetRetry: () => this.setState({ sheetPhase: "input" }),
+      onSheetConfirm: () => this.confirmAgent(),
+      onSheetClose: () => this.setState({ sheet: null, sheetPhase: "input" })
+    };
+  }
+}
+</script>
+</body>
+</html>

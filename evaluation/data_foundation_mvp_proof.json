@@ -1,0 +1,122 @@
+{
+  "design_freeze": "foundational-intake-freeze-2026-08-22-v1",
+  "origin_main_at_mission_start": "dce8a209bb67fbaa3c8a78ae4e8a7384897252ed",
+  "dependency_base_sha": "02cec50b6da6507838081e65086eaaf29a4a5329",
+  "branch_repair_required": false,
+  "base_main_sha": "e7ec5fae802b49b61e5e1b5b3bfb073b4a511cb0",
+  "feature_sha": "b4671f545fd834a675cbbf734600b44856c8563a",
+  "live_cloud_proof": "LIVE_CLOUD_PROOF_NOT_RUN",
+  "pipeline": [
+    "BUSINESS REQUIREMENTS LOADED",
+    "BQ + DRIVE DISCOVERY",
+    "SOURCE CANDIDATES",
+    "SOURCE ASSESSMENTS",
+    "QUALITY FINDINGS",
+    "TRANSFORMATION PREVIEW",
+    "APPROVED TEST PLAN",
+    "TRANSFORM EXECUTION",
+    "BQ STAGING/CANONICAL OUTPUT",
+    "POST-TRANSFORM QA",
+    "FOUNDATION_SOURCE_READY",
+    "FOUNDATION PLAN",
+    "PROVISION / VERIFY",
+    "DATA_FOUNDATION_READY"
+  ],
+  "readiness": {
+    "IMPORT_READY": "M2-11 evaluate_import_readiness only",
+    "FOUNDATION_SOURCE_READY": "FOUNDATION_SOURCE_READY",
+    "DATA_FOUNDATION_READY": "DATA_FOUNDATION_READY",
+    "m2_11_import_ready_consumed": true
+  },
+  "source_fingerprints": {
+    "media": "682c8b8a2b9c454f465f68d1a53806810a77884a5bb06a5f29f1514150902576",
+    "output": "682c8b8a2b9c454f465f68d1a53806810a77884a5bb06a5f29f1514150902576"
+  },
+  "quality_findings": [
+    "DF-Q-UNIQUENESS-EXACT",
+    "DF-Q-COMPLETENESS-EMPTY-COLUMN",
+    "DF-Q-UNIQUENESS-KEY",
+    "DF-Q-COMPLETENESS-NULL",
+    "DF-Q-COMPLETENESS-BLANK",
+    "DF-Q-COMPLETENESS-NULL",
+    "DF-Q-COMPLETENESS-BLANK",
+    "DF-Q-TYPE-DATE",
+    "DF-Q-TYPE-MIXED-DATE",
+    "DF-Q-TEMPORAL-FUTURE",
+    "DF-Q-TYPE-NUMERIC",
+    "DF-Q-DOMAIN-NEG-SPEND",
+    "DF-Q-DOMAIN-ZERO-SEMANTICS"
+  ],
+  "transform_plan": {
+    "plan_id": "dfplan_d5537ac7306942ba987a",
+    "fingerprint": "3a96d29c7eaefc72478305889b70bca470d0bc6fb92823eb7ecbfc551327c80e",
+    "actions": [
+      "DF-T006"
+    ]
+  },
+  "row_counts": {
+    "input": 3,
+    "output": 3,
+    "preview_projected": 3
+  },
+  "reconciliation": {
+    "source_mutated": false
+  },
+  "source_foundation_status": "FOUNDATION_SOURCE_READY",
+  "data_foundation_ready": "DATA_FOUNDATION_READY",
+  "m2_11_import_ready_unchanged": true,
+  "business_iq": {
+    "profile_id": "bprof_88452094f89249618342",
+    "version": 1,
+    "fingerprint": "316d3ed719baa0593e8ee6f71d4ff305c4ec931d3fff89ff6ae9b822fe73ff23",
+    "business_context_ready": "BUSINESS_CONTEXT_READY",
+    "brief_advisory": true,
+    "brief_evidence_refs": [
+      "bfact_kpi"
+    ]
+  },
+  "durable_stores": {
+    "business_iq_production": "FirestoreBusinessIqStore",
+    "data_foundation_production": "FirestoreDataFoundationStore",
+    "ci_local": "InMemory",
+    "backed": [
+      "MeasurementCycle",
+      "SourceBinding",
+      "FoundationPlan",
+      "quality findings",
+      "receipts"
+    ]
+  },
+  "quality_overview": {
+    "source_id": "dfsrc_2bcbca21093e4db1a56f",
+    "blocker_count": 0,
+    "review_count": 0,
+    "pass_count": 13
+  },
+  "data_intelligence_brief": {
+    "advisory": true,
+    "model_version": "data-foundation/intelligence-brief/deterministic/v1",
+    "evidence_refs": [],
+    "gemini_prose": "EXTERNAL_DEPENDENCY"
+  },
+  "foundation_plan": {
+    "domains": [
+      "INFRASTRUCTURE",
+      "SOURCES_AND_TRANSFERS",
+      "QUALITY_AND_TRANSFORMATIONS",
+      "CANONICAL_ASSETS",
+      "GOVERNANCE_AND_OBSERVABILITY"
+    ],
+    "will_not_modify": [
+      "customer GCP project identity",
+      "customer source tables",
+      "raw Drive files",
+      "BigQuery datasets outside prem3_modeling"
+    ],
+    "permission_preview": [
+      "bigquery.datasets.create for prem3_modeling when missing",
+      "bigquery.tables.create on prem3_modeling",
+      "bigquery.tables.updateData on prem3_modeling only"
+    ]
+  }
+}
