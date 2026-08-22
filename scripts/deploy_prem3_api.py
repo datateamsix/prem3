@@ -140,6 +140,16 @@ def _available_secrets() -> dict[str, str]:
     return mapping
 
 
+def _runtime_env_file() -> Path:
+    dest = REPO_ROOT / "artifacts" / "deployment" / "prem3_api_runtime.generated.env.yaml"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    existing = RUNTIME_ENV_PATH.read_text() if RUNTIME_ENV_PATH.is_file() else ""
+    if "GOOGLE_KMS_KEY:" not in existing:
+        existing = existing.rstrip() + f'\nGOOGLE_KMS_KEY: "{GOOGLE_KMS_KEY}"\n'
+    dest.write_text(existing)
+    return dest
+
+
 def _deploy(*, image_uri: str, secrets: dict[str, str]) -> None:
     args = [
         "run",
@@ -160,9 +170,7 @@ def _deploy(*, image_uri: str, secrets: dict[str, str]) -> None:
         "--startup-probe=httpGet.path=/health,periodSeconds=5,timeoutSeconds=3,failureThreshold=12",
         "--quiet",
     ]
-    if RUNTIME_ENV_PATH.is_file():
-        args.append(f"--env-vars-file={RUNTIME_ENV_PATH}")
-    args.append(f"--update-env-vars=GOOGLE_KMS_KEY={GOOGLE_KMS_KEY}")
+    args.append(f"--env-vars-file={_runtime_env_file()}")
     if secrets:
         packed = ",".join(f"{env}={ref}" for env, ref in secrets.items())
         args.append(f"--set-secrets={packed}")

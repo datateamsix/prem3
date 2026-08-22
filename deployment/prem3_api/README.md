@@ -72,7 +72,8 @@ Suggested service bounds (not the Meridian 8Gi / 3600s worker):
 ## Dependencies
 
 `deployment/prem3_api/requirements.txt` includes `google-cloud-storage` for signed
-Dataset uploads (V4 PUT URLs + object metadata verify). Do not add ADK or Meridian
+Dataset uploads, `google-cloud-kms` + `cryptography` for the Google credential vault,
+and `pandas` for Data Foundation warehouse imports. Do not add ADK or Meridian
 to this image.
 
 ## IAM
