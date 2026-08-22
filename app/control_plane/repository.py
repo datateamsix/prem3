@@ -30,6 +30,9 @@ from app.control_plane.models import (
     Workspace,
 )
 from app.governance.import_contract import ImportReadinessReceipt
+from app.governance.publish_contract import PublishReadinessReceipt
+from app.materialization.contracts import SourceMaterializationReceipt
+from app.publish_execution.contracts import PublishExecutionReceipt
 
 
 @runtime_checkable
@@ -263,3 +266,63 @@ class ControlPlaneRepository(Protocol):
     def get_current_import_receipt(
         self, *, tenant_id: str, workspace_id: str, dataset_id: str
     ) -> ImportReadinessReceipt | None: ...
+
+    def put_materialization(
+        self, receipt: SourceMaterializationReceipt
+    ) -> SourceMaterializationReceipt: ...
+
+    def get_materialization(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        materialization_id: str,
+    ) -> SourceMaterializationReceipt | None: ...
+
+    def list_materializations(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str
+    ) -> list[SourceMaterializationReceipt]: ...
+
+    def get_materialization_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        authority_fingerprint: str,
+    ) -> SourceMaterializationReceipt | None: ...
+
+    def put_publish_receipt(self, receipt: PublishReadinessReceipt) -> PublishReadinessReceipt: ...
+
+    def get_current_publish_receipt(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> PublishReadinessReceipt | None: ...
+
+    def put_publish_execution(
+        self, receipt: PublishExecutionReceipt, *, authority_fingerprint: str
+    ) -> PublishExecutionReceipt: ...
+
+    def get_publish_execution(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        publish_id: str,
+    ) -> PublishExecutionReceipt | None: ...
+
+    def list_publish_executions(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> list[PublishExecutionReceipt]: ...
+
+    def get_publish_execution_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        authority_fingerprint: str,
+    ) -> PublishExecutionReceipt | None: ...

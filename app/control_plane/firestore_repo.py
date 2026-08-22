@@ -64,6 +64,9 @@ from app.core.errors import (
 )
 from app.core.identifiers import validate_resource_identifier
 from app.governance.import_contract import ImportReadinessReceipt
+from app.governance.publish_contract import PublishReadinessReceipt
+from app.materialization.contracts import SourceMaterializationReceipt
+from app.publish_execution.contracts import PublishExecutionReceipt
 
 COLLECTION_TENANTS = "tenants"
 COLLECTION_IDENTITY_MAPPINGS = "identity_org_mappings"
@@ -85,6 +88,9 @@ COLLECTION_DRIVE_BINDINGS = "drive_bindings"
 COLLECTION_BQ_BINDINGS = "bigquery_bindings"
 COLLECTION_IMPORT_SELECTIONS = "import_selections"
 COLLECTION_IMPORT_RECEIPTS = "import_receipts"
+COLLECTION_MATERIALIZATIONS = "materializations"
+COLLECTION_PUBLISH_RECEIPTS = "publish_receipts"
+COLLECTION_PUBLISH_EXECUTIONS = "publish_executions"
 
 
 class FirestoreControlPlaneRepository:
@@ -979,6 +985,192 @@ class FirestoreControlPlaneRepository:
             return None
         return receipt
 
+    def put_materialization(
+        self, receipt: SourceMaterializationReceipt
+    ) -> SourceMaterializationReceipt:
+        col = (
+            self._dataset_ref(receipt.tenant_id, receipt.workspace_id, receipt.dataset_id)
+            .collection(COLLECTION_MATERIALIZATIONS)
+        )
+        col.document(receipt.materialization_id).set(model_to_document(receipt))
+        if receipt.status.value == "COMPLETE":
+            col.document(f"authority_{receipt.authority_fingerprint}").set(
+                {"materialization_id": receipt.materialization_id}
+            )
+        return receipt
+
+    def get_materialization(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        materialization_id: str,
+    ) -> SourceMaterializationReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_MATERIALIZATIONS)
+            .document(materialization_id)
+            .get()
+        )
+        if not snap.exists:
+            return None
+        receipt = document_to_model(SourceMaterializationReceipt, snap.to_dict())
+        if receipt.tenant_id != tenant_id:
+            return None
+        return receipt
+
+    def list_materializations(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str
+    ) -> list[SourceMaterializationReceipt]:
+        snaps = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_MATERIALIZATIONS)
+            .stream()
+        )
+        rows: list[SourceMaterializationReceipt] = []
+        for snap in snaps:
+            if snap.id.startswith("authority_"):
+                continue
+            receipt = document_to_model(SourceMaterializationReceipt, snap.to_dict())
+            if receipt.tenant_id == tenant_id:
+                rows.append(receipt)
+        return sorted(rows, key=lambda row: row.started_at)
+
+    def get_materialization_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        authority_fingerprint: str,
+    ) -> SourceMaterializationReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_MATERIALIZATIONS)
+            .document(f"authority_{authority_fingerprint}")
+            .get()
+        )
+        if not snap.exists:
+            return None
+        payload = snap.to_dict() or {}
+        materialization_id = str(payload.get("materialization_id") or "")
+        if not materialization_id:
+            return None
+        return self.get_materialization(
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            dataset_id=dataset_id,
+            materialization_id=materialization_id,
+        )
+
+    def put_publish_receipt(self, receipt: PublishReadinessReceipt) -> PublishReadinessReceipt:
+        col = (
+            self._dataset_ref(receipt.tenant_id, receipt.workspace_id, receipt.dataset_id)
+            .collection(COLLECTION_PUBLISH_RECEIPTS)
+        )
+        col.document(receipt.run_id).set(model_to_document(receipt))
+        col.document(receipt.receipt_id).set(model_to_document(receipt))
+        return receipt
+
+    def get_current_publish_receipt(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> PublishReadinessReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_PUBLISH_RECEIPTS)
+            .document(run_id)
+            .get()
+        )
+        if not snap.exists:
+            return None
+        receipt = document_to_model(PublishReadinessReceipt, snap.to_dict())
+        if receipt.tenant_id != tenant_id:
+            return None
+        return receipt
+
+    def put_publish_execution(
+        self, receipt: PublishExecutionReceipt, *, authority_fingerprint: str
+    ) -> PublishExecutionReceipt:
+        col = (
+            self._dataset_ref(receipt.tenant_id, receipt.workspace_id, receipt.dataset_id)
+            .collection(COLLECTION_PUBLISH_EXECUTIONS)
+        )
+        col.document(receipt.publish_id).set(model_to_document(receipt))
+        if receipt.status.value == "COMPLETE":
+            col.document(f"authority_{authority_fingerprint}").set(
+                {"publish_id": receipt.publish_id, "run_id": receipt.run_id}
+            )
+        return receipt
+
+    def get_publish_execution(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        publish_id: str,
+    ) -> PublishExecutionReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_PUBLISH_EXECUTIONS)
+            .document(publish_id)
+            .get()
+        )
+        if not snap.exists:
+            return None
+        receipt = document_to_model(PublishExecutionReceipt, snap.to_dict())
+        if receipt.tenant_id != tenant_id or receipt.run_id != run_id:
+            return None
+        return receipt
+
+    def list_publish_executions(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> list[PublishExecutionReceipt]:
+        snaps = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_PUBLISH_EXECUTIONS)
+            .stream()
+        )
+        rows: list[PublishExecutionReceipt] = []
+        for snap in snaps:
+            if snap.id.startswith("authority_"):
+                continue
+            receipt = document_to_model(PublishExecutionReceipt, snap.to_dict())
+            if receipt.tenant_id == tenant_id and receipt.run_id == run_id:
+                rows.append(receipt)
+        return sorted(rows, key=lambda row: row.started_at)
+
+    def get_publish_execution_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        authority_fingerprint: str,
+    ) -> PublishExecutionReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_PUBLISH_EXECUTIONS)
+            .document(f"authority_{authority_fingerprint}")
+            .get()
+        )
+        if not snap.exists:
+            return None
+        payload = snap.to_dict() or {}
+        publish_id = str(payload.get("publish_id") or "")
+        if not publish_id:
+            return None
+        return self.get_publish_execution(
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            dataset_id=dataset_id,
+            run_id=run_id,
+            publish_id=publish_id,
+        )
+
     def delete_document_tree_for_qualification(self, tenant_id: str) -> list[str]:
         """Delete a synthetic qualification tenant subtree. Not a product API."""
         deleted: list[str] = []
@@ -1014,6 +1206,15 @@ class FirestoreControlPlaneRepository:
                 for receipt in ds.reference.collection(COLLECTION_IMPORT_RECEIPTS).stream():
                     receipt.reference.delete()
                     deleted.append(receipt.reference.path)
+                for materialization in ds.reference.collection(COLLECTION_MATERIALIZATIONS).stream():
+                    materialization.reference.delete()
+                    deleted.append(materialization.reference.path)
+                for publish_receipt in ds.reference.collection(COLLECTION_PUBLISH_RECEIPTS).stream():
+                    publish_receipt.reference.delete()
+                    deleted.append(publish_receipt.reference.path)
+                for publish_exec in ds.reference.collection(COLLECTION_PUBLISH_EXECUTIONS).stream():
+                    publish_exec.reference.delete()
+                    deleted.append(publish_exec.reference.path)
                 ds.reference.delete()
                 deleted.append(ds.reference.path)
             ws.reference.delete()

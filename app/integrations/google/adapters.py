@@ -8,6 +8,8 @@ from typing import Any, Protocol
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from app.publish_execution.namespace import is_reserved_bigquery_table
+
 
 @dataclass(frozen=True, slots=True)
 class GoogleTokenSet:
@@ -69,6 +71,20 @@ class DriveClient(Protocol):
 
     def download_file(self, *, access_token: str, file_id: str) -> bytes: ...
 
+    def upload_file(
+        self,
+        *,
+        access_token: str,
+        name: str,
+        parent_id: str,
+        data: bytes,
+        mime_type: str,
+    ) -> DriveFile: ...
+
+    def find_child(
+        self, *, access_token: str, parent_id: str, name: str
+    ) -> DriveFile | None: ...
+
 
 class BigQueryClient(Protocol):
     def list_projects(self, *, access_token: str) -> list[dict[str, str]]: ...
@@ -106,6 +122,56 @@ class BigQueryClient(Protocol):
     def get_table_physical(
         self, *, access_token: str, project_id: str, dataset_id: str, table_id: str
     ) -> dict[str, Any] | None: ...
+
+    def export_table_rows(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+        max_rows: int,
+    ) -> tuple[list[str], list[dict[str, object]]]: ...
+
+    def write_versioned_table(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+        columns: list[str],
+        rows: list[list[object]],
+        location: str,
+    ) -> BigQueryTableInfo: ...
+
+    def get_table_rows(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+    ) -> tuple[list[str], list[list[object]]] | None: ...
+
+    def set_current_view(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        view_id: str,
+        table_id: str,
+    ) -> dict[str, str]: ...
+
+    def get_current_view(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        view_id: str,
+    ) -> dict[str, str] | None: ...
 
 
 class FakeGoogleOAuthProvider:
@@ -151,10 +217,14 @@ class FakeGoogleOAuthProvider:
 class FakeDriveClient:
     def __init__(self) -> None:
         self.files: dict[str, DriveFile] = {}
+        self.payloads: dict[str, bytes] = {}
         self.created: list[str] = []
+        self.uploaded: list[str] = []
 
-    def seed(self, file: DriveFile) -> None:
+    def seed(self, file: DriveFile, payload: bytes | None = None) -> None:
         self.files[file.file_id] = file
+        if payload is not None:
+            self.payloads[file.file_id] = payload
 
     def get_file(self, *, access_token: str, file_id: str) -> DriveFile | None:
         del access_token
@@ -185,8 +255,48 @@ class FakeDriveClient:
         del access_token
         found = self.files.get(file_id)
         if found is None:
-            raise KeyError("Drive file not found.")
-        return f"{found.name}".encode()
+            raise FileNotFoundError(file_id)
+        if file_id in self.payloads:
+            return self.payloads[file_id]
+        return found.name.encode()
+
+    def upload_file(
+        self,
+        *,
+        access_token: str,
+        name: str,
+        parent_id: str,
+        data: bytes,
+        mime_type: str,
+    ) -> DriveFile:
+        del access_token
+        existing = self.find_child(access_token="", parent_id=parent_id, name=name)
+        if existing is not None:
+            raise FileExistsError(name)
+        file_id = f"file_{len(self.files) + 1:04d}"
+        uploaded = DriveFile(
+            file_id=file_id,
+            name=name,
+            mime_type=mime_type,
+            parents=(parent_id,),
+            md5=f"md5-{len(data)}",
+            head_revision_id=f"rev-{len(data)}",
+            version="1",
+            size_bytes=len(data),
+        )
+        self.files[file_id] = uploaded
+        self.payloads[file_id] = data
+        self.uploaded.append(file_id)
+        return uploaded
+
+    def find_child(
+        self, *, access_token: str, parent_id: str, name: str
+    ) -> DriveFile | None:
+        del access_token
+        for item in self.files.values():
+            if name == item.name and parent_id in item.parents:
+                return item
+        return None
 
     def trash(self, file_id: str) -> None:
         existing = self.files.get(file_id)
@@ -210,6 +320,9 @@ class FakeBigQueryClient:
         self.projects: list[dict[str, str]] = []
         self.datasets: dict[str, dict[str, Any]] = {}
         self.tables: dict[str, BigQueryTableInfo] = {}
+        self.table_rows: dict[str, tuple[list[str], list[dict[str, object]]]] = {}
+        self.published_tables: dict[str, tuple[list[str], list[list[object]]]] = {}
+        self.current_views: dict[str, str] = {}
         self.created_datasets: list[str] = []
         self.discovery_tokens: list[str] = []
 
@@ -324,6 +437,104 @@ class FakeBigQueryClient:
             "partitioning_type": None,
             "clustering_fields": (),
         }
+
+    def seed_table_rows(
+        self,
+        *,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+        columns: list[str],
+        rows: list[dict[str, object]],
+    ) -> None:
+        self.table_rows[f"{project_id}.{dataset_id}.{table_id}"] = (list(columns), list(rows))
+
+    def export_table_rows(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+        max_rows: int,
+    ) -> tuple[list[str], list[dict[str, object]]]:
+        self.discovery_tokens.append(access_token)
+        columns, rows = self.table_rows.get(
+            f"{project_id}.{dataset_id}.{table_id}", ([], [])
+        )
+        return list(columns), list(rows[:max_rows])
+
+    def write_versioned_table(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+        columns: list[str],
+        rows: list[list[object]],
+        location: str,
+    ) -> BigQueryTableInfo:
+        self.discovery_tokens.append(access_token)
+        if is_reserved_bigquery_table(table_id):
+            raise PermissionError(table_id)
+        key = f"{project_id}.{dataset_id}.{table_id}"
+        if key in self.tables or key in self.published_tables:
+            raise FileExistsError(key)
+        info = BigQueryTableInfo(
+            project_id=project_id,
+            dataset_id=dataset_id,
+            table_id=table_id,
+            object_type="TABLE",
+            schema_fingerprint=":".join(columns),
+            etag=f"etag-{table_id}",
+            last_modified="2026-08-22T00:00:00Z",
+            num_bytes=sum(len(json.dumps(row)) for row in rows),
+            num_rows=len(rows),
+            location=location,
+        )
+        self.tables[key] = info
+        self.published_tables[key] = (list(columns), [list(row) for row in rows])
+        return info
+
+    def get_table_rows(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+    ) -> tuple[list[str], list[list[object]]] | None:
+        self.discovery_tokens.append(access_token)
+        return self.published_tables.get(f"{project_id}.{dataset_id}.{table_id}")
+
+    def set_current_view(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        view_id: str,
+        table_id: str,
+    ) -> dict[str, str]:
+        self.discovery_tokens.append(access_token)
+        key = f"{project_id}.{dataset_id}.{view_id}"
+        self.current_views[key] = table_id
+        return {"view_id": view_id, "table_id": table_id}
+
+    def get_current_view(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        view_id: str,
+    ) -> dict[str, str] | None:
+        self.discovery_tokens.append(access_token)
+        table_id = self.current_views.get(f"{project_id}.{dataset_id}.{view_id}")
+        if table_id is None:
+            return None
+        return {"view_id": view_id, "table_id": table_id}
 
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"

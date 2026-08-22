@@ -25,13 +25,23 @@ from app.governance.publish_evaluator import (
     customer_model_ready_table_id,
     evaluate_publish_readiness,
 )
+from app.publish_execution.model_ready import (
+    ModelReadyEvidenceResolver,
+    NullModelReadyEvidenceResolver,
+)
 from app.service.entitlements import require_feature
 from app.service.errors import resource_not_found
 
 
 class PublishGovernanceService:
-    def __init__(self, *, repo: ControlPlaneRepository) -> None:
+    def __init__(
+        self,
+        *,
+        repo: ControlPlaneRepository,
+        model_ready: ModelReadyEvidenceResolver | None = None,
+    ) -> None:
         self._repo = repo
+        self._model_ready = model_ready or NullModelReadyEvidenceResolver()
 
     def evaluate(self, *, workspace_id: str, dataset_id: str, run_id: str):
         require_feature(self._repo, Feature.BIGQUERY_PUBLISH)
@@ -43,9 +53,14 @@ class PublishGovernanceService:
             or evaluation.dataset_id != dataset_id
         ):
             raise resource_not_found()
-        # Evaluation ACCEPTED is not MODEL_READY. M2-11 does not fabricate MODEL_READY.
-        model_ready_verified = False
-        model_ready_fingerprint = None
+        evidence = self._model_ready.resolve(
+            tenant_id=tenant.tenant_id,
+            workspace_id=workspace_id,
+            dataset_id=dataset_id,
+            run_id=run_id,
+        )
+        model_ready_verified = evidence is not None and bool(evidence.fingerprint)
+        model_ready_fingerprint = None if evidence is None else evidence.fingerprint
         destinations: list[PublishDestination] = []
         drive = self._repo.get_drive_binding(
             tenant_id=tenant.tenant_id, workspace_id=workspace_id
@@ -92,6 +107,7 @@ class PublishGovernanceService:
             update={"contract_fingerprint": contract.compute_fingerprint()}
         )
         receipt = evaluate_publish_readiness(contract)
+        self._repo.put_publish_receipt(receipt)
         return contract, receipt
 
 

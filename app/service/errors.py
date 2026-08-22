@@ -179,6 +179,15 @@ def billing_customer_unavailable() -> APIError:
     )
 
 
+def governance_denied(*, code: str, detail: str) -> APIError:
+    return APIError(
+        code=code,
+        status=409,
+        title="Governance denied",
+        detail=detail,
+    )
+
+
 def validation_error(errors: list[ProblemFieldError]) -> APIError:
     return APIError(
         code="VALIDATION_ERROR",

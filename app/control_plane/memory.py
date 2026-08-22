@@ -61,6 +61,9 @@ from app.core.errors import (
 )
 from app.core.identifiers import validate_resource_identifier
 from app.governance.import_contract import ImportReadinessReceipt
+from app.governance.publish_contract import PublishReadinessReceipt
+from app.materialization.contracts import SourceMaterializationReceipt
+from app.publish_execution.contracts import PublishExecutionReceipt
 
 
 class InMemoryControlPlaneRepository:
@@ -87,6 +90,11 @@ class InMemoryControlPlaneRepository:
         self._import_selections: dict[str, DatasetImportSelection] = {}
         self._import_receipts: dict[str, ImportReadinessReceipt] = {}
         self._current_import_receipts: dict[str, str] = {}
+        self._materializations: dict[str, SourceMaterializationReceipt] = {}
+        self._materialization_authority: dict[str, str] = {}
+        self._publish_receipts: dict[str, PublishReadinessReceipt] = {}
+        self._publish_executions: dict[str, PublishExecutionReceipt] = {}
+        self._publish_authority: dict[str, str] = {}
 
     def create_tenant(
         self,
@@ -728,6 +736,161 @@ class InMemoryControlPlaneRepository:
             if receipt is None or receipt.tenant_id != tenant_id:
                 return None
             return deepcopy(receipt)
+
+    def put_materialization(
+        self, receipt: SourceMaterializationReceipt
+    ) -> SourceMaterializationReceipt:
+        with self._lock:
+            key = (
+                f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                f"{receipt.dataset_id}/{receipt.materialization_id}"
+            )
+            self._materializations[key] = receipt
+            if receipt.status.value == "COMPLETE":
+                auth_key = (
+                    f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                    f"{receipt.dataset_id}/{receipt.authority_fingerprint}"
+                )
+                self._materialization_authority[auth_key] = receipt.materialization_id
+            return deepcopy(receipt)
+
+    def get_materialization(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        materialization_id: str,
+    ) -> SourceMaterializationReceipt | None:
+        with self._lock:
+            receipt = self._materializations.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{materialization_id}"
+            )
+            if receipt is None or receipt.tenant_id != tenant_id:
+                return None
+            return deepcopy(receipt)
+
+    def list_materializations(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str
+    ) -> list[SourceMaterializationReceipt]:
+        with self._lock:
+            prefix = f"{tenant_id}/{workspace_id}/{dataset_id}/"
+            rows = [
+                deepcopy(item)
+                for key, item in self._materializations.items()
+                if key.startswith(prefix) and item.tenant_id == tenant_id
+            ]
+            return sorted(rows, key=lambda row: row.started_at)
+
+    def get_materialization_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        authority_fingerprint: str,
+    ) -> SourceMaterializationReceipt | None:
+        with self._lock:
+            materialization_id = self._materialization_authority.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{authority_fingerprint}"
+            )
+            if materialization_id is None:
+                return None
+            return self.get_materialization(
+                tenant_id=tenant_id,
+                workspace_id=workspace_id,
+                dataset_id=dataset_id,
+                materialization_id=materialization_id,
+            )
+
+    def put_publish_receipt(self, receipt: PublishReadinessReceipt) -> PublishReadinessReceipt:
+        with self._lock:
+            key = (
+                f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                f"{receipt.dataset_id}/{receipt.run_id}"
+            )
+            self._publish_receipts[key] = receipt
+            return deepcopy(receipt)
+
+    def get_current_publish_receipt(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> PublishReadinessReceipt | None:
+        with self._lock:
+            receipt = self._publish_receipts.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{run_id}"
+            )
+            if receipt is None or receipt.tenant_id != tenant_id:
+                return None
+            return deepcopy(receipt)
+
+    def put_publish_execution(
+        self, receipt: PublishExecutionReceipt, *, authority_fingerprint: str
+    ) -> PublishExecutionReceipt:
+        with self._lock:
+            key = (
+                f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                f"{receipt.dataset_id}/{receipt.run_id}/{receipt.publish_id}"
+            )
+            self._publish_executions[key] = receipt
+            if receipt.status.value == "COMPLETE":
+                auth_key = (
+                    f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                    f"{receipt.dataset_id}/{receipt.run_id}/{authority_fingerprint}"
+                )
+                self._publish_authority[auth_key] = receipt.publish_id
+            return deepcopy(receipt)
+
+    def get_publish_execution(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        publish_id: str,
+    ) -> PublishExecutionReceipt | None:
+        with self._lock:
+            receipt = self._publish_executions.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{run_id}/{publish_id}"
+            )
+            if receipt is None or receipt.tenant_id != tenant_id:
+                return None
+            return deepcopy(receipt)
+
+    def list_publish_executions(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> list[PublishExecutionReceipt]:
+        with self._lock:
+            prefix = f"{tenant_id}/{workspace_id}/{dataset_id}/{run_id}/"
+            rows = [
+                deepcopy(item)
+                for key, item in self._publish_executions.items()
+                if key.startswith(prefix) and item.tenant_id == tenant_id
+            ]
+            return sorted(rows, key=lambda row: row.started_at)
+
+    def get_publish_execution_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        authority_fingerprint: str,
+    ) -> PublishExecutionReceipt | None:
+        with self._lock:
+            publish_id = self._publish_authority.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{run_id}/{authority_fingerprint}"
+            )
+            if publish_id is None:
+                return None
+            return self.get_publish_execution(
+                tenant_id=tenant_id,
+                workspace_id=workspace_id,
+                dataset_id=dataset_id,
+                run_id=run_id,
+                publish_id=publish_id,
+            )
 
     @staticmethod
     def _upload_key(

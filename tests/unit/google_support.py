@@ -27,7 +27,7 @@ from app.service.upload_signing import FakeUploadSigner
 from tests.unit.api_support import auth_header, seed_tenant
 
 
-def google_harness(*, plan_id: str = PlanId.PROJECT):
+def google_harness(*, plan_id: str = PlanId.PROJECT, **app_kwargs):
     oauth = FakeGoogleOAuthProvider()
     drive = FakeDriveClient()
     bigquery = FakeBigQueryClient()
@@ -59,6 +59,7 @@ def google_harness(*, plan_id: str = PlanId.PROJECT):
         google_credential_vault=vault,
         google_drive_client=drive,
         google_bigquery_client=bigquery,
+        **app_kwargs,
     )
     client = TestClient(app, raise_server_exceptions=False)
     workspace = client.post(

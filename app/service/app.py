@@ -50,6 +50,13 @@ from app.service.evaluation_service import EvaluationService
 from app.service.google_bigquery import BigQueryBindingService
 from app.service.google_drive import DriveBindingService
 from app.service.google_oauth import GoogleConnectionService
+from app.materialization.foundation_compat import FoundationSourceGate
+from app.materialization.service import MaterializationService
+from app.publish_execution.model_ready import (
+    ModelReadyEvidenceResolver,
+    NullModelReadyEvidenceResolver,
+)
+from app.publish_execution.service import PublishExecutionService
 from app.service.import_governance import ImportGovernanceService
 from app.service.middleware import RequestIdMiddleware, current_request_id
 from app.service.models import PlanCatalogResponse
@@ -69,6 +76,8 @@ from app.service.routers import (
     identity,
     identity_webhooks,
     import_governance,
+    materializations,
+    publishes,
     runs,
     uploads,
     workspaces,
@@ -100,6 +109,8 @@ def create_app(
     google_credential_vault=None,
     google_drive_client=None,
     google_bigquery_client=None,
+    foundation_source_gate: FoundationSourceGate | None = None,
+    model_ready_resolver: ModelReadyEvidenceResolver | None = None,
 ) -> FastAPI:
     cfg = settings or load_settings()
     assert_provider_mode_safe(cfg)
@@ -164,6 +175,7 @@ def create_app(
         vault=google_credential_vault,
         drive_client=google_drive_client,
         bigquery_client=google_bigquery_client,
+        model_ready_resolver=model_ready_resolver,
     )
     app.state.google_connections = google_services["connections"]
     app.state.drive_bindings = google_services["drive"]
@@ -182,6 +194,26 @@ def create_app(
         bigquery_client=google_services["bq_client"],
         drive_client=google_services["drive_client"],
     )
+    upload = app.state.upload_service
+    app.state.materialization = MaterializationService(
+        repo=repo,
+        import_governance=google_services["import_governance"],
+        upload_service=upload,
+        connections=google_services["connections"],
+        drive=google_services["drive_client"],
+        bigquery=google_services["bq_client"],
+        object_store=upload._store,
+        upload_config=upload._config,
+        foundation_gate=foundation_source_gate,
+    )
+    app.state.publish_execution = PublishExecutionService(
+        repo=repo,
+        publish_governance=google_services["publish_governance"],
+        connections=google_services["connections"],
+        drive=google_services["drive_client"],
+        bigquery=google_services["bq_client"],
+        model_ready=google_services["model_ready"],
+    )
 
     app.add_middleware(RequestIdMiddleware)
     app.include_router(health.router)
@@ -197,6 +229,8 @@ def create_app(
     app.include_router(import_governance.router)
     app.include_router(business_iq.router)
     app.include_router(data_foundation.router)
+    app.include_router(materializations.router)
+    app.include_router(publishes.router)
     app.include_router(billing.router)
     app.include_router(identity_webhooks.router)
 
@@ -340,6 +374,7 @@ def _default_google_services(
     vault,
     drive_client,
     bigquery_client,
+    model_ready_resolver: ModelReadyEvidenceResolver | None = None,
 ) -> dict:
     oauth = oauth_provider
     if oauth is None and settings.google_oauth_client_id and settings.google_oauth_client_secret:
@@ -387,7 +422,10 @@ def _default_google_services(
         "import_governance": ImportGovernanceService(
             repo=repo, connections=connections, drive=drive, bigquery=bq
         ),
-        "publish_governance": PublishGovernanceService(repo=repo),
+        "publish_governance": PublishGovernanceService(
+            repo=repo, model_ready=model_ready_resolver
+        ),
+        "model_ready": model_ready_resolver or NullModelReadyEvidenceResolver(),
     }
 
 

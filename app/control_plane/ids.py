@@ -63,3 +63,11 @@ def new_receipt_id() -> str:
 
 def new_import_object_id() -> str:
     return _opaque("iobj")
+
+
+def new_materialization_id() -> str:
+    return _opaque("matl")
+
+
+def new_publish_id() -> str:
+    return _opaque("pub")
