@@ -35,6 +35,8 @@ from app.materialization.drive import (
 )
 from app.materialization.foundation_compat import (
     FOUNDATION_SOURCE_READY,
+    FoundationLineageError,
+    FoundationSourceAuthorityDenied,
     FoundationSourceEvidence,
     FoundationSourceGate,
     NullFoundationSourceGate,
@@ -138,20 +140,32 @@ class MaterializationService:
                 code=GovernanceCheckCode.SOURCE_CHANGED_SINCE_IMPORT_READY.value,
                 detail="Source version changed since IMPORT_READY. Re-run import governance.",
             )
-        source_binding_id = selection.binding_id or selection.upload_id or ""
-        foundation = None
-        if source_binding_id:
+        source_binding_id = (
+            live.source_binding_id or selection.binding_id or selection.upload_id or ""
+        )
+        source_identities = tuple(item.source_identity for item in live.objects)
+        import_roles = tuple(item.role.value for item in live.objects)
+        try:
             foundation = self._foundation.get_source_materialization_evidence(
                 tenant_id=tenant.tenant_id,
                 workspace_id=workspace_id,
                 source_binding_id=source_binding_id,
+                source_identities=source_identities,
+                import_roles=import_roles,
             )
+        except FoundationSourceAuthorityDenied:
+            raise resource_not_found() from None
+        except FoundationLineageError as exc:
+            raise governance_denied(
+                code=GovernanceCheckCode.FOUNDATION_LINEAGE_MISMATCH.value,
+                detail=exc.detail,
+            ) from exc
         if foundation is not None:
             self._require_dual_gate(
                 foundation,
                 tenant_id=tenant.tenant_id,
                 workspace_id=workspace_id,
-                source_binding_id=source_binding_id,
+                source_binding_id=foundation.source_binding_id,
             )
         versions = [item.version_identity for item in live.objects]
         authority = authority_fingerprint(
@@ -246,6 +260,11 @@ class MaterializationService:
             foundation_status=None if foundation is None else foundation.status_code,
             business_profile_snapshot_id=(
                 None if foundation is None else foundation.business_profile_snapshot_id
+            ),
+            business_profile_snapshot_fingerprint=(
+                None
+                if foundation is None
+                else foundation.business_profile_snapshot_fingerprint
             ),
             evidence_requirement_ids=(
                 [] if foundation is None else list(foundation.evidence_requirement_ids)
@@ -545,9 +564,12 @@ class MaterializationService:
                     GovernanceCheckCode.SOURCE_COPY_INCOMPLETE.value,
                     "Drive file download returned no bytes.",
                 )
+            filename = obj.logical_name
+            if not filename.endswith(f".{fmt}") and "." not in filename:
+                filename = f"{filename}.{fmt}"
             files.append(
                 {
-                    "filename": obj.logical_name if obj.logical_name.endswith(f".{fmt}") else f"{obj.logical_name}.{fmt}" if "." not in obj.logical_name else obj.logical_name,
+                    "filename": filename,
                     "content_type": content_type_for_format(fmt),
                     "data": data,
                 }
@@ -602,8 +624,9 @@ class MaterializationService:
                 )
             except OverflowError as exc:
                 raise MaterializationFailure(
-                    GovernanceCheckCode.SOURCE_MATERIALIZATION_FAILED.value,
-                    "BigQuery materialization is bounded and the table exceeds the safe row limit.",
+                    GovernanceCheckCode.MATERIALIZATION_LIMIT_EXCEEDED.value,
+                    "BigQuery materialization is bounded at 100000 rows. "
+                    "Unsupported size is rejected; the table is not truncated.",
                 ) from exc
             except LookupError as exc:
                 raise MaterializationFailure(
@@ -655,6 +678,14 @@ class MaterializationService:
                 None if foundation is None else foundation.source_foundation_receipt_id
             ),
             foundation_status=None if foundation is None else foundation.status_code,
+            business_profile_snapshot_id=(
+                None if foundation is None else foundation.business_profile_snapshot_id
+            ),
+            business_profile_snapshot_fingerprint=(
+                None
+                if foundation is None
+                else foundation.business_profile_snapshot_fingerprint
+            ),
             evidence_requirement_ids=(
                 [] if foundation is None else list(foundation.evidence_requirement_ids)
             ),

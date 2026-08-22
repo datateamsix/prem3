@@ -26,9 +26,9 @@ from app.publish_execution.contracts import (
     DestinationResult,
     DestinationResultKind,
     DestinationWriteStatus,
+    PublishedArtifact,
     PublishExecutionReceipt,
     PublishExecutionStatus,
-    PublishedArtifact,
     publish_authority_fingerprint,
 )
 from app.publish_execution.model_ready import ModelReadyEvidenceResolver

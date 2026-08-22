@@ -694,6 +694,40 @@ class RestDriveClient:
             f"{DRIVE_FILES_URL}/{file_id}?alt=media", access_token=access_token
         )
 
+    def upload_file(
+        self,
+        *,
+        access_token: str,
+        name: str,
+        parent_id: str,
+        data: bytes,
+        mime_type: str,
+    ) -> DriveFile:
+        existing = self.find_child(access_token=access_token, parent_id=parent_id, name=name)
+        if existing is not None:
+            raise FileExistsError(name)
+        metadata = {"name": name, "parents": [parent_id], "mimeType": mime_type}
+        payload = _authorized_multipart(
+            "https://www.googleapis.com/upload/drive/v3/files"
+            "?uploadType=multipart&fields=id,name,mimeType,parents,"
+            "md5Checksum,headRevisionId,version,size,trashed",
+            access_token=access_token,
+            metadata=metadata,
+            data=data,
+            mime_type=mime_type,
+        )
+        if payload is None:
+            raise ValueError("Drive file upload failed.")
+        return _drive_file_from_json(payload)
+
+    def find_child(
+        self, *, access_token: str, parent_id: str, name: str
+    ) -> DriveFile | None:
+        for item in self.list_children(access_token=access_token, folder_id=parent_id):
+            if item.name == name:
+                return item
+        return None
+
 
 class RestBigQueryClient:
     """Live BigQuery adapter for metadata, preview, and depot writes."""
@@ -883,6 +917,256 @@ class RestBigQueryClient:
             else (),
         }
 
+    def export_table_rows(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+        max_rows: int,
+    ) -> tuple[list[str], list[dict[str, object]]]:
+        table = self.get_table(
+            access_token=access_token,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            table_id=table_id,
+        )
+        if table is None:
+            raise LookupError(f"{project_id}.{dataset_id}.{table_id}")
+        if table.num_rows > max_rows:
+            raise OverflowError(table.num_rows)
+        columns, rows = self._list_table_data(
+            access_token=access_token,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            table_id=table_id,
+            max_rows=max_rows,
+        )
+        if len(rows) > max_rows:
+            raise OverflowError(len(rows))
+        return columns, rows
+
+    def write_versioned_table(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+        columns: list[str],
+        rows: list[list[object]],
+        location: str,
+    ) -> BigQueryTableInfo:
+        if is_reserved_bigquery_table(table_id):
+            raise PermissionError(table_id)
+        existing = self.get_table(
+            access_token=access_token,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            table_id=table_id,
+        )
+        if existing is not None:
+            raise FileExistsError(f"{project_id}.{dataset_id}.{table_id}")
+        schema = {
+            "fields": [
+                {"name": name, "type": _bigquery_field_type(rows, index)}
+                for index, name in enumerate(columns)
+            ]
+        }
+        created = _authorized_json(
+            f"{BQ_API}/projects/{project_id}/datasets/{dataset_id}/tables",
+            access_token=access_token,
+            method="POST",
+            json_body={
+                "tableReference": {
+                    "projectId": project_id,
+                    "datasetId": dataset_id,
+                    "tableId": table_id,
+                },
+                "schema": schema,
+                "location": location,
+            },
+        )
+        if created is None:
+            raise ValueError("BigQuery versioned table create failed.")
+        if rows:
+            inserted = _authorized_json(
+                f"{BQ_API}/projects/{project_id}/datasets/{dataset_id}/tables/{table_id}/insertAll",
+                access_token=access_token,
+                method="POST",
+                json_body={
+                    "rows": [
+                        {
+                            "insertId": str(index),
+                            "json": {
+                                columns[col]: row[col] if col < len(row) else None
+                                for col in range(len(columns))
+                            },
+                        }
+                        for index, row in enumerate(rows)
+                    ]
+                },
+            )
+            if inserted is None or inserted.get("insertErrors"):
+                raise ValueError("BigQuery versioned table insert failed.")
+        written = self.get_table(
+            access_token=access_token,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            table_id=table_id,
+        )
+        if written is None:
+            raise ValueError("BigQuery versioned table readback failed.")
+        return written
+
+    def get_table_rows(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+    ) -> tuple[list[str], list[list[object]]] | None:
+        table = self.get_table(
+            access_token=access_token,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            table_id=table_id,
+        )
+        if table is None:
+            return None
+        columns, rows = self._list_table_data(
+            access_token=access_token,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            table_id=table_id,
+            max_rows=max(table.num_rows, 1),
+        )
+        return columns, [[row.get(column) for column in columns] for row in rows]
+
+    def set_current_view(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        view_id: str,
+        table_id: str,
+    ) -> dict[str, str]:
+        query = (
+            f"SELECT artifact, bytes FROM `{project_id}.{dataset_id}.{table_id}`"
+        )
+        body = {
+            "tableReference": {
+                "projectId": project_id,
+                "datasetId": dataset_id,
+                "tableId": view_id,
+            },
+            "view": {"query": query, "useLegacySql": False},
+        }
+        existing = self.get_table(
+            access_token=access_token,
+            project_id=project_id,
+            dataset_id=dataset_id,
+            table_id=view_id,
+        )
+        if existing is None:
+            created = _authorized_json(
+                f"{BQ_API}/projects/{project_id}/datasets/{dataset_id}/tables",
+                access_token=access_token,
+                method="POST",
+                json_body=body,
+            )
+            if created is None:
+                raise ValueError("BigQuery current pointer create failed.")
+        else:
+            patched = _authorized_json(
+                f"{BQ_API}/projects/{project_id}/datasets/{dataset_id}/tables/{view_id}",
+                access_token=access_token,
+                method="PATCH",
+                json_body={"view": body["view"]},
+            )
+            if patched is None:
+                raise ValueError("BigQuery current pointer update failed.")
+        return {"view_id": view_id, "table_id": table_id}
+
+    def get_current_view(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        view_id: str,
+    ) -> dict[str, str] | None:
+        payload = _authorized_json(
+            f"{BQ_API}/projects/{project_id}/datasets/{dataset_id}/tables/{view_id}",
+            access_token=access_token,
+        )
+        if payload is None:
+            return None
+        query = str(((payload.get("view") or {}).get("query")) or "")
+        if not query:
+            return None
+        return {"view_id": view_id, "table_id": query.rsplit(".", 1)[-1].strip("`")}
+
+    def _list_table_data(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        dataset_id: str,
+        table_id: str,
+        max_rows: int,
+    ) -> tuple[list[str], list[dict[str, object]]]:
+        table_payload = _authorized_json(
+            f"{BQ_API}/projects/{project_id}/datasets/{dataset_id}/tables/{table_id}",
+            access_token=access_token,
+        )
+        fields = ((table_payload or {}).get("schema") or {}).get("fields") or []
+        columns = [str(field.get("name")) for field in fields if field.get("name")]
+        rows: list[dict[str, object]] = []
+        page_token = ""
+        while len(rows) < max_rows:
+            query = urlencode(
+                {
+                    "maxResults": str(min(1000, max_rows - len(rows))),
+                    **({"pageToken": page_token} if page_token else {}),
+                }
+            )
+            payload = _authorized_json(
+                f"{BQ_API}/projects/{project_id}/datasets/{dataset_id}/tables/"
+                f"{table_id}/data?{query}",
+                access_token=access_token,
+            )
+            if payload is None:
+                break
+            for row in payload.get("rows") or []:
+                values = [cell.get("v") for cell in row.get("f") or []]
+                rows.append(
+                    {
+                        columns[index]: values[index] if index < len(values) else None
+                        for index in range(len(columns))
+                    }
+                )
+                if len(rows) >= max_rows:
+                    break
+            page_token = str(payload.get("pageToken") or "")
+            if not page_token:
+                break
+        return columns, rows
+
+
+def _bigquery_field_type(rows: list[list[object]], index: int) -> str:
+    for row in rows:
+        if index < len(row) and isinstance(row[index], bool):
+            return "BOOLEAN"
+        if index < len(row) and isinstance(row[index], int):
+            return "INTEGER"
+        if index < len(row) and isinstance(row[index], float):
+            return "FLOAT"
+    return "STRING"
+
 
 def _drive_file_from_json(payload: dict[str, Any]) -> DriveFile:
     parents = payload.get("parents") or ()
@@ -927,3 +1211,34 @@ def _authorized_bytes(url: str, *, access_token: str) -> bytes:
     request.add_header("Authorization", f"Bearer {access_token}")
     with urlopen(request, timeout=20) as response:
         return response.read()
+
+
+def _authorized_multipart(
+    url: str,
+    *,
+    access_token: str,
+    metadata: dict[str, Any],
+    data: bytes,
+    mime_type: str,
+) -> dict[str, Any] | None:
+    boundary = "prem3driveupload"
+    preamble = (
+        f"--{boundary}\r\n"
+        "Content-Type: application/json; charset=UTF-8\r\n\r\n"
+        f"{json.dumps(metadata)}\r\n"
+        f"--{boundary}\r\n"
+        f"Content-Type: {mime_type}\r\n\r\n"
+    ).encode()
+    body = preamble + data + f"\r\n--{boundary}--".encode()
+    request = Request(url, data=body, method="POST")
+    request.add_header("Authorization", f"Bearer {access_token}")
+    request.add_header("Content-Type", f"multipart/related; boundary={boundary}")
+    try:
+        with urlopen(request, timeout=60) as response:
+            raw = response.read().decode("utf-8")
+    except Exception:
+        return None
+    if not raw:
+        return {}
+    parsed = json.loads(raw)
+    return parsed if isinstance(parsed, dict) else None

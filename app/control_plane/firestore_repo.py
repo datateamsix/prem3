@@ -1206,10 +1206,14 @@ class FirestoreControlPlaneRepository:
                 for receipt in ds.reference.collection(COLLECTION_IMPORT_RECEIPTS).stream():
                     receipt.reference.delete()
                     deleted.append(receipt.reference.path)
-                for materialization in ds.reference.collection(COLLECTION_MATERIALIZATIONS).stream():
+                for materialization in (
+                    ds.reference.collection(COLLECTION_MATERIALIZATIONS).stream()
+                ):
                     materialization.reference.delete()
                     deleted.append(materialization.reference.path)
-                for publish_receipt in ds.reference.collection(COLLECTION_PUBLISH_RECEIPTS).stream():
+                for publish_receipt in (
+                    ds.reference.collection(COLLECTION_PUBLISH_RECEIPTS).stream()
+                ):
                     publish_receipt.reference.delete()
                     deleted.append(publish_receipt.reference.path)
                 for publish_exec in ds.reference.collection(COLLECTION_PUBLISH_EXECUTIONS).stream():

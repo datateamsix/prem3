@@ -27,6 +27,14 @@ from app.integrations.google.adapters import (
     RestGoogleOAuthProvider,
 )
 from app.integrations.google.vault import ControlPlaneCredentialVault, InMemoryCredentialVault
+from app.materialization.canonical_gate import CanonicalFoundationSourceGate
+from app.materialization.foundation_compat import FoundationSourceGate
+from app.materialization.service import MaterializationService
+from app.publish_execution.model_ready import (
+    ModelReadyEvidenceResolver,
+    NullModelReadyEvidenceResolver,
+)
+from app.publish_execution.service import PublishExecutionService
 from app.service.auth import IdentityVerifier, UnconfiguredIdentityVerifier
 from app.service.billing import BillingGateway, UnavailableBillingGateway
 from app.service.billing_config import BillingConfig
@@ -50,13 +58,6 @@ from app.service.evaluation_service import EvaluationService
 from app.service.google_bigquery import BigQueryBindingService
 from app.service.google_drive import DriveBindingService
 from app.service.google_oauth import GoogleConnectionService
-from app.materialization.foundation_compat import FoundationSourceGate
-from app.materialization.service import MaterializationService
-from app.publish_execution.model_ready import (
-    ModelReadyEvidenceResolver,
-    NullModelReadyEvidenceResolver,
-)
-from app.publish_execution.service import PublishExecutionService
 from app.service.import_governance import ImportGovernanceService
 from app.service.middleware import RequestIdMiddleware, current_request_id
 from app.service.models import PlanCatalogResponse
@@ -187,6 +188,8 @@ def create_app(
     app.state.google_drive_client = google_services["drive_client"]
     app.state.google_bigquery_client = google_services["bq_client"]
     business_iq_store, data_foundation_store = build_product_stores(repo)
+    app.state.business_iq_store = business_iq_store
+    app.state.data_foundation_store = data_foundation_store
     app.state.business_iq = BusinessIqService(store=business_iq_store)
     app.state.data_foundation = DataFoundationService(
         store=data_foundation_store,
@@ -194,6 +197,8 @@ def create_app(
         bigquery_client=google_services["bq_client"],
         drive_client=google_services["drive_client"],
     )
+    if foundation_source_gate is None:
+        foundation_source_gate = CanonicalFoundationSourceGate(data_foundation_store)
     upload = app.state.upload_service
     app.state.materialization = MaterializationService(
         repo=repo,

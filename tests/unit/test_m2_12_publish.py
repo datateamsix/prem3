@@ -16,7 +16,7 @@ from tests.unit.test_prem3_gcs_import_governance import _verified_upload
 
 
 def _artifacts() -> dict[str, bytes]:
-    return {name: f"{name}-bytes".encode("utf-8") for name in PUBLISH_DRIVE_ARTIFACTS}
+    return {name: f"{name}-bytes".encode() for name in PUBLISH_DRIVE_ARTIFACTS}
 
 
 def _create_evaluation(harness):

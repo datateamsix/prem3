@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-RESERVED_EXACT_TABLES: frozenset[str] = frozenset(
-    {"source_registry", "source_health", "model_input_mmm"}
+from app.data_foundation.owned_resources import (
+    DF_OWNED_EXACT_TABLES,
+    DF_OWNED_PREFIXES,
+    is_data_foundation_table,
 )
-RESERVED_PREFIXES: tuple[str, ...] = ("canonical_", "stg_")
+
+RESERVED_EXACT_TABLES: frozenset[str] = DF_OWNED_EXACT_TABLES
+RESERVED_PREFIXES: tuple[str, ...] = DF_OWNED_PREFIXES
 
 
 def is_reserved_bigquery_table(table_id: str) -> bool:
-    name = table_id.strip()
-    if name in RESERVED_EXACT_TABLES:
-        return True
-    return any(name.startswith(prefix) for prefix in RESERVED_PREFIXES)
+    return is_data_foundation_table(table_id)
 
 
 def assert_model_ready_namespace(table_id: str) -> None:

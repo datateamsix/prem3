@@ -5,7 +5,6 @@ from __future__ import annotations
 from app.integrations.google.adapters import DriveClient, DriveFile
 from app.integrations.google.formats import SHEETS_MIME, drive_format
 
-
 PROTECTED_DRIVE_PLANES: frozenset[str] = frozenset(
     {"imports", "sources", "business_data", "evidence"}
 )

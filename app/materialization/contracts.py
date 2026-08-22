@@ -59,6 +59,7 @@ class SourceMaterializationReceipt(BaseModel):
     foundation_source_receipt_id: str | None = None
     foundation_status: str | None = None
     business_profile_snapshot_id: str | None = None
+    business_profile_snapshot_fingerprint: str | None = None
     evidence_requirement_ids: list[str] = Field(default_factory=list)
     source_objects: list[SourceObjectLineage] = Field(default_factory=list)
     source_version_identities: list[str] = Field(default_factory=list)

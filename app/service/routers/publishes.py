@@ -12,9 +12,9 @@ from app.publish_execution.service import PublishExecutionService
 from app.service.dependencies import authenticated_tenant, authorized_dataset
 from app.service.models import (
     PublishDestinationResultResponse,
+    PublishedArtifactResponse,
     PublishExecutionListResponse,
     PublishExecutionResponse,
-    PublishedArtifactResponse,
 )
 
 router = APIRouter(

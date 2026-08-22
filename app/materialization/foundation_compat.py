@@ -1,7 +1,6 @@
-"""Smallest Data Foundation compatibility seam until PR #15 merges.
+"""Compatibility seam for non-canonical unit fixtures.
 
-Default implementation returns None: the import is not known to be
-Data Foundation-managed, so only IMPORT_READY is required.
+Production runtime uses CanonicalFoundationSourceGate.
 """
 
 from __future__ import annotations
@@ -10,9 +9,18 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 FOUNDATION_SOURCE_READY = "FOUNDATION_SOURCE_READY"
 FOUNDATION_SOURCE_NOT_READY = "FOUNDATION_SOURCE_NOT_READY"
+
+
+class FoundationSourceAuthorityDenied(Exception):
+    """Foreign or mismatched DF identity. Must be indistinguishable from not found."""
+
+
+class FoundationLineageError(Exception):
+    def __init__(self, detail: str) -> None:
+        super().__init__(detail)
+        self.detail = detail
 
 
 class FoundationSourceEvidence(BaseModel):
@@ -31,6 +39,7 @@ class FoundationSourceEvidence(BaseModel):
     tenant_id: str | None = None
     workspace_id: str | None = None
     business_profile_snapshot_id: str | None = None
+    business_profile_snapshot_fingerprint: str | None = None
     evidence_requirement_ids: list[str] = Field(default_factory=list)
     provider: str | None = None
     business_role: str | None = None
@@ -49,11 +58,13 @@ class FoundationSourceGate(Protocol):
         tenant_id: str,
         workspace_id: str,
         source_binding_id: str,
+        source_identities: tuple[str, ...] = (),
+        import_roles: tuple[str, ...] = (),
     ) -> FoundationSourceEvidence | None: ...
 
 
 class NullFoundationSourceGate:
-    """Current-main default: source is not Data Foundation-managed."""
+    """Explicit non-DF fixture. Not the production default."""
 
     def get_source_materialization_evidence(
         self,
@@ -61,13 +72,15 @@ class NullFoundationSourceGate:
         tenant_id: str,
         workspace_id: str,
         source_binding_id: str,
+        source_identities: tuple[str, ...] = (),
+        import_roles: tuple[str, ...] = (),
     ) -> FoundationSourceEvidence | None:
-        del tenant_id, workspace_id, source_binding_id
+        del tenant_id, workspace_id, source_binding_id, source_identities, import_roles
         return None
 
 
 class InMemoryFoundationSourceGate:
-    """Test double. Inject canonical DF evidence without importing PR #15."""
+    """Test double for fixtures that inject FoundationSourceEvidence directly."""
 
     def __init__(self) -> None:
         self._items: dict[tuple[str, str, str], FoundationSourceEvidence] = {}
@@ -83,5 +96,8 @@ class InMemoryFoundationSourceGate:
         tenant_id: str,
         workspace_id: str,
         source_binding_id: str,
+        source_identities: tuple[str, ...] = (),
+        import_roles: tuple[str, ...] = (),
     ) -> FoundationSourceEvidence | None:
+        del source_identities, import_roles
         return self._items.get((tenant_id, workspace_id, source_binding_id))

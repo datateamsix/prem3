@@ -1152,6 +1152,16 @@ components:
       - snapshot
       title: LoadSnapshotRequest
       type: object
+    MaterializeDatasetSourceRequest:
+      additionalProperties: false
+      properties:
+        idempotency_key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency Key
+      title: MaterializeDatasetSourceRequest
+      type: object
     MaterializeDriveRequest:
       additionalProperties: false
       properties:
@@ -1415,6 +1425,153 @@ components:
       - accept
       title: ProposalDecideRequest
       type: object
+    PublishDestinationResultResponse:
+      additionalProperties: false
+      properties:
+        artifacts_verified:
+          items:
+            $ref: '#/components/schemas/PublishedArtifactResponse'
+          title: Artifacts Verified
+          type: array
+        artifacts_written:
+          items:
+            $ref: '#/components/schemas/PublishedArtifactResponse'
+          title: Artifacts Written
+          type: array
+        binding_id:
+          title: Binding Id
+          type: string
+        content_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Content Fingerprint
+        failure_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Code
+        failure_detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Detail
+        kind:
+          title: Kind
+          type: string
+        readback_verified:
+          default: false
+          title: Readback Verified
+          type: boolean
+        row_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Row Count
+        schema_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Schema Fingerprint
+        stable_pointer_identity:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Stable Pointer Identity
+        status:
+          title: Status
+          type: string
+        target_presentation_identity:
+          title: Target Presentation Identity
+          type: string
+        versioned_resource_identity:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Versioned Resource Identity
+        write_completed:
+          default: false
+          title: Write Completed
+          type: boolean
+      required:
+      - kind
+      - binding_id
+      - target_presentation_identity
+      - status
+      title: PublishDestinationResultResponse
+      type: object
+    PublishExecutionListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/PublishExecutionResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: PublishExecutionListResponse
+      type: object
+    PublishExecutionResponse:
+      additionalProperties: false
+      properties:
+        completed_at:
+          format: date-time
+          title: Completed At
+          type: string
+        destination_results:
+          items:
+            $ref: '#/components/schemas/PublishDestinationResultResponse'
+          title: Destination Results
+          type: array
+        failure_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Code
+        failure_detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Detail
+        model_ready_fingerprint:
+          title: Model Ready Fingerprint
+          type: string
+        publish_contract_fingerprint:
+          title: Publish Contract Fingerprint
+          type: string
+        publish_id:
+          title: Publish Id
+          type: string
+        publish_readiness_receipt_id:
+          title: Publish Readiness Receipt Id
+          type: string
+        receipt_id:
+          title: Receipt Id
+          type: string
+        run_id:
+          title: Run Id
+          type: string
+        started_at:
+          format: date-time
+          title: Started At
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - publish_id
+      - receipt_id
+      - run_id
+      - status
+      - model_ready_fingerprint
+      - publish_readiness_receipt_id
+      - publish_contract_fingerprint
+      - destination_results
+      - started_at
+      - completed_at
+      title: PublishExecutionResponse
+      type: object
     PublishReadinessReceiptResponse:
       additionalProperties: false
       properties:
@@ -1478,6 +1635,34 @@ components:
       - contract_fingerprint
       - verified_at
       title: PublishReadinessReceiptResponse
+      type: object
+    PublishedArtifactResponse:
+      additionalProperties: false
+      properties:
+        checksum:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Checksum
+        identity:
+          title: Identity
+          type: string
+        name:
+          title: Name
+          type: string
+        size_bytes:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Size Bytes
+        verified:
+          default: false
+          title: Verified
+          type: boolean
+      required:
+      - name
+      - identity
+      title: PublishedArtifactResponse
       type: object
     ReadyProviderStatus:
       additionalProperties: false
@@ -1613,6 +1798,225 @@ components:
           - type: 'null'
           title: Target Window Start
       title: ReviseCycleRequest
+      type: object
+    SourceMaterializationListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/SourceMaterializationResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: SourceMaterializationListResponse
+      type: object
+    SourceMaterializationResponse:
+      additionalProperties: false
+      properties:
+        business_role:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Role
+        completed_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Completed At
+        dataset_id:
+          title: Dataset Id
+          type: string
+        failure_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Code
+        failure_detail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Detail
+        foundation_source_state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Foundation Source State
+        freshness:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Freshness
+        geography:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Geography
+        grain:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Grain
+        history:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: History
+        import_governance_state:
+          title: Import Governance State
+          type: string
+        import_manifest_fingerprint:
+          title: Import Manifest Fingerprint
+          type: string
+        import_receipt_id:
+          title: Import Receipt Id
+          type: string
+        materialization_id:
+          title: Materialization Id
+          type: string
+        materialization_state:
+          title: Materialization State
+          type: string
+        metrics:
+          items:
+            type: string
+          title: Metrics
+          type: array
+        premodel_review_findings:
+          items:
+            type: string
+          title: Premodel Review Findings
+          type: array
+        premodel_review_remaining:
+          default: false
+          title: Premodel Review Remaining
+          type: boolean
+        provider:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Provider
+        receipt_id:
+          title: Receipt Id
+          type: string
+        refresh_cadence:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Refresh Cadence
+        result_kind:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Kind
+        source_binding_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Binding Id
+        source_objects:
+          items:
+            $ref: '#/components/schemas/SourceObjectLineageResponse'
+          title: Source Objects
+          type: array
+        source_type:
+          title: Source Type
+          type: string
+        source_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Version
+        started_at:
+          format: date-time
+          title: Started At
+          type: string
+        upload_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upload Id
+        upload_package_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upload Package Fingerprint
+        upload_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upload Status
+      required:
+      - materialization_id
+      - receipt_id
+      - dataset_id
+      - source_type
+      - import_governance_state
+      - materialization_state
+      - import_receipt_id
+      - import_manifest_fingerprint
+      - started_at
+      title: SourceMaterializationResponse
+      type: object
+    SourceObjectLineageResponse:
+      additionalProperties: false
+      properties:
+        format:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Format
+        logical_name:
+          title: Logical Name
+          type: string
+        object_id:
+          title: Object Id
+          type: string
+        object_type:
+          title: Object Type
+          type: string
+        provider:
+          title: Provider
+          type: string
+        role:
+          title: Role
+          type: string
+        schema_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Schema Fingerprint
+        source_identity:
+          title: Source Identity
+          type: string
+        target_checksum:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Checksum
+        target_generation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Generation
+        upload_file_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upload File Id
+        version_identity:
+          title: Version Identity
+          type: string
+      required:
+      - object_id
+      - provider
+      - role
+      - logical_name
+      - source_identity
+      - version_identity
+      - object_type
+      title: SourceObjectLineageResponse
       type: object
     TransitionRequest:
       additionalProperties: false
@@ -4422,6 +4826,45 @@ paths:
       tags:
       - evaluations
   /v1/workspaces/{workspace_id}/datasets/{dataset_id}/evaluations/{run_id}/publish-readiness:
+    get:
+      operationId: getPublishReadiness
+      parameters:
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      - in: path
+        name: dataset_id
+        required: true
+        schema:
+          title: Dataset Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishReadinessReceiptResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Publish Readiness Route
+      tags:
+      - import-governance
     post:
       operationId: evaluatePublishReadiness
       parameters:
@@ -4461,6 +4904,131 @@ paths:
       summary: Evaluate Publish Readiness Route
       tags:
       - import-governance
+  /v1/workspaces/{workspace_id}/datasets/{dataset_id}/evaluations/{run_id}/publishes:
+    get:
+      operationId: listEvaluationPublishes
+      parameters:
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      - in: path
+        name: dataset_id
+        required: true
+        schema:
+          title: Dataset Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishExecutionListResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Evaluation Publishes
+      tags:
+      - publish-execution
+    post:
+      operationId: publishEvaluation
+      parameters:
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      - in: path
+        name: dataset_id
+        required: true
+        schema:
+          title: Dataset Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishExecutionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Publish Evaluation
+      tags:
+      - publish-execution
+  /v1/workspaces/{workspace_id}/datasets/{dataset_id}/evaluations/{run_id}/publishes/{publish_id}:
+    get:
+      operationId: getEvaluationPublish
+      parameters:
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      - in: path
+        name: publish_id
+        required: true
+        schema:
+          title: Publish Id
+          type: string
+      - in: path
+        name: dataset_id
+        required: true
+        schema:
+          title: Dataset Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishExecutionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Evaluation Publish
+      tags:
+      - publish-execution
   /v1/workspaces/{workspace_id}/datasets/{dataset_id}/import-binding:
     get:
       operationId: getDatasetImportBinding
@@ -4601,6 +5169,119 @@ paths:
       summary: Evaluate Import Readiness Route
       tags:
       - import-governance
+  /v1/workspaces/{workspace_id}/datasets/{dataset_id}/materializations:
+    get:
+      operationId: listDatasetMaterializations
+      parameters:
+      - in: path
+        name: dataset_id
+        required: true
+        schema:
+          title: Dataset Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceMaterializationListResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Dataset Materializations
+      tags:
+      - materialization
+    post:
+      operationId: materializeDatasetSource
+      parameters:
+      - in: path
+        name: dataset_id
+        required: true
+        schema:
+          title: Dataset Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterializeDatasetSourceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceMaterializationResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Materialize Dataset Source
+      tags:
+      - materialization
+  /v1/workspaces/{workspace_id}/datasets/{dataset_id}/materializations/{materialization_id}:
+    get:
+      operationId: getDatasetMaterialization
+      parameters:
+      - in: path
+        name: materialization_id
+        required: true
+        schema:
+          title: Materialization Id
+          type: string
+      - in: path
+        name: dataset_id
+        required: true
+        schema:
+          title: Dataset Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceMaterializationResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Dataset Materialization
+      tags:
+      - materialization
   /v1/workspaces/{workspace_id}/datasets/{dataset_id}/uploads:
     post:
       operationId: createDatasetUpload
