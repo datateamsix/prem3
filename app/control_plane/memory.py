@@ -632,6 +632,10 @@ class InMemoryControlPlaneRepository:
         with self._lock:
             self._credential_envelopes.pop(f"{tenant_id}/{credential_ref}", None)
 
+    def list_credential_envelopes(self) -> list[CredentialEnvelope]:
+        with self._lock:
+            return [deepcopy(item) for item in self._credential_envelopes.values()]
+
     def put_drive_binding(self, binding: DriveWorkspaceBinding) -> DriveWorkspaceBinding:
         with self._lock:
             self._require_workspace_locked(binding.tenant_id, binding.workspace_id)

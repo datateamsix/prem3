@@ -513,6 +513,7 @@ class CredentialEnvelope(BaseModel):
     credential_ref: str
     algorithm: str
     ciphertext: str
+    nonce: str = ""
     wrapped_dek: str
     kms_key: str | None = None
     created_at: datetime

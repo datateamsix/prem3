@@ -6,6 +6,8 @@ google-cloud-bigquery
 google-cloud-run
 google-cloud-storage
 google-cloud-firestore
+google-cloud-kms
+cryptography
 fastapi
 uvicorn
 clerk-backend-api==6.0.1

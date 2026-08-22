@@ -26,7 +26,11 @@ from app.integrations.google.adapters import (
     RestDriveClient,
     RestGoogleOAuthProvider,
 )
-from app.integrations.google.vault import ControlPlaneCredentialVault, InMemoryCredentialVault
+from app.integrations.google.vault import (
+    CloudKmsKek,
+    ControlPlaneCredentialVault,
+    InMemoryCredentialVault,
+)
 from app.materialization.canonical_gate import CanonicalFoundationSourceGate
 from app.materialization.foundation_compat import FoundationSourceGate
 from app.materialization.service import MaterializationService
@@ -388,18 +392,19 @@ def _default_google_services(
             client_secret=settings.google_oauth_client_secret,
         )
     resolved_vault = vault
-    if resolved_vault is None and settings.google_credential_vault_key:
-        key = settings.google_credential_vault_key.encode("utf-8")
-        if len(key) < 32:
-            key = key.ljust(32, b"0")
+    live_google = bool(settings.google_oauth_client_id and settings.google_oauth_client_secret)
+    if resolved_vault is None and live_google:
+        if not settings.google_kms_key:
+            raise RuntimeError(
+                "Real Google OAuth requires GOOGLE_KMS_KEY for aes-256-gcm+kms-v1. "
+                "InMemoryCredentialVault and hmac-sha256-xor-v1 are not production vaults."
+            )
         resolved_vault = ControlPlaneCredentialVault(
             repo=repo,
-            master_key=key[:32],
-            kms_key=settings.google_kms_key,
+            kms=CloudKmsKek(settings.google_kms_key),
         )
     if resolved_vault is None:
         resolved_vault = InMemoryCredentialVault()
-    live_google = bool(settings.google_oauth_client_id and settings.google_oauth_client_secret)
     drive = drive_client or (RestDriveClient() if live_google else FakeDriveClient())
     bq = bigquery_client or (RestBigQueryClient() if live_google else FakeBigQueryClient())
     redirect_uri = settings.google_oauth_redirect_uri or (

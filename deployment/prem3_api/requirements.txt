@@ -4,6 +4,8 @@ uvicorn
 clerk-backend-api==6.0.1
 stripe==15.5.0
 google-cloud-firestore
+google-cloud-kms
 google-cloud-storage
+cryptography
 google-auth
 pydantic>=2.10

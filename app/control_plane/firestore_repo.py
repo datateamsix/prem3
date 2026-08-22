@@ -866,6 +866,15 @@ class FirestoreControlPlaneRepository:
             .delete()
         )
 
+    def list_credential_envelopes(self) -> list[CredentialEnvelope]:
+        rows: list[CredentialEnvelope] = []
+        for snap in self._db.collection_group(COLLECTION_CREDENTIAL_ENVELOPES).stream():
+            payload = snap.to_dict()
+            if not payload:
+                continue
+            rows.append(document_to_model(CredentialEnvelope, payload))
+        return rows
+
     def put_drive_binding(self, binding: DriveWorkspaceBinding) -> DriveWorkspaceBinding:
         self._workspace_ref(binding.tenant_id, binding.workspace_id).collection(
             COLLECTION_DRIVE_BINDINGS
