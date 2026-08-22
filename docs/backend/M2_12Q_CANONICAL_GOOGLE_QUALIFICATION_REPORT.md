@@ -85,14 +85,24 @@ Production Google OAuth without `GOOGLE_KMS_KEY` fails closed. Incremental auth 
 
 | Field | Value |
 |---|---|
-| SOURCE_SHA | local integration HEAD after this report commit |
-| IMAGE_URI | NOT_RUN |
-| IMAGE_DIGEST | NOT_RUN |
-| CLOUD_RUN_REVISION | current live remains `prem3-api-00003-d4z` until operator deploy |
+| SOURCE_SHA | `f2c517c6abb80a2ac5a5fbc4aba5c3ae6b0b091a` |
+| IMAGE_URI | `us-central1-docker.pkg.dev/modelready-m3/cloud-run-source-deploy/prem3-api:f2c517c6abb80a2ac5a5fbc4aba5c3ae6b0b091a` |
+| IMAGE_DIGEST | `sha256:6977f7d78b4f9eb74192ebaad21fffcb7cb5d468886c497695d724cad5ed744d` |
+| CLOUD_RUN_REVISION | `prem3-api-00005-g77` |
 | SERVICE_URL | `https://prem3-api-vkcd3cbiea-uc.a.run.app` |
 | SERVICE_ACCOUNT | `m3-runtime@modelready-m3.iam.gserviceaccount.com` |
 
-`scripts/deploy_prem3_api.py` now sets `GOOGLE_KMS_KEY`. Historical `modelready-m3` and `meridian-eda-worker` were not modified.
+`scripts/deploy_prem3_api.py` sets `GOOGLE_KMS_KEY`. Historical `modelready-m3` and `meridian-eda-worker` were not modified.
+
+Cloud route regression after `prem3-api-00005-g77`:
+
+- `GET /health` → 200 public ok
+- `GET /healthz` → Google 404 (Cloud Run reserved `z` path; liveness remains `/health`)
+- `GET /readyz` → 200 truthful (`auth_provider=not_configured`, `billing_provider=configured`)
+- `GET /v1/catalog/plans` → 200 public
+- `GET /v1/me`, workspace create, materialization, publish without Clerk → 503 `AUTH_PROVIDER_NOT_CONFIGURED`
+- unsigned identity webhook → 503 `AUTH_PROVIDER_NOT_CONFIGURED`
+- unsigned billing webhook → 503 `BILLING_PROVIDER_NOT_CONFIGURED` (Stripe webhook secret not attached)
 
 ## H. Live proofs
 
@@ -165,9 +175,8 @@ Local results after integration + KMS:
 1. Clerk session on deployed `prem3-api` (secret not attached to current revision).
 2. `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / registered redirect URI.
 3. Interactive test Google account consent.
-4. Operator `py -3.13 scripts/deploy_prem3_api.py --execute` from this branch SHA.
-5. Official `google-meridian` or `MODELREADY_EDA_JOB` for Dataset A BQ/EDA (pre-existing).
-6. Production-scale BigQuery materialization architecture (explicitly out of claim).
+4. Official `google-meridian` or `MODELREADY_EDA_JOB` for Dataset A BQ/EDA (pre-existing).
+5. Production-scale BigQuery materialization architecture (explicitly out of claim).
 
 ## Commits
 
