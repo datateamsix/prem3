@@ -539,3 +539,23 @@ Tenant authority is never derived from Cloud Run accessibility, request headers,
 
 ---
 
+## 2026-08-22 — CANONICAL DF + KMS GOOGLE VAULT (M2-12Q)
+
+**Decision:** Restack Mission 12 onto merged PR #15. Production materialization consumes canonical Data Foundation. Production Google refresh tokens use Cloud KMS envelope encryption.
+
+**Locked:**
+
+1. `build_product_stores(repo)` is the only production DF/BIQ store constructor. Materialization does not instantiate a second Firestore DF store.
+2. `NullFoundationSourceGate` is not the production default. `CanonicalFoundationSourceGate` tenant-qualifies `get_binding(source_id)` / `get_current_source_receipt(source_id)`.
+3. Dual gate: non-DF imports need current `IMPORT_READY` only. DF-managed sources also need `FOUNDATION_SOURCE_READY` + `governance_import_ready`. `DATA_FOUNDATION_READY` is workspace-level and is not required per source.
+4. Business role lineage is Business IQ → `EvidenceRequirement.business_role` → `SourceBinding.requirement_id` → Import Contract. Incompatible roles fail closed (`FOUNDATION_LINEAGE_MISMATCH`).
+5. Production vault algorithm is `aes-256-gcm+kms-v1`. Per-write DEK + nonce, AES-256-GCM, Cloud KMS symmetric wrap. Key: `projects/modelready-m3/locations/us-central1/keyRings/prem3/cryptoKeys/prem3-google-oauth-credentials`. Runtime SA gets key-level `roles/cloudkms.cryptoKeyEncrypterDecrypter` only.
+6. Real Google OAuth without `GOOGLE_KMS_KEY` fails closed. Incremental OAuth with `refresh_token=None` preserves the existing envelope.
+7. Customer BQ publish remains `model_ready_{dataset}_{run}` / `_current`. DF warehouse names are reserved from `app/data_foundation/owned_resources.py`.
+8. BigQuery materialization stays `PASS_BOUNDED` at 100,000 rows. Overflow is `MATERIALIZATION_LIMIT_EXCEEDED`, never silent truncate.
+9. Durable Evaluation dispatch remains M2-13.
+
+**Not in this decision:** live Google OAuth/Drive/BQ provider proofs (external Clerk + OAuth client + interactive test account); Cloud Tasks Evaluation dispatch.
+
+---
+

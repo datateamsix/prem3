@@ -278,8 +278,8 @@ canonical `checkout-session` / `portal-session` paths in `15_*` §4.
 
 ### REQ-016 — Google Connections
 
-**Status:** IMPLEMENTED — CONTRACT/BINDING FOUNDATION (2026-08-18)
-**Does not implement:** Drive/BigQuery materialization into DatasetUpload.
+**Status:** IMPLEMENTED — CONNECTIONS + KMS VAULT (2026-08-22)
+**Does not implement:** live Google OAuth cloud proof (external credentials).
 
 Clerk-authenticated `POST /v1/integrations/google/oauth/start` (capabilities only; backend
 owns scopes). Unauthenticated `GET /v1/integrations/google/oauth/callback` consumes a
@@ -290,8 +290,10 @@ dataset `prem3_modeling` (friendly name `prem3-modeling`). User-credential disco
 Disconnect revokes provider access and encrypted credentials; it does not delete customer
 Drive/BQ data or historical receipts.
 
-**Still later (M2-12):** materialize selected Drive/BigQuery objects into immutable
-`DatasetUpload`.
+**M2-12 / M2-12Q:** materialize selected Drive/BigQuery objects into immutable
+`DatasetUpload` via `SourceMaterializationReceipt`. Production Google refresh tokens
+use `aes-256-gcm+kms-v1`. Live provider proofs remain a separate qualification
+level from code readiness.
 
 ### REQ-017 — Import Governance / IMPORT_READY
 
@@ -315,7 +317,9 @@ and a bound Drive `prem3-modeling` and/or BigQuery `prem3_modeling` destination 
 verification. Evaluation ACCEPTED is not MODEL_READY. HTTP publish-readiness does not write
 customer data.
 
-**Still later (M2-12):** publish MODEL_READY artifacts into the bound depots.
+**M2-12 / M2-12Q:** publish MODEL_READY + PUBLISH_READY artifacts into bound
+`prem3-modeling` / `prem3_modeling` destinations with readback receipts.
+Durable Evaluation dispatch remains M2-13.
 
 ## P1 — execution workspace
 

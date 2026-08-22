@@ -91,6 +91,11 @@ Mission 10 upload signing (same runtime SA):
 
 Do not grant Owner, Editor, or `roles/datastore.owner`.
 
+Mission 12Q Google credential vault:
+
+- `roles/cloudkms.cryptoKeyEncrypterDecrypter` on
+  `prem3/prem3-google-oauth-credentials` for `m3-runtime` only.
+
 Provision with `py -3.13 scripts/provision_prem3_api_cloud.py`.
 
 Qualify signed upload cloud proof (operator only, never pytest/CI):
@@ -111,9 +116,12 @@ Secret Manager resources (values never committed):
 Optional Google OAuth (M2-11; not required for the current deployed revision):
 
 - `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / `GOOGLE_OAUTH_REDIRECT_URI`
-- `GOOGLE_CREDENTIAL_VAULT_KEY` (envelope encryption; never plaintext refresh tokens)
-- optional `GOOGLE_KMS_KEY` name recorded on the envelope. Do **not** grant KMS admin
-  to `m3-runtime`; encrypt/decrypt only if KMS wrap is enabled.
+- `GOOGLE_KMS_KEY` — required for real Google OAuth. Symmetric key
+  `projects/modelready-m3/locations/us-central1/keyRings/prem3/cryptoKeys/prem3-google-oauth-credentials`.
+  Production vault algorithm is `aes-256-gcm+kms-v1`. `m3-runtime` has key-level
+  `roles/cloudkms.cryptoKeyEncrypterDecrypter` only. Do **not** grant KMS Admin.
+
+`GOOGLE_CREDENTIAL_VAULT_KEY` (hmac-sha256-xor-v1) is retired for production writes.
 
 Ordinary configuration stays in Cloud Run env vars: `FIRESTORE_DATABASE`,
 `PREM3_FRONTEND_ORIGIN`, Stripe Price IDs, timeouts, `WEBHOOK_CLAIM_LEASE_SECONDS`,

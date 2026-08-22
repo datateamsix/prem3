@@ -1,19 +1,17 @@
 # M2-12 materialization + verified customer publish
 
-**Status:** code/contracts/local integration qualification. Live Google source/publish proof was not run.
+**Status:** restacked onto PR #15 main. See `M2_12Q_CANONICAL_GOOGLE_QUALIFICATION_REPORT.md`.
 
 ## Baseline
 
 | Item | Value |
 |---|---|
-| Expected `origin/main` | `e7ec5fae802b49b61e5e1b5b3bfb073b4a511cb0` |
-| Branch | `feature/prem3-m2-materialization-publish` |
+| `origin/main` / PR15_MERGE_SHA | `a098e2cdb36b11d1c9f81790be941b913be117c6` |
+| PR15_HEAD | `a610c5e359a53c8212211958e2b0d1d10642e7dc` |
+| Integration branch | `feature/prem3-m2-canonical-google-qualification` |
+| M12 original commit | `19d77902f00de5098209556c526cf184a8162586` |
 | Design freeze | `foundational-intake-freeze-2026-08-22-v1` |
-| REFERENCE_DF_BRANCH | `feature/prem3-data-foundation-backend` |
-| REFERENCE_DF_HEAD | `a610c5e359a53c8212211958e2b0d1d10642e7dc` |
-| PR15_ALREADY_ON_MAIN | false |
-| PR15_COMMITS_IMPORTED | 0 |
-| PR15_FILES_MODIFIED | 0 |
+| PR15_ALREADY_ON_MAIN | true |
 | NEW_FOUNDATIONAL_INTAKE_CAPABILITY | 0 |
 
 ## Architecture
@@ -45,7 +43,7 @@ IMPORT_READY (+ FOUNDATION_SOURCE_READY when DF-managed)
 - `SourceMaterializationReceipt` — distinct from Data Foundation `DriveImportReceipt`
 - `MaterializationStatus`: `REVALIDATING` / `COPYING` / `VERIFYING` / `COMPLETE` / `FAILED` (API is synchronous and returns a terminal result)
 - `MaterializationResultKind`: `CREATED_NEW_UPLOAD` / `REUSED_EXISTING_UPLOAD`
-- `FoundationSourceGate` compatibility Protocol (`app/materialization/foundation_compat.py`); default returns `None`
+- `CanonicalFoundationSourceGate` backed by the shared `DataFoundationStore` from `build_product_stores(repo)`
 - `ModelReadyEvidenceResolver` — reads deterministic run evidence; never emits `MODEL_READY`
 - `PublishExecutionReceipt` with per-destination `VERIFIED` / `VERIFIED_EXISTING` / `FAILED`
 
@@ -85,9 +83,11 @@ BigQuery export is bounded (`BOUNDED_EXPORT_MAX_ROWS = 100000`). This mission do
 5. Create versioned `model_ready_{dataset}_{run}` first; move `model_ready_{dataset}_current` only after readback.
 6. Persist `PublishExecutionReceipt` as `COMPLETE`, `PARTIAL`, or `FAILED`.
 
-## Data Foundation compatibility
+## Data Foundation
 
-PR #15 is not on main. The compatibility gate returns `None` unless a test (or a later merge adapter) injects evidence. Semantic dual-gate behavior is covered by `InMemoryFoundationSourceGate`.
+Production runtime uses `CanonicalFoundationSourceGate` + `DataFoundationStore`.
+`NullFoundationSourceGate` is fixture-only. Source-ID lookups are tenant- and
+workspace-qualified before use. `DATA_FOUNDATION_READY` is not required per source.
 
 ## Security invariants
 
@@ -114,13 +114,13 @@ PR #15 is not on main. The compatibility gate returns `None` unless a test (or a
 
 - Customer-authorized Google Drive / BigQuery sessions
 - Production-size BigQuery export beyond the bounded runtime
-- Canonical Data Foundation store after PR #15 merge (replace `NullFoundationSourceGate`)
+- Live Google OAuth / Drive / BigQuery sessions and a Clerk-authenticated test tenant
 
 ## OpenAPI
 
 Regenerated from FastAPI models.
 
-`contracts/openapi.yaml` sha256=`bf3313101fe340b7a35fe7f4425f187c3ef93d71f9734c762db370fbd3df47b8`
+`contracts/openapi.yaml` sha256=`2c2c3c4b0c0a68590546976ac09e46f4855f2744076c20e96f2d775925953438`
 
 `contracts/schema/api.schema.json` sha256=`e8c14c8bfcda8c75ed151dd1435f19e185639d5e71b2a0282ec7979372205493`
 

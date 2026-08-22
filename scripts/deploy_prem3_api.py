@@ -20,6 +20,10 @@ REGION = "us-central1"
 SERVICE = "prem3-api"
 RUNTIME_SA = f"m3-runtime@{PROJECT}.iam.gserviceaccount.com"
 IMAGE_REPO = f"us-central1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/{SERVICE}"
+GOOGLE_KMS_KEY = (
+    f"projects/{PROJECT}/locations/{REGION}/keyRings/prem3/"
+    "cryptoKeys/prem3-google-oauth-credentials"
+)
 GCLOUD = "gcloud.cmd" if os.name == "nt" else "gcloud"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNTIME_ENV_PATH = REPO_ROOT / "artifacts" / "deployment" / "prem3_api_runtime.env.yaml"
@@ -158,6 +162,7 @@ def _deploy(*, image_uri: str, secrets: dict[str, str]) -> None:
     ]
     if RUNTIME_ENV_PATH.is_file():
         args.append(f"--env-vars-file={RUNTIME_ENV_PATH}")
+    args.append(f"--update-env-vars=GOOGLE_KMS_KEY={GOOGLE_KMS_KEY}")
     if secrets:
         packed = ",".join(f"{env}={ref}" for env, ref in secrets.items())
         args.append(f"--set-secrets={packed}")

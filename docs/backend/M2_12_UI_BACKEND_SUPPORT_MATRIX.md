@@ -1,7 +1,7 @@
 # M2-12 UI / backend support matrix
 
 Design freeze reference: `foundational-intake-freeze-2026-08-22-v1`  
-PR #15 (`feature/prem3-data-foundation-backend`) remains a read-only contract reference. Mission 12 does not copy or replace Business IQ / Data Foundation read models.
+PR #15 is merged. Mission 12Q consumes canonical `SourceBinding` / `SourceFoundationReceipt` / `EvidenceRequirement` through `CanonicalFoundationSourceGate`. It does not replace Business IQ or Data Foundation intake.
 
 No UI field below requires parsing narrative prose to determine authority.
 
@@ -11,7 +11,7 @@ No UI field below requires parsing narrative prose to determine authority.
 | Source role / business requirement | `business_role` / `source_objects[].role` | Import Contract `RoleAssignment`; optional DF `business_role` | materialization response | Import Contract; DF evidence when present |
 | Source identity | `source_objects[].source_identity` | Frozen `PreM3ImportContractV1` object | materialization response | Import Contract |
 | Source version | `source_version` / `source_objects[].version_identity` | Live provider metadata revalidated against the Import Contract | materialization response | Import compile + M2-12 revalidation |
-| Foundation source state | `foundation_source_state` | `FoundationSourceEvidence.status_code` or omitted when not DF-managed | materialization response | Data Foundation (compat Protocol today) |
+| Foundation source state | `foundation_source_state` | Canonical `SourceFoundationReceipt.status_code` or omitted when not DF-managed | materialization response | `DataFoundationStore` via `CanonicalFoundationSourceGate` |
 | Import governance state | `import_governance_state` | Current `ImportReadinessReceipt.status` | materialization response | `evaluate_import_readiness` |
 | Pre-model review | `premodel_review_remaining`, `premodel_review_findings` | DF compatibility evidence; never resolved by M2-12 | materialization response | Data Foundation |
 | Materialization state | `materialization_state` | `SourceMaterializationReceipt.status` | materialization response | `MaterializationService` |
