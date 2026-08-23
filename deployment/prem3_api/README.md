@@ -29,6 +29,7 @@ That is **not** product-route unauthenticated access. FastAPI remains authoritat
 | Clerk session | `/v1/me`, workspaces, datasets, uploads, evaluations, runs, Checkout/Portal | verified Clerk session + current org membership |
 | Signed callbacks | `POST /v1/webhooks/identity`, `POST /v1/webhooks/billing` | Clerk Svix / Stripe-Signature |
 | Google OAuth callback | `GET /v1/integrations/google/oauth/callback` | opaque single-use state; no Clerk bearer |
+| Service launch | `POST /internal/v1/evaluation-dispatches/{id}/launch` | Google-signed OIDC for `prem3-evaluation-dispatcher@...` only |
 
 Do not add `X-Tenant-ID`. Do not add credentialed wildcard CORS. Browser clients
 use the Next.js BFF, not prem3-api directly.
@@ -73,8 +74,9 @@ Suggested service bounds (not the Meridian 8Gi / 3600s worker):
 
 `deployment/prem3_api/requirements.txt` includes `google-cloud-storage` for signed
 Dataset uploads, `google-cloud-kms` + `cryptography` for the Google credential vault,
-and `pandas` for Data Foundation warehouse imports. Do not add ADK or Meridian
-to this image.
+`google-cloud-tasks` + `google-cloud-run` for Evaluation launch, and `pandas` for
+Data Foundation warehouse imports. Do not add ADK or Meridian to this image.
+Evaluation ADK execution uses `deployment/prem3_evaluation_worker/`.
 
 ## IAM
 
@@ -97,7 +99,14 @@ Mission 12Q Google credential vault:
 - `roles/cloudkms.cryptoKeyEncrypterDecrypter` on
   `prem3/prem3-google-oauth-credentials` for `m3-runtime` only.
 
-Provision with `py -3.13 scripts/provision_prem3_api_cloud.py`.
+Mission 13 durable Evaluation dispatch:
+
+- `roles/cloudtasks.enqueuer` on queue `prem3-evaluation-dispatch` for `m3-runtime`
+- `roles/iam.serviceAccountUser` on `prem3-evaluation-dispatcher@...` for `m3-runtime`
+- `roles/run.jobsExecutorWithOverrides` on job `prem3-evaluation-worker` for `m3-runtime`
+
+Provision API secrets/IAM with `py -3.13 scripts/provision_prem3_api_cloud.py`.
+Provision dispatch queue/IAM with `py -3.13 scripts/provision_evaluation_dispatch_cloud.py`.
 
 Qualify signed upload cloud proof (operator only, never pytest/CI):
 

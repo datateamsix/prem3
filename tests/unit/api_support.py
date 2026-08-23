@@ -17,7 +17,11 @@ from app.control_plane.models import (
     MembershipStatus,
 )
 from app.service.app import create_app
-from app.service.auth import FakeIdentityVerifier, VerifiedIdentity
+from app.service.auth import (
+    FakeIdentityVerifier,
+    UnconfiguredIdentityVerifier,
+    VerifiedIdentity,
+)
 from app.service.billing import UnavailableBillingGateway
 from app.service.catalog import build_plan_catalog
 from app.service.clerk_runtime import FakeClerkRuntime
@@ -87,7 +91,7 @@ def make_client(
 ) -> tuple[TestClient, InMemoryControlPlaneRepository]:
     repository = repo or InMemoryControlPlaneRepository()
     if unconfigured_auth:
-        verifier = None
+        verifier = UnconfiguredIdentityVerifier()
     else:
         verifier = FakeIdentityVerifier(default=identity, identities=identities)
     app = create_app(

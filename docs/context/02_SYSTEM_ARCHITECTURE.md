@@ -45,6 +45,8 @@ Build a small but production-minded event-driven agent with explicit state, dete
 
 The diagram remains the long-range Google Cloud shape. **Eventarc is still future (`AMBIENT_TASKMASTER`).** Mission 2 authenticated product traffic enters through `prem3-api` (see `15_*`), not Eventarc. Public `/planner` does not enter this diagram at all. Firestore is the Mission 2 operational control plane (`14_*` §5.4); GCS and BigQuery keep artifact and ledger roles. Customer identity is request-scoped and is not the Cloud Run service account (`11_*` vs `14_*`).
 
+M2-13 durable Evaluation path: `createEvaluation` → HTTP 202 after Cloud Tasks enqueue on `prem3-evaluation-dispatch` → service-OIDC launch → Cloud Run Job `prem3-evaluation-worker` → trusted restoration of `TenantContext` / `WorkspaceContext` / `ExecutionContext` → existing in-process `EvaluationExecutor`. Cloud Tasks does not run ADK. `EvaluationStatus` stays `ACCEPTED`. Dispatch success is not `MODEL_READY`. Isolated `meridian-eda-worker` remains a separate job.
+
 ## Agent topology
 
 The user-facing product and agent is **PreM3**. It uses the **M3** operating method: **Map. Mend. Model.**

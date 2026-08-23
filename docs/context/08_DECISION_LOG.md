@@ -553,9 +553,30 @@ Tenant authority is never derived from Cloud Run accessibility, request headers,
 6. Real Google OAuth without `GOOGLE_KMS_KEY` fails closed. Incremental OAuth with `refresh_token=None` preserves the existing envelope.
 7. Customer BQ publish remains `model_ready_{dataset}_{run}` / `_current`. DF warehouse names are reserved from `app/data_foundation/owned_resources.py`.
 8. BigQuery materialization stays `PASS_BOUNDED` at 100,000 rows. Overflow is `MATERIALIZATION_LIMIT_EXCEEDED`, never silent truncate.
-9. Durable Evaluation dispatch remains M2-13.
+9. Durable Evaluation dispatch was deferred to M2-13 and is now implemented on
+   `feature/prem3-m2-durable-evaluation-dispatch`.
 
-**Not in this decision:** live Google OAuth/Drive/BQ provider proofs (external Clerk + OAuth client + interactive test account); Cloud Tasks Evaluation dispatch.
+**Not in this decision:** live Google OAuth/Drive/BQ provider proofs (external Clerk + OAuth client + interactive test account). Those remain `DEFERRED_UI_PROVIDER_QUALIFICATION`.
+
+---
+
+## 2026-08-23 — DURABLE EVALUATION DISPATCH (M2-13)
+
+**Decision:** HTTP 202 after `createEvaluation` means durable Cloud Tasks launch, not ADK completion. The Evaluation worker is a Cloud Run Job. `EvaluationStatus` stays `ACCEPTED`.
+
+**Locked:**
+
+1. Cloud Tasks queue `prem3-evaluation-dispatch` (us-central1) is the short-lived launcher. It does not run ADK or wait for Evaluation completion.
+2. Cloud Run Job `prem3-evaluation-worker` (tasks=1, parallelism=1, timeout 7200s, max retries 2) is the execution substrate. It invokes existing `EvaluationExecutor.execute_evaluation(run_id)` in-process. No `/run_sse`. No remote ADK API.
+3. Job override authority is only `PREM3_EVALUATION_DISPATCH_ID`. Tenant, package URI, storage, entitlement, and destinations are restored from the persisted server-owned dispatch + Evaluation.
+4. Internal launch `POST /internal/v1/evaluation-dispatches/{dispatch_id}/launch` is service-OIDC (`prem3-evaluation-dispatcher@...`). Clerk customer tokens are denied. Cloud Tasks headers are metadata only.
+5. Enqueue failure persists `FAILED_RETRYABLE` and returns `EVALUATION_DISPATCH_UNAVAILABLE`. Same idempotency key retries the same Evaluation and dispatch.
+6. Atomic claim: same Cloud Run execution may reclaim; a different active execution is fail-closed; expired claims may recover. Dispatch success is not `MODEL_READY`.
+7. Public run view is a composed `EvaluationExecutionView`. Internal Cloud identifiers and `package_uri` stay hidden. Frontend polls GET run.
+8. Worker image uses the same `app/` source with ADK dependencies. Slim `prem3-api` stays without ADK. Isolated `meridian-eda-worker` is unchanged. Historical `modelready-m3` is unchanged.
+9. Interactive Clerk/Google provider proofs remain `DEFERRED_UI_PROVIDER_QUALIFICATION` and do not block M2-13 code qualification.
+
+**Not in this decision:** Mission 2 acceptance freeze (M2-14); run-based billing; SSE progress.
 
 ---
 

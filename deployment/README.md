@@ -16,6 +16,21 @@ py -3.13 scripts/qualify_prem3_api_cloud.py --execute --write-evidence
 
 The API container starts Uvicorn only. It does not include ADK, Meridian, or the frontend.
 
+## prem3-evaluation-worker (M2-13)
+
+Cloud Run Job for durable Evaluation execution. Cloud Tasks queue
+`prem3-evaluation-dispatch` only launches the job.
+
+See `deployment/prem3_evaluation_worker/README.md`.
+
+```powershell
+py -3.13 scripts/provision_evaluation_dispatch_cloud.py --execute
+py -3.13 scripts/deploy_evaluation_worker.py --execute
+py -3.13 scripts/qualify_evaluation_dispatch_cloud.py --execute --write-evidence
+```
+
+Do not merge this job with `meridian-eda-worker`. Do not deploy it over `modelready-m3`.
+
 ## Current milestone
 
 **PRE_MODELING_GOLDEN** — PreM3 on private Cloud Run inspects a GCS Dataset A package, selects AUTO_SAFE remediations, verifies BigQuery model consumption, runs official Meridian EDA, and reaches evidence-backed `MODEL_READY`.

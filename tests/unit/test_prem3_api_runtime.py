@@ -26,6 +26,8 @@ def test_local_runtime_uses_in_memory_control_plane(monkeypatch: pytest.MonkeyPa
 def test_injected_repository_wins_in_cloud_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PREM3_API_RUNTIME", "cloud")
     monkeypatch.setenv("STRIPE_SECRET_KEY", "")
+    monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_ID", "")
+    monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_SECRET", "")
     repo = InMemoryControlPlaneRepository()
     app = create_app(control_plane_repository=repo)
     assert app.state.control_plane is repo
@@ -39,6 +41,8 @@ def test_cloud_runtime_constructs_firestore(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("PREM3_API_RUNTIME", "cloud")
     monkeypatch.setenv("STRIPE_SECRET_KEY", "")
     monkeypatch.setenv("CLERK_SECRET_KEY", "")
+    monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_ID", "")
+    monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_SECRET", "")
     monkeypatch.setattr(
         "app.service.runtime.FirestoreControlPlaneRepository.from_settings",
         lambda **_kwargs: fake,
@@ -59,6 +63,8 @@ def test_k_service_selects_cloud_runtime(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("K_SERVICE", "prem3-api")
     monkeypatch.setenv("STRIPE_SECRET_KEY", "")
     monkeypatch.setenv("CLERK_SECRET_KEY", "")
+    monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_ID", "")
+    monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_SECRET", "")
     monkeypatch.setattr(
         "app.service.runtime.FirestoreControlPlaneRepository.from_settings",
         lambda **_kwargs: fake,

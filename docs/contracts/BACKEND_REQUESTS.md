@@ -242,12 +242,16 @@ canonical `checkout-session` / `portal-session` paths in `15_*` §4.
 
 ### REQ-014 — Dataset lifecycle, evaluation-run history, and dataset-to-run linkage
 
-**Status:** PARTIAL — UPLOAD + EVALUATION RESOURCE API (Mission 10); EXECUTION DISPATCH IS LATER
+**Status:** IMPLEMENTED — UPLOAD + EVALUATION + DURABLE DISPATCH (M2-13)
 **Available:**
 
 - First-class Evaluation create/list/get: `POST|GET .../datasets/{dataset_id}/evaluations`,
-  `GET /v1/runs/{run_id}`. Create returns **202** for accepted/created resource only
-  (`EvaluationStatus.ACCEPTED`), not agent running and not `MODEL_READY`.
+  `GET /v1/runs/{run_id}`. Create returns **202** only after Cloud Tasks enqueue.
+  `EvaluationStatus` stays `ACCEPTED`. 202 is not agent running and not `MODEL_READY`.
+- Enqueue failure returns `EVALUATION_DISPATCH_UNAVAILABLE` (503). Idempotent retry
+  reuses the same Evaluation/`run_id`/`dispatch_id` and retries queue delivery.
+- Presentation-safe `execution` view on Evaluation GET/list/run. Frontend polls the
+  run resource. `dispatch_status` is not `MODEL_READY` authority.
 - Signed upload create/get/complete under `.../datasets/{dataset_id}/uploads`. Accepted
   formats: `.csv`, `.parquet`, `.json`. Frontend never constructs `gs://` or holds cloud
   credentials. Complete verifies object metadata and freezes GCS generation.
@@ -255,11 +259,11 @@ canonical `checkout-session` / `portal-session` paths in `15_*` §4.
   pagination is not a quota). Each Evaluation carries an explicit `dataset_id` /
   `upload_id` linkage and a `run_id`.
 
-**Still later (durable Evaluation dispatch):**
+**Still later:**
 
-- Durable Evaluation execution/dispatch after HTTP 202 (`ExecutionContext` → ADK).
 - Comparable-fields contract for run-to-run comparison; frontend must not infer readiness
   deltas.
+- Real-time SSE/WebSocket run streaming.
 
 ### REQ-015 — Deterministic Planner manifest / registry snapshot export
 
@@ -319,7 +323,9 @@ customer data.
 
 **M2-12 / M2-12Q:** publish MODEL_READY + PUBLISH_READY artifacts into bound
 `prem3-modeling` / `prem3_modeling` destinations with readback receipts.
-Durable Evaluation dispatch remains M2-13.
+Durable Evaluation dispatch is M2-13 (`EvaluationDispatch` + Cloud Tasks launch +
+`prem3-evaluation-worker`). Interactive Clerk/Google provider proofs remain
+`DEFERRED_UI_PROVIDER_QUALIFICATION`.
 
 ## P1 — execution workspace
 

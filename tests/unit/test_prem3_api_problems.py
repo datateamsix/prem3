@@ -12,7 +12,7 @@ from tests.unit.api_support import auth_header, make_client, seed_tenant
 
 
 def test_problem_detail_has_stable_code() -> None:
-    client = TestClient(create_app(), raise_server_exceptions=False)
+    client, _ = make_client(unconfigured_auth=True)
     response = client.get("/v1/me", headers=auth_header())
     body = response.json()
     assert body["code"] == "AUTH_PROVIDER_NOT_CONFIGURED"
