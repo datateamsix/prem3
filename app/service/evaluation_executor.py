@@ -1,7 +1,7 @@
 """In-process ADK Evaluation bridge.
 
-Mission 10 qualifies local programmatic invocation only.
-Cloud durable dispatch after HTTP 202 is Mission 11.
+Mission 10 qualifies local programmatic invocation.
+M2-13 invokes this same bridge from the Cloud Run Evaluation worker.
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ class EvaluationExecutionResult:
 class EvaluationExecutor:
     """Trusted dispatch target: execute_evaluation(run_id) after server authorization.
 
-    Not a public HTTP endpoint. Mission 11 may call this from durable dispatch.
+    Not a public HTTP endpoint. M2-13 calls this from durable Cloud Run Job dispatch.
     Requires an already-bound TenantContext for foreign-tenant fail-closed lookup.
     """
 

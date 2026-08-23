@@ -33,7 +33,11 @@ SECRET_ENV_MAP = {
     "prem3-api-clerk-webhook-signing-secret": "CLERK_WEBHOOK_SIGNING_SECRET",
     "prem3-api-stripe-secret-key": "STRIPE_SECRET_KEY",
     "prem3-api-stripe-webhook-secret": "STRIPE_WEBHOOK_SECRET",
+    "prem3-api-google-oauth-client-secret": "GOOGLE_OAUTH_CLIENT_SECRET",
 }
+DEFAULT_CLERK_AUTHORIZED_PARTIES = (
+    "http://localhost:3000,https://set-sole-4153.clerk.accounts.dev"
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -69,6 +73,8 @@ def main(argv: list[str] | None = None) -> int:
             value = settings.clerk_secret_key or ""
         elif env_name == "CLERK_WEBHOOK_SIGNING_SECRET":
             value = settings.clerk_webhook_signing_secret or ""
+        elif env_name == "GOOGLE_OAUTH_CLIENT_SECRET":
+            value = settings.google_oauth_client_secret or ""
         if not value:
             skipped_secrets.append(secret_name)
             continue
@@ -213,6 +219,26 @@ def _yaml_value(value: str) -> str:
     return json.dumps(value)
 
 
+def _read_existing_runtime_env() -> dict[str, str]:
+    if not RUNTIME_ENV_PATH.is_file():
+        return {}
+    parsed: dict[str, str] = {}
+    for line in RUNTIME_ENV_PATH.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#") or ":" not in line:
+            continue
+        key, raw = line.split(":", 1)
+        key = key.strip()
+        raw = raw.strip()
+        if not key:
+            continue
+        try:
+            value = json.loads(raw)
+        except json.JSONDecodeError:
+            value = raw.strip().strip('"')
+        parsed[key] = str(value)
+    return parsed
+
+
 def _write_runtime_env(settings) -> None:
     RUNTIME_ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
     origin = settings.prem3_frontend_origin or "http://localhost:3000"
@@ -230,6 +256,10 @@ def _write_runtime_env(settings) -> None:
         ("STRIPE_TIMEOUT_SECONDS", "10"),
         ("STRIPE_MAX_NETWORK_RETRIES", "2"),
     ]
+    if settings.google_oauth_client_id:
+        rows.append(("GOOGLE_OAUTH_CLIENT_ID", settings.google_oauth_client_id))
+    if settings.google_oauth_redirect_uri:
+        rows.append(("GOOGLE_OAUTH_REDIRECT_URI", settings.google_oauth_redirect_uri))
     prices = {
         "STRIPE_PRICE_PROJECT": settings.stripe_price_project or os.getenv("STRIPE_PRICE_PROJECT"),
         "STRIPE_PRICE_PORTFOLIO": settings.stripe_price_portfolio
@@ -270,10 +300,12 @@ def _write_runtime_env(settings) -> None:
                 ),
             ]
         )
-    parties = ",".join(settings.clerk_authorized_parties)
-    if parties:
-        rows.append(("CLERK_AUTHORIZED_PARTIES", parties))
-    text = "".join(f"{key}: {_yaml_value(value)}\n" for key, value in rows)
+    parties = ",".join(settings.clerk_authorized_parties) or DEFAULT_CLERK_AUTHORIZED_PARTIES
+    rows.append(("CLERK_AUTHORIZED_PARTIES", parties))
+    merged = _read_existing_runtime_env()
+    for key, value in rows:
+        merged[key] = value
+    text = "".join(f"{key}: {_yaml_value(value)}\n" for key, value in merged.items())
     RUNTIME_ENV_PATH.write_text(text, encoding="utf-8")
 
 
