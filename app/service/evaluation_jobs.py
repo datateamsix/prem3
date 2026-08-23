@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Protocol
 
 try:
@@ -74,10 +75,38 @@ class CloudRunEvaluationJobLauncher:
         }
         try:
             operation = client.run_job(request=request)
-            response = operation.result(timeout=60)
+            name = _execution_name_from_operation(operation)
+        except JobLaunchError:
+            raise
         except Exception as exc:
             raise JobLaunchError("cloud run job launch failed") from exc
-        return execution_id_from_resource(str(getattr(response, "name", None) or ""))
+        if not name:
+            raise JobLaunchError("cloud run job launch returned no execution name")
+        return execution_id_from_resource(name)
+
+
+def _execution_name_from_operation(operation: object) -> str:
+    """Return the execution id without waiting for the Job to finish."""
+    deadline = time.time() + 15
+    while time.time() <= deadline:
+        metadata = getattr(operation, "metadata", None)
+        name = getattr(metadata, "name", None) if metadata is not None else None
+        if name:
+            return str(name)
+        done = getattr(operation, "done", None)
+        if callable(done) and done():
+            error = getattr(operation, "exception", None)
+            if callable(error):
+                exc = error()
+                if exc is not None:
+                    raise JobLaunchError("cloud run job launch failed") from exc
+            result = getattr(operation, "result", None)
+            if callable(result):
+                response = result(timeout=1)
+                return str(getattr(response, "name", None) or "")
+            return ""
+        time.sleep(0.25)
+    return ""
 
 
 def _run_jobs_client() -> object:

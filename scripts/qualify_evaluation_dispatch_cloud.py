@@ -41,7 +41,7 @@ from app.control_plane.models import (
     UploadStatus,
 )
 from app.service.evaluation_dispatch import CloudTasksEvaluationDispatcher
-from app.service.evaluation_jobs import CloudRunEvaluationJobLauncher
+from app.service.evaluation_jobs import CloudRunEvaluationJobLauncher, JobLaunchError
 from app.synthetic.paths import DATASET_A_DIR
 
 PROJECT = "modelready-m3"
@@ -132,9 +132,14 @@ def main(argv: list[str] | None = None) -> int:
     launcher = CloudRunEvaluationJobLauncher(
         project_id=PROJECT, location=REGION, job_name=JOB
     )
-    first_execution = launcher.launch(dispatch.dispatch_id)
-    evidence["CLOUD_EVALUATION_JOB_LAUNCHED"] = bool(first_execution)
-    evidence["cloud_run_execution_name"] = first_execution
+    try:
+        first_execution = launcher.launch(dispatch.dispatch_id)
+        evidence["CLOUD_EVALUATION_JOB_LAUNCHED"] = bool(first_execution)
+        evidence["cloud_run_execution_name"] = first_execution
+    except JobLaunchError as exc:
+        evidence["CLOUD_EVALUATION_JOB_LAUNCHED"] = False
+        evidence["launch_error"] = str(exc)
+        first_execution = ""
     try:
         launcher.launch(dispatch.dispatch_id)
         evidence["DUPLICATE_DISPATCH_FAIL_CLOSED"] = "LAUNCHED_SECOND_JOB"

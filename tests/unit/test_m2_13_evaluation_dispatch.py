@@ -30,7 +30,10 @@ from app.publish_execution.contracts import ModelReadyEvidence
 from app.publish_execution.model_ready import InMemoryModelReadyEvidenceResolver
 from app.service.evaluation_dispatch import FakeEvaluationDispatcher
 from app.service.evaluation_executor import EvaluationExecutionResult
-from app.service.evaluation_jobs import FakeEvaluationJobLauncher
+from app.service.evaluation_jobs import (
+    CloudRunEvaluationJobLauncher,
+    FakeEvaluationJobLauncher,
+)
 from app.service.evaluation_progress import compose_execution_view
 from app.service.service_identity import FakeServiceIdentityVerifier, ServiceIdentity
 from app.workers.evaluation_runtime import execute_claimed_dispatch
@@ -296,6 +299,32 @@ def test_internal_launch_rejects_wrong_service_identity() -> None:
         headers={"Authorization": "Bearer wrong"},
     )
     assert response.status_code == 401
+
+
+def test_cloud_run_launcher_does_not_wait_for_job_completion() -> None:
+    class _Meta:
+        name = "projects/p/locations/l/jobs/j/executions/exec-fast"
+
+    class _Op:
+        metadata = _Meta()
+
+        def result(self, timeout=None):
+            raise AssertionError("launcher must not wait for job completion")
+
+    class _Client:
+        def run_job(self, request):
+            env = request["overrides"]["container_overrides"][0]["env"][0]
+            assert env["name"] == "PREM3_EVALUATION_DISPATCH_ID"
+            assert env["value"] == "dsp_demo0000000000009"
+            return _Op()
+
+    launcher = CloudRunEvaluationJobLauncher(
+        project_id="modelready-m3",
+        location="us-central1",
+        job_name="prem3-evaluation-worker",
+        client=_Client(),
+    )
+    assert launcher.launch("dsp_demo0000000000009") == "exec-fast"
 
 
 def test_internal_launch_accepts_dispatch_service_identity() -> None:
