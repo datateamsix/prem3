@@ -844,6 +844,78 @@ components:
       - connection_id
       title: DriveBindingSetupRequest
       type: object
+    EvaluationExecutionView:
+      additionalProperties: false
+      properties:
+        approval_required:
+          default: false
+          title: Approval Required
+          type: boolean
+        current_stage:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Stage
+        dispatch_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dispatch Status
+        eda_receipt_available:
+          default: false
+          title: Eda Receipt Available
+          type: boolean
+        evaluation_status:
+          title: Evaluation Status
+          type: string
+        execution_completed_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Execution Completed At
+        execution_started_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Execution Started At
+        execution_updated_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Execution Updated At
+        issue_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Issue Count
+        model_ready:
+          default: false
+          title: Model Ready
+          type: boolean
+        outcome:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Outcome
+        readiness_receipt_available:
+          default: false
+          title: Readiness Receipt Available
+          type: boolean
+        run_id:
+          title: Run Id
+          type: string
+        terminal:
+          default: false
+          title: Terminal
+          type: boolean
+      required:
+      - run_id
+      - evaluation_status
+      title: EvaluationExecutionView
+      type: object
     EvaluationListResponse:
       additionalProperties: false
       properties:
@@ -871,6 +943,10 @@ components:
         dataset_id:
           title: Dataset Id
           type: string
+        execution:
+          anyOf:
+          - $ref: '#/components/schemas/EvaluationExecutionView'
+          - type: 'null'
         package_fingerprint:
           anyOf:
           - type: string
@@ -2321,8 +2397,8 @@ components:
 info:
   description: Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, Google connection, import/publish
     governance, Business IQ, and Data Foundation contracts. Clerk session tokens are verified when the identity provider is
-    configured. Creating an Evaluation returns 202 Accepted for resource creation only; durable ADK dispatch is not started
-    from this HTTP boundary. Tenant identity is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY,
+    configured. Creating an Evaluation returns 202 Accepted only after durable Cloud Tasks enqueue; 202 is not ADK completion
+    and not MODEL_READY. Tenant identity is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY,
     MODEL_READY, and PUBLISH_READY are distinct deterministic states.
   summary: PreM3 authenticated product API
   title: prem3-api
@@ -4778,7 +4854,7 @@ paths:
       tags:
       - evaluations
     post:
-      description: Accept Evaluation creation. 202 means accepted/created, not agent running.
+      description: Accept Evaluation creation. 202 means durable dispatch queued, not ADK complete.
       operationId: createEvaluation
       parameters:
       - in: path

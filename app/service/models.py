@@ -179,6 +179,23 @@ class CreateEvaluationRequest(ApiModel):
     upload_id: str = Field(min_length=1, max_length=128)
 
 
+class EvaluationExecutionView(ApiModel):
+    run_id: str
+    evaluation_status: str
+    dispatch_status: str | None = None
+    execution_started_at: datetime | None = None
+    execution_updated_at: datetime | None = None
+    execution_completed_at: datetime | None = None
+    current_stage: str | None = None
+    terminal: bool = False
+    outcome: str | None = None
+    model_ready: bool = False
+    approval_required: bool = False
+    issue_count: int | None = None
+    readiness_receipt_available: bool = False
+    eda_receipt_available: bool = False
+
+
 class EvaluationResponse(ApiModel):
     run_id: str
     dataset_id: str
@@ -187,6 +204,7 @@ class EvaluationResponse(ApiModel):
     created_at: datetime
     updated_at: datetime | None = None
     package_fingerprint: str | None = None
+    execution: EvaluationExecutionView | None = None
 
 
 class EvaluationListResponse(ApiModel):
