@@ -580,3 +580,30 @@ Tenant authority is never derived from Cloud Run accessibility, request headers,
 
 ---
 
+## 2026-08-23 — MISSION 2 BACKEND ACCEPTANCE FREEZE (M2-14)
+
+**Decision:** Freeze the completed Mission 2 backend as one merge candidate. No new
+architecture. No readiness-semantic change.
+
+**Locked:**
+
+1. Firestore remains the operational control plane.
+2. Clerk maps verified identity to PreM3 tenant; Clerk org ID is never storage authority.
+3. Stripe remains entitlement source of truth; PreM3 stores `EntitlementSnapshot`.
+4. Business IQ snapshot and Data Foundation remain canonical persisted planes.
+5. Three-state governance stays distinct: `IMPORT_READY`, `MODEL_READY`, `PUBLISH_READY`.
+6. `DatasetUpload` remains the immutable Evaluation input boundary.
+7. Google credentials remain KMS-enveloped (`aes-256-gcm+kms-v1`).
+8. Cloud Tasks remains the durable launcher; Cloud Run Job remains the Evaluation worker.
+9. Frontend polls `GET /v1/runs/{run_id}`. No SSE.
+10. BigQuery materialization stays bounded at 100,000 rows with explicit overflow failure.
+11. Live Clerk/Google/Drive/BQ interactive proofs remain `DEFERRED_UI_PROVIDER_QUALIFICATION`.
+12. Durable-worker `MODEL_READY` remains `EXTERNAL_DEPENDENCY` until official Meridian EDA
+    can be proven on that path. Historical Dataset A golden `MODEL_READY` remains valid.
+
+**Not in this decision:** merging the PR; frontend visual implementation; live provider
+qualification; modeling / posterior work; a pre-merge release tag. Recommended post-merge
+tag: `prem3-m2-backend-freeze`.
+
+---
+

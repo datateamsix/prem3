@@ -10,6 +10,10 @@ request here instead.** Do not create a second overlapping request file.
 
 Status values: `NOT STARTED` · `IN PROGRESS` · `AVAILABLE` · `SUPERSEDED` · `BLOCKED`.
 
+M2-14 acceptance closeout uses one of: `IMPLEMENTED` · `IMPLEMENTED_BOUNDED` ·
+`EXTERNAL_DEPENDENCY` · `DEFERRED_UI_PROVIDER_QUALIFICATION` · `NOT_IMPLEMENTED`.
+See the closeout table at the end of this file.
+
 REQ-001 through REQ-010 originated in the Mission 2 frontend prompt pack. REQ-011 through
 REQ-015 are specified here as first-class Mission 2 commercial/resource contracts.
 REQ-016 through REQ-018 are Google connections and import/publish governance.
@@ -182,16 +186,15 @@ workflow path (`POST /v1/planning/runs/{planning_run_id}/change-path`).
 
 ### REQ-011 — Project/Dataset resource model and endpoints
 
-**Status:** PARTIAL — PERSISTENCE + HTTP CONTRACTS (2026-08-17)
-**Needs:**
+**Status:** IMPLEMENTED — PROJECT / DATASET / UPLOAD / EVALUATION (M2-14)
+**Needs:** none for Mission 2 backend architecture.
 
 - First-class MMM Project (`workspace_id`) and Dataset (`dataset_id`) resources persisted in
   Firestore. Project creation is **explicit** and capacity-gated; Clerk user/org provisioning
-  must not auto-create a paid MMM Project. **Persistence + capacity + HTTP list/create/get
-  contracts exist. Full product lifecycle (uploads, evaluations) still pending.**
+  must not auto-create a paid MMM Project. Uploads and Evaluations are implemented (REQ-014).
 - CRUD endpoints per `15_*` §4 (`/v1/workspaces`, `/v1/workspaces/{workspace_id}/datasets`).
 - Each Evaluation Run (`run_id`) carries an explicit `dataset_id` foreign key.
-  Minimal `DatasetEvaluationRef` seam exists; full history/read model is REQ-014.
+  Full history/read model is REQ-014 (implemented).
 - List/detail fields remain contract-backed (name, intended KPI/grain, source count, latest
   evaluation state, latest evaluated timestamp, evaluation count, next action).
 - Isolation: tenant from verified credential; `workspace_id` in the URL is a selector that
@@ -362,3 +365,36 @@ of them.
 **One-line description:** revocable plan share token.
 **Needs specification:** backend-issued, revocable read-only share token for authenticated
 plan detail pages. Optional until specified.
+
+---
+
+## M2-14 Mission 2 closeout
+
+Canonical acceptance freeze: `docs/backend/M2_MISSION_2_ACCEPTANCE_FREEZE_REPORT.md`.
+Proof matrix: `docs/backend/M2_ACCEPTANCE_PROOF_MATRIX.md`.
+
+| Request | Closeout | Notes |
+|---|---|---|
+| REQ-001 schema export | IMPLEMENTED | generated `contracts/schema/*` |
+| REQ-002 OpenAPI freeze | IMPLEMENTED | `contracts/openapi.yaml`; no hand-edit |
+| REQ-003 `/v1/me` + Clerk mapping | IMPLEMENTED | live Clerk UX is DEFERRED_UI_PROVIDER_QUALIFICATION |
+| REQ-004 question schema | NOT_IMPLEMENTED | planning workstream; not an M2 architecture gap |
+| REQ-005 field provenance | NOT_IMPLEMENTED | planning workstream |
+| REQ-006 workflow change | NOT_IMPLEMENTED | planning workstream |
+| REQ-007 Taskmaster read model | NOT_IMPLEMENTED | later product surface |
+| REQ-008 share token | NOT_IMPLEMENTED | collaboration; later |
+| REQ-009 registry search/gaps | NOT_IMPLEMENTED | later |
+| REQ-010 planning response types | NOT_IMPLEMENTED | later `18_*` |
+| REQ-011 Project/Dataset HTTP | IMPLEMENTED | uploads + evaluations closed via REQ-014 |
+| REQ-012 plan catalog | IMPLEMENTED | |
+| REQ-013 Stripe Checkout/Portal | IMPLEMENTED | live SaaS webhook proof remains optional |
+| REQ-014 uploads + evaluations | IMPLEMENTED | durable dispatch is M2-13 |
+| REQ-015 planner manifest export | NOT_IMPLEMENTED | public `/planner` stays local-static |
+| REQ-016 Google connections | IMPLEMENTED | connector code ready; live OAuth is DEFERRED_UI_PROVIDER_QUALIFICATION |
+| REQ-017 Import Governance | IMPLEMENTED | live provider qualification deferred |
+| REQ-018 Publish Governance | IMPLEMENTED | adapters ready; live publish proof deferred |
+| Drive/BQ materialization | IMPLEMENTED | live provider proof deferred |
+| BigQuery materialization scale | IMPLEMENTED_BOUNDED | 100000 rows; overflow fails closed |
+| Durable ADK cloud execution | IMPLEMENTED | PROVEN_CLOUD on Dataset A SERVICE fixture |
+| Durable cloud MODEL_READY | EXTERNAL_DEPENDENCY | official Meridian EDA environment |
+| Production-scale BQ extract | NOT_IMPLEMENTED | explicitly out of Mission 2 |

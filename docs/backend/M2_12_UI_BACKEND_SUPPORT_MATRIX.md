@@ -25,11 +25,17 @@ No UI field below requires parsing narrative prose to determine authority.
 | Published artifact identity | `destination_results[].artifacts_verified[].identity` and BQ `versioned_resource_identity` | Drive file IDs / BQ table IDs after readback | publish execution routes | Publish execution |
 | Current model-ready pointer | `destination_results[].stable_pointer_identity` | BQ view `model_ready_{dataset}_current` after versioned table verifies | publish execution routes | Publish execution |
 | Publish verification | `readback_verified`, `write_completed`, overall `status` | Destination readback | publish execution routes | Publish execution |
+| Evaluation accepted | `EvaluationResponse.status` | `EvaluationStatus.ACCEPTED` | `POST/GET .../evaluations`, `GET /v1/runs/{run_id}` | `createEvaluation` |
+| Dispatch transport | `execution.dispatch_status` | `EvaluationDispatch.status` | run/evaluation GET | Cloud Tasks + worker |
+| Evaluation progress | `execution.current_stage`, `terminal`, `outcome` | `DurableRunState` | `GET /v1/runs/{run_id}` | EvaluationExecutor |
+| MODEL_READY (run view) | `execution.model_ready` | readiness evidence, never dispatch success | `GET /v1/runs/{run_id}` | Deterministic validators + official EDA |
+
+M2-14 polling contract: `GET /v1/runs/{run_id}`. No SSE. See `docs/backend/M2_14_FRONTEND_CONTRACT_HANDOFF.md`.
 
 ## Presentation rules
 
 - GCS package URIs, OAuth tokens, Firestore paths, and bucket internals are not returned.
 - `IMPORT_READY` is never inferred from `FOUNDATION_SOURCE_READY` or the reverse.
-- `MODEL_READY` is never inferred from Evaluation `ACCEPTED` or `COMPLETE`.
+- `MODEL_READY` is never inferred from Evaluation `ACCEPTED`, dispatch `SUCCEEDED`, or `COMPLETE`.
 - `PUBLISH_READY` is never inferred from `MODEL_READY`.
 - `PUBLISHED` / `COMPLETE` is never inferred from `PUBLISH_READY`.
