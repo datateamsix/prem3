@@ -45,6 +45,10 @@ def new_run_id() -> str:
     return _opaque("run")
 
 
+def new_dispatch_id() -> str:
+    return _opaque("dsp")
+
+
 def new_google_connection_id() -> str:
     return _opaque("gconn")
 

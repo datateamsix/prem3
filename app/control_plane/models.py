@@ -428,6 +428,71 @@ class DatasetEvaluationRef(BaseModel):
 Evaluation = DatasetEvaluationRef
 
 
+class DispatchStatus(StrEnum):
+    """Durable launch/execution transport. Not MODEL_READY and not EvaluationStatus."""
+
+    PENDING = "PENDING"
+    QUEUED = "QUEUED"
+    LAUNCHING = "LAUNCHING"
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED_RETRYABLE = "FAILED_RETRYABLE"
+    FAILED_TERMINAL = "FAILED_TERMINAL"
+
+
+class EvaluationDispatch(BaseModel):
+    """Server-owned Evaluation launch record. dispatch_id is never customer authority."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    dispatch_id: str
+    tenant_id: str
+    workspace_id: str
+    dataset_id: str
+    run_id: str
+    evaluation_created_at: datetime
+    status: DispatchStatus
+    attempt_count: int = 0
+    cloud_task_name: str | None = None
+    cloud_run_job_name: str
+    cloud_run_execution_name: str | None = None
+    claim_owner: str | None = None
+    claim_expires_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+    launched_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    failed_at: datetime | None = None
+    last_error_code: str | None = None
+    last_error_detail: str | None = None
+
+    @field_validator("dispatch_id")
+    @classmethod
+    def _dispatch_id(cls, value: str) -> str:
+        return validate_resource_identifier(value, field="dispatch_id")
+
+    @field_validator("tenant_id")
+    @classmethod
+    def _tenant_id(cls, value: str) -> str:
+        return validate_resource_identifier(value, field="tenant_id")
+
+    @field_validator("workspace_id")
+    @classmethod
+    def _workspace_id(cls, value: str) -> str:
+        return validate_resource_identifier(value, field="workspace_id")
+
+    @field_validator("dataset_id")
+    @classmethod
+    def _dataset_id(cls, value: str) -> str:
+        return validate_resource_identifier(value, field="dataset_id")
+
+    @field_validator("run_id")
+    @classmethod
+    def _run_id(cls, value: str) -> str:
+        return validate_resource_identifier(value, field="run_id")
+
+
 class RegistryOverlayMetadata(BaseModel):
     """Storage seam only. Does not load overlays into the bundled registry."""
 

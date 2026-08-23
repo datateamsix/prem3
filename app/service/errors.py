@@ -198,6 +198,24 @@ def validation_error(errors: list[ProblemFieldError]) -> APIError:
     )
 
 
+def evaluation_dispatch_unavailable() -> APIError:
+    return APIError(
+        code="EVALUATION_DISPATCH_UNAVAILABLE",
+        status=503,
+        title="Evaluation dispatch unavailable",
+        detail="The Evaluation was accepted but durable dispatch could not be queued.",
+    )
+
+
+def service_identity_required() -> APIError:
+    return APIError(
+        code="SERVICE_IDENTITY_REQUIRED",
+        status=401,
+        title="Service identity required",
+        detail="A verified service identity is required for this operation.",
+    )
+
+
 def internal_error() -> APIError:
     return APIError(
         code="INTERNAL_ERROR",

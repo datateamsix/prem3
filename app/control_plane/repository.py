@@ -17,6 +17,7 @@ from app.control_plane.models import (
     DatasetUpload,
     DriveWorkspaceBinding,
     EntitlementSnapshot,
+    EvaluationDispatch,
     GoogleConnection,
     GoogleOAuthTransaction,
     IdentityProviderOrganizationMapping,
@@ -193,6 +194,23 @@ class ControlPlaneRepository(Protocol):
         workspace_id: str,
         dataset_id: str,
     ) -> list[DatasetEvaluationRef]: ...
+
+    def put_evaluation_dispatch(self, dispatch: EvaluationDispatch) -> EvaluationDispatch: ...
+
+    def get_evaluation_dispatch(self, dispatch_id: str) -> EvaluationDispatch | None: ...
+
+    def get_evaluation_dispatch_for_run(
+        self, *, tenant_id: str, run_id: str
+    ) -> EvaluationDispatch | None: ...
+
+    def claim_evaluation_dispatch(
+        self,
+        *,
+        dispatch_id: str,
+        owner: str,
+        execution_name: str,
+        now: datetime,
+    ) -> tuple[str, EvaluationDispatch | None]: ...
 
     # --- Idempotency (tenant-scoped; key is not authority) ---
     def get_idempotent_result(

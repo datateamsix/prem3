@@ -12,6 +12,7 @@ from typing import Any
 from google.cloud import firestore
 from google.cloud.firestore import transactional
 
+from app.control_plane.dispatch_claims import decide_claim
 from app.control_plane.entitlements import default_planner_entitlement
 from app.control_plane.ids import new_dataset_id, new_tenant_id, new_workspace_id
 from app.control_plane.layout import (
@@ -32,6 +33,7 @@ from app.control_plane.models import (
     DatasetUpload,
     DriveWorkspaceBinding,
     EntitlementSnapshot,
+    EvaluationDispatch,
     GoogleConnection,
     GoogleOAuthTransaction,
     IdentityProviderOrganizationMapping,
@@ -91,6 +93,8 @@ COLLECTION_IMPORT_RECEIPTS = "import_receipts"
 COLLECTION_MATERIALIZATIONS = "materializations"
 COLLECTION_PUBLISH_RECEIPTS = "publish_receipts"
 COLLECTION_PUBLISH_EXECUTIONS = "publish_executions"
+COLLECTION_DISPATCHES = "dispatches"
+COLLECTION_EVALUATION_DISPATCHES = "evaluation_dispatches"
 
 
 class FirestoreControlPlaneRepository:
@@ -180,6 +184,21 @@ class FirestoreControlPlaneRepository:
             self._dataset_ref(tenant_id, workspace_id, dataset_id)
             .collection(COLLECTION_EVALUATIONS)
             .document(run_id)
+        )
+
+    def _dispatch_index_doc(self, dispatch_id: str):
+        return self._db.collection(COLLECTION_EVALUATION_DISPATCHES).document(dispatch_id)
+
+    def _nested_dispatch_doc(self, dispatch: EvaluationDispatch):
+        return (
+            self._dataset_evaluation_doc(
+                dispatch.tenant_id,
+                dispatch.workspace_id,
+                dispatch.dataset_id,
+                dispatch.run_id,
+            )
+            .collection(COLLECTION_DISPATCHES)
+            .document(dispatch.dispatch_id)
         )
 
     def _idempotency_ref(self, tenant_id: str, operation: str, key: str):
@@ -739,6 +758,76 @@ class FirestoreControlPlaneRepository:
                 rows.append(ref)
         rows.sort(key=lambda item: item.run_id)
         return rows
+
+    def put_evaluation_dispatch(self, dispatch: EvaluationDispatch) -> EvaluationDispatch:
+        existing_snap = self._dispatch_index_doc(dispatch.dispatch_id).get()
+        if existing_snap.exists:
+            existing = document_to_model(EvaluationDispatch, existing_snap.to_dict())
+            if (
+                existing.tenant_id != dispatch.tenant_id
+                or existing.workspace_id != dispatch.workspace_id
+                or existing.dataset_id != dispatch.dataset_id
+                or existing.run_id != dispatch.run_id
+            ):
+                raise ProviderMappingConflictError("Evaluation dispatch linkage is immutable.")
+        payload = model_to_document(dispatch)
+        self._dispatch_index_doc(dispatch.dispatch_id).set(payload)
+        self._nested_dispatch_doc(dispatch).set(payload)
+        return dispatch
+
+    def get_evaluation_dispatch(self, dispatch_id: str) -> EvaluationDispatch | None:
+        snap = self._dispatch_index_doc(dispatch_id).get()
+        if not snap.exists:
+            return None
+        return document_to_model(EvaluationDispatch, snap.to_dict())
+
+    def get_evaluation_dispatch_for_run(
+        self, *, tenant_id: str, run_id: str
+    ) -> EvaluationDispatch | None:
+        evaluation = self.get_evaluation_ref(tenant_id=tenant_id, run_id=run_id)
+        if evaluation is None:
+            return None
+        rows: list[EvaluationDispatch] = []
+        for snap in (
+            self._dataset_evaluation_doc(
+                tenant_id, evaluation.workspace_id, evaluation.dataset_id, run_id
+            )
+            .collection(COLLECTION_DISPATCHES)
+            .stream()
+        ):
+            row = document_to_model(EvaluationDispatch, snap.to_dict())
+            if row.tenant_id == tenant_id and row.run_id == run_id:
+                rows.append(row)
+        if not rows:
+            return None
+        rows.sort(key=lambda item: item.created_at)
+        return rows[-1]
+
+    def claim_evaluation_dispatch(
+        self,
+        *,
+        dispatch_id: str,
+        owner: str,
+        execution_name: str,
+        now: datetime,
+    ) -> tuple[str, EvaluationDispatch | None]:
+        index = self._dispatch_index_doc(dispatch_id)
+
+        @transactional
+        def _claim(transaction: firestore.Transaction) -> tuple[str, EvaluationDispatch | None]:
+            snap = index.get(transaction=transaction)
+            if not snap.exists:
+                return "not_found", None
+            current = document_to_model(EvaluationDispatch, snap.to_dict())
+            outcome, updated = decide_claim(
+                current, owner=owner, execution_name=execution_name, now=now
+            )
+            payload = model_to_document(updated)
+            transaction.set(index, payload)
+            transaction.set(self._nested_dispatch_doc(updated), payload)
+            return outcome.value, updated
+
+        return _claim(self._db.transaction())
 
     def get_idempotent_result(
         self, *, tenant_id: str, operation: str, key: str

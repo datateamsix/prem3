@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from threading import RLock
 from typing import Any
 
+from app.control_plane.dispatch_claims import decide_claim
 from app.control_plane.entitlements import default_planner_entitlement
 from app.control_plane.ids import new_dataset_id, new_tenant_id, new_workspace_id
 from app.control_plane.layout import (
@@ -30,6 +31,7 @@ from app.control_plane.models import (
     DatasetUpload,
     DriveWorkspaceBinding,
     EntitlementSnapshot,
+    EvaluationDispatch,
     GoogleConnection,
     GoogleOAuthTransaction,
     IdentityProviderOrganizationMapping,
@@ -95,6 +97,8 @@ class InMemoryControlPlaneRepository:
         self._publish_receipts: dict[str, PublishReadinessReceipt] = {}
         self._publish_executions: dict[str, PublishExecutionReceipt] = {}
         self._publish_authority: dict[str, str] = {}
+        self._evaluation_dispatches: dict[str, EvaluationDispatch] = {}
+        self._run_dispatches: dict[str, str] = {}
 
     def create_tenant(
         self,
@@ -536,6 +540,55 @@ class InMemoryControlPlaneRepository:
             ]
             rows.sort(key=lambda item: item.run_id)
             return rows
+
+    def put_evaluation_dispatch(self, dispatch: EvaluationDispatch) -> EvaluationDispatch:
+        with self._lock:
+            existing = self._evaluation_dispatches.get(dispatch.dispatch_id)
+            if existing is not None and (
+                existing.tenant_id != dispatch.tenant_id
+                or existing.workspace_id != dispatch.workspace_id
+                or existing.dataset_id != dispatch.dataset_id
+                or existing.run_id != dispatch.run_id
+            ):
+                raise ProviderMappingConflictError("Evaluation dispatch linkage is immutable.")
+            self._evaluation_dispatches[dispatch.dispatch_id] = dispatch
+            self._run_dispatches[f"{dispatch.tenant_id}/{dispatch.run_id}"] = dispatch.dispatch_id
+            return deepcopy(dispatch)
+
+    def get_evaluation_dispatch(self, dispatch_id: str) -> EvaluationDispatch | None:
+        with self._lock:
+            row = self._evaluation_dispatches.get(dispatch_id)
+            return deepcopy(row) if row is not None else None
+
+    def get_evaluation_dispatch_for_run(
+        self, *, tenant_id: str, run_id: str
+    ) -> EvaluationDispatch | None:
+        with self._lock:
+            dispatch_id = self._run_dispatches.get(f"{tenant_id}/{run_id}")
+            if dispatch_id is None:
+                return None
+            row = self._evaluation_dispatches.get(dispatch_id)
+            if row is None or row.tenant_id != tenant_id or row.run_id != run_id:
+                return None
+            return deepcopy(row)
+
+    def claim_evaluation_dispatch(
+        self,
+        *,
+        dispatch_id: str,
+        owner: str,
+        execution_name: str,
+        now: datetime,
+    ) -> tuple[str, EvaluationDispatch | None]:
+        with self._lock:
+            row = self._evaluation_dispatches.get(dispatch_id)
+            if row is None:
+                return "not_found", None
+            outcome, updated = decide_claim(
+                row, owner=owner, execution_name=execution_name, now=now
+            )
+            self._evaluation_dispatches[dispatch_id] = updated
+            return outcome.value, deepcopy(updated)
 
     def get_idempotent_result(
         self, *, tenant_id: str, operation: str, key: str
