@@ -20,17 +20,26 @@ REGION = "us-central1"
 SERVICE = "prem3-api"
 RUNTIME_SA = f"m3-runtime@{PROJECT}.iam.gserviceaccount.com"
 IMAGE_REPO = f"us-central1-docker.pkg.dev/{PROJECT}/cloud-run-source-deploy/{SERVICE}"
+GOOGLE_KMS_KEY = (
+    f"projects/{PROJECT}/locations/{REGION}/keyRings/prem3/"
+    "cryptoKeys/prem3-google-oauth-credentials"
+)
 GCLOUD = "gcloud.cmd" if os.name == "nt" else "gcloud"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNTIME_ENV_PATH = REPO_ROOT / "artifacts" / "deployment" / "prem3_api_runtime.env.yaml"
 HISTORICAL_SERVICE = "modelready-m3"
 EDA_JOB = "meridian-eda-worker"
+EVALUATION_QUEUE = "prem3-evaluation-dispatch"
+EVALUATION_JOB = "prem3-evaluation-worker"
+DISPATCHER_SA = f"prem3-evaluation-dispatcher@{PROJECT}.iam.gserviceaccount.com"
+DEFAULT_API_URL = "https://prem3-api-vkcd3cbiea-uc.a.run.app"
 
 SECRET_ENV = {
     "CLERK_SECRET_KEY": "prem3-api-clerk-secret-key",
     "CLERK_WEBHOOK_SIGNING_SECRET": "prem3-api-clerk-webhook-signing-secret",
     "STRIPE_SECRET_KEY": "prem3-api-stripe-secret-key",
     "STRIPE_WEBHOOK_SECRET": "prem3-api-stripe-webhook-secret",
+    "GOOGLE_OAUTH_CLIENT_SECRET": "prem3-api-google-oauth-client-secret",
 }
 
 
@@ -136,6 +145,27 @@ def _available_secrets() -> dict[str, str]:
     return mapping
 
 
+def _runtime_env_file() -> Path:
+    dest = REPO_ROOT / "artifacts" / "deployment" / "prem3_api_runtime.generated.env.yaml"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    existing = RUNTIME_ENV_PATH.read_text() if RUNTIME_ENV_PATH.is_file() else ""
+    if "GOOGLE_KMS_KEY:" not in existing:
+        existing = existing.rstrip() + f'\nGOOGLE_KMS_KEY: "{GOOGLE_KMS_KEY}"\n'
+    launch_url = f"{DEFAULT_API_URL}/internal/v1/evaluation-dispatches"
+    extras = {
+        "EVALUATION_DISPATCH_QUEUE": EVALUATION_QUEUE,
+        "EVALUATION_WORKER_JOB": EVALUATION_JOB,
+        "EVALUATION_DISPATCHER_SA": DISPATCHER_SA,
+        "EVALUATION_LAUNCH_URL": launch_url,
+        "EVALUATION_LAUNCH_AUDIENCE": launch_url,
+    }
+    for key, value in extras.items():
+        if f"{key}:" not in existing:
+            existing = existing.rstrip() + f'\n{key}: "{value}"\n'
+    dest.write_text(existing)
+    return dest
+
+
 def _deploy(*, image_uri: str, secrets: dict[str, str]) -> None:
     args = [
         "run",
@@ -156,8 +186,7 @@ def _deploy(*, image_uri: str, secrets: dict[str, str]) -> None:
         "--startup-probe=httpGet.path=/health,periodSeconds=5,timeoutSeconds=3,failureThreshold=12",
         "--quiet",
     ]
-    if RUNTIME_ENV_PATH.is_file():
-        args.append(f"--env-vars-file={RUNTIME_ENV_PATH}")
+    args.append(f"--env-vars-file={_runtime_env_file()}")
     if secrets:
         packed = ",".join(f"{env}={ref}" for env, ref in secrets.items())
         args.append(f"--set-secrets={packed}")

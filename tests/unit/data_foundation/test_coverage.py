@@ -31,7 +31,9 @@ def test_not_expected_before_launch_and_valid_zero(service, df_context, tenant_c
     snapshot = acme_snapshot()
     service.load_business_snapshot(df_context, snapshot)
     inventory = service.discover(df_context)
-    candidate = next(item for item in inventory.candidates if "audio" in (item.resource.table_id or ""))
+    candidate = next(
+        item for item in inventory.candidates if "audio" in (item.resource.table_id or "")
+    )
     paid_social = next(
         item
         for item in service.get_evidence_requirements(df_context).requirements
@@ -58,7 +60,11 @@ def test_not_expected_before_launch_and_valid_zero(service, df_context, tenant_c
         cycle.cycle_id,
         channel_dates={"Paid Social": ("2026-04-01", None)},
     )
-    series = next(item for item in coverage.series if "Paid" in item.concept or "Streaming" in item.concept or True)
+    series = next(
+        item
+        for item in coverage.series
+        if "Paid" in item.concept or "Streaming" in item.concept or True
+    )
     jan = next(item for item in series.buckets if item.period == "2026-01")
     assert jan.state in {
         CoverageBucketState.NOT_EXPECTED,
@@ -119,7 +125,9 @@ def test_shared_window_and_transition_overlap(service, df_context, tenant_ctx) -
     )
     coverage = service.compute_coverage(df_context, cycle.cycle_id, view=CoverageView.ALL_SOURCES)
     assert coverage.view is CoverageView.ALL_SOURCES
-    series = next(item for item in coverage.series if item.requirement_id == media_req.requirement_id)
+    series = next(
+        item for item in coverage.series if item.requirement_id == media_req.requirement_id
+    )
     january = next(bucket for bucket in series.buckets if bucket.period == "2026-01")
     assert january.state is CoverageBucketState.OVERLAP_UNDER_RECONCILIATION
     assert series.source_id == binding.source_id

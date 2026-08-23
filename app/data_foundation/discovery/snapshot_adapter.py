@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from app.business_iq.contracts import BusinessProfile, BusinessProfileSnapshot as IqSnapshot
+from app.business_iq.contracts import BusinessProfile
+from app.business_iq.contracts import BusinessProfileSnapshot as IqSnapshot
 from app.business_iq.enums import BusinessContextReadyStatus, KnowledgeState
 from app.data_foundation.contracts import (
     BusinessChannelFact,
@@ -18,7 +19,9 @@ def snapshot_from_business_iq(
     business_context_ready: bool,
 ) -> BusinessProfileSnapshot:
     profile = snapshot.profile
-    return snapshot_from_profile(profile, snapshot_id=snapshot.snapshot_id, ready=business_context_ready)
+    return snapshot_from_profile(
+        profile, snapshot_id=snapshot.snapshot_id, ready=business_context_ready
+    )
 
 
 def snapshot_from_profile(
@@ -41,7 +44,9 @@ def snapshot_from_profile(
         business_context_ready=ready,
         kpi=profile.kpi or "unspecified",
         kpi_definition=profile.kpi_definition or profile.kpi_custom_text,
-        objective=profile.measurement_objectives[0].statement if profile.measurement_objectives else None,
+        objective=profile.measurement_objectives[0].statement
+        if profile.measurement_objectives
+        else None,
         markets=tuple(item.name for item in profile.markets),
         channels=tuple(
             BusinessChannelFact(

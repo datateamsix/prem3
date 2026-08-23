@@ -118,6 +118,11 @@ class Settings:
     google_credential_vault_key: str | None
     google_kms_key: str | None
     google_oauth_ttl_seconds: int
+    evaluation_dispatch_queue: str | None
+    evaluation_worker_job: str | None
+    evaluation_dispatcher_sa: str | None
+    evaluation_launch_url: str | None
+    evaluation_launch_audience: str | None
 
 
 def load_settings() -> Settings:
@@ -192,6 +197,11 @@ def load_settings() -> Settings:
         google_credential_vault_key=os.getenv("GOOGLE_CREDENTIAL_VAULT_KEY") or None,
         google_kms_key=os.getenv("GOOGLE_KMS_KEY") or None,
         google_oauth_ttl_seconds=int(os.getenv("GOOGLE_OAUTH_TTL_SECONDS", "600")),
+        evaluation_dispatch_queue=os.getenv("EVALUATION_DISPATCH_QUEUE") or None,
+        evaluation_worker_job=os.getenv("EVALUATION_WORKER_JOB") or None,
+        evaluation_dispatcher_sa=os.getenv("EVALUATION_DISPATCHER_SA") or None,
+        evaluation_launch_url=os.getenv("EVALUATION_LAUNCH_URL") or None,
+        evaluation_launch_audience=os.getenv("EVALUATION_LAUNCH_AUDIENCE") or None,
     )
 
 

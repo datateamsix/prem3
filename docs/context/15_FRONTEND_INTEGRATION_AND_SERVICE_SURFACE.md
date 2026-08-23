@@ -296,3 +296,18 @@ The public marketing/Planner work can proceed in parallel once the Planner manif
 - Server-side rendering of the authenticated Taskmaster (client-side fetch is sufficient).
 - Direct customer SQL access to their BigQuery consumption dataset.
 - Replacing the ADK developer/CLI path used by `scripts/run_dataset_a.py`. That path must keep working; it is the reproducible proof surface.
+
+## 11. Mission 2 backend freeze (M2-14)
+
+Backend architecture is frozen. Frontend implements against generated OpenAPI and
+`contracts/schema/*`. Do not invent readiness or dispatch semantics.
+
+Authoritative Evaluation progress fields live on `EvaluationResponse.execution`.
+Poll `GET /v1/runs/{run_id}`. HTTP 202 after create is enqueue success, not
+`MODEL_READY`. `dispatch_status=SUCCEEDED` is not `MODEL_READY`.
+
+Interactive Clerk Organization UX and Google provider flows are frontend integration,
+then live provider qualification. They are not backend schema gaps.
+
+See `docs/backend/M2_14_FRONTEND_CONTRACT_HANDOFF.md` and
+`docs/backend/M2_MISSION_2_ACCEPTANCE_FREEZE_REPORT.md`.

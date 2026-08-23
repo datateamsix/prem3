@@ -8,7 +8,6 @@ from app.business_iq.contracts import BusinessContextReadyReceipt, BusinessProfi
 from app.business_iq.enums import BusinessContextReadyStatus, KnowledgeState
 from app.business_iq.ids import new_receipt_id
 
-
 REQUIRED_CONCEPTS = (
     "business_identity",
     "measurement_objective",

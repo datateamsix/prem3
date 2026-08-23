@@ -16,10 +16,16 @@ BRIEF_MODEL_VERSION = "business-iq/brief/deterministic/v1"
 
 def compile_grounded_brief(*, profile: BusinessProfile) -> BusinessIntelligenceBrief:
     fact_ids = tuple(item.fact_id for item in profile.facts)
-    channel_names = ", ".join(item.custom_name or item.canonical_name for item in profile.marketing_portfolio)
+    channel_names = ", ".join(
+        item.custom_name or item.canonical_name for item in profile.marketing_portfolio
+    )
     markets = ", ".join(item.name for item in profile.markets) or "unspecified markets"
     kpi = profile.kpi or "an unspecified KPI"
-    identity = profile.business_identity.brand_name or profile.business_identity.legal_name or "This business"
+    identity = (
+        profile.business_identity.brand_name
+        or profile.business_identity.legal_name
+        or "This business"
+    )
     gaps = [item.question for item in profile.knowledge_gaps if not item.acknowledged]
     events = [item.name for item in profile.events]
     priors = [item.description for item in profile.prior_evidence]

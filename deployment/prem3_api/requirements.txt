@@ -1,9 +1,15 @@
-# Minimal prem3-api Cloud Run runtime. Do not install ADK, Meridian, or pandas.
+# Minimal prem3-api Cloud Run runtime. Do not install ADK or Meridian.
+# pandas is required for Data Foundation warehouse + import contract imports.
 fastapi
 uvicorn
 clerk-backend-api==6.0.1
 stripe==15.5.0
 google-cloud-firestore
+google-cloud-kms
 google-cloud-storage
+google-cloud-run
+google-cloud-tasks
+cryptography
 google-auth
 pydantic>=2.10
+pandas>=2.2

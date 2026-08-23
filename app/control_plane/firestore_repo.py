@@ -12,6 +12,7 @@ from typing import Any
 from google.cloud import firestore
 from google.cloud.firestore import transactional
 
+from app.control_plane.dispatch_claims import decide_claim
 from app.control_plane.entitlements import default_planner_entitlement
 from app.control_plane.ids import new_dataset_id, new_tenant_id, new_workspace_id
 from app.control_plane.layout import (
@@ -32,6 +33,7 @@ from app.control_plane.models import (
     DatasetUpload,
     DriveWorkspaceBinding,
     EntitlementSnapshot,
+    EvaluationDispatch,
     GoogleConnection,
     GoogleOAuthTransaction,
     IdentityProviderOrganizationMapping,
@@ -64,6 +66,9 @@ from app.core.errors import (
 )
 from app.core.identifiers import validate_resource_identifier
 from app.governance.import_contract import ImportReadinessReceipt
+from app.governance.publish_contract import PublishReadinessReceipt
+from app.materialization.contracts import SourceMaterializationReceipt
+from app.publish_execution.contracts import PublishExecutionReceipt
 
 COLLECTION_TENANTS = "tenants"
 COLLECTION_IDENTITY_MAPPINGS = "identity_org_mappings"
@@ -85,6 +90,11 @@ COLLECTION_DRIVE_BINDINGS = "drive_bindings"
 COLLECTION_BQ_BINDINGS = "bigquery_bindings"
 COLLECTION_IMPORT_SELECTIONS = "import_selections"
 COLLECTION_IMPORT_RECEIPTS = "import_receipts"
+COLLECTION_MATERIALIZATIONS = "materializations"
+COLLECTION_PUBLISH_RECEIPTS = "publish_receipts"
+COLLECTION_PUBLISH_EXECUTIONS = "publish_executions"
+COLLECTION_DISPATCHES = "dispatches"
+COLLECTION_EVALUATION_DISPATCHES = "evaluation_dispatches"
 
 
 class FirestoreControlPlaneRepository:
@@ -174,6 +184,21 @@ class FirestoreControlPlaneRepository:
             self._dataset_ref(tenant_id, workspace_id, dataset_id)
             .collection(COLLECTION_EVALUATIONS)
             .document(run_id)
+        )
+
+    def _dispatch_index_doc(self, dispatch_id: str):
+        return self._db.collection(COLLECTION_EVALUATION_DISPATCHES).document(dispatch_id)
+
+    def _nested_dispatch_doc(self, dispatch: EvaluationDispatch):
+        return (
+            self._dataset_evaluation_doc(
+                dispatch.tenant_id,
+                dispatch.workspace_id,
+                dispatch.dataset_id,
+                dispatch.run_id,
+            )
+            .collection(COLLECTION_DISPATCHES)
+            .document(dispatch.dispatch_id)
         )
 
     def _idempotency_ref(self, tenant_id: str, operation: str, key: str):
@@ -734,6 +759,76 @@ class FirestoreControlPlaneRepository:
         rows.sort(key=lambda item: item.run_id)
         return rows
 
+    def put_evaluation_dispatch(self, dispatch: EvaluationDispatch) -> EvaluationDispatch:
+        existing_snap = self._dispatch_index_doc(dispatch.dispatch_id).get()
+        if existing_snap.exists:
+            existing = document_to_model(EvaluationDispatch, existing_snap.to_dict())
+            if (
+                existing.tenant_id != dispatch.tenant_id
+                or existing.workspace_id != dispatch.workspace_id
+                or existing.dataset_id != dispatch.dataset_id
+                or existing.run_id != dispatch.run_id
+            ):
+                raise ProviderMappingConflictError("Evaluation dispatch linkage is immutable.")
+        payload = model_to_document(dispatch)
+        self._dispatch_index_doc(dispatch.dispatch_id).set(payload)
+        self._nested_dispatch_doc(dispatch).set(payload)
+        return dispatch
+
+    def get_evaluation_dispatch(self, dispatch_id: str) -> EvaluationDispatch | None:
+        snap = self._dispatch_index_doc(dispatch_id).get()
+        if not snap.exists:
+            return None
+        return document_to_model(EvaluationDispatch, snap.to_dict())
+
+    def get_evaluation_dispatch_for_run(
+        self, *, tenant_id: str, run_id: str
+    ) -> EvaluationDispatch | None:
+        evaluation = self.get_evaluation_ref(tenant_id=tenant_id, run_id=run_id)
+        if evaluation is None:
+            return None
+        rows: list[EvaluationDispatch] = []
+        for snap in (
+            self._dataset_evaluation_doc(
+                tenant_id, evaluation.workspace_id, evaluation.dataset_id, run_id
+            )
+            .collection(COLLECTION_DISPATCHES)
+            .stream()
+        ):
+            row = document_to_model(EvaluationDispatch, snap.to_dict())
+            if row.tenant_id == tenant_id and row.run_id == run_id:
+                rows.append(row)
+        if not rows:
+            return None
+        rows.sort(key=lambda item: item.created_at)
+        return rows[-1]
+
+    def claim_evaluation_dispatch(
+        self,
+        *,
+        dispatch_id: str,
+        owner: str,
+        execution_name: str,
+        now: datetime,
+    ) -> tuple[str, EvaluationDispatch | None]:
+        index = self._dispatch_index_doc(dispatch_id)
+
+        @transactional
+        def _claim(transaction: firestore.Transaction) -> tuple[str, EvaluationDispatch | None]:
+            snap = index.get(transaction=transaction)
+            if not snap.exists:
+                return "not_found", None
+            current = document_to_model(EvaluationDispatch, snap.to_dict())
+            outcome, updated = decide_claim(
+                current, owner=owner, execution_name=execution_name, now=now
+            )
+            payload = model_to_document(updated)
+            transaction.set(index, payload)
+            transaction.set(self._nested_dispatch_doc(updated), payload)
+            return outcome.value, updated
+
+        return _claim(self._db.transaction())
+
     def get_idempotent_result(
         self, *, tenant_id: str, operation: str, key: str
     ) -> dict[str, Any] | None:
@@ -860,6 +955,15 @@ class FirestoreControlPlaneRepository:
             .delete()
         )
 
+    def list_credential_envelopes(self) -> list[CredentialEnvelope]:
+        rows: list[CredentialEnvelope] = []
+        for snap in self._db.collection_group(COLLECTION_CREDENTIAL_ENVELOPES).stream():
+            payload = snap.to_dict()
+            if not payload:
+                continue
+            rows.append(document_to_model(CredentialEnvelope, payload))
+        return rows
+
     def put_drive_binding(self, binding: DriveWorkspaceBinding) -> DriveWorkspaceBinding:
         self._workspace_ref(binding.tenant_id, binding.workspace_id).collection(
             COLLECTION_DRIVE_BINDINGS
@@ -979,6 +1083,192 @@ class FirestoreControlPlaneRepository:
             return None
         return receipt
 
+    def put_materialization(
+        self, receipt: SourceMaterializationReceipt
+    ) -> SourceMaterializationReceipt:
+        col = (
+            self._dataset_ref(receipt.tenant_id, receipt.workspace_id, receipt.dataset_id)
+            .collection(COLLECTION_MATERIALIZATIONS)
+        )
+        col.document(receipt.materialization_id).set(model_to_document(receipt))
+        if receipt.status.value == "COMPLETE":
+            col.document(f"authority_{receipt.authority_fingerprint}").set(
+                {"materialization_id": receipt.materialization_id}
+            )
+        return receipt
+
+    def get_materialization(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        materialization_id: str,
+    ) -> SourceMaterializationReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_MATERIALIZATIONS)
+            .document(materialization_id)
+            .get()
+        )
+        if not snap.exists:
+            return None
+        receipt = document_to_model(SourceMaterializationReceipt, snap.to_dict())
+        if receipt.tenant_id != tenant_id:
+            return None
+        return receipt
+
+    def list_materializations(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str
+    ) -> list[SourceMaterializationReceipt]:
+        snaps = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_MATERIALIZATIONS)
+            .stream()
+        )
+        rows: list[SourceMaterializationReceipt] = []
+        for snap in snaps:
+            if snap.id.startswith("authority_"):
+                continue
+            receipt = document_to_model(SourceMaterializationReceipt, snap.to_dict())
+            if receipt.tenant_id == tenant_id:
+                rows.append(receipt)
+        return sorted(rows, key=lambda row: row.started_at)
+
+    def get_materialization_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        authority_fingerprint: str,
+    ) -> SourceMaterializationReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_MATERIALIZATIONS)
+            .document(f"authority_{authority_fingerprint}")
+            .get()
+        )
+        if not snap.exists:
+            return None
+        payload = snap.to_dict() or {}
+        materialization_id = str(payload.get("materialization_id") or "")
+        if not materialization_id:
+            return None
+        return self.get_materialization(
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            dataset_id=dataset_id,
+            materialization_id=materialization_id,
+        )
+
+    def put_publish_receipt(self, receipt: PublishReadinessReceipt) -> PublishReadinessReceipt:
+        col = (
+            self._dataset_ref(receipt.tenant_id, receipt.workspace_id, receipt.dataset_id)
+            .collection(COLLECTION_PUBLISH_RECEIPTS)
+        )
+        col.document(receipt.run_id).set(model_to_document(receipt))
+        col.document(receipt.receipt_id).set(model_to_document(receipt))
+        return receipt
+
+    def get_current_publish_receipt(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> PublishReadinessReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_PUBLISH_RECEIPTS)
+            .document(run_id)
+            .get()
+        )
+        if not snap.exists:
+            return None
+        receipt = document_to_model(PublishReadinessReceipt, snap.to_dict())
+        if receipt.tenant_id != tenant_id:
+            return None
+        return receipt
+
+    def put_publish_execution(
+        self, receipt: PublishExecutionReceipt, *, authority_fingerprint: str
+    ) -> PublishExecutionReceipt:
+        col = (
+            self._dataset_ref(receipt.tenant_id, receipt.workspace_id, receipt.dataset_id)
+            .collection(COLLECTION_PUBLISH_EXECUTIONS)
+        )
+        col.document(receipt.publish_id).set(model_to_document(receipt))
+        if receipt.status.value == "COMPLETE":
+            col.document(f"authority_{authority_fingerprint}").set(
+                {"publish_id": receipt.publish_id, "run_id": receipt.run_id}
+            )
+        return receipt
+
+    def get_publish_execution(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        publish_id: str,
+    ) -> PublishExecutionReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_PUBLISH_EXECUTIONS)
+            .document(publish_id)
+            .get()
+        )
+        if not snap.exists:
+            return None
+        receipt = document_to_model(PublishExecutionReceipt, snap.to_dict())
+        if receipt.tenant_id != tenant_id or receipt.run_id != run_id:
+            return None
+        return receipt
+
+    def list_publish_executions(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> list[PublishExecutionReceipt]:
+        snaps = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_PUBLISH_EXECUTIONS)
+            .stream()
+        )
+        rows: list[PublishExecutionReceipt] = []
+        for snap in snaps:
+            if snap.id.startswith("authority_"):
+                continue
+            receipt = document_to_model(PublishExecutionReceipt, snap.to_dict())
+            if receipt.tenant_id == tenant_id and receipt.run_id == run_id:
+                rows.append(receipt)
+        return sorted(rows, key=lambda row: row.started_at)
+
+    def get_publish_execution_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        authority_fingerprint: str,
+    ) -> PublishExecutionReceipt | None:
+        snap = (
+            self._dataset_ref(tenant_id, workspace_id, dataset_id)
+            .collection(COLLECTION_PUBLISH_EXECUTIONS)
+            .document(f"authority_{authority_fingerprint}")
+            .get()
+        )
+        if not snap.exists:
+            return None
+        payload = snap.to_dict() or {}
+        publish_id = str(payload.get("publish_id") or "")
+        if not publish_id:
+            return None
+        return self.get_publish_execution(
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            dataset_id=dataset_id,
+            run_id=run_id,
+            publish_id=publish_id,
+        )
+
     def delete_document_tree_for_qualification(self, tenant_id: str) -> list[str]:
         """Delete a synthetic qualification tenant subtree. Not a product API."""
         deleted: list[str] = []
@@ -1014,6 +1304,19 @@ class FirestoreControlPlaneRepository:
                 for receipt in ds.reference.collection(COLLECTION_IMPORT_RECEIPTS).stream():
                     receipt.reference.delete()
                     deleted.append(receipt.reference.path)
+                for materialization in (
+                    ds.reference.collection(COLLECTION_MATERIALIZATIONS).stream()
+                ):
+                    materialization.reference.delete()
+                    deleted.append(materialization.reference.path)
+                for publish_receipt in (
+                    ds.reference.collection(COLLECTION_PUBLISH_RECEIPTS).stream()
+                ):
+                    publish_receipt.reference.delete()
+                    deleted.append(publish_receipt.reference.path)
+                for publish_exec in ds.reference.collection(COLLECTION_PUBLISH_EXECUTIONS).stream():
+                    publish_exec.reference.delete()
+                    deleted.append(publish_exec.reference.path)
                 ds.reference.delete()
                 deleted.append(ds.reference.path)
             ws.reference.delete()

@@ -343,9 +343,12 @@ class BusinessIqService:
             commercial_driver_notes=payload.get("commercial_driver_notes"),
             competition_notes=payload.get("competition_notes"),
             facts=tuple(BusinessFact.model_validate(item) for item in payload.get("facts") or ()),
-            events=tuple(BusinessEvent.model_validate(item) for item in payload.get("events") or ()),
+            events=tuple(
+                BusinessEvent.model_validate(item) for item in payload.get("events") or ()
+            ),
             relationships=tuple(
-                BusinessRelationship.model_validate(item) for item in payload.get("relationships") or ()
+                BusinessRelationship.model_validate(item)
+                for item in payload.get("relationships") or ()
             ),
             hypotheses=tuple(
                 BusinessHypothesis.model_validate(item) for item in payload.get("hypotheses") or ()
@@ -382,9 +385,9 @@ class BusinessIqService:
                     or proposed.get("channel") is None
                 ):
                     channels.append(
-                        channel.model_copy(
-                            update={"lifecycle_status": status}
-                        ).model_dump(mode="json")
+                        channel.model_copy(update={"lifecycle_status": status}).model_dump(
+                            mode="json"
+                        )
                     )
                 else:
                     channels.append(channel.model_dump(mode="json"))

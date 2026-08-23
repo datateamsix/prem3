@@ -14,12 +14,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.business_iq.service import BusinessIqService
 from app.config import Settings, load_settings
 from app.control_plane.repository import ControlPlaneRepository
-from app.business_iq.service import BusinessIqService
 from app.data_foundation.service import DataFoundationService
 from app.data_foundation.warehouse import FoundationWarehouse
-from app.service.product_stores import build_product_stores
 from app.integrations.google.adapters import (
     FakeBigQueryClient,
     FakeDriveClient,
@@ -27,7 +26,19 @@ from app.integrations.google.adapters import (
     RestDriveClient,
     RestGoogleOAuthProvider,
 )
-from app.integrations.google.vault import ControlPlaneCredentialVault, InMemoryCredentialVault
+from app.integrations.google.vault import (
+    CloudKmsKek,
+    ControlPlaneCredentialVault,
+    InMemoryCredentialVault,
+)
+from app.materialization.canonical_gate import CanonicalFoundationSourceGate
+from app.materialization.foundation_compat import FoundationSourceGate
+from app.materialization.service import MaterializationService
+from app.publish_execution.model_ready import (
+    ModelReadyEvidenceResolver,
+    NullModelReadyEvidenceResolver,
+)
+from app.publish_execution.service import PublishExecutionService
 from app.service.auth import IdentityVerifier, UnconfiguredIdentityVerifier
 from app.service.billing import BillingGateway, UnavailableBillingGateway
 from app.service.billing_config import BillingConfig
@@ -47,7 +58,20 @@ from app.service.errors import (
     problem_json,
     validation_error,
 )
-from app.service.evaluation_service import EvaluationService
+from app.service.evaluation_dispatch import (
+    CloudTasksEvaluationDispatcher,
+    EvaluationDispatcher,
+    FakeEvaluationDispatcher,
+    UnavailableEvaluationDispatcher,
+)
+from app.service.evaluation_jobs import (
+    CloudRunEvaluationJobLauncher,
+    EvaluationJobLauncher,
+    FakeEvaluationJobLauncher,
+    UnavailableEvaluationJobLauncher,
+)
+from app.service.evaluation_launch import EvaluationLaunchService
+from app.service.evaluation_service import DEFAULT_EVALUATION_JOB_NAME, EvaluationService
 from app.service.google_bigquery import BigQueryBindingService
 from app.service.google_drive import DriveBindingService
 from app.service.google_oauth import GoogleConnectionService
@@ -55,11 +79,12 @@ from app.service.import_governance import ImportGovernanceService
 from app.service.middleware import RequestIdMiddleware, current_request_id
 from app.service.models import PlanCatalogResponse
 from app.service.object_store import FakeObjectStore, GcsObjectStore, ObjectStore
+from app.service.product_stores import build_product_stores
 from app.service.publish_governance import PublishGovernanceService
 from app.service.routers import (
     billing,
-    catalog,
     business_iq,
+    catalog,
     data_foundation,
     datasets,
     evaluations,
@@ -69,11 +94,19 @@ from app.service.routers import (
     identity,
     identity_webhooks,
     import_governance,
+    internal_dispatch,
+    materializations,
+    publishes,
     runs,
     uploads,
     workspaces,
 )
-from app.service.runtime import assert_provider_mode_safe, build_control_plane
+from app.service.runtime import assert_provider_mode_safe, build_control_plane, uses_cloud_runtime
+from app.service.service_identity import (
+    FakeServiceIdentityVerifier,
+    GoogleOidcServiceIdentityVerifier,
+    ServiceIdentityVerifier,
+)
 from app.service.stripe_gateway import StripeBillingGateway
 from app.service.stripe_provider import RealStripeProvider
 from app.service.upload_config import UploadConfig
@@ -94,12 +127,17 @@ def create_app(
     organization_directory: OrganizationDirectory | None = None,
     upload_service: UploadService | None = None,
     evaluation_service: EvaluationService | None = None,
+    evaluation_dispatcher: EvaluationDispatcher | None = None,
+    evaluation_job_launcher: EvaluationJobLauncher | None = None,
+    service_identity_verifier: ServiceIdentityVerifier | None = None,
     upload_signer: UploadSigner | None = None,
     object_store: ObjectStore | None = None,
     google_oauth_provider=None,
     google_credential_vault=None,
     google_drive_client=None,
     google_bigquery_client=None,
+    foundation_source_gate: FoundationSourceGate | None = None,
+    model_ready_resolver: ModelReadyEvidenceResolver | None = None,
 ) -> FastAPI:
     cfg = settings or load_settings()
     assert_provider_mode_safe(cfg)
@@ -119,12 +157,14 @@ def create_app(
         summary="PreM3 authenticated product API",
         description=(
             "Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, "
-            "Google connection, import/publish governance, Business IQ, and Data Foundation contracts. "
-            "Clerk session tokens are verified when the identity provider is configured. "
-            "Creating an Evaluation returns 202 Accepted for resource creation only; durable "
-            "ADK dispatch is not started from this HTTP boundary. Tenant identity is never "
-            "accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, "
-            "DATA_FOUNDATION_READY, MODEL_READY, and PUBLISH_READY are distinct deterministic states."
+            "Google connection, import/publish governance, Business IQ, and "
+            "Data Foundation contracts. Clerk session tokens are verified when the "
+            "identity provider is configured. Creating an Evaluation returns 202 "
+            "Accepted only after durable Cloud Tasks enqueue; 202 is not ADK "
+            "completion and not MODEL_READY. Tenant identity "
+            "is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, "
+            "DATA_FOUNDATION_READY, MODEL_READY, and PUBLISH_READY are distinct "
+            "deterministic states."
         ),
         docs_url=None,
         redoc_url=None,
@@ -151,34 +191,75 @@ def create_app(
     app.state.billing_gateway = billing_gateway or UnavailableBillingGateway()
     app.state.billing_webhook_processor = billing_webhook_processor
     app.state.plan_catalog = plan_catalog or build_plan_catalog(config=billing_config)
-    app.state.evaluation_service = evaluation_service or EvaluationService(repo=repo)
+    dispatcher, launcher, service_identity, job_name = _default_evaluation_stack(
+        cfg,
+        dispatcher=evaluation_dispatcher,
+        launcher=evaluation_job_launcher,
+        verifier=service_identity_verifier,
+    )
+    app.state.evaluation_dispatcher = dispatcher
+    app.state.evaluation_job_launcher = launcher
+    app.state.service_identity_verifier = service_identity
+    app.state.evaluation_service = evaluation_service or EvaluationService(
+        repo=repo, dispatcher=dispatcher, job_name=job_name
+    )
+    app.state.evaluation_launch = EvaluationLaunchService(repo=repo, launcher=launcher)
     app.state.upload_service = upload_service or _default_upload_service(
         cfg, repo, signer=upload_signer, object_store=object_store
     )
+    local_vault = google_credential_vault
+    if local_vault is None and not uses_cloud_runtime():
+        local_vault = InMemoryCredentialVault()
     google_services = _default_google_services(
         cfg,
         repo,
         oauth_provider=google_oauth_provider,
-        vault=google_credential_vault,
+        vault=local_vault,
         drive_client=google_drive_client,
         bigquery_client=google_bigquery_client,
+        model_ready_resolver=model_ready_resolver,
     )
     app.state.google_connections = google_services["connections"]
     app.state.drive_bindings = google_services["drive"]
     app.state.bigquery_bindings = google_services["bigquery"]
     app.state.import_governance = google_services["import_governance"]
     app.state.publish_governance = google_services["publish_governance"]
+    app.state.model_ready_resolver = google_services["model_ready"]
     app.state.google_oauth_provider = google_services["oauth"]
     app.state.google_credential_vault = google_services["vault"]
     app.state.google_drive_client = google_services["drive_client"]
     app.state.google_bigquery_client = google_services["bq_client"]
     business_iq_store, data_foundation_store = build_product_stores(repo)
+    app.state.business_iq_store = business_iq_store
+    app.state.data_foundation_store = data_foundation_store
     app.state.business_iq = BusinessIqService(store=business_iq_store)
     app.state.data_foundation = DataFoundationService(
         store=data_foundation_store,
         warehouse=FoundationWarehouse(),
         bigquery_client=google_services["bq_client"],
         drive_client=google_services["drive_client"],
+    )
+    if foundation_source_gate is None:
+        foundation_source_gate = CanonicalFoundationSourceGate(data_foundation_store)
+    upload = app.state.upload_service
+    app.state.materialization = MaterializationService(
+        repo=repo,
+        import_governance=google_services["import_governance"],
+        upload_service=upload,
+        connections=google_services["connections"],
+        drive=google_services["drive_client"],
+        bigquery=google_services["bq_client"],
+        object_store=upload._store,
+        upload_config=upload._config,
+        foundation_gate=foundation_source_gate,
+    )
+    app.state.publish_execution = PublishExecutionService(
+        repo=repo,
+        publish_governance=google_services["publish_governance"],
+        connections=google_services["connections"],
+        drive=google_services["drive_client"],
+        bigquery=google_services["bq_client"],
+        model_ready=google_services["model_ready"],
     )
 
     app.add_middleware(RequestIdMiddleware)
@@ -195,8 +276,11 @@ def create_app(
     app.include_router(import_governance.router)
     app.include_router(business_iq.router)
     app.include_router(data_foundation.router)
+    app.include_router(materializations.router)
+    app.include_router(publishes.router)
     app.include_router(billing.router)
     app.include_router(identity_webhooks.router)
+    app.include_router(internal_dispatch.router)
 
     @app.exception_handler(APIError)
     async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
@@ -338,6 +422,7 @@ def _default_google_services(
     vault,
     drive_client,
     bigquery_client,
+    model_ready_resolver: ModelReadyEvidenceResolver | None = None,
 ) -> dict:
     oauth = oauth_provider
     if oauth is None and settings.google_oauth_client_id and settings.google_oauth_client_secret:
@@ -346,18 +431,19 @@ def _default_google_services(
             client_secret=settings.google_oauth_client_secret,
         )
     resolved_vault = vault
-    if resolved_vault is None and settings.google_credential_vault_key:
-        key = settings.google_credential_vault_key.encode("utf-8")
-        if len(key) < 32:
-            key = key.ljust(32, b"0")
+    live_google = bool(settings.google_oauth_client_id and settings.google_oauth_client_secret)
+    if resolved_vault is None and live_google:
+        if not settings.google_kms_key:
+            raise RuntimeError(
+                "Real Google OAuth requires GOOGLE_KMS_KEY for aes-256-gcm+kms-v1. "
+                "InMemoryCredentialVault and hmac-sha256-xor-v1 are not production vaults."
+            )
         resolved_vault = ControlPlaneCredentialVault(
             repo=repo,
-            master_key=key[:32],
-            kms_key=settings.google_kms_key,
+            kms=CloudKmsKek(settings.google_kms_key),
         )
     if resolved_vault is None:
         resolved_vault = InMemoryCredentialVault()
-    live_google = bool(settings.google_oauth_client_id and settings.google_oauth_client_secret)
     drive = drive_client or (RestDriveClient() if live_google else FakeDriveClient())
     bq = bigquery_client or (RestBigQueryClient() if live_google else FakeBigQueryClient())
     redirect_uri = settings.google_oauth_redirect_uri or (
@@ -385,8 +471,75 @@ def _default_google_services(
         "import_governance": ImportGovernanceService(
             repo=repo, connections=connections, drive=drive, bigquery=bq
         ),
-        "publish_governance": PublishGovernanceService(repo=repo),
+        "publish_governance": PublishGovernanceService(
+            repo=repo, model_ready=model_ready_resolver
+        ),
+        "model_ready": model_ready_resolver or NullModelReadyEvidenceResolver(),
     }
+
+
+def _default_evaluation_stack(
+    settings: Settings,
+    *,
+    dispatcher: EvaluationDispatcher | None,
+    launcher: EvaluationJobLauncher | None,
+    verifier: ServiceIdentityVerifier | None,
+) -> tuple[
+    EvaluationDispatcher,
+    EvaluationJobLauncher,
+    ServiceIdentityVerifier | None,
+    str,
+]:
+    job_name = settings.evaluation_worker_job or DEFAULT_EVALUATION_JOB_NAME
+    if not uses_cloud_runtime():
+        return (
+            dispatcher or FakeEvaluationDispatcher(),
+            launcher or FakeEvaluationJobLauncher(),
+            verifier
+            or FakeServiceIdentityVerifier(
+                allowed_email=settings.evaluation_dispatcher_sa
+                or "prem3-evaluation-dispatcher@local",
+                audience=settings.evaluation_launch_audience
+                or "http://localhost/internal/v1/evaluation-dispatches",
+            ),
+            job_name,
+        )
+    configured = bool(
+        settings.evaluation_dispatch_queue
+        and settings.evaluation_dispatcher_sa
+        and settings.evaluation_launch_url
+        and settings.evaluation_launch_audience
+    )
+    if not configured:
+        return (
+            dispatcher or UnavailableEvaluationDispatcher(),
+            launcher or UnavailableEvaluationJobLauncher(),
+            verifier,
+            job_name,
+        )
+    return (
+        dispatcher
+        or CloudTasksEvaluationDispatcher(
+            project_id=settings.project_id,
+            location=settings.cloud_region,
+            queue=settings.evaluation_dispatch_queue or "prem3-evaluation-dispatch",
+            launch_url=settings.evaluation_launch_url or "",
+            service_account_email=settings.evaluation_dispatcher_sa or "",
+            audience=settings.evaluation_launch_audience or "",
+        ),
+        launcher
+        or CloudRunEvaluationJobLauncher(
+            project_id=settings.project_id,
+            location=settings.cloud_region,
+            job_name=job_name,
+        ),
+        verifier
+        or GoogleOidcServiceIdentityVerifier(
+            allowed_email=settings.evaluation_dispatcher_sa or "",
+            audience=settings.evaluation_launch_audience or "",
+        ),
+        job_name,
+    )
 
 
 app = create_app()

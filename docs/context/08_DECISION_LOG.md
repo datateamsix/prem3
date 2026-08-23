@@ -539,3 +539,71 @@ Tenant authority is never derived from Cloud Run accessibility, request headers,
 
 ---
 
+## 2026-08-22 — CANONICAL DF + KMS GOOGLE VAULT (M2-12Q)
+
+**Decision:** Restack Mission 12 onto merged PR #15. Production materialization consumes canonical Data Foundation. Production Google refresh tokens use Cloud KMS envelope encryption.
+
+**Locked:**
+
+1. `build_product_stores(repo)` is the only production DF/BIQ store constructor. Materialization does not instantiate a second Firestore DF store.
+2. `NullFoundationSourceGate` is not the production default. `CanonicalFoundationSourceGate` tenant-qualifies `get_binding(source_id)` / `get_current_source_receipt(source_id)`.
+3. Dual gate: non-DF imports need current `IMPORT_READY` only. DF-managed sources also need `FOUNDATION_SOURCE_READY` + `governance_import_ready`. `DATA_FOUNDATION_READY` is workspace-level and is not required per source.
+4. Business role lineage is Business IQ → `EvidenceRequirement.business_role` → `SourceBinding.requirement_id` → Import Contract. Incompatible roles fail closed (`FOUNDATION_LINEAGE_MISMATCH`).
+5. Production vault algorithm is `aes-256-gcm+kms-v1`. Per-write DEK + nonce, AES-256-GCM, Cloud KMS symmetric wrap. Key: `projects/modelready-m3/locations/us-central1/keyRings/prem3/cryptoKeys/prem3-google-oauth-credentials`. Runtime SA gets key-level `roles/cloudkms.cryptoKeyEncrypterDecrypter` only.
+6. Real Google OAuth without `GOOGLE_KMS_KEY` fails closed. Incremental OAuth with `refresh_token=None` preserves the existing envelope.
+7. Customer BQ publish remains `model_ready_{dataset}_{run}` / `_current`. DF warehouse names are reserved from `app/data_foundation/owned_resources.py`.
+8. BigQuery materialization stays `PASS_BOUNDED` at 100,000 rows. Overflow is `MATERIALIZATION_LIMIT_EXCEEDED`, never silent truncate.
+9. Durable Evaluation dispatch was deferred to M2-13 and is now implemented on
+   `feature/prem3-m2-durable-evaluation-dispatch`.
+
+**Not in this decision:** live Google OAuth/Drive/BQ provider proofs (external Clerk + OAuth client + interactive test account). Those remain `DEFERRED_UI_PROVIDER_QUALIFICATION`.
+
+---
+
+## 2026-08-23 — DURABLE EVALUATION DISPATCH (M2-13)
+
+**Decision:** HTTP 202 after `createEvaluation` means durable Cloud Tasks launch, not ADK completion. The Evaluation worker is a Cloud Run Job. `EvaluationStatus` stays `ACCEPTED`.
+
+**Locked:**
+
+1. Cloud Tasks queue `prem3-evaluation-dispatch` (us-central1) is the short-lived launcher. It does not run ADK or wait for Evaluation completion.
+2. Cloud Run Job `prem3-evaluation-worker` (tasks=1, parallelism=1, timeout 7200s, max retries 2) is the execution substrate. It invokes existing `EvaluationExecutor.execute_evaluation(run_id)` in-process. No `/run_sse`. No remote ADK API.
+3. Job override authority is only `PREM3_EVALUATION_DISPATCH_ID`. Tenant, package URI, storage, entitlement, and destinations are restored from the persisted server-owned dispatch + Evaluation.
+4. Internal launch `POST /internal/v1/evaluation-dispatches/{dispatch_id}/launch` is service-OIDC (`prem3-evaluation-dispatcher@...`). Clerk customer tokens are denied. Cloud Tasks headers are metadata only.
+5. Enqueue failure persists `FAILED_RETRYABLE` and returns `EVALUATION_DISPATCH_UNAVAILABLE`. Same idempotency key retries the same Evaluation and dispatch.
+6. Atomic claim: same Cloud Run execution may reclaim; a different active execution is fail-closed; expired claims may recover. Dispatch success is not `MODEL_READY`.
+7. Public run view is a composed `EvaluationExecutionView`. Internal Cloud identifiers and `package_uri` stay hidden. Frontend polls GET run.
+8. Worker image uses the same `app/` source with ADK dependencies. Slim `prem3-api` stays without ADK. Isolated `meridian-eda-worker` is unchanged. Historical `modelready-m3` is unchanged.
+9. Interactive Clerk/Google provider proofs remain `DEFERRED_UI_PROVIDER_QUALIFICATION` and do not block M2-13 code qualification.
+
+**Not in this decision:** Mission 2 acceptance freeze (M2-14); run-based billing; SSE progress.
+
+---
+
+## 2026-08-23 — MISSION 2 BACKEND ACCEPTANCE FREEZE (M2-14)
+
+**Decision:** Freeze the completed Mission 2 backend as one merge candidate. No new
+architecture. No readiness-semantic change.
+
+**Locked:**
+
+1. Firestore remains the operational control plane.
+2. Clerk maps verified identity to PreM3 tenant; Clerk org ID is never storage authority.
+3. Stripe remains entitlement source of truth; PreM3 stores `EntitlementSnapshot`.
+4. Business IQ snapshot and Data Foundation remain canonical persisted planes.
+5. Three-state governance stays distinct: `IMPORT_READY`, `MODEL_READY`, `PUBLISH_READY`.
+6. `DatasetUpload` remains the immutable Evaluation input boundary.
+7. Google credentials remain KMS-enveloped (`aes-256-gcm+kms-v1`).
+8. Cloud Tasks remains the durable launcher; Cloud Run Job remains the Evaluation worker.
+9. Frontend polls `GET /v1/runs/{run_id}`. No SSE.
+10. BigQuery materialization stays bounded at 100,000 rows with explicit overflow failure.
+11. Live Clerk/Google/Drive/BQ interactive proofs remain `DEFERRED_UI_PROVIDER_QUALIFICATION`.
+12. Durable-worker `MODEL_READY` remains `EXTERNAL_DEPENDENCY` until official Meridian EDA
+    can be proven on that path. Historical Dataset A golden `MODEL_READY` remains valid.
+
+**Not in this decision:** merging the PR; frontend visual implementation; live provider
+qualification; modeling / posterior work; a pre-merge release tag. Recommended post-merge
+tag: `prem3-m2-backend-freeze`.
+
+---
+

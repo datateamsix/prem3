@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from fastapi.testclient import TestClient
-
 from app.control_plane.entitlements import PlanId, entitlement_for_plan
 from app.control_plane.memory import InMemoryControlPlaneRepository
 from app.control_plane.models import (
@@ -14,13 +12,12 @@ from app.control_plane.models import (
     EntitlementStatus,
     StripeCustomerMapping,
 )
-from app.service.app import create_app
-from tests.unit.api_support import auth_header, seed_tenant
+from tests.unit.api_support import auth_header, make_client, seed_tenant
 from tests.unit.stripe_support import make_stripe_client
 
 
 def test_portal_requires_authentication() -> None:
-    client = TestClient(create_app(), raise_server_exceptions=False)
+    client, _ = make_client(unconfigured_auth=True)
     response = client.post("/v1/billing/portal-session", json={})
     assert response.status_code == 503
     assert response.json()["code"] == "AUTH_PROVIDER_NOT_CONFIGURED"

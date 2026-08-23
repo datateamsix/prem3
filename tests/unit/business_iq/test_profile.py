@@ -92,7 +92,9 @@ def test_channel_lifecycle_prior_evidence_and_brief(biq, tenant_ctx) -> None:
         actor_id="user-a",
         payload=ready_payload(),
     )
-    audio = next(item for item in profile.marketing_portfolio if item.canonical_name == "Streaming Audio")
+    audio = next(
+        item for item in profile.marketing_portfolio if item.canonical_name == "Streaming Audio"
+    )
     assert audio.active_from == "2026-04-01"
     assert audio.lifecycle_status is ChannelLifecycle.ACTIVE
     assert profile.prior_evidence[0].evidence_type == "geo_holdout"
@@ -120,7 +122,11 @@ def test_proposal_accept_reject_and_no_silent_mutate(biq, tenant_ctx) -> None:
         actor_id="df-agent",
         previous_fact={"concept": "Paid Social", "lifecycle_status": "ACTIVE"},
         observed_evidence={"gap": "2025-04"},
-        proposed_fact={"concept": "channel_lifecycle", "lifecycle_status": "PAUSED", "channel": "Paid Search"},
+        proposed_fact={
+            "concept": "channel_lifecycle",
+            "lifecycle_status": "PAUSED",
+            "channel": "Paid Search",
+        },
     )
     decided = biq.decide_proposal(
         tenant_id="tenant-a",

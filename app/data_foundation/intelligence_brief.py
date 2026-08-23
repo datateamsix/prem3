@@ -34,7 +34,10 @@ def compile_data_intelligence_brief(
     refs = tuple(finding_ids)
     found = IntelligenceBriefSection(
         heading="What PreM3 found",
-        body=f"{len(assessments)} assessed sources. Coverage gaps: {len(coverage.gaps) if coverage else 0}.",
+        body=(
+            f"{len(assessments)} assessed sources. "
+            f"Coverage gaps: {len(coverage.gaps) if coverage else 0}."
+        ),
         evidence_refs=refs,
     )
     quality = IntelligenceBriefSection(
@@ -44,12 +47,17 @@ def compile_data_intelligence_brief(
     )
     mend = IntelligenceBriefSection(
         heading="PreM3 can mend",
-        body="Deterministic type/format normalization and AUTO_SAFE transforms only. Missing is not zero.",
+        body=(
+            "Deterministic type/format normalization and AUTO_SAFE transforms only. "
+            "Missing is not zero."
+        ),
         evidence_refs=refs,
     )
     decisions = IntelligenceBriefSection(
         heading="Needs your decision",
-        body="; ".join(item.recommended_next_action for item in coverage.gaps) if coverage else "No coverage decisions.",
+        body="; ".join(item.recommended_next_action for item in coverage.gaps)
+        if coverage
+        else "No coverage decisions.",
         evidence_refs=refs,
     )
     premodel = IntelligenceBriefSection(

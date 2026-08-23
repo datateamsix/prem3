@@ -10,8 +10,10 @@ from app.data_foundation.warehouse import WarehouseTable
 def physical_from_table(table: WarehouseTable) -> PhysicalMetadata:
     is_view = table.object_type.upper() == "VIEW"
     row_count = table.num_rows if table.num_rows is not None else len(table.frame)
-    kind = RowCountKind(table.row_count_kind) if table.row_count_kind in RowCountKind.__members__ else (
-        RowCountKind.SAMPLED if is_view else RowCountKind.EXACT
+    kind = (
+        RowCountKind(table.row_count_kind)
+        if table.row_count_kind in RowCountKind.__members__
+        else (RowCountKind.SAMPLED if is_view else RowCountKind.EXACT)
     )
     return PhysicalMetadata(
         object_type=table.object_type,
@@ -29,7 +31,9 @@ def physical_from_table(table: WarehouseTable) -> PhysicalMetadata:
     )
 
 
-def physical_from_drive_files(files: list[DriveFileRecord], *, row_count: int | None) -> PhysicalMetadata:
+def physical_from_drive_files(
+    files: list[DriveFileRecord], *, row_count: int | None
+) -> PhysicalMetadata:
     names = [item.original_name for item in files]
     return PhysicalMetadata(
         object_type="DRIVE_LOGICAL_SOURCE",

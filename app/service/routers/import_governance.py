@@ -222,3 +222,25 @@ async def evaluate_publish_readiness_route(
         run_id=run_id,
     )
     return _publish_receipt_response(receipt)
+
+
+@router.get(
+    "/evaluations/{run_id}/publish-readiness",
+    operation_id="getPublishReadiness",
+    response_model=PublishReadinessReceiptResponse,
+)
+async def get_publish_readiness_route(
+    run_id: str,
+    dataset: Annotated[Dataset, Depends(authorized_dataset)],
+    _tenant: Annotated[object, Depends(authenticated_tenant)],
+    request: Request,
+) -> PublishReadinessReceiptResponse:
+    execution = getattr(request.app.state, "publish_execution", None)
+    if execution is None:
+        raise resource_not_found()
+    receipt = execution.get_publish_readiness(
+        workspace_id=dataset.workspace_id,
+        dataset_id=dataset.dataset_id,
+        run_id=run_id,
+    )
+    return _publish_receipt_response(receipt)

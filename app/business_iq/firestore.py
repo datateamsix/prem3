@@ -51,13 +51,19 @@ class FirestoreBusinessIqStore:
         data = snap.to_dict() or {}
         return str(data["tenant_id"]), str(data["workspace_id"])
 
-    def _put(self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model: Any) -> None:
+    def _put(
+        self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model: Any
+    ) -> None:
         self._workspace(tenant_id, workspace_id).collection(collection).document(doc_id).set(
             model_to_document(model)
         )
 
-    def _get(self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model_type: Any):
-        snap = self._workspace(tenant_id, workspace_id).collection(collection).document(doc_id).get()
+    def _get(
+        self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model_type: Any
+    ):
+        snap = (
+            self._workspace(tenant_id, workspace_id).collection(collection).document(doc_id).get()
+        )
         if not snap.exists:
             return None
         return document_to_model(model_type, snap.to_dict())
@@ -109,7 +115,11 @@ class FirestoreBusinessIqStore:
         if snap.exists:
             data = snap.to_dict() or {}
             return self._get(
-                str(data["tenant_id"]), workspace_id, COL_BRIEFS, "current", BusinessIntelligenceBrief
+                str(data["tenant_id"]),
+                workspace_id,
+                COL_BRIEFS,
+                "current",
+                BusinessIntelligenceBrief,
             )
         profile_hits = []
         for item in self._db.collection(COL_INDEX).stream():
@@ -147,8 +157,12 @@ class FirestoreBusinessIqStore:
             rows.append(document_to_model(BusinessProfileUpdateProposal, snap.to_dict()))
         return rows
 
-    def put_clarification(self, value: BusinessClarificationRequest) -> BusinessClarificationRequest:
-        self._put(value.tenant_id, value.workspace_id, COL_CLARIFICATIONS, value.clarification_id, value)
+    def put_clarification(
+        self, value: BusinessClarificationRequest
+    ) -> BusinessClarificationRequest:
+        self._put(
+            value.tenant_id, value.workspace_id, COL_CLARIFICATIONS, value.clarification_id, value
+        )
         self._index("clarification", value.clarification_id, value.tenant_id, value.workspace_id)
         self._index("workspace", value.workspace_id, value.tenant_id, value.workspace_id)
         return value

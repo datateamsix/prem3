@@ -29,6 +29,8 @@ _FORBIDDEN = frozenset(
         "client_secret",
         "ciphertext",
         "wrapped_dek",
+        "nonce",
+        "dek",
     }
 )
 

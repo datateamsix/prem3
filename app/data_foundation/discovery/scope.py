@@ -24,7 +24,11 @@ def infer_source_scope(
             geo_values_summary=geo_field,
             provenance=ScopeProvenance.SCHEMA_DETECTED,
         )
-    geo_columns = [name for name in field_names if name.lower() in {"geo", "country", "region", "dma", "market"}]
+    geo_columns = [
+        name
+        for name in field_names
+        if name.lower() in {"geo", "country", "region", "dma", "market"}
+    ]
     if geo_columns:
         return SourceScope(
             market_scope=markets,

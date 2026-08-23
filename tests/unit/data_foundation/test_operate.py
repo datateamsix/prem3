@@ -37,7 +37,13 @@ def test_quality_overview_is_deterministic_aggregate(service, df_context, tenant
     overview = service.get_quality_overview(df_context, binding.source_id)
     again = service.get_quality_overview(df_context, binding.source_id)
     assert overview.source_id == binding.source_id
-    assert overview.blocker_count + overview.review_count + overview.advisory_count + overview.pass_count > 0
+    assert (
+        overview.blocker_count
+        + overview.review_count
+        + overview.advisory_count
+        + overview.pass_count
+        > 0
+    )
     assert overview.blocker_count == again.blocker_count
     assert overview.pass_count == again.pass_count
 
@@ -67,7 +73,10 @@ def test_replace_source_retires_prior_and_binds_replacement(
     )
     kpi = next(item for item in inventory.candidates if "shopify" in (item.resource.table_id or ""))
     first = service.bind_source(
-        df_context, candidate_id=media.candidate_id, contract=_contract(), governance_import_ready=True
+        df_context,
+        candidate_id=media.candidate_id,
+        contract=_contract(),
+        governance_import_ready=True,
     )
     service.assess_source(df_context, first.source_id)
     replacement = service.replace_source(
@@ -114,7 +123,10 @@ def test_add_source_and_drive_bq_alignment(service, df_context, tenant_ctx) -> N
     )
     kpi = next(item for item in inventory.candidates if "shopify" in (item.resource.table_id or ""))
     service.bind_source(
-        df_context, candidate_id=media.candidate_id, contract=_contract(), governance_import_ready=True
+        df_context,
+        candidate_id=media.candidate_id,
+        contract=_contract(),
+        governance_import_ready=True,
     )
     service.bind_source(
         df_context,

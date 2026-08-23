@@ -163,25 +163,35 @@ Requires `MODELREADY_RAW_BUCKET` and V4 `signBlob` IAM (see `deployment/prem3_ap
 
 ## Evaluations
 
-First-class Evaluation resource create/list/get. `POST` returns **202 Accepted** for
-resource creation only — not agent running, not Cloud ADK dispatch, not `MODEL_READY`.
+First-class Evaluation resource create/list/get. `POST` returns **202 Accepted** only
+after durable Cloud Tasks enqueue. 202 means accepted for durable execution. It does
+not mean the worker started, ADK ran, or `MODEL_READY`.
+
+`EvaluationStatus` remains `ACCEPTED`. Execution progression lives on
+`EvaluationDispatch` plus existing `DurableRunState` / readiness evidence.
 
 ```text
 POST /v1/workspaces/{workspace_id}/datasets/{dataset_id}/evaluations
-  → 202 EvaluationResponse (status ACCEPTED; optional Idempotency-Key)
+  → 202 EvaluationResponse (status ACCEPTED + execution view; optional Idempotency-Key)
+  → 503 EVALUATION_DISPATCH_UNAVAILABLE if enqueue fails (same run/dispatch on retry)
 
 GET /v1/workspaces/{workspace_id}/datasets/{dataset_id}/evaluations
   → 200 EvaluationListResponse
 
 GET /v1/runs/{run_id}
-  → 200 EvaluationResponse
+  → 200 EvaluationResponse with presentation-safe execution view
 ```
 
-`EvaluationStatus.ACCEPTED` is the pre-execution control-plane lifecycle. Execution stages
-remain on `DurableRunState`. Durable cloud dispatch after HTTP 202 is a later mission.
+Poll `GET /v1/runs/{run_id}`. Do not use SSE, WebSockets, or `/run_sse`.
+`dispatch_status == SUCCEEDED` is not `MODEL_READY`. Backend derives `model_ready`
+from deterministic run evidence only.
 
-Local in-process ADK bridge proof level: `LOCAL_AUTHORIZED_ADK_BRIDGE`
-(`tests/unit/test_local_authorized_adk_bridge.py`). Not Cloud Run ADK execution.
+Internal launch `POST /internal/v1/evaluation-dispatches/{dispatch_id}/launch` is
+service-OIDC only (not in public OpenAPI). Clerk customers cannot invoke it.
+
+Local in-process ADK bridge: `LOCAL_AUTHORIZED_ADK_BRIDGE`.
+Cloud durable path: `CLOUD_DURABLE_EVALUATION_DISPATCH` +
+`CLOUD_AUTHORIZED_ADK_EXECUTION`.
 
 ## Authority
 

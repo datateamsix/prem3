@@ -128,7 +128,9 @@ def compile_foundation_plan(
     if include_drive:
         permission_preview = permission_preview + ("drive.files.readonly inside the bound root",)
     payload = [item.model_dump(mode="json") for item in actions]
-    payload.append({"will_not_modify": list(will_not_modify), "permission_preview": list(permission_preview)})
+    payload.append(
+        {"will_not_modify": list(will_not_modify), "permission_preview": list(permission_preview)}
+    )
     return FoundationPlan(
         plan_id=new_plan_id(),
         version=1,

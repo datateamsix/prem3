@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from app.control_plane.ids import new_run_id
+from app.control_plane.dispatch_claims import mark_enqueue_failure, mark_queued, utc_now
+from app.control_plane.ids import new_dispatch_id, new_run_id
 from app.control_plane.models import (
     DatasetEvaluationRef,
+    DispatchStatus,
+    EvaluationDispatch,
     EvaluationStatus,
     Feature,
     UploadStatus,
@@ -16,14 +19,30 @@ from app.core.tenancy import require_tenant
 from app.service.entitlements import require_feature
 from app.service.errors import (
     ProblemFieldError,
+    evaluation_dispatch_unavailable,
     resource_not_found,
     validation_error,
 )
+from app.service.evaluation_dispatch import (
+    DispatchEnqueueError,
+    EvaluationDispatcher,
+    FakeEvaluationDispatcher,
+)
+
+DEFAULT_EVALUATION_JOB_NAME = "prem3-evaluation-worker"
 
 
 class EvaluationService:
-    def __init__(self, *, repo: ControlPlaneRepository) -> None:
+    def __init__(
+        self,
+        *,
+        repo: ControlPlaneRepository,
+        dispatcher: EvaluationDispatcher | None = None,
+        job_name: str = DEFAULT_EVALUATION_JOB_NAME,
+    ) -> None:
         self._repo = repo
+        self._dispatcher = dispatcher or FakeEvaluationDispatcher()
+        self._job_name = job_name
 
     def create_evaluation(
         self,
@@ -53,6 +72,7 @@ class EvaluationService:
                 )
                 if ref is None:
                     raise resource_not_found()
+                self._ensure_dispatched(ref)
                 return ref
 
         upload = self._repo.get_upload(
@@ -105,6 +125,7 @@ class EvaluationService:
                 key=idempotency_key,
                 result={"run_id": stored.run_id},
             )
+        self._ensure_dispatched(stored)
         return stored
 
     def list_evaluations(
@@ -128,3 +149,46 @@ class EvaluationService:
         if ref is None:
             raise resource_not_found()
         return ref
+
+    def get_dispatch_for_run(self, *, run_id: str) -> EvaluationDispatch | None:
+        tenant = require_tenant()
+        return self._repo.get_evaluation_dispatch_for_run(
+            tenant_id=tenant.tenant_id, run_id=run_id
+        )
+
+    def _ensure_dispatched(self, evaluation: DatasetEvaluationRef) -> EvaluationDispatch:
+        existing = self._repo.get_evaluation_dispatch_for_run(
+            tenant_id=evaluation.tenant_id, run_id=evaluation.run_id
+        )
+        if existing is not None and existing.status in {
+            DispatchStatus.QUEUED,
+            DispatchStatus.LAUNCHING,
+            DispatchStatus.RUNNING,
+            DispatchStatus.SUCCEEDED,
+        }:
+            return existing
+        dispatch = existing or EvaluationDispatch(
+            dispatch_id=new_dispatch_id(),
+            tenant_id=evaluation.tenant_id,
+            workspace_id=evaluation.workspace_id,
+            dataset_id=evaluation.dataset_id,
+            run_id=evaluation.run_id,
+            evaluation_created_at=evaluation.created_at,
+            status=DispatchStatus.PENDING,
+            cloud_run_job_name=self._job_name,
+            created_at=utc_now(),
+            updated_at=utc_now(),
+        )
+        if existing is None:
+            dispatch = self._repo.put_evaluation_dispatch(dispatch)
+        now = utc_now()
+        try:
+            task_name = self._dispatcher.enqueue(dispatch)
+        except DispatchEnqueueError:
+            failed = mark_enqueue_failure(
+                dispatch, now=now, error_code="EVALUATION_DISPATCH_UNAVAILABLE"
+            )
+            self._repo.put_evaluation_dispatch(failed)
+            raise evaluation_dispatch_unavailable() from None
+        queued = mark_queued(dispatch, now=now, cloud_task_name=task_name)
+        return self._repo.put_evaluation_dispatch(queued)

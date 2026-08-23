@@ -109,7 +109,11 @@
         "DatasetImportBindingRequest",
         "DatasetImportBindingResponse",
         "ImportReadinessReceiptResponse",
-        "PublishReadinessReceiptResponse"
+        "PublishReadinessReceiptResponse",
+        "SourceMaterializationResponse",
+        "SourceMaterializationListResponse",
+        "PublishExecutionResponse",
+        "PublishExecutionListResponse"
       ],
       "python_module": "app.service.models",
       "python_qualnames": [
@@ -134,9 +138,13 @@
         "app.service.models.DatasetImportBindingRequest",
         "app.service.models.DatasetImportBindingResponse",
         "app.service.models.ImportReadinessReceiptResponse",
-        "app.service.models.PublishReadinessReceiptResponse"
+        "app.service.models.PublishReadinessReceiptResponse",
+        "app.service.models.SourceMaterializationResponse",
+        "app.service.models.SourceMaterializationListResponse",
+        "app.service.models.PublishExecutionResponse",
+        "app.service.models.PublishExecutionListResponse"
       ],
-      "sha256": "7c66839335d59825375ce2e7af5b5a55c726d4502b3afa66ece1d30647547366"
+      "sha256": "e8c14c8bfcda8c75ed151dd1435f19e185639d5e71b2a0282ec7979372205493"
     }
   ],
   "hash_algorithm": "sha256",

@@ -67,7 +67,9 @@ def test_drive_hints_stay_in_root(service, df_context, tenant_ctx) -> None:
         ),
     )
     inventory = service.discover(df_context)
-    names = [item.resource.drive_file_id for item in inventory.candidates if item.resource.drive_file_id]
+    names = [
+        item.resource.drive_file_id for item in inventory.candidates if item.resource.drive_file_id
+    ]
     assert "file_keep" in names
     assert "file_other" not in names
 
@@ -79,9 +81,7 @@ def test_physical_and_scope(service, df_context, tenant_ctx) -> None:
             project_id="acme_analytics",
             dataset_id="marketing",
             table_id="google_ads_campaign_daily",
-            frame=pd.DataFrame(
-                {"date": ["2026-01-01"], "country": ["US"], "spend": [1.0]}
-            ),
+            frame=pd.DataFrame({"date": ["2026-01-01"], "country": ["US"], "spend": [1.0]}),
             object_type="TABLE",
             num_rows=3,
             row_count_kind="EXACT",
@@ -104,7 +104,11 @@ def test_physical_and_scope(service, df_context, tenant_ctx) -> None:
     )
     service.load_business_snapshot(df_context, acme_snapshot())
     inventory = service.discover(df_context)
-    table = next(item for item in inventory.candidates if item.resource.table_id == "google_ads_campaign_daily")
+    table = next(
+        item
+        for item in inventory.candidates
+        if item.resource.table_id == "google_ads_campaign_daily"
+    )
     view = next(item for item in inventory.candidates if item.resource.table_id == "kpi_view")
     bound = service.bind_source(
         df_context,

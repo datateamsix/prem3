@@ -17,14 +17,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_checkout_requires_authentication() -> None:
-    client = TestClient(create_app(), raise_server_exceptions=False)
+    client, _ = make_client(unconfigured_auth=True)
     response = client.post("/v1/billing/checkout-session", json={"plan_id": "project"})
     assert response.status_code == 503
     assert response.json()["code"] == "AUTH_PROVIDER_NOT_CONFIGURED"
 
 
 def test_portal_requires_authentication() -> None:
-    client = TestClient(create_app(), raise_server_exceptions=False)
+    client, _ = make_client(unconfigured_auth=True)
     response = client.post("/v1/billing/portal-session", json={})
     assert response.status_code == 503
     assert response.json()["code"] == "AUTH_PROVIDER_NOT_CONFIGURED"

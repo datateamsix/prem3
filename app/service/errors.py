@@ -179,6 +179,15 @@ def billing_customer_unavailable() -> APIError:
     )
 
 
+def governance_denied(*, code: str, detail: str) -> APIError:
+    return APIError(
+        code=code,
+        status=409,
+        title="Governance denied",
+        detail=detail,
+    )
+
+
 def validation_error(errors: list[ProblemFieldError]) -> APIError:
     return APIError(
         code="VALIDATION_ERROR",
@@ -186,6 +195,24 @@ def validation_error(errors: list[ProblemFieldError]) -> APIError:
         title="Validation error",
         detail="The request failed validation.",
         errors=errors,
+    )
+
+
+def evaluation_dispatch_unavailable() -> APIError:
+    return APIError(
+        code="EVALUATION_DISPATCH_UNAVAILABLE",
+        status=503,
+        title="Evaluation dispatch unavailable",
+        detail="The Evaluation was accepted but durable dispatch could not be queued.",
+    )
+
+
+def service_identity_required() -> APIError:
+    return APIError(
+        code="SERVICE_IDENTITY_REQUIRED",
+        status=401,
+        title="Service identity required",
+        detail="A verified service identity is required for this operation.",
     )
 
 

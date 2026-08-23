@@ -15,7 +15,11 @@ from app.integrations.google.adapters import (
     FakeGoogleOAuthProvider,
     GoogleTokenSet,
 )
-from app.integrations.google.vault import InMemoryCredentialVault
+from app.integrations.google.vault import (
+    ControlPlaneCredentialVault,
+    FakeKmsKek,
+    InMemoryCredentialVault,
+)
 from app.service.app import create_app
 from app.service.auth import FakeIdentityVerifier
 from app.service.billing import UnavailableBillingGateway
@@ -27,12 +31,21 @@ from app.service.upload_signing import FakeUploadSigner
 from tests.unit.api_support import auth_header, seed_tenant
 
 
-def google_harness(*, plan_id: str = PlanId.PROJECT):
+def google_harness(
+    *,
+    plan_id: str = PlanId.PROJECT,
+    use_production_vault: bool = False,
+    **app_kwargs,
+):
     oauth = FakeGoogleOAuthProvider()
     drive = FakeDriveClient()
     bigquery = FakeBigQueryClient()
-    vault = InMemoryCredentialVault()
     repo = InMemoryControlPlaneRepository()
+    vault = (
+        ControlPlaneCredentialVault(repo=repo, kms=FakeKmsKek())
+        if use_production_vault
+        else InMemoryCredentialVault()
+    )
     tenant, identity = seed_tenant(repo, plan_id=plan_id)
     store = FakeObjectStore()
     signer = FakeUploadSigner()
@@ -59,6 +72,7 @@ def google_harness(*, plan_id: str = PlanId.PROJECT):
         google_credential_vault=vault,
         google_drive_client=drive,
         google_bigquery_client=bigquery,
+        **app_kwargs,
     )
     client = TestClient(app, raise_server_exceptions=False)
     workspace = client.post(

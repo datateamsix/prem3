@@ -1,0 +1,15 @@
+.venv
+.git
+.pytest_cache
+.ruff_cache
+.mypy_cache
+__pycache__
+*.pyc
+artifacts
+outputs
+.local
+.env
+frontend
+datasets
+docs
+tests

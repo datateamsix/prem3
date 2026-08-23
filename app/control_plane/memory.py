@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from threading import RLock
 from typing import Any
 
+from app.control_plane.dispatch_claims import decide_claim
 from app.control_plane.entitlements import default_planner_entitlement
 from app.control_plane.ids import new_dataset_id, new_tenant_id, new_workspace_id
 from app.control_plane.layout import (
@@ -30,6 +31,7 @@ from app.control_plane.models import (
     DatasetUpload,
     DriveWorkspaceBinding,
     EntitlementSnapshot,
+    EvaluationDispatch,
     GoogleConnection,
     GoogleOAuthTransaction,
     IdentityProviderOrganizationMapping,
@@ -61,6 +63,9 @@ from app.core.errors import (
 )
 from app.core.identifiers import validate_resource_identifier
 from app.governance.import_contract import ImportReadinessReceipt
+from app.governance.publish_contract import PublishReadinessReceipt
+from app.materialization.contracts import SourceMaterializationReceipt
+from app.publish_execution.contracts import PublishExecutionReceipt
 
 
 class InMemoryControlPlaneRepository:
@@ -87,6 +92,13 @@ class InMemoryControlPlaneRepository:
         self._import_selections: dict[str, DatasetImportSelection] = {}
         self._import_receipts: dict[str, ImportReadinessReceipt] = {}
         self._current_import_receipts: dict[str, str] = {}
+        self._materializations: dict[str, SourceMaterializationReceipt] = {}
+        self._materialization_authority: dict[str, str] = {}
+        self._publish_receipts: dict[str, PublishReadinessReceipt] = {}
+        self._publish_executions: dict[str, PublishExecutionReceipt] = {}
+        self._publish_authority: dict[str, str] = {}
+        self._evaluation_dispatches: dict[str, EvaluationDispatch] = {}
+        self._run_dispatches: dict[str, str] = {}
 
     def create_tenant(
         self,
@@ -529,6 +541,55 @@ class InMemoryControlPlaneRepository:
             rows.sort(key=lambda item: item.run_id)
             return rows
 
+    def put_evaluation_dispatch(self, dispatch: EvaluationDispatch) -> EvaluationDispatch:
+        with self._lock:
+            existing = self._evaluation_dispatches.get(dispatch.dispatch_id)
+            if existing is not None and (
+                existing.tenant_id != dispatch.tenant_id
+                or existing.workspace_id != dispatch.workspace_id
+                or existing.dataset_id != dispatch.dataset_id
+                or existing.run_id != dispatch.run_id
+            ):
+                raise ProviderMappingConflictError("Evaluation dispatch linkage is immutable.")
+            self._evaluation_dispatches[dispatch.dispatch_id] = dispatch
+            self._run_dispatches[f"{dispatch.tenant_id}/{dispatch.run_id}"] = dispatch.dispatch_id
+            return deepcopy(dispatch)
+
+    def get_evaluation_dispatch(self, dispatch_id: str) -> EvaluationDispatch | None:
+        with self._lock:
+            row = self._evaluation_dispatches.get(dispatch_id)
+            return deepcopy(row) if row is not None else None
+
+    def get_evaluation_dispatch_for_run(
+        self, *, tenant_id: str, run_id: str
+    ) -> EvaluationDispatch | None:
+        with self._lock:
+            dispatch_id = self._run_dispatches.get(f"{tenant_id}/{run_id}")
+            if dispatch_id is None:
+                return None
+            row = self._evaluation_dispatches.get(dispatch_id)
+            if row is None or row.tenant_id != tenant_id or row.run_id != run_id:
+                return None
+            return deepcopy(row)
+
+    def claim_evaluation_dispatch(
+        self,
+        *,
+        dispatch_id: str,
+        owner: str,
+        execution_name: str,
+        now: datetime,
+    ) -> tuple[str, EvaluationDispatch | None]:
+        with self._lock:
+            row = self._evaluation_dispatches.get(dispatch_id)
+            if row is None:
+                return "not_found", None
+            outcome, updated = decide_claim(
+                row, owner=owner, execution_name=execution_name, now=now
+            )
+            self._evaluation_dispatches[dispatch_id] = updated
+            return outcome.value, deepcopy(updated)
+
     def get_idempotent_result(
         self, *, tenant_id: str, operation: str, key: str
     ) -> dict[str, Any] | None:
@@ -623,6 +684,10 @@ class InMemoryControlPlaneRepository:
     def delete_credential_envelope(self, *, tenant_id: str, credential_ref: str) -> None:
         with self._lock:
             self._credential_envelopes.pop(f"{tenant_id}/{credential_ref}", None)
+
+    def list_credential_envelopes(self) -> list[CredentialEnvelope]:
+        with self._lock:
+            return [deepcopy(item) for item in self._credential_envelopes.values()]
 
     def put_drive_binding(self, binding: DriveWorkspaceBinding) -> DriveWorkspaceBinding:
         with self._lock:
@@ -728,6 +793,161 @@ class InMemoryControlPlaneRepository:
             if receipt is None or receipt.tenant_id != tenant_id:
                 return None
             return deepcopy(receipt)
+
+    def put_materialization(
+        self, receipt: SourceMaterializationReceipt
+    ) -> SourceMaterializationReceipt:
+        with self._lock:
+            key = (
+                f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                f"{receipt.dataset_id}/{receipt.materialization_id}"
+            )
+            self._materializations[key] = receipt
+            if receipt.status.value == "COMPLETE":
+                auth_key = (
+                    f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                    f"{receipt.dataset_id}/{receipt.authority_fingerprint}"
+                )
+                self._materialization_authority[auth_key] = receipt.materialization_id
+            return deepcopy(receipt)
+
+    def get_materialization(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        materialization_id: str,
+    ) -> SourceMaterializationReceipt | None:
+        with self._lock:
+            receipt = self._materializations.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{materialization_id}"
+            )
+            if receipt is None or receipt.tenant_id != tenant_id:
+                return None
+            return deepcopy(receipt)
+
+    def list_materializations(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str
+    ) -> list[SourceMaterializationReceipt]:
+        with self._lock:
+            prefix = f"{tenant_id}/{workspace_id}/{dataset_id}/"
+            rows = [
+                deepcopy(item)
+                for key, item in self._materializations.items()
+                if key.startswith(prefix) and item.tenant_id == tenant_id
+            ]
+            return sorted(rows, key=lambda row: row.started_at)
+
+    def get_materialization_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        authority_fingerprint: str,
+    ) -> SourceMaterializationReceipt | None:
+        with self._lock:
+            materialization_id = self._materialization_authority.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{authority_fingerprint}"
+            )
+            if materialization_id is None:
+                return None
+            return self.get_materialization(
+                tenant_id=tenant_id,
+                workspace_id=workspace_id,
+                dataset_id=dataset_id,
+                materialization_id=materialization_id,
+            )
+
+    def put_publish_receipt(self, receipt: PublishReadinessReceipt) -> PublishReadinessReceipt:
+        with self._lock:
+            key = (
+                f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                f"{receipt.dataset_id}/{receipt.run_id}"
+            )
+            self._publish_receipts[key] = receipt
+            return deepcopy(receipt)
+
+    def get_current_publish_receipt(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> PublishReadinessReceipt | None:
+        with self._lock:
+            receipt = self._publish_receipts.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{run_id}"
+            )
+            if receipt is None or receipt.tenant_id != tenant_id:
+                return None
+            return deepcopy(receipt)
+
+    def put_publish_execution(
+        self, receipt: PublishExecutionReceipt, *, authority_fingerprint: str
+    ) -> PublishExecutionReceipt:
+        with self._lock:
+            key = (
+                f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                f"{receipt.dataset_id}/{receipt.run_id}/{receipt.publish_id}"
+            )
+            self._publish_executions[key] = receipt
+            if receipt.status.value == "COMPLETE":
+                auth_key = (
+                    f"{receipt.tenant_id}/{receipt.workspace_id}/"
+                    f"{receipt.dataset_id}/{receipt.run_id}/{authority_fingerprint}"
+                )
+                self._publish_authority[auth_key] = receipt.publish_id
+            return deepcopy(receipt)
+
+    def get_publish_execution(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        publish_id: str,
+    ) -> PublishExecutionReceipt | None:
+        with self._lock:
+            receipt = self._publish_executions.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{run_id}/{publish_id}"
+            )
+            if receipt is None or receipt.tenant_id != tenant_id:
+                return None
+            return deepcopy(receipt)
+
+    def list_publish_executions(
+        self, *, tenant_id: str, workspace_id: str, dataset_id: str, run_id: str
+    ) -> list[PublishExecutionReceipt]:
+        with self._lock:
+            prefix = f"{tenant_id}/{workspace_id}/{dataset_id}/{run_id}/"
+            rows = [
+                deepcopy(item)
+                for key, item in self._publish_executions.items()
+                if key.startswith(prefix) and item.tenant_id == tenant_id
+            ]
+            return sorted(rows, key=lambda row: row.started_at)
+
+    def get_publish_execution_by_authority(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        dataset_id: str,
+        run_id: str,
+        authority_fingerprint: str,
+    ) -> PublishExecutionReceipt | None:
+        with self._lock:
+            publish_id = self._publish_authority.get(
+                f"{tenant_id}/{workspace_id}/{dataset_id}/{run_id}/{authority_fingerprint}"
+            )
+            if publish_id is None:
+                return None
+            return self.get_publish_execution(
+                tenant_id=tenant_id,
+                workspace_id=workspace_id,
+                dataset_id=dataset_id,
+                run_id=run_id,
+                publish_id=publish_id,
+            )
 
     @staticmethod
     def _upload_key(

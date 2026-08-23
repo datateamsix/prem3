@@ -36,6 +36,15 @@ class ObjectStore(Protocol):
         if_generation_match: int | None = 0,
     ) -> ObjectMetadata: ...
 
+    def write_bytes(
+        self,
+        *,
+        bucket: str,
+        object_name: str,
+        data: bytes,
+        content_type: str = "application/octet-stream",
+    ) -> ObjectMetadata: ...
+
     def delete_prefix(self, *, bucket: str, prefix: str) -> int: ...
 
 
@@ -72,6 +81,23 @@ class FakeObjectStore:
             etag=record["etag"],
             crc32c=record["crc32c"],
             md5_hash=record["md5_hash"],
+        )
+
+    def write_bytes(
+        self,
+        *,
+        bucket: str,
+        object_name: str,
+        data: bytes,
+        content_type: str = "application/octet-stream",
+    ) -> ObjectMetadata:
+        if (bucket, object_name) in self.objects:
+            raise FileExistsError(object_name)
+        return self.put_bytes(
+            bucket=bucket,
+            object_name=object_name,
+            data=data,
+            content_type=content_type,
         )
 
     def get_object_metadata(self, *, bucket: str, object_name: str) -> ObjectMetadata | None:
@@ -153,6 +179,31 @@ class GcsObjectStore:
         blob.upload_from_string(
             json.dumps(payload, sort_keys=True),
             content_type="application/json",
+            if_generation_match=0,
+        )
+        blob.reload()
+        return ObjectMetadata(
+            name=object_name,
+            size=int(blob.size or 0),
+            content_type=blob.content_type,
+            generation=str(blob.generation) if blob.generation is not None else "",
+            etag=blob.etag,
+            crc32c=blob.crc32c,
+            md5_hash=blob.md5_hash,
+        )
+
+    def write_bytes(
+        self,
+        *,
+        bucket: str,
+        object_name: str,
+        data: bytes,
+        content_type: str = "application/octet-stream",
+    ) -> ObjectMetadata:
+        blob = self._client_or_default().bucket(bucket).blob(object_name)
+        blob.upload_from_string(
+            data,
+            content_type=content_type,
             if_generation_match=0,
         )
         blob.reload()

@@ -76,6 +76,11 @@ FORBIDDEN_MODEL_SUPPLIED_AUTHORITY_PARAMETERS = frozenset(
         "drive_folder_id",
         "destination_project",
         "destination_project_id",
+        "upload_id",
+        "dispatch_id",
+        "cloud_run_execution",
+        "cloud_run_execution_name",
+        "cloud_task_name",
     }
 )
 

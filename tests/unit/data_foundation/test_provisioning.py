@@ -91,7 +91,9 @@ def test_partial_approval_skips_unapproved_sections_and_dependencies(
     )
     run = service.execute_plan(df_context, plan_id=plan.plan_id)
     applied = [step for step in run.steps if step.status.value == "APPLIED"]
-    previewed = [step for step in run.steps if "not approved" in step.detail or "dependencies" in step.detail]
+    previewed = [
+        step for step in run.steps if "not approved" in step.detail or "dependencies" in step.detail
+    ]
     assert applied
     assert previewed
     assert service.warehouse.get_table("acme_analytics.prem3_modeling.canonical_media") is None

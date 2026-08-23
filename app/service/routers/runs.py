@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.service.dependencies import authenticated_tenant, get_evaluation_service
 from app.service.evaluation_service import EvaluationService
@@ -21,8 +21,10 @@ router = APIRouter(prefix="/v1/runs", tags=["evaluations"])
 )
 async def get_run(
     run_id: str,
+    request: Request,
     service: Annotated[EvaluationService, Depends(get_evaluation_service)],
     _tenant: Annotated[object, Depends(authenticated_tenant)],
 ) -> EvaluationResponse:
     evaluation = service.get_evaluation(run_id=run_id)
-    return _to_response(evaluation)
+    resolver = getattr(request.app.state, "model_ready_resolver", None)
+    return _to_response(evaluation, service=service, model_ready_resolver=resolver)
