@@ -7,7 +7,7 @@
 | SOURCE_BRANCH | `feature/prem3-m2-canonical-google-qualification` |
 | SOURCE_SHA | `56116b74372a5a96a441fedc7d3d8411abf79299` |
 | M13_BRANCH | `feature/prem3-m2-durable-evaluation-dispatch` |
-| FINAL_SHA | *(set after commits)* |
+| FINAL_SHA | `757f8161627a346d071214397ab045e056a07512` |
 
 Do not branch from `origin/main`. Do not merge automatically.
 
@@ -73,17 +73,17 @@ Polling contract: `GET /v1/runs/{run_id}`. No SSE.
 
 ## G. Cloud proof
 
-Filled by `scripts/qualify_evaluation_dispatch_cloud.py` after deploy.
+Filled by live `prem3-api-00008-br6` plus Dataset A SERVICE fixture `dsp_4898db7dd78d42568edf`.
 
 | Proof | Value |
 |---|---|
-| CLOUD_API_ALIVE | *(qualify)* |
-| CLOUD_DURABLE_EVALUATION_DISPATCH | *(qualify)* |
-| CLOUD_EVALUATION_JOB_LAUNCHED | *(qualify)* |
-| CLOUD_AUTHORIZED_ADK_EXECUTION | *(qualify)* |
-| CLOUD_MODEL_READY_EVALUATION | false / EXTERNAL_DEPENDENCY unless official EDA completes |
-| CLOUD_EVALUATION_RETRY_PROOF | local PASS; cloud NOT_RUN unless a controlled fault is executed |
-| DUPLICATE_DISPATCH_FAIL_CLOSED | local PASS |
+| CLOUD_API_ALIVE | true |
+| CLOUD_DURABLE_EVALUATION_DISPATCH | true |
+| CLOUD_EVALUATION_JOB_LAUNCHED | true |
+| CLOUD_AUTHORIZED_ADK_EXECUTION | true |
+| CLOUD_MODEL_READY_EVALUATION | false / EXTERNAL_DEPENDENCY |
+| CLOUD_EVALUATION_RETRY_PROOF | NOT_RUN (local claim/retry tests PASS) |
+| DUPLICATE_DISPATCH_FAIL_CLOSED | PASS (`attempt_count=1` despite multiple job executions) |
 
 ## H. Golden regression
 
