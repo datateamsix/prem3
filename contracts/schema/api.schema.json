@@ -833,6 +833,40 @@
       "title": "ImportRoleAssignmentRequest",
       "type": "object"
     },
+    "app_service_models__MeEntitlementSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "feature_summary": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Feature Summary",
+          "type": "array"
+        },
+        "plan_id": {
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan_id",
+        "status",
+        "feature_summary"
+      ],
+      "title": "MeEntitlementSummary",
+      "type": "object"
+    },
     "app_service_models__MeOrganization": {
       "additionalProperties": false,
       "properties": {
@@ -903,17 +937,77 @@
       "title": "MeProjectCapacity",
       "type": "object"
     },
+    "app_service_models__MeProjectSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project_id",
+        "name",
+        "status"
+      ],
+      "title": "MeProjectSummary",
+      "type": "object"
+    },
     "app_service_models__MeResponse": {
       "additionalProperties": false,
       "properties": {
+        "current_organization": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_models__MeOrganization"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "entitlement_summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_models__MeEntitlementSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "organization": {
           "$ref": "#/$defs/app_service_models__MeOrganization"
+        },
+        "organizations": {
+          "items": {
+            "$ref": "#/$defs/app_service_models__MeOrganization"
+          },
+          "title": "Organizations",
+          "type": "array"
         },
         "plan": {
           "$ref": "#/$defs/app_service_models__MePlan"
         },
         "project_capacity": {
           "$ref": "#/$defs/app_service_models__MeProjectCapacity"
+        },
+        "project_summaries": {
+          "items": {
+            "$ref": "#/$defs/app_service_models__MeProjectSummary"
+          },
+          "title": "Project Summaries",
+          "type": "array"
         },
         "user": {
           "$ref": "#/$defs/app_service_models__MeUser"
@@ -1911,6 +2005,18 @@
           "title": "Name",
           "type": "string"
         },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
+        },
         "status": {
           "title": "Status",
           "type": "string"
@@ -1933,6 +2039,1398 @@
         "updated_at"
       ],
       "title": "WorkspaceResponse",
+      "type": "object"
+    },
+    "app_service_project_models__AttentionItem": {
+      "additionalProperties": false,
+      "properties": {
+        "attention_id": {
+          "title": "Attention Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "next_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_project_models__NextAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "owning_capability": {
+          "title": "Owning Capability",
+          "type": "string"
+        },
+        "severity": {
+          "title": "Severity",
+          "type": "string"
+        },
+        "state": {
+          "default": "OPEN",
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attention_id",
+        "severity",
+        "title",
+        "summary",
+        "owning_capability",
+        "created_at"
+      ],
+      "title": "AttentionItem",
+      "type": "object"
+    },
+    "app_service_project_models__BusinessIqHomeSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "acknowledged_unknown_count": {
+          "default": 0,
+          "title": "Acknowledged Unknown Count",
+          "type": "integer"
+        },
+        "channel_count": {
+          "default": 0,
+          "title": "Channel Count",
+          "type": "integer"
+        },
+        "high_priority_question_count": {
+          "default": 0,
+          "title": "High Priority Question Count",
+          "type": "integer"
+        },
+        "market_count": {
+          "default": 0,
+          "title": "Market Count",
+          "type": "integer"
+        },
+        "material_driver_count": {
+          "default": 0,
+          "title": "Material Driver Count",
+          "type": "integer"
+        },
+        "next_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_project_models__NextAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "profile_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile Snapshot Id"
+        },
+        "profile_version": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile Version"
+        },
+        "readiness": {
+          "title": "Readiness",
+          "type": "string"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        }
+      },
+      "required": [
+        "readiness"
+      ],
+      "title": "BusinessIqHomeSummary",
+      "type": "object"
+    },
+    "app_service_project_models__BusinessIqOverviewReadModel": {
+      "additionalProperties": false,
+      "properties": {
+        "attention_items": {
+          "items": {
+            "$ref": "#/$defs/app_service_project_models__AttentionItem"
+          },
+          "title": "Attention Items",
+          "type": "array"
+        },
+        "brief_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brief Summary"
+        },
+        "evidence_summary": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Evidence Summary",
+          "type": "object"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "next_actions": {
+          "items": {
+            "$ref": "#/$defs/app_service_project_models__NextAction"
+          },
+          "title": "Next Actions",
+          "type": "array"
+        },
+        "open_question_summary": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Open Question Summary",
+          "type": "object"
+        },
+        "profile_summary": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile Summary"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "readiness": {
+          "title": "Readiness",
+          "type": "string"
+        },
+        "summary_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Summary Counts",
+          "type": "object"
+        },
+        "top_measurement_considerations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Top Measurement Considerations",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        }
+      },
+      "required": [
+        "project_id",
+        "readiness",
+        "generated_at"
+      ],
+      "title": "BusinessIqOverviewReadModel",
+      "type": "object"
+    },
+    "app_service_project_models__CreateProjectRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "brand_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Name"
+        },
+        "business_unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Unit"
+        },
+        "default_currency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default Currency"
+        },
+        "default_timezone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default Timezone"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "logo_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Logo Ref"
+        },
+        "markets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Markets",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "primary_market": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Market"
+        },
+        "scope_type": {
+          "default": "CUSTOM",
+          "title": "Scope Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "CreateProjectRequest",
+      "type": "object"
+    },
+    "app_service_project_models__DataFoundationHomeSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "attention_count": {
+          "default": 0,
+          "title": "Attention Count",
+          "type": "integer"
+        },
+        "blocked_source_count": {
+          "default": 0,
+          "title": "Blocked Source Count",
+          "type": "integer"
+        },
+        "healthy_source_count": {
+          "default": 0,
+          "title": "Healthy Source Count",
+          "type": "integer"
+        },
+        "last_refresh_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Refresh At"
+        },
+        "most_limiting_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Most Limiting Source"
+        },
+        "next_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_project_models__NextAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "readiness": {
+          "title": "Readiness",
+          "type": "string"
+        },
+        "required_source_count": {
+          "default": 0,
+          "title": "Required Source Count",
+          "type": "integer"
+        },
+        "review_source_count": {
+          "default": 0,
+          "title": "Review Source Count",
+          "type": "integer"
+        },
+        "shared_continuous_window": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shared Continuous Window"
+        }
+      },
+      "required": [
+        "readiness"
+      ],
+      "title": "DataFoundationHomeSummary",
+      "type": "object"
+    },
+    "app_service_project_models__DataFoundationOverviewReadModel": {
+      "additionalProperties": false,
+      "properties": {
+        "attention_items": {
+          "items": {
+            "$ref": "#/$defs/app_service_project_models__AttentionItem"
+          },
+          "title": "Attention Items",
+          "type": "array"
+        },
+        "connection_summary": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Connection Summary",
+          "type": "array"
+        },
+        "coverage_summary": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Summary"
+        },
+        "data_intelligence_summary": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Intelligence Summary"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "last_refresh_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Refresh At"
+        },
+        "next_actions": {
+          "items": {
+            "$ref": "#/$defs/app_service_project_models__NextAction"
+          },
+          "title": "Next Actions",
+          "type": "array"
+        },
+        "phase": {
+          "title": "Phase",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "quality_summary": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Quality Summary",
+          "type": "object"
+        },
+        "readiness": {
+          "title": "Readiness",
+          "type": "string"
+        },
+        "source_summary": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Source Summary",
+          "type": "object"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        }
+      },
+      "required": [
+        "project_id",
+        "readiness",
+        "phase",
+        "generated_at"
+      ],
+      "title": "DataFoundationOverviewReadModel",
+      "type": "object"
+    },
+    "app_service_project_models__IntelligenceHomeSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_required_count": {
+          "default": 0,
+          "title": "Decision Required Count",
+          "type": "integer"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "opportunity_count": {
+          "default": 0,
+          "title": "Opportunity Count",
+          "type": "integer"
+        },
+        "risk_count": {
+          "default": 0,
+          "title": "Risk Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "generated_at"
+      ],
+      "title": "IntelligenceHomeSummary",
+      "type": "object"
+    },
+    "app_service_project_models__MeasurementCycleSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "business_profile_snapshot_id": {
+          "title": "Business Profile Snapshot Id",
+          "type": "string"
+        },
+        "cadence": {
+          "title": "Cadence",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "cycle_id": {
+          "title": "Cycle Id",
+          "type": "string"
+        },
+        "data_cutoff": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Cutoff"
+        },
+        "data_cutoff_origin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Cutoff Origin"
+        },
+        "foundation_snapshot_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Foundation Snapshot Ref"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cycle_id",
+        "project_id",
+        "name",
+        "cadence",
+        "business_profile_snapshot_id",
+        "state",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "MeasurementCycleSummary",
+      "type": "object"
+    },
+    "app_service_project_models__MeasurementTrackSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "attention_count": {
+          "default": 0,
+          "title": "Attention Count",
+          "type": "integer"
+        },
+        "availability": {
+          "title": "Availability",
+          "type": "string"
+        },
+        "context_items": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Context Items",
+          "type": "array"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "domain_state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domain State"
+        },
+        "engine": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Engine"
+        },
+        "latest_run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Run Id"
+        },
+        "next_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_project_models__NextAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "track_id": {
+          "title": "Track Id",
+          "type": "string"
+        },
+        "track_type": {
+          "title": "Track Type",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "track_id",
+        "track_type",
+        "display_name",
+        "availability",
+        "updated_at"
+      ],
+      "title": "MeasurementTrackSummary",
+      "type": "object"
+    },
+    "app_service_project_models__NextAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "title": "Action Type",
+          "type": "string"
+        },
+        "capability": {
+          "title": "Capability",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "priority": {
+          "default": 100,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "resource_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Ref"
+        },
+        "route_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Route Hint"
+        }
+      },
+      "required": [
+        "action_type",
+        "label",
+        "capability"
+      ],
+      "title": "NextAction",
+      "type": "object"
+    },
+    "app_service_project_models__PlanningCapabilitySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "title": "Availability",
+          "type": "string"
+        },
+        "capability": {
+          "title": "Capability",
+          "type": "string"
+        },
+        "dependency_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dependency Reason"
+        },
+        "latest_artifact_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Artifact Ref"
+        },
+        "next_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_project_models__NextAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "capability",
+        "availability"
+      ],
+      "title": "PlanningCapabilitySummary",
+      "type": "object"
+    },
+    "app_service_project_models__ProjectHomeReadModel": {
+      "additionalProperties": false,
+      "properties": {
+        "attention_items": {
+          "items": {
+            "$ref": "#/$defs/app_service_project_models__AttentionItem"
+          },
+          "title": "Attention Items",
+          "type": "array"
+        },
+        "business_iq_summary": {
+          "$ref": "#/$defs/app_service_project_models__BusinessIqHomeSummary"
+        },
+        "current_cycle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_project_models__MeasurementCycleSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "data_foundation_summary": {
+          "$ref": "#/$defs/app_service_project_models__DataFoundationHomeSummary"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "intelligence_summary": {
+          "$ref": "#/$defs/app_service_project_models__IntelligenceHomeSummary"
+        },
+        "is_current_cycle": {
+          "default": true,
+          "title": "Is Current Cycle",
+          "type": "boolean"
+        },
+        "measurement_home": {
+          "$ref": "#/$defs/app_service_project_models__ProjectMeasurementHomeBinding"
+        },
+        "measurement_tracks": {
+          "items": {
+            "$ref": "#/$defs/app_service_project_models__MeasurementTrackSummary"
+          },
+          "title": "Measurement Tracks",
+          "type": "array"
+        },
+        "planning_capabilities": {
+          "items": {
+            "$ref": "#/$defs/app_service_project_models__PlanningCapabilitySummary"
+          },
+          "title": "Planning Capabilities",
+          "type": "array"
+        },
+        "project": {
+          "$ref": "#/$defs/app_service_project_models__ProjectResponse"
+        },
+        "recent_changes": {
+          "items": {
+            "$ref": "#/$defs/app_service_project_models__RecentChange"
+          },
+          "title": "Recent Changes",
+          "type": "array"
+        },
+        "selected_cycle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_project_models__MeasurementCycleSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "project",
+        "measurement_home",
+        "business_iq_summary",
+        "data_foundation_summary",
+        "intelligence_summary",
+        "generated_at"
+      ],
+      "title": "ProjectHomeReadModel",
+      "type": "object"
+    },
+    "app_service_project_models__ProjectListItem": {
+      "additionalProperties": false,
+      "properties": {
+        "active_tracks": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Active Tracks",
+          "type": "array"
+        },
+        "attention_count": {
+          "default": 0,
+          "title": "Attention Count",
+          "type": "integer"
+        },
+        "foundation_state": {
+          "title": "Foundation State",
+          "type": "string"
+        },
+        "latest_activity_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Activity At"
+        },
+        "next_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_project_models__NextAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "project": {
+          "$ref": "#/$defs/app_service_project_models__ProjectResponse"
+        }
+      },
+      "required": [
+        "project",
+        "foundation_state"
+      ],
+      "title": "ProjectListItem",
+      "type": "object"
+    },
+    "app_service_project_models__ProjectListResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "active_project_count": {
+          "title": "Active Project Count",
+          "type": "integer"
+        },
+        "capacity_remaining": {
+          "title": "Capacity Remaining",
+          "type": "integer"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/app_service_project_models__ProjectListItem"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "max_active_projects": {
+          "title": "Max Active Projects",
+          "type": "integer"
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next Cursor"
+        }
+      },
+      "required": [
+        "items",
+        "active_project_count",
+        "max_active_projects",
+        "capacity_remaining"
+      ],
+      "title": "ProjectListResponse",
+      "type": "object"
+    },
+    "app_service_project_models__ProjectMeasurementHomeBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "bigquery_dataset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bigquery Dataset Id"
+        },
+        "binding_status": {
+          "title": "Binding Status",
+          "type": "string"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "drive_root_folder_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drive Root Folder Id"
+        },
+        "gcp_project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gcp Project Id"
+        },
+        "google_connection_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Google Connection Id"
+        },
+        "namespace_conflict": {
+          "default": false,
+          "title": "Namespace Conflict",
+          "type": "boolean"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        },
+        "verified_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verified At"
+        }
+      },
+      "required": [
+        "project_id",
+        "binding_status"
+      ],
+      "title": "ProjectMeasurementHomeBinding",
+      "type": "object"
+    },
+    "app_service_project_models__ProjectResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "brand_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Name"
+        },
+        "business_unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Unit"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "default_currency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default Currency"
+        },
+        "default_timezone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default Timezone"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "logo_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Logo Ref"
+        },
+        "markets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Markets",
+          "type": "array"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "primary_market": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Market"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "scope_type": {
+          "title": "Scope Type",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project_id",
+        "workspace_id",
+        "name",
+        "scope_type",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ProjectResponse",
+      "type": "object"
+    },
+    "app_service_project_models__RecentChange": {
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "title": "Capability",
+          "type": "string"
+        },
+        "event_id": {
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_type": {
+          "title": "Event Type",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "receipt_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Receipt Ref"
+        },
+        "resource_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Ref"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "event_type",
+        "title",
+        "occurred_at",
+        "capability"
+      ],
+      "title": "RecentChange",
       "type": "object"
     }
   },
@@ -2016,6 +3514,24 @@
     },
     {
       "$ref": "#/$defs/app_service_models__PublishExecutionListResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_project_models__ProjectResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_project_models__CreateProjectRequest"
+    },
+    {
+      "$ref": "#/$defs/app_service_project_models__ProjectListResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_project_models__ProjectHomeReadModel"
+    },
+    {
+      "$ref": "#/$defs/app_service_project_models__BusinessIqOverviewReadModel"
+    },
+    {
+      "$ref": "#/$defs/app_service_project_models__DataFoundationOverviewReadModel"
     }
   ],
   "title": "PreM3 prem3-api presentation contracts"

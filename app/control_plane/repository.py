@@ -21,6 +21,7 @@ from app.control_plane.models import (
     GoogleConnection,
     GoogleOAuthTransaction,
     IdentityProviderOrganizationMapping,
+    MeasurementTrack,
     MembershipProjection,
     ProcessedWebhookEvent,
     StripeCustomerMapping,
@@ -29,6 +30,7 @@ from app.control_plane.models import (
     WebhookClaimResult,
     WebhookProvider,
     Workspace,
+    WorkspaceStatus,
 )
 from app.governance.import_contract import ImportReadinessReceipt
 from app.governance.publish_contract import PublishReadinessReceipt
@@ -88,6 +90,30 @@ class ControlPlaneRepository(Protocol):
     def create_workspace_with_capacity(
         self, *, tenant_id: str, name: str, workspace_id: str | None = None
     ) -> Workspace: ...
+
+    def put_workspace(self, workspace: Workspace) -> Workspace: ...
+
+    def update_workspace_status(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        status: WorkspaceStatus,
+    ) -> Workspace: ...
+
+    def put_measurement_track(self, track: MeasurementTrack) -> MeasurementTrack: ...
+
+    def get_measurement_track(
+        self, *, tenant_id: str, workspace_id: str, track_id: str
+    ) -> MeasurementTrack | None: ...
+
+    def list_measurement_tracks(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        cycle_id: str | None = None,
+    ) -> list[MeasurementTrack]: ...
 
     # --- Dataset ---
     def list_datasets_for_workspace(

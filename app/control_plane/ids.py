@@ -75,3 +75,7 @@ def new_materialization_id() -> str:
 
 def new_publish_id() -> str:
     return _opaque("pub")
+
+
+def new_track_id() -> str:
+    return _opaque("trk")

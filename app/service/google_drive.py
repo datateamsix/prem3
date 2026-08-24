@@ -12,6 +12,7 @@ from app.integrations.google.adapters import DriveClient
 from app.service.entitlements import require_feature
 from app.service.errors import ProblemFieldError, resource_not_found, validation_error
 from app.service.google_oauth import GoogleConnectionService
+from app.service.measurement_home_guard import deny_conflicted_measurement_home
 
 CHILD_FOLDERS = ("imports", "exports", "reports")
 
@@ -31,6 +32,9 @@ class DriveBindingService:
     def get_binding(self, *, workspace_id: str) -> DriveWorkspaceBinding | None:
         require_feature(self._repo, Feature.DATA_UPLOAD)
         tenant = require_tenant()
+        deny_conflicted_measurement_home(
+            self._repo, tenant_id=tenant.tenant_id, workspace_id=workspace_id
+        )
         return self._repo.get_drive_binding(tenant_id=tenant.tenant_id, workspace_id=workspace_id)
 
     def setup(
@@ -43,6 +47,7 @@ class DriveBindingService:
         )
         if workspace is None:
             raise resource_not_found()
+        deny_conflicted_measurement_home(self._repo, workspace)
         connection = self._require_drive_connection(connection_id)
         existing = self._repo.get_drive_binding(
             tenant_id=tenant.tenant_id, workspace_id=workspace_id

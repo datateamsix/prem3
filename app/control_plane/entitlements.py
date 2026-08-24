@@ -36,6 +36,13 @@ PAID_FEATURES: frozenset[Feature] = frozenset(
         Feature.MERIDIAN_INTEGRATION,
         Feature.REGISTRY_RESEARCH,
         Feature.TEAM_SEATS,
+        Feature.FOUNDATION,
+        Feature.MMM,
+        Feature.MTA,
+        Feature.FORECASTING,
+        Feature.SCENARIO_SIMULATION,
+        Feature.BUDGET_OPTIMIZATION,
+        Feature.DECISION_INTELLIGENCE,
     }
 )
 
@@ -80,9 +87,14 @@ class UnsupportedSubscriptionStatusError(ValueError):
 def _features_for_plan(plan_id: str) -> frozenset[Feature]:
     if plan_id == PlanId.PLANNER:
         return PLANNER_FEATURES
-    if plan_id in PAID_PLAN_IDS:
-        return PAID_FEATURES
-    raise ValueError(f"Unknown plan_id: {plan_id}")
+    if plan_id not in PAID_PLAN_IDS:
+        raise ValueError(f"Unknown plan_id: {plan_id}")
+    features = set(PAID_FEATURES)
+    if plan_id in {PlanId.PORTFOLIO, PlanId.ENTERPRISE}:
+        features.add(Feature.PORTFOLIO_VIEW)
+    if plan_id == PlanId.ENTERPRISE:
+        features.add(Feature.API_ACCESS)
+    return frozenset(features)
 
 
 def default_planner_entitlement(

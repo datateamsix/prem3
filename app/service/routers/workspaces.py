@@ -24,6 +24,7 @@ router = APIRouter(prefix="/v1/workspaces", tags=["workspaces"])
 def _to_response(workspace: Workspace) -> WorkspaceResponse:
     return WorkspaceResponse(
         workspace_id=workspace.workspace_id,
+        project_id=workspace.workspace_id,
         name=workspace.name,
         status=workspace.status.value,
         created_at=workspace.created_at,

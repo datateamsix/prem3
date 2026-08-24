@@ -22,9 +22,40 @@ class TenantStatus(StrEnum):
 
 
 class WorkspaceStatus(StrEnum):
-    """Active MMM Projects count toward capacity. Archive/reactivate deferred."""
+    """Customer-facing Project status. ACTIVE counts toward capacity."""
 
+    DRAFT = "DRAFT"
     ACTIVE = "ACTIVE"
+    ARCHIVED = "ARCHIVED"
+
+
+class ProjectScopeType(StrEnum):
+    COMPANY = "COMPANY"
+    BRAND = "BRAND"
+    BUSINESS_UNIT = "BUSINESS_UNIT"
+    COUNTRY = "COUNTRY"
+    REGION = "REGION"
+    PRODUCT_PORTFOLIO = "PRODUCT_PORTFOLIO"
+    CUSTOM = "CUSTOM"
+
+
+class MeasurementTrackType(StrEnum):
+    MMM = "MMM"
+    MTA = "MTA"
+    FORECAST = "FORECAST"
+
+
+class MeasurementTrackStatus(StrEnum):
+    """Shared track envelope. Methodology workflow state stays domain-owned."""
+
+    NOT_CONFIGURED = "NOT_CONFIGURED"
+    AVAILABLE_TO_CONFIGURE = "AVAILABLE_TO_CONFIGURE"
+    CONFIGURING = "CONFIGURING"
+    READY_TO_RUN = "READY_TO_RUN"
+    RUNNING = "RUNNING"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
+    COMPLETE = "COMPLETE"
+    BLOCKED = "BLOCKED"
 
 
 class DatasetStatus(StrEnum):
@@ -65,6 +96,15 @@ class Feature(StrEnum):
     MERIDIAN_INTEGRATION = "meridian_integration"
     REGISTRY_RESEARCH = "registry_research"
     TEAM_SEATS = "team_seats"
+    FOUNDATION = "foundation"
+    MMM = "mmm"
+    MTA = "mta"
+    FORECASTING = "forecasting"
+    SCENARIO_SIMULATION = "scenario_simulation"
+    BUDGET_OPTIMIZATION = "budget_optimization"
+    DECISION_INTELLIGENCE = "decision_intelligence"
+    PORTFOLIO_VIEW = "portfolio_view"
+    API_ACCESS = "api_access"
 
 
 class IdentityProvider(StrEnum):
@@ -159,7 +199,7 @@ class MembershipProjection(BaseModel):
 
 
 class Workspace(BaseModel):
-    """MMM Project. Customer-facing name is MMM Project; storage key is workspace_id."""
+    """Canonical Project store. Storage key remains workspace_id; product name is Project."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -169,6 +209,20 @@ class Workspace(BaseModel):
     status: WorkspaceStatus
     created_at: datetime
     updated_at: datetime
+    description: str | None = None
+    scope_type: ProjectScopeType = ProjectScopeType.CUSTOM
+    brand_name: str | None = None
+    business_unit: str | None = None
+    primary_market: str | None = None
+    markets: tuple[str, ...] = ()
+    default_currency: str | None = None
+    default_timezone: str | None = None
+    logo_ref: str | None = None
+    archived_at: datetime | None = None
+
+    @property
+    def project_id(self) -> str:
+        return self.workspace_id
 
     @field_validator("tenant_id")
     @classmethod
@@ -671,3 +725,64 @@ class DatasetImportSelection(BaseModel):
     @classmethod
     def _tenant_id(cls, value: str) -> str:
         return validate_resource_identifier(value, field="tenant_id")
+
+
+class TrackConfigRevision(BaseModel):
+    """Immutable analytical configuration snapshot for a consumed Track version."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    configuration_version: int
+    config: dict[str, Any] = Field(default_factory=dict)
+    consumed_by_run_id: str | None = None
+    created_at: datetime
+
+
+class MeasurementTrack(BaseModel):
+    """Methodology-specific track under a Project MeasurementCycle. Not an MMM run."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    track_id: str
+    tenant_id: str
+    workspace_id: str
+    cycle_id: str
+    track_type: MeasurementTrackType
+    status: MeasurementTrackStatus
+    configuration_version: int = 1
+    config: dict[str, Any] = Field(default_factory=dict)
+    config_revisions: tuple[TrackConfigRevision, ...] = ()
+    consumed_run_versions: dict[str, int] = Field(default_factory=dict)
+    input_readiness_state: str | None = None
+    readiness_receipt_ref: str | None = None
+    latest_run_id: str | None = None
+    accepted_artifact_id: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    def is_consumed(self) -> bool:
+        return bool(
+            self.latest_run_id
+            or self.accepted_artifact_id
+            or self.readiness_receipt_ref
+            or self.consumed_run_versions
+        )
+
+    @property
+    def project_id(self) -> str:
+        return self.workspace_id
+
+    @field_validator("track_id")
+    @classmethod
+    def _track_id(cls, value: str) -> str:
+        return validate_resource_identifier(value, field="track_id")
+
+    @field_validator("tenant_id")
+    @classmethod
+    def _tenant_id(cls, value: str) -> str:
+        return validate_resource_identifier(value, field="tenant_id")
+
+    @field_validator("workspace_id")
+    @classmethod
+    def _workspace_id(cls, value: str) -> str:
+        return validate_resource_identifier(value, field="workspace_id")

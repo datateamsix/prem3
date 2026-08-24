@@ -37,6 +37,7 @@ from app.control_plane.models import (
     GoogleConnection,
     GoogleOAuthTransaction,
     IdentityProviderOrganizationMapping,
+    MeasurementTrack,
     MembershipProjection,
     ProcessedWebhookEvent,
     StripeCustomerMapping,
@@ -61,6 +62,7 @@ from app.core.errors import (
     ProjectLimitReachedError,
     ProviderMappingConflictError,
     TenantNotFoundError,
+    TrackConfigurationImmutableError,
     WebhookAlreadyProcessedError,
     WorkspaceNotFoundError,
 )
@@ -95,6 +97,7 @@ COLLECTION_PUBLISH_RECEIPTS = "publish_receipts"
 COLLECTION_PUBLISH_EXECUTIONS = "publish_executions"
 COLLECTION_DISPATCHES = "dispatches"
 COLLECTION_EVALUATION_DISPATCHES = "evaluation_dispatches"
+COLLECTION_MEASUREMENT_TRACKS = "measurement_tracks"
 
 
 class FirestoreControlPlaneRepository:
@@ -124,6 +127,13 @@ class FirestoreControlPlaneRepository:
             self._tenant_ref(tenant_id)
             .collection(COLLECTION_WORKSPACES)
             .document(workspace_id)
+        )
+
+    def _track_ref(self, tenant_id: str, workspace_id: str, track_id: str):
+        return (
+            self._workspace_ref(tenant_id, workspace_id)
+            .collection(COLLECTION_MEASUREMENT_TRACKS)
+            .document(track_id)
         )
 
     def _dataset_ref(self, tenant_id: str, workspace_id: str, dataset_id: str):
@@ -416,6 +426,174 @@ class FirestoreControlPlaneRepository:
             return workspace
 
         return _create(transaction)
+
+    def put_workspace(self, workspace: Workspace) -> Workspace:
+        current = self.get_workspace_for_tenant(
+            tenant_id=workspace.tenant_id, workspace_id=workspace.workspace_id
+        )
+        if current is None:
+            raise WorkspaceNotFoundError("Workspace does not exist.")
+        stored = workspace.model_copy(
+            update={"status": current.status, "updated_at": datetime.now(UTC)}
+        )
+        self._workspace_ref(workspace.tenant_id, workspace.workspace_id).set(
+            model_to_document(stored)
+        )
+        if workspace.status is not current.status:
+            return self.update_workspace_status(
+                tenant_id=workspace.tenant_id,
+                workspace_id=workspace.workspace_id,
+                status=workspace.status,
+            )
+        return stored
+
+    def update_workspace_status(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        status: WorkspaceStatus,
+    ) -> Workspace:
+        transaction = self._db.transaction()
+
+        @transactional
+        def _update(txn: firestore.Transaction) -> Workspace:
+            workspace_ref = self._workspace_ref(tenant_id, workspace_id)
+            snap = workspace_ref.get(transaction=txn)
+            if not snap.exists:
+                raise WorkspaceNotFoundError("Workspace does not exist.")
+            current = document_to_model(Workspace, snap.to_dict())
+            tenant_ref = self._tenant_ref(tenant_id)
+            tenant_snap = tenant_ref.get(transaction=txn)
+            if not tenant_snap.exists:
+                raise TenantNotFoundError("Tenant does not exist.")
+            tenant = document_to_model(Tenant, tenant_snap.to_dict())
+            count = tenant.active_workspace_count
+            if current.status is WorkspaceStatus.ACTIVE and status is not WorkspaceStatus.ACTIVE:
+                count = max(0, count - 1)
+            elif current.status is not WorkspaceStatus.ACTIVE and status is WorkspaceStatus.ACTIVE:
+                if tenant.current_entitlement_snapshot_id is None:
+                    raise EntitlementUnavailableError(
+                        "No current entitlement snapshot for tenant."
+                    )
+                ent_snap = self._entitlement_ref(
+                    tenant_id, tenant.current_entitlement_snapshot_id
+                ).get(transaction=txn)
+                if not ent_snap.exists:
+                    raise EntitlementUnavailableError("Current entitlement snapshot is missing.")
+                entitlement = document_to_model(EntitlementSnapshot, ent_snap.to_dict())
+                if count >= entitlement.max_active_projects:
+                    raise ProjectLimitReachedError(
+                        "Active Project capacity reached for current entitlement."
+                    )
+                count += 1
+            now = datetime.now(UTC)
+            stored = current.model_copy(
+                update={
+                    "status": status,
+                    "updated_at": now,
+                    "archived_at": now if status is WorkspaceStatus.ARCHIVED else None,
+                }
+            )
+            txn.set(workspace_ref, model_to_document(stored))
+            txn.set(
+                tenant_ref,
+                model_to_document(
+                    tenant.model_copy(
+                        update={"active_workspace_count": count, "updated_at": now}
+                    )
+                ),
+            )
+            return stored
+
+        return _update(transaction)
+
+    def put_measurement_track(self, track: MeasurementTrack) -> MeasurementTrack:
+        transaction_factory = getattr(self._db, "transaction", None)
+        if transaction_factory is None:
+            return self._put_measurement_track_body(None, track)
+        transaction = transaction_factory()
+        if type(transaction).__module__.startswith("google.cloud.firestore"):
+
+            @transactional
+            def _put(txn: firestore.Transaction) -> MeasurementTrack:
+                return self._put_measurement_track_body(txn, track)
+
+            return _put(transaction)
+        return self._put_measurement_track_body(transaction, track)
+
+    def _put_measurement_track_body(
+        self, txn: firestore.Transaction | None, track: MeasurementTrack
+    ) -> MeasurementTrack:
+        workspace_ref = self._workspace_ref(track.tenant_id, track.workspace_id)
+        workspace_snap = (
+            workspace_ref.get(transaction=txn) if txn is not None else workspace_ref.get()
+        )
+        if not workspace_snap.exists:
+            raise WorkspaceNotFoundError("Workspace does not exist.")
+        tracks = workspace_ref.collection(COLLECTION_MEASUREMENT_TRACKS)
+        current_ref = self._track_ref(track.tenant_id, track.workspace_id, track.track_id)
+        current_snap = current_ref.get(transaction=txn) if txn is not None else current_ref.get()
+        if current_snap.exists:
+            existing = document_to_model(MeasurementTrack, current_snap.to_dict())
+            if (
+                existing.is_consumed()
+                and existing.config != track.config
+                and existing.configuration_version == track.configuration_version
+            ):
+                raise TrackConfigurationImmutableError(
+                    "A consumed MeasurementTrack configuration cannot be rewritten."
+                )
+        snapshots = txn.get(tracks) if txn is not None else tracks.stream()
+        for snap in snapshots:
+            other = document_to_model(MeasurementTrack, snap.to_dict())
+            if (
+                other.cycle_id == track.cycle_id
+                and other.track_type is track.track_type
+                and other.track_id != track.track_id
+            ):
+                raise ProviderMappingConflictError(
+                    "One active track of each type is allowed per MeasurementCycle."
+                )
+        payload = model_to_document(track)
+        dest = self._track_ref(track.tenant_id, track.workspace_id, track.track_id)
+        if txn is not None:
+            txn.set(dest, payload)
+        else:
+            dest.set(payload)
+        return track
+
+    def get_measurement_track(
+        self, *, tenant_id: str, workspace_id: str, track_id: str
+    ) -> MeasurementTrack | None:
+        snap = self._track_ref(tenant_id, workspace_id, track_id).get()
+        if not snap.exists:
+            return None
+        track = document_to_model(MeasurementTrack, snap.to_dict())
+        if track.tenant_id != tenant_id:
+            return None
+        return track
+
+    def list_measurement_tracks(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        cycle_id: str | None = None,
+    ) -> list[MeasurementTrack]:
+        if self.get_workspace_for_tenant(tenant_id=tenant_id, workspace_id=workspace_id) is None:
+            raise WorkspaceNotFoundError("Workspace does not exist.")
+        rows: list[MeasurementTrack] = []
+        for snap in (
+            self._workspace_ref(tenant_id, workspace_id)
+            .collection(COLLECTION_MEASUREMENT_TRACKS)
+            .stream()
+        ):
+            track = document_to_model(MeasurementTrack, snap.to_dict())
+            if cycle_id is None or track.cycle_id == cycle_id:
+                rows.append(track)
+        rows.sort(key=lambda item: (item.cycle_id, item.track_type.value, item.created_at))
+        return rows
 
     def list_datasets_for_workspace(
         self, *, tenant_id: str, workspace_id: str

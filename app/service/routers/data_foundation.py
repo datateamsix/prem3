@@ -45,6 +45,7 @@ from app.service.data_foundation_models import (
 )
 from app.service.dependencies import authenticated_tenant, authorized_workspace
 from app.service.errors import resource_not_found, validation_error
+from app.service.measurement_home_guard import deny_conflicted_measurement_home
 
 router = APIRouter(
     prefix="/v1/workspaces/{workspace_id}/data-foundation",
@@ -67,6 +68,7 @@ def _context(
     del tenant
     repo = request.app.state.control_plane
     tenant_id = require_tenant().tenant_id
+    deny_conflicted_measurement_home(repo, workspace)
     bq = repo.get_bigquery_binding(tenant_id=tenant_id, workspace_id=workspace.workspace_id)
     drive = repo.get_drive_binding(tenant_id=tenant_id, workspace_id=workspace.workspace_id)
     return context_from_tenant(

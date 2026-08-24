@@ -23,7 +23,8 @@ class FakeDocument:
     def set(self, data: dict[str, Any]) -> None:
         self._db[self._path] = dict(data)
 
-    def get(self) -> _Snapshot:
+    def get(self, transaction: Any = None) -> _Snapshot:
+        del transaction
         return _Snapshot(self._db.get(self._path), self._path.rsplit("/", 1)[-1])
 
     def collection(self, name: str) -> FakeCollection:

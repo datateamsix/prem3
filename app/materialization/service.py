@@ -45,6 +45,7 @@ from app.service.entitlements import require_feature
 from app.service.errors import governance_denied, resource_not_found
 from app.service.google_oauth import GoogleConnectionService
 from app.service.import_governance import ImportGovernanceService
+from app.service.measurement_home_guard import deny_conflicted_measurement_home
 from app.service.upload_config import UploadConfig
 from app.service.upload_service import UploadService
 
@@ -108,6 +109,9 @@ class MaterializationService:
     ) -> SourceMaterializationReceipt:
         require_feature(self._repo, Feature.DATA_UPLOAD)
         tenant = require_tenant()
+        deny_conflicted_measurement_home(
+            self._repo, tenant_id=tenant.tenant_id, workspace_id=workspace_id
+        )
         dataset = self._repo.get_dataset_for_workspace(
             tenant_id=tenant.tenant_id, workspace_id=workspace_id, dataset_id=dataset_id
         )

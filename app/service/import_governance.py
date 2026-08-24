@@ -34,6 +34,7 @@ from app.integrations.google.formats import drive_format, gcs_format
 from app.service.entitlements import require_feature
 from app.service.errors import ProblemFieldError, resource_not_found, validation_error
 from app.service.google_oauth import GoogleConnectionService
+from app.service.measurement_home_guard import deny_conflicted_measurement_home
 
 
 class ImportGovernanceService:
@@ -75,6 +76,10 @@ class ImportGovernanceService:
                 [ProblemFieldError(field="source_type", message="Unsupported import source type.")]
             ) from exc
         now = datetime.now(UTC)
+        if parsed_type in {SourceType.GOOGLE_DRIVE, SourceType.BIGQUERY}:
+            deny_conflicted_measurement_home(
+                self._repo, tenant_id=tenant.tenant_id, workspace_id=workspace_id
+            )
         previous = self._repo.get_import_selection(
             tenant_id=tenant.tenant_id, workspace_id=workspace_id, dataset_id=dataset_id
         )

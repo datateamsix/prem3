@@ -66,6 +66,14 @@ from app.service.models import (
     WorkspaceListResponse,
     WorkspaceResponse,
 )
+from app.service.project_models import (
+    BusinessIqOverviewReadModel,
+    CreateProjectRequest,
+    DataFoundationOverviewReadModel,
+    ProjectHomeReadModel,
+    ProjectListResponse,
+    ProjectResponse,
+)
 
 JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
 EXPORT_VERSION = "1.0.0"
@@ -211,6 +219,12 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             SourceMaterializationListResponse,
             PublishExecutionResponse,
             PublishExecutionListResponse,
+            ProjectResponse,
+            CreateProjectRequest,
+            ProjectListResponse,
+            ProjectHomeReadModel,
+            BusinessIqOverviewReadModel,
+            DataFoundationOverviewReadModel,
         ),
         composition="catalog",
     ),

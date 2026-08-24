@@ -17,6 +17,50 @@ components:
       - plan_id
       title: ApprovePlanRequest
       type: object
+    AttentionItem:
+      additionalProperties: false
+      properties:
+        attention_id:
+          title: Attention Id
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        evidence_refs:
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        next_action:
+          anyOf:
+          - $ref: '#/components/schemas/NextAction'
+          - type: 'null'
+        owning_capability:
+          title: Owning Capability
+          type: string
+        severity:
+          title: Severity
+          type: string
+        state:
+          default: OPEN
+          title: State
+          type: string
+        summary:
+          title: Summary
+          type: string
+        title:
+          title: Title
+          type: string
+      required:
+      - attention_id
+      - severity
+      - title
+      - summary
+      - owning_capability
+      - created_at
+      title: AttentionItem
+      type: object
     BigQueryBindingResponse:
       additionalProperties: false
       properties:
@@ -251,6 +295,56 @@ components:
       required:
       - candidate_id
       title: BindSourceRequest
+      type: object
+    BusinessIqHomeSummary:
+      additionalProperties: false
+      properties:
+        acknowledged_unknown_count:
+          default: 0
+          title: Acknowledged Unknown Count
+          type: integer
+        channel_count:
+          default: 0
+          title: Channel Count
+          type: integer
+        high_priority_question_count:
+          default: 0
+          title: High Priority Question Count
+          type: integer
+        market_count:
+          default: 0
+          title: Market Count
+          type: integer
+        material_driver_count:
+          default: 0
+          title: Material Driver Count
+          type: integer
+        next_action:
+          anyOf:
+          - $ref: '#/components/schemas/NextAction'
+          - type: 'null'
+        profile_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Profile Snapshot Id
+        profile_version:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Profile Version
+        readiness:
+          title: Readiness
+          type: string
+        updated_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Updated At
+      required:
+      - readiness
+      title: BusinessIqHomeSummary
       type: object
     BusinessProfileRequest:
       additionalProperties: false
@@ -494,6 +588,51 @@ components:
       - files
       title: CompleteUploadResponse
       type: object
+    CoverageReadModel:
+      additionalProperties: false
+      properties:
+        assessed_at:
+          format: date-time
+          title: Assessed At
+          type: string
+        cycle_id:
+          title: Cycle Id
+          type: string
+        gaps:
+          items:
+            additionalProperties: true
+            type: object
+          title: Gaps
+          type: array
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        series:
+          items:
+            additionalProperties: true
+            type: object
+          title: Series
+          type: array
+        summary:
+          additionalProperties: true
+          title: Summary
+          type: object
+        view:
+          title: View
+          type: string
+      required:
+      - project_id
+      - cycle_id
+      - view
+      - summary
+      - assessed_at
+      - generated_at
+      title: CoverageReadModel
+      type: object
     CreateCycleRequest:
       additionalProperties: false
       properties:
@@ -560,6 +699,62 @@ components:
       - upload_id
       title: CreateEvaluationRequest
       type: object
+    CreateProjectRequest:
+      additionalProperties: false
+      properties:
+        brand_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Brand Name
+        business_unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Unit
+        default_currency:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Default Currency
+        default_timezone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Default Timezone
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        logo_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Logo Ref
+        markets:
+          items:
+            type: string
+          title: Markets
+          type: array
+        name:
+          maxLength: 120
+          minLength: 1
+          title: Name
+          type: string
+        primary_market:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Primary Market
+        scope_type:
+          default: CUSTOM
+          title: Scope Type
+          type: string
+      required:
+      - name
+      title: CreateProjectRequest
+      type: object
     CreateUploadRequest:
       additionalProperties: false
       properties:
@@ -585,6 +780,56 @@ components:
       required:
       - name
       title: CreateWorkspaceRequest
+      type: object
+    DataFoundationHomeSummary:
+      additionalProperties: false
+      properties:
+        attention_count:
+          default: 0
+          title: Attention Count
+          type: integer
+        blocked_source_count:
+          default: 0
+          title: Blocked Source Count
+          type: integer
+        healthy_source_count:
+          default: 0
+          title: Healthy Source Count
+          type: integer
+        last_refresh_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Last Refresh At
+        most_limiting_source:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Most Limiting Source
+        next_action:
+          anyOf:
+          - $ref: '#/components/schemas/NextAction'
+          - type: 'null'
+        readiness:
+          title: Readiness
+          type: string
+        required_source_count:
+          default: 0
+          title: Required Source Count
+          type: integer
+        review_source_count:
+          default: 0
+          title: Review Source Count
+          type: integer
+        shared_continuous_window:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Shared Continuous Window
+      required:
+      - readiness
+      title: DataFoundationHomeSummary
       type: object
     DataFoundationOverviewResponse:
       additionalProperties: false
@@ -1217,6 +1462,35 @@ components:
       - provider
       title: ImportRoleAssignmentRequest
       type: object
+    IntelligenceHomeSummary:
+      additionalProperties: false
+      properties:
+        decision_required_count:
+          default: 0
+          title: Decision Required Count
+          type: integer
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        items:
+          items:
+            additionalProperties: true
+            type: object
+          title: Items
+          type: array
+        opportunity_count:
+          default: 0
+          title: Opportunity Count
+          type: integer
+        risk_count:
+          default: 0
+          title: Risk Count
+          type: integer
+      required:
+      - generated_at
+      title: IntelligenceHomeSummary
+      type: object
     LoadSnapshotRequest:
       additionalProperties: false
       properties:
@@ -1252,6 +1526,31 @@ components:
       required:
       - drive_file_id
       title: MaterializeDriveRequest
+      type: object
+    MeEntitlementSummary:
+      additionalProperties: false
+      properties:
+        capabilities:
+          items:
+            type: string
+          title: Capabilities
+          type: array
+        feature_summary:
+          items:
+            type: string
+          title: Feature Summary
+          type: array
+        plan_id:
+          title: Plan Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - plan_id
+      - status
+      - feature_summary
+      title: MeEntitlementSummary
       type: object
     MeOrganization:
       additionalProperties: false
@@ -1305,15 +1604,51 @@ components:
       - remaining_projects
       title: MeProjectCapacity
       type: object
+    MeProjectSummary:
+      additionalProperties: false
+      properties:
+        name:
+          title: Name
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - project_id
+      - name
+      - status
+      title: MeProjectSummary
+      type: object
     MeResponse:
       additionalProperties: false
       properties:
+        current_organization:
+          anyOf:
+          - $ref: '#/components/schemas/MeOrganization'
+          - type: 'null'
+        entitlement_summary:
+          anyOf:
+          - $ref: '#/components/schemas/MeEntitlementSummary'
+          - type: 'null'
         organization:
           $ref: '#/components/schemas/MeOrganization'
+        organizations:
+          items:
+            $ref: '#/components/schemas/MeOrganization'
+          title: Organizations
+          type: array
         plan:
           $ref: '#/components/schemas/MePlan'
         project_capacity:
           $ref: '#/components/schemas/MeProjectCapacity'
+        project_summaries:
+          items:
+            $ref: '#/components/schemas/MeProjectSummary'
+          title: Project Summaries
+          type: array
         user:
           $ref: '#/components/schemas/MeUser'
       required:
@@ -1332,6 +1667,329 @@ components:
       required:
       - user_id
       title: MeUser
+      type: object
+    MeasurementCycleSummary:
+      additionalProperties: false
+      properties:
+        business_profile_snapshot_id:
+          title: Business Profile Snapshot Id
+          type: string
+        cadence:
+          title: Cadence
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        cycle_id:
+          title: Cycle Id
+          type: string
+        data_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Cutoff
+        data_cutoff_origin:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Cutoff Origin
+        foundation_snapshot_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Foundation Snapshot Ref
+        name:
+          title: Name
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        state:
+          title: State
+          type: string
+        updated_at:
+          format: date-time
+          title: Updated At
+          type: string
+      required:
+      - cycle_id
+      - project_id
+      - name
+      - cadence
+      - business_profile_snapshot_id
+      - state
+      - created_at
+      - updated_at
+      title: MeasurementCycleSummary
+      type: object
+    MeasurementTrackListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/MeasurementTrackResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: MeasurementTrackListResponse
+      type: object
+    MeasurementTrackResponse:
+      additionalProperties: false
+      properties:
+        config:
+          additionalProperties: true
+          title: Config
+          type: object
+        configuration_version:
+          title: Configuration Version
+          type: integer
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        cycle_id:
+          title: Cycle Id
+          type: string
+        input_readiness_state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Input Readiness State
+        latest_run_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Run Id
+        project_id:
+          title: Project Id
+          type: string
+        status:
+          title: Status
+          type: string
+        track_id:
+          title: Track Id
+          type: string
+        track_type:
+          title: Track Type
+          type: string
+        updated_at:
+          format: date-time
+          title: Updated At
+          type: string
+        workspace_id:
+          title: Workspace Id
+          type: string
+      required:
+      - track_id
+      - project_id
+      - workspace_id
+      - cycle_id
+      - track_type
+      - status
+      - configuration_version
+      - created_at
+      - updated_at
+      title: MeasurementTrackResponse
+      type: object
+    MeasurementTrackSummary:
+      additionalProperties: false
+      properties:
+        attention_count:
+          default: 0
+          title: Attention Count
+          type: integer
+        availability:
+          title: Availability
+          type: string
+        context_items:
+          items:
+            type: string
+          title: Context Items
+          type: array
+        display_name:
+          title: Display Name
+          type: string
+        domain_state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Domain State
+        engine:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Engine
+        latest_run_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Run Id
+        next_action:
+          anyOf:
+          - $ref: '#/components/schemas/NextAction'
+          - type: 'null'
+        track_id:
+          title: Track Id
+          type: string
+        track_type:
+          title: Track Type
+          type: string
+        updated_at:
+          format: date-time
+          title: Updated At
+          type: string
+      required:
+      - track_id
+      - track_type
+      - display_name
+      - availability
+      - updated_at
+      title: MeasurementTrackSummary
+      type: object
+    NextAction:
+      additionalProperties: false
+      properties:
+        action_type:
+          title: Action Type
+          type: string
+        capability:
+          title: Capability
+          type: string
+        label:
+          title: Label
+          type: string
+        priority:
+          default: 100
+          title: Priority
+          type: integer
+        resource_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Resource Ref
+        route_hint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Route Hint
+      required:
+      - action_type
+      - label
+      - capability
+      title: NextAction
+      type: object
+    OrganizationReadModel:
+      additionalProperties: false
+      properties:
+        active_project_count:
+          title: Active Project Count
+          type: integer
+        capabilities:
+          items:
+            type: string
+          title: Capabilities
+          type: array
+        current_plan:
+          title: Current Plan
+          type: string
+        display_name:
+          title: Display Name
+          type: string
+        max_active_projects:
+          title: Max Active Projects
+          type: integer
+        plan_status:
+          title: Plan Status
+          type: string
+        user_role:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: User Role
+      required:
+      - display_name
+      - current_plan
+      - plan_status
+      - active_project_count
+      - max_active_projects
+      title: OrganizationReadModel
+      type: object
+    PatchMeasurementTrackRequest:
+      additionalProperties: false
+      properties:
+        config:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Config
+      title: PatchMeasurementTrackRequest
+      type: object
+    PatchProjectRequest:
+      additionalProperties: false
+      properties:
+        brand_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Brand Name
+        business_unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Unit
+        default_currency:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Default Currency
+        default_timezone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Default Timezone
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        logo_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Logo Ref
+        markets:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Markets
+        name:
+          anyOf:
+          - maxLength: 120
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Name
+        primary_market:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Primary Market
+        scope_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scope Type
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      title: PatchProjectRequest
       type: object
     PlanCatalogEntry:
       additionalProperties: false
@@ -1399,6 +2057,34 @@ components:
       required:
       - plans
       title: PlanCatalogResponse
+      type: object
+    PlanningCapabilitySummary:
+      additionalProperties: false
+      properties:
+        availability:
+          title: Availability
+          type: string
+        capability:
+          title: Capability
+          type: string
+        dependency_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dependency Reason
+        latest_artifact_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Artifact Ref
+        next_action:
+          anyOf:
+          - $ref: '#/components/schemas/NextAction'
+          - type: 'null'
+      required:
+      - capability
+      - availability
+      title: PlanningCapabilitySummary
       type: object
     PortalSessionRequest:
       additionalProperties: false
@@ -1469,6 +2155,256 @@ components:
       - code
       - request_id
       title: ProblemDetail
+      type: object
+    ProjectHomeReadModel:
+      additionalProperties: false
+      properties:
+        attention_items:
+          items:
+            $ref: '#/components/schemas/AttentionItem'
+          title: Attention Items
+          type: array
+        business_iq_summary:
+          $ref: '#/components/schemas/BusinessIqHomeSummary'
+        current_cycle:
+          anyOf:
+          - $ref: '#/components/schemas/MeasurementCycleSummary'
+          - type: 'null'
+        data_foundation_summary:
+          $ref: '#/components/schemas/DataFoundationHomeSummary'
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        intelligence_summary:
+          $ref: '#/components/schemas/IntelligenceHomeSummary'
+        is_current_cycle:
+          default: true
+          title: Is Current Cycle
+          type: boolean
+        measurement_home:
+          $ref: '#/components/schemas/ProjectMeasurementHomeBinding'
+        measurement_tracks:
+          items:
+            $ref: '#/components/schemas/MeasurementTrackSummary'
+          title: Measurement Tracks
+          type: array
+        planning_capabilities:
+          items:
+            $ref: '#/components/schemas/PlanningCapabilitySummary'
+          title: Planning Capabilities
+          type: array
+        project:
+          $ref: '#/components/schemas/ProjectResponse'
+        recent_changes:
+          items:
+            $ref: '#/components/schemas/RecentChange'
+          title: Recent Changes
+          type: array
+        selected_cycle:
+          anyOf:
+          - $ref: '#/components/schemas/MeasurementCycleSummary'
+          - type: 'null'
+      required:
+      - project
+      - measurement_home
+      - business_iq_summary
+      - data_foundation_summary
+      - intelligence_summary
+      - generated_at
+      title: ProjectHomeReadModel
+      type: object
+    ProjectListItem:
+      additionalProperties: false
+      properties:
+        active_tracks:
+          items:
+            type: string
+          title: Active Tracks
+          type: array
+        attention_count:
+          default: 0
+          title: Attention Count
+          type: integer
+        foundation_state:
+          title: Foundation State
+          type: string
+        latest_activity_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Latest Activity At
+        next_action:
+          anyOf:
+          - $ref: '#/components/schemas/NextAction'
+          - type: 'null'
+        project:
+          $ref: '#/components/schemas/ProjectResponse'
+      required:
+      - project
+      - foundation_state
+      title: ProjectListItem
+      type: object
+    ProjectListResponse:
+      additionalProperties: false
+      properties:
+        active_project_count:
+          title: Active Project Count
+          type: integer
+        capacity_remaining:
+          title: Capacity Remaining
+          type: integer
+        items:
+          items:
+            $ref: '#/components/schemas/ProjectListItem'
+          title: Items
+          type: array
+        max_active_projects:
+          title: Max Active Projects
+          type: integer
+        next_cursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Cursor
+      required:
+      - items
+      - active_project_count
+      - max_active_projects
+      - capacity_remaining
+      title: ProjectListResponse
+      type: object
+    ProjectMeasurementHomeBinding:
+      additionalProperties: false
+      properties:
+        bigquery_dataset_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bigquery Dataset Id
+        binding_status:
+          title: Binding Status
+          type: string
+        created_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Created At
+        drive_root_folder_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Drive Root Folder Id
+        gcp_project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Gcp Project Id
+        google_connection_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Google Connection Id
+        namespace_conflict:
+          default: false
+          title: Namespace Conflict
+          type: boolean
+        project_id:
+          title: Project Id
+          type: string
+        region:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Region
+        verified_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Verified At
+      required:
+      - project_id
+      - binding_status
+      title: ProjectMeasurementHomeBinding
+      type: object
+    ProjectResponse:
+      additionalProperties: false
+      properties:
+        brand_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Brand Name
+        business_unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Unit
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        default_currency:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Default Currency
+        default_timezone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Default Timezone
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        logo_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Logo Ref
+        markets:
+          items:
+            type: string
+          title: Markets
+          type: array
+        name:
+          title: Name
+          type: string
+        primary_market:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Primary Market
+        project_id:
+          title: Project Id
+          type: string
+        scope_type:
+          title: Scope Type
+          type: string
+        status:
+          title: Status
+          type: string
+        updated_at:
+          format: date-time
+          title: Updated At
+          type: string
+        workspace_id:
+          title: Workspace Id
+          type: string
+      required:
+      - project_id
+      - workspace_id
+      - name
+      - scope_type
+      - status
+      - created_at
+      - updated_at
+      title: ProjectResponse
       type: object
     ProposalCreateRequest:
       additionalProperties: false
@@ -1770,6 +2706,43 @@ components:
       - status
       - dependencies
       title: ReadyResponse
+      type: object
+    RecentChange:
+      additionalProperties: false
+      properties:
+        capability:
+          title: Capability
+          type: string
+        event_id:
+          title: Event Id
+          type: string
+        event_type:
+          title: Event Type
+          type: string
+        occurred_at:
+          format: date-time
+          title: Occurred At
+          type: string
+        receipt_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receipt Ref
+        resource_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Resource Ref
+        title:
+          title: Title
+          type: string
+      required:
+      - event_id
+      - event_type
+      - title
+      - occurred_at
+      - capability
+      title: RecentChange
       type: object
     ReplaceSourceRequest:
       additionalProperties: false
@@ -2369,6 +3342,11 @@ components:
         name:
           title: Name
           type: string
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
         status:
           title: Status
           type: string
@@ -2604,6 +3582,373 @@ paths:
       summary: Get Me
       tags:
       - identity
+  /v1/organization:
+    get:
+      operationId: getOrganization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationReadModel'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Get Organization
+      tags:
+      - projects
+  /v1/projects:
+    get:
+      operationId: listProjects
+      parameters:
+      - in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - maximum: 50
+            minimum: 1
+            type: integer
+          - type: 'null'
+          title: Limit
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cursor
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Projects
+      tags:
+      - projects
+    post:
+      operationId: createProject
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Project
+      tags:
+      - projects
+  /v1/projects/{project_id}:
+    get:
+      operationId: getProject
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Project
+      tags:
+      - projects
+    patch:
+      operationId: patchProject
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchProjectRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Patch Project
+      tags:
+      - projects
+  /v1/projects/{project_id}/business-iq/overview:
+    get:
+      operationId: getBusinessIqOverview
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Business Iq Overview
+      tags:
+      - projects
+  /v1/projects/{project_id}/cycles/{cycle_id}/coverage:
+    get:
+      operationId: getProjectCycleCoverage
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageReadModel'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Project Cycle Coverage
+      tags:
+      - projects
+  /v1/projects/{project_id}/cycles/{cycle_id}/tracks:
+    get:
+      operationId: listProjectTracks
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeasurementTrackListResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Project Tracks
+      tags:
+      - projects
+  /v1/projects/{project_id}/data-foundation/overview:
+    get:
+      operationId: getProjectDataFoundationOverview
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Project Data Foundation Overview
+      tags:
+      - projects
+  /v1/projects/{project_id}/home:
+    get:
+      operationId: getProjectHome
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: query
+        name: cycle_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cycle Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectHomeReadModel'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Project Home
+      tags:
+      - projects
+  /v1/projects/{project_id}/measurement-home:
+    get:
+      operationId: getProjectMeasurementHome
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Project Measurement Home
+      tags:
+      - projects
+  /v1/projects/{project_id}/tracks/{track_id}:
+    patch:
+      operationId: patchProjectTrack
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: track_id
+        required: true
+        schema:
+          title: Track Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchMeasurementTrackRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeasurementTrackResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Patch Project Track
+      tags:
+      - projects
   /v1/runs/{run_id}:
     get:
       operationId: getEvaluationByRunId
@@ -2892,6 +4237,33 @@ paths:
       summary: Answer Clarification
       tags:
       - business-iq
+  /v1/workspaces/{workspace_id}/business-iq/overview:
+    get:
+      operationId: getWorkspaceBusinessIqOverview
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Workspace Business Iq Overview
+      tags:
+      - projects
   /v1/workspaces/{workspace_id}/business-iq/profile:
     get:
       operationId: getBusinessProfile
@@ -3939,6 +5311,33 @@ paths:
       summary: Compile Intelligence Brief
       tags:
       - data-foundation
+  /v1/workspaces/{workspace_id}/data-foundation/overview-home:
+    get:
+      operationId: getWorkspaceDataFoundationOverviewHome
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Workspace Data Foundation Overview Home
+      tags:
+      - projects
   /v1/workspaces/{workspace_id}/data-foundation/plans:
     post:
       operationId: compileDataFoundationPlan
@@ -5486,6 +6885,42 @@ paths:
       summary: Complete Upload
       tags:
       - uploads
+  /v1/workspaces/{workspace_id}/home:
+    get:
+      operationId: getWorkspaceHome
+      parameters:
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      - in: query
+        name: cycle_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cycle Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectHomeReadModel'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Workspace Home
+      tags:
+      - projects
   /v1/workspaces/{workspace_id}/integrations/bigquery:
     get:
       operationId: getBigQueryBinding

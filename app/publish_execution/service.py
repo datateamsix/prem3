@@ -36,6 +36,7 @@ from app.publish_execution.namespace import is_reserved_bigquery_table
 from app.service.entitlements import require_feature
 from app.service.errors import governance_denied, resource_not_found
 from app.service.google_oauth import GoogleConnectionService
+from app.service.measurement_home_guard import deny_conflicted_measurement_home
 from app.service.publish_governance import PublishGovernanceService
 
 
@@ -248,6 +249,9 @@ class PublishExecutionService:
         evidence_artifacts: dict[str, bytes],
     ) -> DestinationResult:
         tenant = require_tenant()
+        deny_conflicted_measurement_home(
+            self._repo, tenant_id=tenant.tenant_id, workspace_id=workspace_id
+        )
         binding = self._repo.get_drive_binding(
             tenant_id=tenant.tenant_id, workspace_id=workspace_id
         )
@@ -424,6 +428,9 @@ class PublishExecutionService:
         evidence,
     ) -> DestinationResult:
         tenant = require_tenant()
+        deny_conflicted_measurement_home(
+            self._repo, tenant_id=tenant.tenant_id, workspace_id=workspace_id
+        )
         binding = self._repo.get_bigquery_binding(
             tenant_id=tenant.tenant_id, workspace_id=workspace_id
         )

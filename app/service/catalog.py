@@ -9,23 +9,23 @@ from app.service.models import PlanCatalogEntry, PlanCatalogResponse
 _PLAN_COPY: dict[str, tuple[str, str, list[str]]] = {
     PlanId.PLANNER: (
         "Planner",
-        "Public deterministic PreM3 Planner. No paid MMM Project slot.",
+        "Public deterministic PreM3 Planner. No paid Project slot.",
         ["Deterministic public Planner"],
     ),
     PlanId.PROJECT: (
         "Project",
-        "One paid MMM Project with unlimited commercial re-evaluations.",
-        ["One MMM Project", "Unlimited re-evaluations", "Meridian Integration"],
+        "One methodology-neutral active PreM3 Project with unlimited commercial re-evaluations.",
+        ["One PreM3 Project", "Unlimited re-evaluations", "Meridian Integration"],
     ),
     PlanId.PORTFOLIO: (
         "Portfolio",
-        "Up to ten paid MMM Projects with unlimited commercial re-evaluations.",
-        ["Up to 10 MMM Projects", "Unlimited re-evaluations", "Meridian Integration"],
+        "Up to ten methodology-neutral active PreM3 Projects with unlimited commercial re-evaluations.",
+        ["Up to 10 PreM3 Projects", "Unlimited re-evaluations", "Meridian Integration"],
     ),
     PlanId.ENTERPRISE: (
         "Enterprise",
-        "Up to fifty paid MMM Projects with unlimited commercial re-evaluations.",
-        ["Up to 50 MMM Projects", "Unlimited re-evaluations", "Meridian Integration"],
+        "Up to fifty methodology-neutral active PreM3 Projects with unlimited commercial re-evaluations.",
+        ["Up to 50 PreM3 Projects", "Unlimited re-evaluations", "Meridian Integration"],
     ),
 }
 
