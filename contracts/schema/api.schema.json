@@ -86,6 +86,319 @@
       "title": "ProblemFieldError",
       "type": "object"
     },
+    "app_service_mmm_models__CreateModelDesignRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "business_profile_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Profile Snapshot Id"
+        },
+        "compute_profile": {
+          "default": "CPU_TEST",
+          "title": "Compute Profile",
+          "type": "string"
+        },
+        "include_ambiguous_promotion": {
+          "default": false,
+          "title": "Include Ambiguous Promotion",
+          "type": "boolean"
+        },
+        "include_experiment_prior": {
+          "default": false,
+          "title": "Include Experiment Prior",
+          "type": "boolean"
+        },
+        "include_insufficient_controls": {
+          "default": false,
+          "title": "Include Insufficient Controls",
+          "type": "boolean"
+        },
+        "kpi": {
+          "default": "revenue",
+          "title": "Kpi",
+          "type": "string"
+        },
+        "media_channels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Media Channels",
+          "type": "array"
+        },
+        "model_ready_manifest_fingerprint": {
+          "title": "Model Ready Manifest Fingerprint",
+          "type": "string"
+        },
+        "model_ready_manifest_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Ready Manifest Ref"
+        },
+        "model_ready_run_id": {
+          "title": "Model Ready Run Id",
+          "type": "string"
+        },
+        "model_window_end": {
+          "title": "Model Window End",
+          "type": "string"
+        },
+        "model_window_start": {
+          "title": "Model Window Start",
+          "type": "string"
+        },
+        "rf_channels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rf Channels",
+          "type": "array"
+        },
+        "scope": {
+          "default": "GEO",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_ready_run_id",
+        "model_ready_manifest_fingerprint",
+        "model_window_start",
+        "model_window_end"
+      ],
+      "title": "CreateModelDesignRequest",
+      "type": "object"
+    },
+    "app_service_mmm_models__FitRunResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "fit_plan_fingerprint": {
+          "title": "Fit Plan Fingerprint",
+          "type": "string"
+        },
+        "fit_run_id": {
+          "title": "Fit Run Id",
+          "type": "string"
+        },
+        "meridian_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Meridian Version"
+        },
+        "model_version_id": {
+          "title": "Model Version Id",
+          "type": "string"
+        },
+        "python_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Python Version"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "tensorflow_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tensorflow Version"
+        },
+        "worker_image_digest": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worker Image Digest"
+        }
+      },
+      "required": [
+        "fit_run_id",
+        "model_version_id",
+        "status",
+        "fit_plan_fingerprint"
+      ],
+      "title": "FitRunResponse",
+      "type": "object"
+    },
+    "app_service_mmm_models__MMMSummaryResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "cycle_id": {
+          "title": "Cycle Id",
+          "type": "string"
+        },
+        "model_ready": {
+          "default": false,
+          "title": "Model Ready",
+          "type": "boolean"
+        },
+        "model_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Version Id"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        },
+        "track_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Track Id"
+        }
+      },
+      "required": [
+        "project_id",
+        "cycle_id"
+      ],
+      "title": "MMMSummaryResponse",
+      "type": "object"
+    },
+    "app_service_mmm_models__ModelVersionResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "cycle_id": {
+          "title": "Cycle Id",
+          "type": "string"
+        },
+        "model_plan_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Plan Fingerprint"
+        },
+        "model_ready_manifest_fingerprint": {
+          "title": "Model Ready Manifest Fingerprint",
+          "type": "string"
+        },
+        "model_version_id": {
+          "title": "Model Version Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "supersedes_model_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supersedes Model Version Id"
+        },
+        "track_id": {
+          "title": "Track Id",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "model_version_id",
+        "project_id",
+        "cycle_id",
+        "track_id",
+        "state",
+        "version",
+        "model_ready_manifest_fingerprint",
+        "accepted",
+        "created_at"
+      ],
+      "title": "ModelVersionResponse",
+      "type": "object"
+    },
     "app_service_models__BigQueryBindingResponse": {
       "additionalProperties": false,
       "properties": {
@@ -3532,6 +3845,18 @@
     },
     {
       "$ref": "#/$defs/app_service_project_models__DataFoundationOverviewReadModel"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__MMMSummaryResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__CreateModelDesignRequest"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__ModelVersionResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__FitRunResponse"
     }
   ],
   "title": "PreM3 prem3-api presentation contracts"

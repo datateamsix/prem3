@@ -34,6 +34,7 @@ from app.integrations.google.vault import (
 from app.materialization.canonical_gate import CanonicalFoundationSourceGate
 from app.materialization.foundation_compat import FoundationSourceGate
 from app.materialization.service import MaterializationService
+from app.modeling.mmm.service import MMMModelingService
 from app.publish_execution.model_ready import (
     ModelReadyEvidenceResolver,
     NullModelReadyEvidenceResolver,
@@ -96,6 +97,7 @@ from app.service.routers import (
     import_governance,
     internal_dispatch,
     materializations,
+    mmm,
     projects,
     publishes,
     runs,
@@ -139,6 +141,7 @@ def create_app(
     google_bigquery_client=None,
     foundation_source_gate: FoundationSourceGate | None = None,
     model_ready_resolver: ModelReadyEvidenceResolver | None = None,
+    mmm_modeling: MMMModelingService | None = None,
 ) -> FastAPI:
     cfg = settings or load_settings()
     assert_provider_mode_safe(cfg)
@@ -158,13 +161,15 @@ def create_app(
         summary="PreM3 authenticated product API",
         description=(
             "Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, "
-            "Google connection, import/publish governance, Business IQ, and "
-            "Data Foundation contracts. Clerk session tokens are verified when the "
-            "identity provider is configured. Creating an Evaluation returns 202 "
-            "Accepted only after durable Cloud Tasks enqueue; 202 is not ADK "
-            "completion and not MODEL_READY. Tenant identity "
-            "is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, "
-            "DATA_FOUNDATION_READY, MODEL_READY, and PUBLISH_READY are distinct "
+            "Google connection, import/publish governance, Business IQ, "
+            "Data Foundation, and governed MMM modeling contracts. Clerk session "
+            "tokens are verified when the identity provider is configured. Creating "
+            "an Evaluation returns 202 Accepted only after durable Cloud Tasks "
+            "enqueue; 202 is not ADK completion and not MODEL_READY. Posterior "
+            "sampling is never autonomous and requires an exact fingerprinted "
+            "FitPlan approval. Tenant identity is never accepted from the client. "
+            "IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY, "
+            "MODEL_READY, MODEL_ACCEPTED, and PUBLISH_READY are distinct "
             "deterministic states."
         ),
         docs_url=None,
@@ -262,6 +267,7 @@ def create_app(
         bigquery=google_services["bq_client"],
         model_ready=google_services["model_ready"],
     )
+    app.state.mmm_modeling = mmm_modeling or MMMModelingService()
 
     app.add_middleware(RequestIdMiddleware)
     app.include_router(health.router)
@@ -280,6 +286,7 @@ def create_app(
     app.include_router(data_foundation.router)
     app.include_router(materializations.router)
     app.include_router(publishes.router)
+    app.include_router(mmm.router)
     app.include_router(billing.router)
     app.include_router(identity_webhooks.router)
     app.include_router(internal_dispatch.router)

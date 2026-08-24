@@ -1,0 +1,361 @@
+{
+  "mission": "PreM3 Mission 3 \u2014 Meridian Modeling Runtime & Official Agent Skill Integration",
+  "lineage": {
+    "origin_main_sha": "0d72636c2b7298a29e212ac3b382a52e11933425",
+    "parent_feature_sha": "f5a0851fb095829ea7a286ed8f07d0673c35566a",
+    "mission3_base_sha": "f5a0851fb095829ea7a286ed8f07d0673c35566a",
+    "stacked": true,
+    "restack_required": true,
+    "parent_branch": "feature/prem3-project-architecture-enablement",
+    "mission_branch": "feature/prem3-m3-meridian-modeling-runtime"
+  },
+  "upstream": {
+    "repository": "google/meridian",
+    "commit": "8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+    "runtime_meridian_version": "1.8.0",
+    "license": "Apache-2.0",
+    "asset_manifest_sha256": "24d984fa3aae22f3f3db71fd61e6d3191d10aad1b856b30058bd7d266b09f57f",
+    "fetched_from_github_at_runtime": false
+  },
+  "compatibility": {
+    "compatible": true,
+    "errors": [
+      "media_effects_dist='roi' is not a ModelSpec value on 1.8.0"
+    ],
+    "warnings": [
+      "UPSTREAM_UNRELEASED: ModelContext channel inspection",
+      "UPSTREAM_UNRELEASED: Analyzer incremental outcome APIs",
+      "UPSTREAM_UNRELEASED: WeeklyOptimizationGrid",
+      "UPSTREAM_UNRELEASED: currency_code",
+      "doc-consultant public repo lacks root /docs directory",
+      "google-meridian is not installed in this process; using pinned API table"
+    ],
+    "checks": [
+      {
+        "name": "media_effects_dist_rejects_roi",
+        "class_name": "INCOMPATIBLE"
+      },
+      {
+        "name": "media_prior_type_values",
+        "class_name": "COMPATIBLE"
+      },
+      {
+        "name": "budget_optimizer_reference_only",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "scenario_planner_reference_only",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "unreleased_modelcontext",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "unreleased_analyzer",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "unreleased_weeklyoptimizationgrid",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "unreleased_currency_code",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "doc_consultant_missing_public_docs_tree",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_DataFrameInputDataBuilder",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_ModelSpec",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_PriorDistribution",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_Meridian",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_sample_prior",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_sample_posterior",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_MeridianEDA",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_meridian_serde_save_meridian",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_meridian_serde_load_meridian",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_reviewer_ModelReviewer",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_summarizer_Summarizer",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      }
+    ],
+    "media_effects_dist_roi": "INCOMPATIBLE \u2014 skill template; compiler uses media_prior_type"
+  },
+  "music_center": {
+    "project": "Music Center",
+    "cycle": "Q3 2026 MMM Track",
+    "scope": "GEO",
+    "model_window": [
+      "2026-07-01",
+      "2026-09-30"
+    ],
+    "media_channels": [
+      "paid_search",
+      "paid_social",
+      "video"
+    ],
+    "business_profile_snapshot_id": "bprof_music_center",
+    "model_ready_manifest_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "model_plan_id": "mplan_db04f35304ee458ebff6",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "state": "MODEL_ACCEPTED",
+    "accepted": true
+  },
+  "decision_ledger": [
+    {
+      "decision_id": "mdec_2db1fe6812a74a6e9fe1",
+      "decision_type": "MODEL_WINDOW",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_73f268b9009645cf826d",
+      "decision_type": "MODEL_SCOPE",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_47ca504ecc8146c29ac4",
+      "decision_type": "KPI_TYPE",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_762c2fdd31834954a85e",
+      "decision_type": "MEDIA_PRIOR_TYPE",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_1d570c46f58e4a158592",
+      "decision_type": "KNOT_STRATEGY",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_692e95f32e8f4668afb6",
+      "decision_type": "ENABLE_AKS",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_40f8c600109d4d0b9e3b",
+      "decision_type": "MAX_LAG",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_fba9ceb91856413fb02f",
+      "decision_type": "HOLDOUT",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_912a2185105d4a23946c",
+      "decision_type": "MCMC_CONFIGURATION",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    }
+  ],
+  "prior_validation": {
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "meridian_version": "1.8.0",
+    "prior_config_fingerprint": "d5b742b80da8a8a59f4855b505cb2458541e4f83bba9d5b928f5f2fbb885ad70",
+    "n_draws": 8,
+    "seed": 1,
+    "status": "PASS",
+    "artifact_refs": [],
+    "warnings": [],
+    "generated_at": "2026-08-24T15:20:27.736032Z"
+  },
+  "fit_approval": {
+    "approval_id": "mapv_6a38f74bf94442afa3d1",
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "tenant_id": "ten_music",
+    "project_id": "prj_music_center",
+    "fit_plan_fingerprint": "3e2c92f7b6f7506f667ba1f49bb86a67adeca5b4d04fcf38a7539eb94745d350",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "approved_by": "user_music",
+    "approved_at": "2026-08-24T15:20:27.736139Z",
+    "superseded": false
+  },
+  "fit_run": {
+    "fit_run_id": "mfit_9453ac17dfae483f86c6",
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "tenant_id": "ten_music",
+    "project_id": "prj_music_center",
+    "fit_plan_fingerprint": "3e2c92f7b6f7506f667ba1f49bb86a67adeca5b4d04fcf38a7539eb94745d350",
+    "status": "SUCCEEDED",
+    "compute_profile": "CPU_TEST",
+    "python_version": "3.12",
+    "meridian_version": "1.8.0",
+    "tensorflow_version": null,
+    "worker_image_digest": "sha256:fake-cpu-test",
+    "error_code": null,
+    "created_at": "2026-08-24T15:20:27.736195Z",
+    "started_at": "2026-08-24T15:20:27.736188Z",
+    "completed_at": "2026-08-24T15:20:27.736410Z"
+  },
+  "model_artifact_manifest": {
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "fit_run_id": "mfit_9453ac17dfae483f86c6",
+    "meridian_version": "1.8.0",
+    "worker_image_digest": "sha256:fake-cpu-test",
+    "input_manifest_ref": "gs://prem3/music-center/model-ready.json",
+    "input_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "fit_plan_fingerprint": "3e2c92f7b6f7506f667ba1f49bb86a67adeca5b4d04fcf38a7539eb94745d350",
+    "binary_model_ref": "modeling/mver_a6782a1bd7004fd4aba4/meridian_model.binpb",
+    "binary_sha256": "f79a807361f8bd776143f719c58a4d6cabc1e733aa4fed7c8dacb400977579df",
+    "created_at": "2026-08-24T15:20:27.736268Z"
+  },
+  "official_health": {
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "fit_run_id": "mfit_9453ac17dfae483f86c6",
+    "reviewer_version": "meridian.model.reviewer.ModelReviewer",
+    "meridian_version": "1.8.0",
+    "overall_health_score": null,
+    "check_results": [
+      {
+        "check_name": "ConvergenceCheck",
+        "status": "PASS",
+        "summary": "Fake runtime convergence PASS."
+      },
+      {
+        "check_name": "BaselineCheck",
+        "status": "PASS",
+        "summary": "Fake runtime baseline PASS."
+      },
+      {
+        "check_name": "BayesianPPPCheck",
+        "status": "PASS",
+        "summary": "Fake runtime PPP PASS."
+      },
+      {
+        "check_name": "GoodnessOfFitCheck",
+        "status": "PASS",
+        "summary": "Fake runtime GOF PASS."
+      },
+      {
+        "check_name": "PriorPosteriorShiftCheck",
+        "status": "PASS",
+        "summary": "Fake runtime shift PASS."
+      },
+      {
+        "check_name": "ROIConsistencyCheck",
+        "status": "PASS",
+        "summary": "Fake runtime ROI PASS."
+      }
+    ],
+    "blocking_fail_count": 0,
+    "review_count": 0,
+    "health_html_ref": null,
+    "generated_at": "2026-08-24T15:20:27.736284Z"
+  },
+  "results_refs": "modeling/mver_a6782a1bd7004fd4aba4/results_summary.html",
+  "review_pack_fingerprint": "d643be3ec020af374d201e2b1ce891584371f68e06f6faacd819276760147082",
+  "acceptance_approval": {
+    "approval_id": "mapv_2da3461aecbe48a6885b",
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "fit_run_id": "mfit_9453ac17dfae483f86c6",
+    "tenant_id": "ten_music",
+    "project_id": "prj_music_center",
+    "review_pack_fingerprint": "d643be3ec020af374d201e2b1ce891584371f68e06f6faacd819276760147082",
+    "model_artifact_fingerprint": "f79a807361f8bd776143f719c58a4d6cabc1e733aa4fed7c8dacb400977579df",
+    "approved_by": "user_music",
+    "approved_at": "2026-08-24T15:20:27.736472Z",
+    "decision": "ACCEPT",
+    "reason": null
+  },
+  "reproducibility": {
+    "project_id": "prj_music_center",
+    "cycle_id": "cyc_q3_2026",
+    "track_id": "trk_mmm",
+    "business_profile_snapshot_id": "bprof_music_center",
+    "model_ready_manifest_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "decision_ids": [
+      "mdec_2db1fe6812a74a6e9fe1",
+      "mdec_73f268b9009645cf826d",
+      "mdec_47ca504ecc8146c29ac4",
+      "mdec_762c2fdd31834954a85e",
+      "mdec_1d570c46f58e4a158592",
+      "mdec_692e95f32e8f4668afb6",
+      "mdec_40f8c600109d4d0b9e3b",
+      "mdec_fba9ceb91856413fb02f",
+      "mdec_912a2185105d4a23946c"
+    ],
+    "meridian_version": "1.8.0",
+    "external_knowledge_asset_versions": [
+      "meridian.skill.doc_consultant:1",
+      "meridian.skill.doc_consultant.documentation_map:1",
+      "meridian.skill.model_building:1",
+      "meridian.skill.model_building.model_spec_template:1",
+      "meridian.skill.result_visualization:1"
+    ],
+    "worker_image_digest": "sha256:fake-cpu-test",
+    "fit_configuration": {
+      "model_version_id": "mver_a6782a1bd7004fd4aba4",
+      "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+      "meridian_version": "1.8.0",
+      "container_image_digest": null,
+      "backend": "tensorflow",
+      "n_chains": 4,
+      "n_adapt": 500,
+      "n_burnin": 500,
+      "n_keep": 1000,
+      "seed": 1,
+      "reconstruction_batch_size": null,
+      "compute_profile": "CPU_TEST",
+      "artifact_destinations": {},
+      "input_artifact_ref": null,
+      "input_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+      "created_at": "2026-08-24T15:20:27.736094Z",
+      "fingerprint": "3e2c92f7b6f7506f667ba1f49bb86a67adeca5b4d04fcf38a7539eb94745d350"
+    },
+    "model_artifact_hash": "f79a807361f8bd776143f719c58a4d6cabc1e733aa4fed7c8dacb400977579df",
+    "review_artifact_refs": [
+      "d643be3ec020af374d201e2b1ce891584371f68e06f6faacd819276760147082"
+    ],
+    "acceptance_approval_id": "mapv_2da3461aecbe48a6885b"
+  },
+  "brief_objective": "Fit a reviewed Meridian MMM for incremental paid-media contribution.",
+  "live_gpu_proof": "LIVE_GPU_PROOF_NOT_RUN",
+  "eda_spec_promoted": false,
+  "autonomous_posterior_sampling": false
+}

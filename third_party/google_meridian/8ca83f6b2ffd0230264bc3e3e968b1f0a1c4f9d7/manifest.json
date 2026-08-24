@@ -1,0 +1,137 @@
+{
+  "provider": "google",
+  "repository": "google/meridian",
+  "upstream_commit_sha": "8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+  "runtime_meridian_version": "1.8.0",
+  "license": "Apache-2.0",
+  "license_path": "LICENSE",
+  "license_blob_sha": "7a4a3ea2424c09fbe48d455aed1eaa94d9124835",
+  "internal_version": "1",
+  "review_status": "REVIEWED",
+  "fetched_from_github_at_runtime": false,
+  "assets": [
+    {
+      "asset_id": "meridian.skill.doc_consultant",
+      "asset_type": "SKILL",
+      "upstream_path": "skills/meridian_doc_consultant/SKILL.md",
+      "upstream_blob_sha": "3b39fc0a34715c608cbb10b64bf2efa1f4aabdc7",
+      "compatibility_status": "COMPATIBLE_WITH_ADAPTATION",
+      "enabled": true,
+      "mission3_role": "active"
+    },
+    {
+      "asset_id": "meridian.skill.doc_consultant.documentation_map",
+      "asset_type": "DOCUMENTATION_MAP",
+      "upstream_path": "skills/meridian_doc_consultant/references/documentation_map.md",
+      "upstream_blob_sha": "31fa1687e719eea124b10758b75e46aa988ce27b",
+      "compatibility_status": "COMPATIBLE_WITH_ADAPTATION",
+      "enabled": true,
+      "notes": "Repo-relative docs/* paths are a topic ontology, not runtime content."
+    },
+    {
+      "asset_id": "meridian.skill.model_building",
+      "asset_type": "SKILL",
+      "upstream_path": "skills/meridian_model_building/SKILL.md",
+      "upstream_blob_sha": "61090c0bc571b1701bb49cd14fc07e5336dc685d",
+      "compatibility_status": "COMPATIBLE_WITH_ADAPTATION",
+      "enabled": true,
+      "mission3_role": "active"
+    },
+    {
+      "asset_id": "meridian.skill.model_building.model_spec_template",
+      "asset_type": "REFERENCE_TEMPLATE",
+      "upstream_path": "skills/meridian_model_building/references/model_spec_template.md",
+      "upstream_blob_sha": "36843e9ce85f1088e0b9e139697bb266ad0833cd",
+      "compatibility_status": "INCOMPATIBLE",
+      "enabled": true,
+      "notes": "Template uses ModelSpec(media_effects_dist='roi'); runtime 1.8.0 allows normal|log_normal only."
+    },
+    {
+      "asset_id": "meridian.skill.result_visualization",
+      "asset_type": "SKILL",
+      "upstream_path": "skills/meridian_result_visualization/SKILL.md",
+      "upstream_blob_sha": "6d016dafebf3e367d60856aa30df654d4983b57f",
+      "compatibility_status": "COMPATIBLE_WITH_ADAPTATION",
+      "enabled": true,
+      "mission3_role": "active"
+    },
+    {
+      "asset_id": "meridian.skill.budget_optimization",
+      "asset_type": "SKILL",
+      "upstream_path": "skills/meridian_budget_optimization/SKILL.md",
+      "upstream_blob_sha": "9ff768055cac4c6e3e6b25c47eebba61605331ac",
+      "compatibility_status": "REFERENCE_ONLY",
+      "enabled": false,
+      "mission3_role": "register_only"
+    },
+    {
+      "asset_id": "meridian.skill.scenario_planner",
+      "asset_type": "SKILL",
+      "upstream_path": "skills/meridian_scenario_planner/SKILL.md",
+      "upstream_blob_sha": "c638bbda6b43ab54732a13627ad44033a541a060",
+      "compatibility_status": "REFERENCE_ONLY",
+      "enabled": false,
+      "mission3_role": "register_only"
+    },
+    {
+      "asset_id": "meridian.demo.getting_started",
+      "asset_type": "DEMO_NOTEBOOK",
+      "upstream_path": "demo/Meridian_Getting_Started.ipynb",
+      "upstream_blob_sha": "06d372bdc80cd24b5755fe238da3743a56ab66e3",
+      "compatibility_status": "REFERENCE_ONLY",
+      "enabled": false,
+      "mission3_role": "register_only"
+    },
+    {
+      "asset_id": "meridian.demo.getting_started_jax",
+      "asset_type": "DEMO_NOTEBOOK",
+      "upstream_path": "demo/Meridian_Getting_Started_Jax.ipynb",
+      "upstream_blob_sha": "53e80ad0afc116ba39bd438ca15fb62e93d98d09",
+      "compatibility_status": "REFERENCE_ONLY",
+      "enabled": false,
+      "mission3_role": "register_only"
+    },
+    {
+      "asset_id": "meridian.demo.rf",
+      "asset_type": "DEMO_NOTEBOOK",
+      "upstream_path": "demo/Meridian_RF_Demo.ipynb",
+      "upstream_blob_sha": "74c4d12c315e3e832d846c1af68666ef0198ac29",
+      "compatibility_status": "REFERENCE_ONLY",
+      "enabled": false,
+      "mission3_role": "register_only"
+    },
+    {
+      "asset_id": "meridian.demo.roi_mroi_response_curves",
+      "asset_type": "DEMO_NOTEBOOK",
+      "upstream_path": "demo/ROI_mROI_Response_Curves.ipynb",
+      "upstream_blob_sha": "50fab394caae6514c00cee39d0c502c65f4f79ae",
+      "compatibility_status": "REFERENCE_ONLY",
+      "enabled": false,
+      "mission3_role": "register_only"
+    },
+    {
+      "asset_id": "meridian.demo.scenario_planner_beta",
+      "asset_type": "DEMO_NOTEBOOK",
+      "upstream_path": "demo/Meridian_Scenario_Planner_Beta.ipynb",
+      "upstream_blob_sha": "fc4d75f290e6fb9df189175ff6eb55450e073885",
+      "compatibility_status": "REFERENCE_ONLY",
+      "enabled": false,
+      "mission3_role": "register_only"
+    },
+    {
+      "asset_id": "meridian.demo.mlflow",
+      "asset_type": "DEMO_NOTEBOOK",
+      "upstream_path": "demo/Meridian_MLflow_Demo.ipynb",
+      "upstream_blob_sha": "05243a9b29a9ef5bc1dbb4f20491fc452dbfa904",
+      "compatibility_status": "REFERENCE_ONLY",
+      "enabled": false,
+      "mission3_role": "register_only"
+    }
+  ],
+  "unreleased_upstream_main_features": [
+    "ModelContext channel inspection",
+    "Analyzer incremental outcome APIs",
+    "WeeklyOptimizationGrid",
+    "currency_code"
+  ]
+}

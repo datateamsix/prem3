@@ -1,0 +1,423 @@
+"""Immutable MMM modeling contracts. No Python distribution objects as authority."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.core.contracts import utc_now
+from app.modeling.mmm.states import MMMModelingStage
+
+
+class FrozenModel(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+
+class KnowledgeClass(StrEnum):
+    MERIDIAN_NORMATIVE = "MERIDIAN_NORMATIVE"
+    PREM3_DETERMINISTIC_EVIDENCE = "PREM3_DETERMINISTIC_EVIDENCE"
+    BUSINESS_CONTEXT = "BUSINESS_CONTEXT"
+    HISTORICAL_EXPERIENCE = "HISTORICAL_EXPERIENCE"
+    MMM_JUDGMENT = "MMM_JUDGMENT"
+
+
+class DecisionType(StrEnum):
+    MODEL_WINDOW = "MODEL_WINDOW"
+    MODEL_SCOPE = "MODEL_SCOPE"
+    KPI_TYPE = "KPI_TYPE"
+    CONTROL_SELECTION = "CONTROL_SELECTION"
+    TREATMENT_CLASSIFICATION = "TREATMENT_CLASSIFICATION"
+    MEDIA_PRIOR_TYPE = "MEDIA_PRIOR_TYPE"
+    RF_PRIOR_TYPE = "RF_PRIOR_TYPE"
+    CUSTOM_PRIOR = "CUSTOM_PRIOR"
+    ROI_CALIBRATION_PERIOD = "ROI_CALIBRATION_PERIOD"
+    KNOT_STRATEGY = "KNOT_STRATEGY"
+    ENABLE_AKS = "ENABLE_AKS"
+    MAX_LAG = "MAX_LAG"
+    ADSTOCK_DECAY_SPEC = "ADSTOCK_DECAY_SPEC"
+    SATURATION_SPEC = "SATURATION_SPEC"
+    HILL_BEFORE_ADSTOCK = "HILL_BEFORE_ADSTOCK"
+    BASELINE_GEO = "BASELINE_GEO"
+    POPULATION_SCALING = "POPULATION_SCALING"
+    HOLDOUT = "HOLDOUT"
+    MCMC_CONFIGURATION = "MCMC_CONFIGURATION"
+    FIT_APPROVAL = "FIT_APPROVAL"
+    MODEL_ACCEPTANCE = "MODEL_ACCEPTANCE"
+
+
+class DecisionStatus(StrEnum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    SUPERSEDED = "SUPERSEDED"
+
+
+class PriorSource(StrEnum):
+    MERIDIAN_DEFAULT = "MERIDIAN_DEFAULT"
+    EXPERIMENT = "EXPERIMENT"
+    PRIOR_MMM = "PRIOR_MMM"
+    INTERNAL_BENCHMARK = "INTERNAL_BENCHMARK"
+    EXPERT_JUDGMENT = "EXPERT_JUDGMENT"
+    PREM3_RECOMMENDATION = "PREM3_RECOMMENDATION"
+
+
+class ComputeProfile(StrEnum):
+    CPU_TEST = "CPU_TEST"
+    GPU_STANDARD = "GPU_STANDARD"
+    GPU_LARGE = "GPU_LARGE"
+
+
+class OfficialHealthStatus(StrEnum):
+    PASS = "PASS"
+    REVIEW = "REVIEW"
+    FAIL = "FAIL"
+
+
+class PriorValidationStatus(StrEnum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+
+
+class AcceptanceDecision(StrEnum):
+    ACCEPT = "ACCEPT"
+    REJECT = "REJECT"
+
+
+class FitRunStatus(StrEnum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+
+
+class NormativeSourceKind(StrEnum):
+    PINNED_REPO_SOURCE = "PINNED_REPO_SOURCE"
+    OFFICIAL_MERIDIAN_WEB_DOC = "OFFICIAL_MERIDIAN_WEB_DOC"
+    PREM3_CURATED_MERIDIAN_CONTEXT = "PREM3_CURATED_MERIDIAN_CONTEXT"
+
+
+class Recommendation(FrozenModel):
+    proposal: Any
+    reason: str
+    evidence_refs: tuple[str, ...] = ()
+    knowledge_asset_refs: tuple[str, ...] = ()
+    authority: KnowledgeClass = KnowledgeClass.MMM_JUDGMENT
+    requires_approval: bool = True
+
+
+class PriorSpec(FrozenModel):
+    parameter: str
+    distribution_family: str
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    channels: tuple[str, ...] = ()
+    source: PriorSource = PriorSource.MERIDIAN_DEFAULT
+    evidence_refs: tuple[str, ...] = ()
+    rationale: str | None = None
+
+
+class MeridianModelSpecProposal(FrozenModel):
+    media_effects_dist: str = "log_normal"
+    hill_before_adstock: bool = False
+    max_lag: int = 8
+    unique_sigma_for_each_geo: bool = False
+    media_prior_type: str = "roi"
+    rf_prior_type: str = "roi"
+    roi_calibration_period: list[list[bool]] | None = None
+    rf_roi_calibration_period: list[list[bool]] | None = None
+    organic_media_prior_type: str = "contribution"
+    organic_rf_prior_type: str = "contribution"
+    non_media_treatments_prior_type: str = "contribution"
+    non_media_baseline_values: list[float | str] | None = None
+    knots: int | list[int] | None = None
+    baseline_geo: int | str | None = None
+    holdout_id: list[bool] | list[list[bool]] | None = None
+    control_population_scaling_id: list[bool] | None = None
+    non_media_population_scaling_id: list[bool] | None = None
+    adstock_decay_spec: str | dict[str, str] = "geometric"
+    saturation_spec: str | dict[str, str] = "hill"
+    enable_aks: bool = False
+    paid_media_prior_type: str | None = None
+
+
+class CompiledMeridianModelSpec(FrozenModel):
+    spec: MeridianModelSpecProposal
+    priors: tuple[PriorSpec, ...] = ()
+    fingerprint: str
+    meridian_version: str
+    compatibility_status: str
+
+
+class ModelPlan(FrozenModel):
+    model_plan_id: str
+    model_version_id: str
+    model_ready_run_id: str
+    model_ready_manifest_fingerprint: str
+    business_profile_snapshot_id: str | None = None
+    meridian_version: str = "1.8.0"
+    model_window_start: str
+    model_window_end: str
+    scope: str
+    spec: MeridianModelSpecProposal
+    priors: tuple[PriorSpec, ...] = ()
+    mcmc: dict[str, Any] = Field(default_factory=dict)
+    compute_profile: ComputeProfile = ComputeProfile.GPU_STANDARD
+    rf_channels: tuple[str, ...] = ()
+    media_channels: tuple[str, ...] = ()
+    fingerprint: str
+
+
+class ModelDecision(FrozenModel):
+    decision_id: str
+    model_version_id: str
+    tenant_id: str
+    project_id: str
+    decision_type: DecisionType
+    proposal: Any
+    authority: KnowledgeClass
+    evidence_refs: tuple[str, ...] = ()
+    knowledge_asset_refs: tuple[str, ...] = ()
+    recommended_value: Any = None
+    chosen_value: Any = None
+    reason: str | None = None
+    requires_approval: bool = True
+    status: DecisionStatus = DecisionStatus.PENDING
+    approved_by: str | None = None
+    approved_at: datetime | None = None
+    plan_fingerprint: str | None = None
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class MMMModelVersion(FrozenModel):
+    model_version_id: str
+    tenant_id: str
+    project_id: str
+    cycle_id: str
+    track_id: str
+    model_ready_run_id: str
+    model_ready_manifest_ref: str | None = None
+    model_ready_manifest_fingerprint: str
+    business_profile_snapshot_id: str | None = None
+    foundation_fingerprint: str | None = None
+    meridian_version: str = "1.8.0"
+    model_plan_id: str | None = None
+    model_plan_fingerprint: str | None = None
+    version: int = 1
+    supersedes_model_version_id: str | None = None
+    iteration_reason: str | None = None
+    triggering_review_refs: tuple[str, ...] = ()
+    changed_decision_ids: tuple[str, ...] = ()
+    state: MMMModelingStage = MMMModelingStage.DESIGNING_MODEL
+    created_at: datetime = Field(default_factory=utc_now)
+    created_by: str
+    accepted: bool = False
+
+
+class DesignBriefSection(FrozenModel):
+    name: str
+    recommendation: Recommendation
+
+
+class MMMModelDesignBrief(FrozenModel):
+    model_version_id: str
+    model_objective: str
+    kpi_treatment: str
+    geo_vs_national: str
+    final_model_window: str
+    paid_media_treatments: tuple[str, ...] = ()
+    rf_treatments: tuple[str, ...] = ()
+    organic_media: tuple[str, ...] = ()
+    non_media_treatments: tuple[str, ...] = ()
+    controls: tuple[str, ...] = ()
+    time_effect_strategy: str
+    prior_strategy: str
+    calibration_evidence: tuple[str, ...] = ()
+    adstock_strategy: str
+    saturation_strategy: str
+    population_scaling: str
+    holdout_strategy: str
+    mcmc_recommendation: dict[str, Any] = Field(default_factory=dict)
+    known_limitations: tuple[str, ...] = ()
+    decisions_requiring_human_input: tuple[str, ...] = ()
+    evidence_refs: tuple[str, ...] = ()
+    sections: tuple[DesignBriefSection, ...] = ()
+    generated_at: datetime = Field(default_factory=utc_now)
+
+
+class MeridianPriorValidationReceipt(FrozenModel):
+    model_version_id: str
+    model_plan_fingerprint: str
+    meridian_version: str
+    prior_config_fingerprint: str
+    n_draws: int
+    seed: int
+    status: PriorValidationStatus
+    artifact_refs: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+    generated_at: datetime = Field(default_factory=utc_now)
+
+
+class MeridianFitPlan(FrozenModel):
+    model_version_id: str
+    model_plan_fingerprint: str
+    meridian_version: str
+    container_image_digest: str | None = None
+    backend: str = "tensorflow"
+    n_chains: int
+    n_adapt: int
+    n_burnin: int
+    n_keep: int
+    seed: int
+    reconstruction_batch_size: int | None = None
+    compute_profile: ComputeProfile
+    artifact_destinations: dict[str, str] = Field(default_factory=dict)
+    input_artifact_ref: str | None = None
+    input_fingerprint: str
+    created_at: datetime = Field(default_factory=utc_now)
+    fingerprint: str
+
+
+class FitApproval(FrozenModel):
+    approval_id: str
+    model_version_id: str
+    tenant_id: str
+    project_id: str
+    fit_plan_fingerprint: str
+    model_plan_fingerprint: str
+    approved_by: str
+    approved_at: datetime
+    superseded: bool = False
+
+
+class FitRun(FrozenModel):
+    fit_run_id: str
+    model_version_id: str
+    tenant_id: str
+    project_id: str
+    fit_plan_fingerprint: str
+    status: FitRunStatus = FitRunStatus.PENDING
+    compute_profile: ComputeProfile
+    python_version: str | None = None
+    meridian_version: str | None = None
+    tensorflow_version: str | None = None
+    worker_image_digest: str | None = None
+    error_code: str | None = None
+    created_at: datetime = Field(default_factory=utc_now)
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+
+
+class MeridianModelArtifactManifest(FrozenModel):
+    model_version_id: str
+    fit_run_id: str
+    meridian_version: str
+    worker_image_digest: str | None = None
+    input_manifest_ref: str | None = None
+    input_fingerprint: str
+    model_plan_fingerprint: str
+    fit_plan_fingerprint: str
+    binary_model_ref: str
+    binary_sha256: str
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class OfficialCheckResult(FrozenModel):
+    check_name: str
+    status: OfficialHealthStatus
+    summary: str | None = None
+
+
+class MeridianModelHealthReceipt(FrozenModel):
+    model_version_id: str
+    fit_run_id: str
+    reviewer_version: str
+    meridian_version: str
+    overall_health_score: float | None = None
+    check_results: tuple[OfficialCheckResult, ...] = ()
+    blocking_fail_count: int = 0
+    review_count: int = 0
+    health_html_ref: str | None = None
+    generated_at: datetime = Field(default_factory=utc_now)
+
+
+class ResultsSummary(FrozenModel):
+    html_ref: str | None = None
+    requested_date_range: str | None = None
+    effective_date_range: str | None = None
+    model_fit: dict[str, Any] = Field(default_factory=dict)
+    incremental_outcomes: dict[str, Any] = Field(default_factory=dict)
+    channel_contribution: dict[str, Any] = Field(default_factory=dict)
+    roi: dict[str, Any] = Field(default_factory=dict)
+    mroi: dict[str, Any] = Field(default_factory=dict)
+    response_curve_metadata: dict[str, Any] = Field(default_factory=dict)
+    baseline: dict[str, Any] = Field(default_factory=dict)
+    adstock_saturation: dict[str, Any] = Field(default_factory=dict)
+
+
+class MMMModelReviewPack(FrozenModel):
+    model_version_id: str
+    fit_run_id: str
+    model_spec_summary: dict[str, Any] = Field(default_factory=dict)
+    prior_summary: dict[str, Any] = Field(default_factory=dict)
+    mcmc_summary: dict[str, Any] = Field(default_factory=dict)
+    official_health: MeridianModelHealthReceipt | None = None
+    results: ResultsSummary | None = None
+    business_iq_assumptions: tuple[str, ...] = ()
+    known_limitations: tuple[str, ...] = ()
+    review_required_items: tuple[str, ...] = ()
+    acknowledged_review_items: tuple[str, ...] = ()
+    agent_interpretation: str | None = None
+    recommended_next_action: str | None = None
+    evidence_refs: tuple[str, ...] = ()
+    fingerprint: str
+    generated_at: datetime = Field(default_factory=utc_now)
+
+
+class ModelAcceptanceApproval(FrozenModel):
+    approval_id: str
+    model_version_id: str
+    fit_run_id: str
+    tenant_id: str
+    project_id: str
+    review_pack_fingerprint: str
+    model_artifact_fingerprint: str
+    approved_by: str
+    approved_at: datetime
+    decision: AcceptanceDecision
+    reason: str | None = None
+
+
+class MMMReproducibilityManifest(FrozenModel):
+    project_id: str
+    cycle_id: str
+    track_id: str
+    business_profile_snapshot_id: str | None = None
+    model_ready_manifest_fingerprint: str
+    model_plan_fingerprint: str
+    decision_ids: tuple[str, ...] = ()
+    meridian_version: str
+    external_knowledge_asset_versions: tuple[str, ...] = ()
+    worker_image_digest: str | None = None
+    fit_configuration: dict[str, Any] = Field(default_factory=dict)
+    model_artifact_hash: str | None = None
+    review_artifact_refs: tuple[str, ...] = ()
+    acceptance_approval_id: str | None = None
+
+
+class ModelingReceipt(FrozenModel):
+    receipt_type: str
+    model_version_id: str
+    payload: dict[str, Any] = Field(default_factory=dict)
+    generated_at: datetime = Field(default_factory=utc_now)
+
+
+class NormativeRecommendation(FrozenModel):
+    topic: str
+    recommendation: str
+    source_refs: tuple[str, ...] = ()
+    upstream_asset_version: str
+    meridian_version: str
+    source_kind: NormativeSourceKind
+    available: bool = True

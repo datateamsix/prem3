@@ -39,6 +39,12 @@ from app.mel.models import (
 )
 from app.response.contracts import StructuredResponse
 from app.service.errors import ProblemDetail
+from app.service.mmm_models import (
+    CreateModelDesignRequest,
+    FitRunResponse,
+    MMMSummaryResponse,
+    ModelVersionResponse,
+)
 from app.service.models import (
     BigQueryBindingResponse,
     BillingSessionResponse,
@@ -225,6 +231,10 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             ProjectHomeReadModel,
             BusinessIqOverviewReadModel,
             DataFoundationOverviewReadModel,
+            MMMSummaryResponse,
+            CreateModelDesignRequest,
+            ModelVersionResponse,
+            FitRunResponse,
         ),
         composition="catalog",
     ),

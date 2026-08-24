@@ -1,0 +1,14 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:1.8.0
+      - -f
+      - deployment/prem3_meridian_model_worker/Dockerfile
+      - .
+    images:
+      - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:1.8.0
+options:
+  machineType: E2_HIGHCPU_8
+timeout: 3600s

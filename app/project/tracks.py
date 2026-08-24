@@ -196,12 +196,33 @@ def mmm_adapter_state(
     model_ready: bool,
     latest_run_id: str | None,
     entitled: bool,
+    modeling_stage: str | None = None,
 ) -> tuple[MeasurementTrackStatus, CapabilityAvailability, str | None, NextActionType]:
     if not entitled:
         return (
             MeasurementTrackStatus.BLOCKED,
             CapabilityAvailability.UNAVAILABLE_ENTITLEMENT,
             None,
+            NextActionType.CONTINUE_MMM,
+        )
+    if modeling_stage == "MODEL_ACCEPTED":
+        return (
+            MeasurementTrackStatus.COMPLETE,
+            CapabilityAvailability.READY,
+            "MODEL_ACCEPTED",
+            NextActionType.REVIEW_MMM,
+        )
+    if modeling_stage in {
+        "DESIGNING_MODEL",
+        "AWAITING_ASSUMPTION_DECISIONS",
+        "READY_TO_FIT",
+        "FITTING_MODEL",
+        "AWAITING_MODEL_REVIEW",
+    }:
+        return (
+            MeasurementTrackStatus.RUNNING,
+            CapabilityAvailability.IN_PROGRESS,
+            modeling_stage,
             NextActionType.CONTINUE_MMM,
         )
     if model_ready:
@@ -314,6 +335,7 @@ def planning_availability(
     capability: CapabilityFamily,
     entitled: bool,
     model_ready: bool,
+    model_accepted: bool = False,
 ) -> tuple[CapabilityAvailability, NextActionType]:
     if not entitled:
         return (
@@ -323,6 +345,8 @@ def planning_availability(
     if capability is CapabilityFamily.FORECASTING:
         return CapabilityAvailability.AVAILABLE_TO_CONFIGURE, NextActionType.SETUP_FORECAST
     del model_ready
+    if model_accepted:
+        return CapabilityAvailability.AVAILABLE_TO_CONFIGURE, NextActionType.RETURN_PROJECT_HOME
     if capability is CapabilityFamily.SCENARIO_SIMULATION:
         return (
             CapabilityAvailability.NEEDS_ACCEPTED_MODEL,

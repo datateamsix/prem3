@@ -1,5 +1,25 @@
 components:
   schemas:
+    AcceptModelRequest:
+      additionalProperties: false
+      properties:
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+      title: AcceptModelRequest
+      type: object
+    AcknowledgeReviewRequest:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            type: string
+          title: Items
+          type: array
+      title: AcknowledgeReviewRequest
+      type: object
     ApprovePlanRequest:
       additionalProperties: false
       properties:
@@ -699,6 +719,72 @@ components:
       - upload_id
       title: CreateEvaluationRequest
       type: object
+    CreateModelDesignRequest:
+      additionalProperties: false
+      properties:
+        business_profile_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Profile Snapshot Id
+        compute_profile:
+          default: CPU_TEST
+          title: Compute Profile
+          type: string
+        include_ambiguous_promotion:
+          default: false
+          title: Include Ambiguous Promotion
+          type: boolean
+        include_experiment_prior:
+          default: false
+          title: Include Experiment Prior
+          type: boolean
+        include_insufficient_controls:
+          default: false
+          title: Include Insufficient Controls
+          type: boolean
+        kpi:
+          default: revenue
+          title: Kpi
+          type: string
+        media_channels:
+          items:
+            type: string
+          title: Media Channels
+          type: array
+        model_ready_manifest_fingerprint:
+          title: Model Ready Manifest Fingerprint
+          type: string
+        model_ready_manifest_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Ready Manifest Ref
+        model_ready_run_id:
+          title: Model Ready Run Id
+          type: string
+        model_window_end:
+          title: Model Window End
+          type: string
+        model_window_start:
+          title: Model Window Start
+          type: string
+        rf_channels:
+          items:
+            type: string
+          title: Rf Channels
+          type: array
+        scope:
+          default: GEO
+          title: Scope
+          type: string
+      required:
+      - model_ready_run_id
+      - model_ready_manifest_fingerprint
+      - model_window_start
+      - model_window_end
+      title: CreateModelDesignRequest
+      type: object
     CreateProjectRequest:
       additionalProperties: false
       properties:
@@ -993,6 +1079,18 @@ components:
       - updated_at
       title: DatasetResponse
       type: object
+    DecisionActionRequest:
+      additionalProperties: false
+      properties:
+        chosen_value:
+          title: Chosen Value
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+      title: DecisionActionRequest
+      type: object
     DiscoveryHintsRequest:
       additionalProperties: false
       properties:
@@ -1229,6 +1327,48 @@ components:
       required:
       - plan_id
       title: ExecutePlanRequest
+      type: object
+    FitRunResponse:
+      additionalProperties: false
+      properties:
+        fit_plan_fingerprint:
+          title: Fit Plan Fingerprint
+          type: string
+        fit_run_id:
+          title: Fit Run Id
+          type: string
+        meridian_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Meridian Version
+        model_version_id:
+          title: Model Version Id
+          type: string
+        python_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Python Version
+        status:
+          title: Status
+          type: string
+        tensorflow_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tensorflow Version
+        worker_image_digest:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Worker Image Digest
+      required:
+      - fit_run_id
+      - model_version_id
+      - status
+      - fit_plan_fingerprint
+      title: FitRunResponse
       type: object
     GoogleConnectionListResponse:
       additionalProperties: false
@@ -1491,6 +1631,16 @@ components:
       - generated_at
       title: IntelligenceHomeSummary
       type: object
+    IterateModelRequest:
+      additionalProperties: false
+      properties:
+        reason:
+          title: Reason
+          type: string
+      required:
+      - reason
+      title: IterateModelRequest
+      type: object
     LoadSnapshotRequest:
       additionalProperties: false
       properties:
@@ -1501,6 +1651,39 @@ components:
       required:
       - snapshot
       title: LoadSnapshotRequest
+      type: object
+    MMMSummaryResponse:
+      additionalProperties: false
+      properties:
+        cycle_id:
+          title: Cycle Id
+          type: string
+        model_ready:
+          default: false
+          title: Model Ready
+          type: boolean
+        model_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Version Id
+        project_id:
+          title: Project Id
+          type: string
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+        track_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Track Id
+      required:
+      - project_id
+      - cycle_id
+      title: MMMSummaryResponse
       type: object
     MaterializeDatasetSourceRequest:
       additionalProperties: false
@@ -1847,6 +2030,59 @@ components:
       - availability
       - updated_at
       title: MeasurementTrackSummary
+      type: object
+    ModelVersionResponse:
+      additionalProperties: false
+      properties:
+        accepted:
+          title: Accepted
+          type: boolean
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        cycle_id:
+          title: Cycle Id
+          type: string
+        model_plan_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Plan Fingerprint
+        model_ready_manifest_fingerprint:
+          title: Model Ready Manifest Fingerprint
+          type: string
+        model_version_id:
+          title: Model Version Id
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        state:
+          title: State
+          type: string
+        supersedes_model_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Supersedes Model Version Id
+        track_id:
+          title: Track Id
+          type: string
+        version:
+          title: Version
+          type: integer
+      required:
+      - model_version_id
+      - project_id
+      - cycle_id
+      - track_id
+      - state
+      - version
+      - model_ready_manifest_fingerprint
+      - accepted
+      - created_at
+      title: ModelVersionResponse
       type: object
     NextAction:
       additionalProperties: false
@@ -3374,10 +3610,11 @@ components:
       type: http
 info:
   description: Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, Google connection, import/publish
-    governance, Business IQ, and Data Foundation contracts. Clerk session tokens are verified when the identity provider is
-    configured. Creating an Evaluation returns 202 Accepted only after durable Cloud Tasks enqueue; 202 is not ADK completion
-    and not MODEL_READY. Tenant identity is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY,
-    MODEL_READY, and PUBLISH_READY are distinct deterministic states.
+    governance, Business IQ, Data Foundation, and governed MMM modeling contracts. Clerk session tokens are verified when
+    the identity provider is configured. Creating an Evaluation returns 202 Accepted only after durable Cloud Tasks enqueue;
+    202 is not ADK completion and not MODEL_READY. Posterior sampling is never autonomous and requires an exact fingerprinted
+    FitPlan approval. Tenant identity is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY,
+    MODEL_READY, MODEL_ACCEPTED, and PUBLISH_READY are distinct deterministic states.
   summary: PreM3 authenticated product API
   title: prem3-api
   version: 0.1.0
@@ -3785,6 +4022,82 @@ paths:
       summary: Get Project Cycle Coverage
       tags:
       - projects
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm:
+    get:
+      operationId: getProjectCycleMmm
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MMMSummaryResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/model-design:
+    post:
+      operationId: createMmmModelDesign
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateModelDesignRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createmmmmodeldesign
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Model Design
+      tags:
+      - mmm-modeling
   /v1/projects/{project_id}/cycles/{cycle_id}/tracks:
     get:
       operationId: listProjectTracks
@@ -3909,6 +4222,426 @@ paths:
       summary: Get Project Measurement Home
       tags:
       - projects
+  /v1/projects/{project_id}/mmm/model-decisions/{decision_id}/approve:
+    post:
+      operationId: approveMmmModelDecision
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: decision_id
+        required: true
+        schema:
+          title: Decision Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionActionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Approvemmmmodeldecision
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Approve Decision
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-decisions/{decision_id}/reject:
+    post:
+      operationId: rejectMmmModelDecision
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: decision_id
+        required: true
+        schema:
+          title: Decision Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Rejectmmmmodeldecision
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Reject Decision
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-design/{model_version_id}:
+    get:
+      operationId: getMmmModelDesign
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getmmmmodeldesign
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Model Design
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/accept:
+    post:
+      operationId: acceptMmmModel
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptModelRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Acceptmmmmodel
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Accept Model
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/fit:
+    post:
+      operationId: startMmmFit
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FitRunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Start Fit
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/fit-approval:
+    post:
+      operationId: approveMmmFit
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Approvemmmfit
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Approve Fit
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/fit-runs/{fit_run_id}:
+    get:
+      operationId: getMmmFitRun
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      - in: path
+        name: fit_run_id
+        required: true
+        schema:
+          title: Fit Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FitRunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Fit Run
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/iterate:
+    post:
+      operationId: iterateMmmModel
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IterateModelRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelVersionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Iterate Model
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/review:
+    get:
+      operationId: getMmmModelReview
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getmmmmodelreview
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Review
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/review/acknowledge:
+    post:
+      operationId: acknowledgeMmmReview
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcknowledgeReviewRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Acknowledgemmmreview
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Acknowledge Review
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/validate-prior:
+    post:
+      operationId: validateMmmPrior
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Validatemmmprior
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Validate Prior
+      tags:
+      - mmm-modeling
   /v1/projects/{project_id}/tracks/{track_id}:
     patch:
       operationId: patchProjectTrack
@@ -4567,6 +5300,48 @@ paths:
       summary: Evaluate Ready
       tags:
       - business-iq
+  /v1/workspaces/{workspace_id}/cycles/{cycle_id}/mmm/model-design:
+    post:
+      operationId: createWorkspaceMmmModelDesign
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateModelDesignRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createworkspacemmmmodeldesign
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Workspace Create Model Design
+      tags:
+      - mmm-modeling
   /v1/workspaces/{workspace_id}/data-foundation:
     get:
       operationId: getDataFoundationOverview

@@ -119,7 +119,11 @@
         "ProjectListResponse",
         "ProjectHomeReadModel",
         "BusinessIqOverviewReadModel",
-        "DataFoundationOverviewReadModel"
+        "DataFoundationOverviewReadModel",
+        "MMMSummaryResponse",
+        "CreateModelDesignRequest",
+        "ModelVersionResponse",
+        "FitRunResponse"
       ],
       "python_module": "app.service.models",
       "python_qualnames": [
@@ -154,9 +158,13 @@
         "app.service.project_models.ProjectListResponse",
         "app.service.project_models.ProjectHomeReadModel",
         "app.service.project_models.BusinessIqOverviewReadModel",
-        "app.service.project_models.DataFoundationOverviewReadModel"
+        "app.service.project_models.DataFoundationOverviewReadModel",
+        "app.service.mmm_models.MMMSummaryResponse",
+        "app.service.mmm_models.CreateModelDesignRequest",
+        "app.service.mmm_models.ModelVersionResponse",
+        "app.service.mmm_models.FitRunResponse"
       ],
-      "sha256": "1e56b53348ca1186011ad52deb21c1e5e3d19b9e5832a26df03d11b970345f6e"
+      "sha256": "141a52ceca5934f0bf03198e72d800604e12d7de4539f1a868ffc775dfbaa804"
     }
   ],
   "hash_algorithm": "sha256",

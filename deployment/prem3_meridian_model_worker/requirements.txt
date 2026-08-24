@@ -1,0 +1,4 @@
+# Isolated Meridian model worker. Do not add google-adk.
+google-meridian==1.8.0
+google-cloud-storage
+pydantic>=2.10
