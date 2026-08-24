@@ -4,10 +4,59 @@
     "origin_main_sha": "0d72636c2b7298a29e212ac3b382a52e11933425",
     "parent_feature_sha": "f5a0851fb095829ea7a286ed8f07d0673c35566a",
     "mission3_base_sha": "f5a0851fb095829ea7a286ed8f07d0673c35566a",
+    "m3_00_checkpoint_sha": "e6fc551273f940571f5ce2bb371c83f7a1685506",
     "stacked": true,
     "restack_required": true,
+    "restack_plan": "After PR 18 merges: fetch latest main, rebase this M3 branch onto main, verify the diff is M3-only, rerun Project Architecture + M3 tests, regenerate contracts if needed. Do not open a standalone merge PR against main while PR 18 remains the parent.",
     "parent_branch": "feature/prem3-project-architecture-enablement",
     "mission_branch": "feature/prem3-m3-meridian-modeling-runtime"
+  },
+  "proof_layers": {
+    "logic_proof": {
+      "status": "RUN",
+      "runtime_mode": "FAKE_TEST",
+      "evidence": "Unit state-machine, approvals, iteration, and FAKE_TEST rejection of MODEL_ACCEPTED. Explicit FakeMeridianRuntime injection only."
+    },
+    "official_cpu_smoke": {
+      "status": "BLOCKED",
+      "runtime_mode": "OFFICIAL_CPU_SMOKE",
+      "evidence": "OfficialMeridianRuntime has no fake fallback. RecordingMeridianLibrary proves sample_prior, sample_posterior, meridian_serde save/load, ModelReviewer, and Summarizer call order. Live google-meridian==1.8.0 is not importable on local Python 3.13 (ModuleNotFoundError: meridian). Worker image remains Python 3.12."
+    },
+    "official_gpu_proof": {
+      "status": "BLOCKED",
+      "runtime_mode": "OFFICIAL_GPU",
+      "result": "LIVE_GPU_PROOF_BLOCKED",
+      "attempt": "gcloud run jobs describe prem3-meridian-model-worker --region=us-central1",
+      "blocker": "Cannot find job [prem3-meridian-model-worker]. Project modelready-m3 us-central1 currently has meridian-eda-worker and prem3-evaluation-worker only. GPU adapter maps GPU_STANDARD to that server-owned job name; the job is not deployed, so no Cloud Task or execution ID exists yet.",
+      "gpu_preference": "nvidia-l4"
+    },
+    "music_center_fit_proof": {
+      "status": "NOT_RUN",
+      "reason": "Music Center official GPU fit is pending the worker job. Do not conflate with CPU smoke or FAKE_TEST logic proof.",
+      "coverage": {
+        "earliest_time": "2024-01-01",
+        "latest_time": "2026-06-29",
+        "n_times": 131,
+        "n_geos": 4,
+        "geos": ["CA", "FL", "NY", "TX"],
+        "n_treatments": 4,
+        "n_controls": 3,
+        "source": "datasets/music_center/dataset_a/truth/expected_model_ready_weekly.csv",
+        "shared_usable_historical_coverage": "2024-01-01/2026-06-29"
+      },
+      "selected_model_window": ["2024-01-01", "2026-06-29"],
+      "window_rationale": "Verified shared usable history. Q3 2026 Measurement Cycle 2026-07-01/2026-09-30 starts after coverage ends and is not the MMM model window."
+    },
+    "firestore_proof": {
+      "status": "RUN",
+      "evidence": "FirestoreModelingRepository round-trips version, decision, fit approval, fit run, and acceptance against FakeFirestore. Restart via a new repository instance on the same client preserves fingerprints. Accepted versions are immutable. Cross-tenant get returns None. Concurrent claim_canonical_dispatch resolves to one dispatch_id."
+    },
+    "bigquery_ledger_proof": {
+      "status": "RUN",
+      "environment": "InMemoryModelLedger CI twin",
+      "live_bigquery": "NOT_RUN",
+      "evidence": "compile_*_row helpers and publish_fit_ledger write+read-back fingerprint match. Historical rows append; no WRITE_TRUNCATE. Live Project Measurement Home write is pending a bound depot in this local runtime."
+    }
   },
   "upstream": {
     "repository": "google/meridian",
@@ -116,24 +165,30 @@
   },
   "music_center": {
     "project": "Music Center",
-    "cycle": "Q3 2026 MMM Track",
+    "cycle": "Q3 2026",
+    "measurement_cycle": {
+      "name": "Q3 2026",
+      "data_cutoff": "2026-09-30"
+    },
     "scope": "GEO",
     "model_window": [
-      "2026-07-01",
-      "2026-09-30"
+      "2024-01-01",
+      "2026-06-29"
     ],
     "media_channels": [
       "paid_search",
-      "paid_social",
-      "video"
+      "shopping",
+      "paid_social"
     ],
     "business_profile_snapshot_id": "bprof_music_center",
     "model_ready_manifest_fingerprint": "mc-q3-2026-model-ready-fingerprint",
     "model_version_id": "mver_a6782a1bd7004fd4aba4",
     "model_plan_id": "mplan_db04f35304ee458ebff6",
     "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
-    "state": "MODEL_ACCEPTED",
-    "accepted": true
+    "state": "AWAITING_ASSUMPTION_DECISIONS",
+    "accepted": false,
+    "production_model_accepted": false,
+    "note": "Prior M3-00 MODEL_ACCEPTED claim was FAKE_TEST logic proof only and is not official Meridian evidence."
   },
   "decision_ledger": [
     {
@@ -355,7 +410,7 @@
     "acceptance_approval_id": "mapv_2da3461aecbe48a6885b"
   },
   "brief_objective": "Fit a reviewed Meridian MMM for incremental paid-media contribution.",
-  "live_gpu_proof": "LIVE_GPU_PROOF_NOT_RUN",
+  "live_gpu_proof": "LIVE_GPU_PROOF_BLOCKED",
   "eda_spec_promoted": false,
   "autonomous_posterior_sampling": false
 }

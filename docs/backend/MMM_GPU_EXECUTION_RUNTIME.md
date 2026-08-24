@@ -76,4 +76,8 @@ Authorized L4 qualification (worker start, GPU visible, Meridian import, tiny
 prior + posterior, serde, reviewer, artifact verification) is runtime proof, not
 statistical adequacy.
 
-Until that job is run: `LIVE_GPU_PROOF_NOT_RUN`.
+Until that job is run: `LIVE_GPU_PROOF_BLOCKED` after an attempted
+`gcloud run jobs describe prem3-meridian-model-worker --region=us-central1`.
+Current blocker: the job does not exist in `modelready-m3` / `us-central1`
+(only `meridian-eda-worker` and `prem3-evaluation-worker` are listed).
+Do not report `NOT_RUN` merely because the adapter stopped before an attempt.

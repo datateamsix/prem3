@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, ConfigDict
 
 from app.service.dependencies import get_control_plane
-from app.service.errors import evaluation_dispatch_unavailable, service_identity_required
+from app.service.errors import (
+    evaluation_dispatch_unavailable,
+    resource_not_found,
+    service_identity_required,
+)
 from app.service.evaluation_jobs import JobLaunchError
 from app.service.evaluation_launch import EvaluationLaunchService
 from app.service.security_log import security_log
@@ -62,6 +66,40 @@ async def launch_evaluation_dispatch(
     return LaunchAck(dispatch_id=result["dispatch_id"], status=result["status"])
 
 
-def unused_payload_guard(body: dict[str, Any] | None) -> None:
-    """Cloud Task body is ignored. Path dispatch_id is the only identifier."""
-    del body
+@router.post(
+    "/mmm-fit-dispatches/{dispatch_id}/launch",
+    response_model=LaunchAck,
+    include_in_schema=False,
+)
+async def launch_mmm_fit_dispatch(
+    dispatch_id: str,
+    request: Request,
+    verifier: Annotated[
+        ServiceIdentityVerifier | None, Depends(get_service_identity_verifier)
+    ],
+    _control_plane: Annotated[object, Depends(get_control_plane)],
+    x_cloudtasks_taskname: Annotated[str | None, Header(alias="X-CloudTasks-TaskName")] = None,
+) -> LaunchAck:
+    del x_cloudtasks_taskname
+    if verifier is None:
+        raise service_identity_required()
+    verifier.verify(request.headers.get("authorization") or request.headers.get("Authorization"))
+    modeling = getattr(request.app.state, "mmm_modeling", None)
+    launcher = getattr(request.app.state, "mmm_fit_launcher", None)
+    if modeling is None:
+        raise evaluation_dispatch_unavailable()
+    dispatch = modeling.repo.get_dispatch(dispatch_id)
+    if dispatch is None:
+        raise resource_not_found()
+    if launcher is None:
+        return LaunchAck(dispatch_id=dispatch_id, status=dispatch.status.value)
+    try:
+        execution_name = launcher.launch(dispatch_id)
+    except JobLaunchError:
+        security_log("mmm.fit_launch_http_failed", dispatch_id=dispatch_id)
+        raise evaluation_dispatch_unavailable() from None
+    updated = dispatch.model_copy(
+        update={"cloud_run_execution_name": execution_name}
+    )
+    modeling.repo.put_dispatch(updated)
+    return LaunchAck(dispatch_id=dispatch_id, status=updated.status.value)

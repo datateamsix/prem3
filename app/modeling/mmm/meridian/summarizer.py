@@ -13,10 +13,12 @@ def structured_results(
     requested_date_range: str | None,
     effective_date_range: str | None,
     values: dict[str, Any] | None = None,
+    html_sha256: str | None = None,
 ) -> ResultsSummary:
     payload = values or {}
     return ResultsSummary(
         html_ref=html_ref,
+        html_sha256=html_sha256,
         requested_date_range=requested_date_range,
         effective_date_range=effective_date_range or requested_date_range,
         model_fit=dict(payload.get("model_fit") or {}),

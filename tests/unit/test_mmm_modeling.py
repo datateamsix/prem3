@@ -11,13 +11,13 @@ from app.control_plane.entitlements import PlanId
 from app.control_plane.memory import InMemoryControlPlaneRepository
 from app.modeling.common.errors import (
     ExternalAssetDisabledError,
+    FakeRuntimeAcceptanceError,
     FitApprovalRequiredError,
     FitRuntimeError,
     IllegalModelingTransitionError,
     InputContractMismatchError,
     ModelReviewFailedError,
     ModelSpecInvalidError,
-    ModelVersionImmutableError,
     ModelVersionNotFoundError,
     StaleApprovalError,
 )
@@ -37,6 +37,7 @@ from app.modeling.mmm.compiler import compile_meridian_model_spec
 from app.modeling.mmm.contracts import (
     ComputeProfile,
     MeridianModelSpecProposal,
+    MeridianRuntimeMode,
     OfficialCheckResult,
     OfficialHealthStatus,
     PriorSource,
@@ -45,7 +46,12 @@ from app.modeling.mmm.design import REQUIRED_DECISION_TYPES, proposed_model_plan
 from app.modeling.mmm.doc_consultant import consult_topic
 from app.modeling.mmm.ledger import BQ_MODEL_LEDGER_TABLES, InMemoryModelLedger
 from app.modeling.mmm.meridian.builder import assert_not_eda_spec
-from app.modeling.mmm.meridian.runner import FakeMeridianRuntime, FitExecutionResult
+from app.modeling.mmm.meridian.runner import (
+    FakeMeridianRuntime,
+    FitExecutionResult,
+    OfficialMeridianRuntime,
+    RecordingMeridianLibrary,
+)
 from app.modeling.mmm.receipts import receipt_cannot_mutate_plan, reproducibility_manifest
 from app.modeling.mmm.repository import InMemoryModelingRepository
 from app.modeling.mmm.service import MMMModelingService
@@ -54,8 +60,40 @@ from app.tools.meridian_model_worker import execute_server_owned_request
 from tests.unit.api_support import auth_header, make_client, seed_tenant
 
 MUSIC_CENTER_FP = "mc-q3-2026-model-ready-fingerprint"
-MUSIC_CENTER_WINDOW = ("2026-07-01", "2026-09-30")
+MUSIC_CENTER_WINDOW = ("2024-01-01", "2026-06-29")
 MEDIA = ("paid_search", "paid_social", "video")
+PASS_CHECKS = (
+    OfficialCheckResult(
+        check_name="ConvergenceCheck",
+        status=OfficialHealthStatus.PASS,
+        summary="ok",
+    ),
+    OfficialCheckResult(
+        check_name="BaselineCheck",
+        status=OfficialHealthStatus.PASS,
+        summary="ok",
+    ),
+    OfficialCheckResult(
+        check_name="BayesianPPPCheck",
+        status=OfficialHealthStatus.PASS,
+        summary="ok",
+    ),
+    OfficialCheckResult(
+        check_name="GoodnessOfFitCheck",
+        status=OfficialHealthStatus.PASS,
+        summary="ok",
+    ),
+    OfficialCheckResult(
+        check_name="PriorPosteriorShiftCheck",
+        status=OfficialHealthStatus.PASS,
+        summary="ok",
+    ),
+    OfficialCheckResult(
+        check_name="ROIConsistencyCheck",
+        status=OfficialHealthStatus.PASS,
+        summary="ok",
+    ),
+)
 
 
 class ScriptedRuntime(FakeMeridianRuntime):
@@ -74,7 +112,24 @@ class ScriptedRuntime(FakeMeridianRuntime):
             tensorflow_version=result.tensorflow_version,
             meridian_version=result.meridian_version,
             worker_image_digest=result.worker_image_digest,
+            runtime_mode=result.runtime_mode,
+            review_source=result.review_source,
+            calls_made=result.calls_made,
+            serde_readback_ok=result.serde_readback_ok,
+            health_html=result.health_html,
+            results_html_sha256=result.results_html_sha256,
         )
+
+
+def _official_service(checks: tuple[OfficialCheckResult, ...] | None = None) -> MMMModelingService:
+    library = RecordingMeridianLibrary(checks=checks or PASS_CHECKS)
+    return MMMModelingService(
+        InMemoryModelingRepository(),
+        runtime=OfficialMeridianRuntime(
+            mode=MeridianRuntimeMode.OFFICIAL_CPU_SMOKE,
+            library=library,
+        ),
+    )
 
 
 def _service(runtime=None) -> MMMModelingService:
@@ -246,7 +301,7 @@ def test_music_center_geo_design_and_national_and_rf() -> None:
     assert geo.state is MMMModelingStage.AWAITING_ASSUMPTION_DECISIONS
     brief = service.repo.get_brief(geo.model_version_id)
     assert brief is not None
-    assert "2026-07-01/2026-09-30" == brief.final_model_window
+    assert "2024-01-01/2026-06-29" == brief.final_model_window
     assert all(section.recommendation.requires_approval for section in brief.sections)
     national = _start(
         service, project_id="prj_nat", scope="NATIONAL", media_channels=("search",)
@@ -381,21 +436,12 @@ def test_cpu_smoke_serde_and_artifact_integrity() -> None:
         tenant_id="ten_a", project_id="prj_a", model_version_id=version.model_version_id
     )
     assert current.state is MMMModelingStage.AWAITING_MODEL_REVIEW
-    service.accept(
-        tenant_id="ten_a",
-        project_id="prj_a",
-        model_version_id=version.model_version_id,
-        actor_id="user_a",
-    )
-    accepted = service.get_version(
-        tenant_id="ten_a", project_id="prj_a", model_version_id=version.model_version_id
-    )
-    assert accepted.accepted is True
-    with pytest.raises(ModelVersionImmutableError):
-        service.validate_prior(
+    with pytest.raises(FakeRuntimeAcceptanceError):
+        service.accept(
             tenant_id="ten_a",
             project_id="prj_a",
             model_version_id=version.model_version_id,
+            actor_id="user_a",
         )
 
 
@@ -442,7 +488,7 @@ def _failing(check: str, status: OfficialHealthStatus) -> ScriptedRuntime:
 
 
 def test_convergence_fail_blocks_acceptance() -> None:
-    service = _service(_failing("ConvergenceCheck", OfficialHealthStatus.FAIL))
+    service = _official_service(_failing("ConvergenceCheck", OfficialHealthStatus.FAIL).checks)
     version = _start(service)
     _fit_ready(service, version)
     with pytest.raises(ModelReviewFailedError, match="Convergence FAIL"):
@@ -455,7 +501,7 @@ def test_convergence_fail_blocks_acceptance() -> None:
 
 
 def test_official_fail_blocks_acceptance() -> None:
-    service = _service(_failing("BaselineCheck", OfficialHealthStatus.FAIL))
+    service = _official_service(_failing("BaselineCheck", OfficialHealthStatus.FAIL).checks)
     version = _start(service)
     _fit_ready(service, version)
     with pytest.raises(ModelReviewFailedError, match="Official FAIL"):
@@ -468,7 +514,9 @@ def test_official_fail_blocks_acceptance() -> None:
 
 
 def test_review_requires_acknowledgment() -> None:
-    service = _service(_failing("ROIConsistencyCheck", OfficialHealthStatus.REVIEW))
+    service = _official_service(
+        _failing("ROIConsistencyCheck", OfficialHealthStatus.REVIEW).checks
+    )
     version = _start(service)
     _fit_ready(service, version)
     with pytest.raises(ModelReviewFailedError, match="REVIEW"):
@@ -553,22 +601,21 @@ def test_worker_rejects_generated_python_and_restores_server_plan() -> None:
     assert plan is not None and fit_plan is not None
     with pytest.raises(FitRuntimeError, match="untrusted"):
         execute_server_owned_request({"python": "print(1)", "tenant_id": "ten_a"})
-    result = execute_server_owned_request(
-        {
-            "tenant_id": "ten_a",
-            "project_id": "prj_a",
-            "cycle_id": "cyc_q3_2026",
-            "track_id": "trk_mmm",
-            "model_version_id": version.model_version_id,
-            "fit_run_id": "mfit_worker",
-            "model_plan": plan.model_dump(mode="json"),
-            "fit_plan": fit_plan.model_dump(mode="json"),
-            "input_fingerprint": MUSIC_CENTER_FP,
-            "compute_profile": "CPU_TEST",
-        }
-    )
-    assert result["status"] == "SUCCEEDED"
-    assert result["meridian_version"] == "1.8.0"
+    with pytest.raises(FitRuntimeError, match="dispatch_id"):
+        execute_server_owned_request(
+            {
+                "tenant_id": "ten_a",
+                "project_id": "prj_a",
+                "cycle_id": "cyc_q3_2026",
+                "track_id": "trk_mmm",
+                "model_version_id": version.model_version_id,
+                "fit_run_id": "mfit_worker",
+                "model_plan": plan.model_dump(mode="json"),
+                "fit_plan": fit_plan.model_dump(mode="json"),
+                "input_fingerprint": MUSIC_CENTER_FP,
+                "compute_profile": "CPU_TEST",
+            }
+        )
 
 
 def test_doc_consultant_does_not_invent_numeric_defaults() -> None:

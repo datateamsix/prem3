@@ -123,6 +123,16 @@ class Settings:
     evaluation_dispatcher_sa: str | None
     evaluation_launch_url: str | None
     evaluation_launch_audience: str | None
+    meridian_fit_dispatch_queue: str | None
+    meridian_model_worker_job: str | None
+    meridian_fit_dispatcher_sa: str | None
+    meridian_fit_launch_url: str | None
+    meridian_fit_launch_audience: str | None
+    meridian_model_worker_image: str | None
+    meridian_model_gpu: str | None
+    meridian_model_cpu: str | None
+    meridian_model_memory: str | None
+    meridian_model_timeout_seconds: int
 
 
 def load_settings() -> Settings:
@@ -202,6 +212,18 @@ def load_settings() -> Settings:
         evaluation_dispatcher_sa=os.getenv("EVALUATION_DISPATCHER_SA") or None,
         evaluation_launch_url=os.getenv("EVALUATION_LAUNCH_URL") or None,
         evaluation_launch_audience=os.getenv("EVALUATION_LAUNCH_AUDIENCE") or None,
+        meridian_fit_dispatch_queue=os.getenv("MERIDIAN_FIT_DISPATCH_QUEUE") or None,
+        meridian_model_worker_job=os.getenv("MERIDIAN_MODEL_WORKER_JOB") or None,
+        meridian_fit_dispatcher_sa=os.getenv("MERIDIAN_FIT_DISPATCHER_SA") or None,
+        meridian_fit_launch_url=os.getenv("MERIDIAN_FIT_LAUNCH_URL") or None,
+        meridian_fit_launch_audience=os.getenv("MERIDIAN_FIT_LAUNCH_AUDIENCE") or None,
+        meridian_model_worker_image=os.getenv("MERIDIAN_MODEL_WORKER_IMAGE") or None,
+        meridian_model_gpu=os.getenv("MERIDIAN_MODEL_GPU") or None,
+        meridian_model_cpu=os.getenv("MERIDIAN_MODEL_CPU") or None,
+        meridian_model_memory=os.getenv("MERIDIAN_MODEL_MEMORY") or None,
+        meridian_model_timeout_seconds=int(
+            os.getenv("MERIDIAN_MODEL_TIMEOUT_SECONDS", "3300")
+        ),
     )
 
 

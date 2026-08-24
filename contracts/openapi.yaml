@@ -1350,6 +1350,11 @@ components:
           - type: string
           - type: 'null'
           title: Python Version
+        runtime_mode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Runtime Mode
         status:
           title: Status
           type: string
@@ -1658,6 +1663,14 @@ components:
         cycle_id:
           title: Cycle Id
           type: string
+        measurement_cycle:
+          anyOf:
+          - $ref: '#/components/schemas/MeasurementCycleView'
+          - type: 'null'
+        mmm_track:
+          anyOf:
+          - $ref: '#/components/schemas/MmmTrackWindowView'
+          - type: 'null'
         model_ready:
           default: false
           title: Model Ready
@@ -1906,6 +1919,26 @@ components:
       - updated_at
       title: MeasurementCycleSummary
       type: object
+    MeasurementCycleView:
+      additionalProperties: false
+      properties:
+        cycle_id:
+          title: Cycle Id
+          type: string
+        data_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Cutoff
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+      required:
+      - cycle_id
+      title: MeasurementCycleView
+      type: object
     MeasurementTrackListResponse:
       additionalProperties: false
       properties:
@@ -2031,6 +2064,21 @@ components:
       - updated_at
       title: MeasurementTrackSummary
       type: object
+    MmmTrackWindowView:
+      additionalProperties: false
+      properties:
+        model_window_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window End
+        model_window_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window Start
+      title: MmmTrackWindowView
+      type: object
     ModelVersionResponse:
       additionalProperties: false
       properties:
@@ -2055,6 +2103,16 @@ components:
         model_version_id:
           title: Model Version Id
           type: string
+        model_window_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window End
+        model_window_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window Start
         project_id:
           title: Project Id
           type: string

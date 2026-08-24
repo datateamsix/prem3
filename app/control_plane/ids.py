@@ -99,3 +99,7 @@ def new_fit_run_id() -> str:
 
 def new_approval_id() -> str:
     return _opaque("mapv")
+
+
+def new_fit_dispatch_id() -> str:
+    return _opaque("mdsp")

@@ -27,7 +27,9 @@ from app.service.mmm_models import (
     DecisionActionRequest,
     FitRunResponse,
     IterateModelRequest,
+    MeasurementCycleView,
     MMMSummaryResponse,
+    MmmTrackWindowView,
     ModelVersionResponse,
 )
 
@@ -50,7 +52,9 @@ def _raise_modeling(exc: ModelingError) -> None:
     status = 409
     if exc.code == "RESOURCE_NOT_FOUND":
         status = 404
-    if exc.code in {"FIT_APPROVAL_REQUIRED", "STALE_APPROVAL"}:
+    if exc.code in {"FIT_APPROVAL_REQUIRED", "STALE_APPROVAL", "FAKE_RUNTIME_INELIGIBLE"}:
+        status = 409
+    if exc.code == "LEDGER_PUBLICATION_FAILED":
         status = 409
     if exc.code == "RESOURCE_EXHAUSTED":
         status = 429
@@ -67,6 +71,8 @@ def _version_response(version) -> ModelVersionResponse:
         version=version.version,
         model_plan_fingerprint=version.model_plan_fingerprint,
         model_ready_manifest_fingerprint=version.model_ready_manifest_fingerprint,
+        model_window_start=version.model_window_start,
+        model_window_end=version.model_window_end,
         supersedes_model_version_id=version.supersedes_model_version_id,
         accepted=version.accepted,
         created_at=version.created_at,
@@ -96,6 +102,7 @@ async def get_cycle_mmm(
     )
     tracks = ensure_tracks_for_cycle(repo, workspace=workspace, cycle_id=cycle_id)
     mmm = next((item for item in tracks if item.track_type.value == "MMM"), None)
+    plan = None if current is None else _modeling(request).repo.get_plan(current.model_version_id)
     return MMMSummaryResponse(
         project_id=project_id,
         cycle_id=cycle_id,
@@ -103,6 +110,11 @@ async def get_cycle_mmm(
         state=None if current is None else current.state.value,
         model_version_id=None if current is None else current.model_version_id,
         model_ready=current is not None or mmm is not None,
+        measurement_cycle=MeasurementCycleView(cycle_id=cycle_id, name=None, data_cutoff=None),
+        mmm_track=MmmTrackWindowView(
+            model_window_start=None if plan is None else plan.model_window_start,
+            model_window_end=None if plan is None else plan.model_window_end,
+        ),
     )
 
 

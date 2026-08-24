@@ -78,3 +78,11 @@ class DecisionNotFoundError(ModelingError):
 
 class ModelVersionNotFoundError(ModelingError):
     code = "RESOURCE_NOT_FOUND"
+
+
+class LedgerPublicationError(ModelingError):
+    code = "LEDGER_PUBLICATION_FAILED"
+
+
+class FakeRuntimeAcceptanceError(ModelingError):
+    code = "FAKE_RUNTIME_INELIGIBLE"

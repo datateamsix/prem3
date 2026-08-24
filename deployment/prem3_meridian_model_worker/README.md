@@ -11,4 +11,6 @@ Pin:
 This image must not install `google-adk` and must not execute generated Python.
 
 GPU is attached at Cloud Run Job deploy time (`GPU_STANDARD` / L4 preferred).
-`LIVE_GPU_PROOF_NOT_RUN` until an authorized L4 job is executed.
+`LIVE_GPU_PROOF_BLOCKED` until `prem3-meridian-model-worker` is deployed and an
+authorized L4 job is executed. Attempted: `gcloud run jobs describe` in
+`us-central1` returned job not found.

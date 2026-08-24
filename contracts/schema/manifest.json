@@ -164,7 +164,7 @@
         "app.service.mmm_models.ModelVersionResponse",
         "app.service.mmm_models.FitRunResponse"
       ],
-      "sha256": "141a52ceca5934f0bf03198e72d800604e12d7de4539f1a868ffc775dfbaa804"
+      "sha256": "bb9e9431fc7e33ab86b2dddf904d59953a4ee29916f11d3966783850cbcf4e5f"
     }
   ],
   "hash_algorithm": "sha256",

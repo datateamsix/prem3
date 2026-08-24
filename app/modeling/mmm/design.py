@@ -59,6 +59,7 @@ def build_design_brief(
     media_channels: tuple[str, ...],
     rf_channels: tuple[str, ...],
     evidence_refs: tuple[str, ...],
+    coverage=None,
 ) -> MMMModelDesignBrief:
     window = f"{model_window_start}/{model_window_end}"
     sections = (
@@ -120,6 +121,17 @@ def build_design_brief(
     required = [item.value for item in REQUIRED_DECISION_TYPES]
     if rf_channels:
         required.append(DecisionType.RF_PRIOR_TYPE.value)
+    limitations = (
+        "EDA ModelSpec is PRE_MODELING_EDA_ONLY and is not the fitted spec.",
+        "Measurement Cycle dates are decision context, not the MMM model window.",
+    )
+    if coverage is not None:
+        coverage_span = coverage.shared_usable_historical_coverage or (
+            f"{coverage.earliest_time}/{coverage.latest_time}"
+        )
+        adequacy = (coverage_span, coverage.source or "model-ready-coverage")
+    else:
+        adequacy = ()
     return MMMModelDesignBrief(
         model_version_id=model_version_id,
         model_objective="Fit a reviewed Meridian MMM for incremental paid-media contribution.",
@@ -141,10 +153,16 @@ def build_design_brief(
             "n_keep": 1000,
             "seed": 1,
         },
-        known_limitations=("EDA ModelSpec is PRE_MODELING_EDA_ONLY and is not the fitted spec.",),
+        known_limitations=limitations,
         decisions_requiring_human_input=tuple(required),
         evidence_refs=evidence_refs,
         sections=sections,
+        candidate_window=window,
+        n_times=None if coverage is None else coverage.n_times,
+        n_geos=None if coverage is None else coverage.n_geos,
+        n_treatments=None if coverage is None else coverage.n_treatments,
+        n_controls=None if coverage is None else coverage.n_controls,
+        adequacy_evidence=adequacy,
     )
 
 

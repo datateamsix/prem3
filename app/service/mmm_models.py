@@ -10,6 +10,17 @@ from pydantic import Field
 from app.service.models import ApiModel
 
 
+class MeasurementCycleView(ApiModel):
+    cycle_id: str
+    name: str | None = None
+    data_cutoff: str | None = None
+
+
+class MmmTrackWindowView(ApiModel):
+    model_window_start: str | None = None
+    model_window_end: str | None = None
+
+
 class MMMSummaryResponse(ApiModel):
     project_id: str
     cycle_id: str
@@ -17,6 +28,8 @@ class MMMSummaryResponse(ApiModel):
     state: str | None = None
     model_version_id: str | None = None
     model_ready: bool = False
+    measurement_cycle: MeasurementCycleView | None = None
+    mmm_track: MmmTrackWindowView | None = None
 
 
 class CreateModelDesignRequest(ApiModel):
@@ -62,6 +75,8 @@ class ModelVersionResponse(ApiModel):
     version: int
     model_plan_fingerprint: str | None = None
     model_ready_manifest_fingerprint: str
+    model_window_start: str | None = None
+    model_window_end: str | None = None
     supersedes_model_version_id: str | None = None
     accepted: bool
     created_at: datetime
@@ -72,6 +87,7 @@ class FitRunResponse(ApiModel):
     model_version_id: str
     status: str
     fit_plan_fingerprint: str
+    runtime_mode: str | None = None
     python_version: str | None = None
     meridian_version: str | None = None
     tensorflow_version: str | None = None

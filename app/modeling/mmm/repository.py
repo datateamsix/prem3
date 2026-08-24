@@ -5,10 +5,12 @@ from __future__ import annotations
 from threading import Lock
 from typing import Protocol
 
+from app.modeling.common.errors import ModelVersionImmutableError
 from app.modeling.mmm.contracts import (
     FitApproval,
     FitRun,
     FitRunStatus,
+    MeridianFitDispatch,
     MeridianFitPlan,
     MeridianModelArtifactManifest,
     MeridianModelHealthReceipt,
@@ -16,6 +18,7 @@ from app.modeling.mmm.contracts import (
     MMMModelDesignBrief,
     MMMModelReviewPack,
     MMMModelVersion,
+    MMMReproducibilityManifest,
     ModelAcceptanceApproval,
     ModelDecision,
     ModelPlan,
@@ -71,6 +74,18 @@ class ModelingRepository(Protocol):
     def list_running_fits(
         self, *, tenant_id: str, project_id: str | None = None
     ) -> list[FitRun]: ...
+    def put_dispatch(self, dispatch: MeridianFitDispatch) -> MeridianFitDispatch: ...
+    def get_dispatch(self, dispatch_id: str) -> MeridianFitDispatch | None: ...
+    def claim_canonical_dispatch(
+        self, dispatch: MeridianFitDispatch
+    ) -> MeridianFitDispatch: ...
+    def list_dispatches(self, model_version_id: str) -> list[MeridianFitDispatch]: ...
+    def put_reproducibility(
+        self, manifest: MMMReproducibilityManifest
+    ) -> MMMReproducibilityManifest: ...
+    def get_reproducibility(
+        self, model_version_id: str
+    ) -> MMMReproducibilityManifest | None: ...
 
 
 class InMemoryModelingRepository:
@@ -89,9 +104,23 @@ class InMemoryModelingRepository:
         self.health: dict[str, MeridianModelHealthReceipt] = {}
         self.reviews: dict[str, MMMModelReviewPack] = {}
         self.acceptances: dict[str, ModelAcceptanceApproval] = {}
+        self.dispatches: dict[str, MeridianFitDispatch] = {}
+        self.canonical_dispatches: dict[str, str] = {}
+        self.reproducibility: dict[str, MMMReproducibilityManifest] = {}
 
     def put_version(self, version: MMMModelVersion) -> MMMModelVersion:
         with self._lock:
+            existing = self.versions.get(version.model_version_id)
+            if existing is not None and existing.accepted:
+                if (
+                    existing.model_window_start != version.model_window_start
+                    or existing.model_window_end != version.model_window_end
+                    or existing.model_plan_fingerprint != version.model_plan_fingerprint
+                    or not version.accepted
+                ):
+                    raise ModelVersionImmutableError(
+                        "Accepted model versions cannot be rewritten."
+                    )
             self.versions[version.model_version_id] = version
             return version
 
@@ -244,3 +273,43 @@ class InMemoryModelingRepository:
             and item.status is FitRunStatus.RUNNING
             and (project_id is None or item.project_id == project_id)
         ]
+
+    def put_dispatch(self, dispatch: MeridianFitDispatch) -> MeridianFitDispatch:
+        self.dispatches[dispatch.dispatch_id] = dispatch
+        return dispatch
+
+    def get_dispatch(self, dispatch_id: str) -> MeridianFitDispatch | None:
+        return self.dispatches.get(dispatch_id)
+
+    def claim_canonical_dispatch(
+        self, dispatch: MeridianFitDispatch
+    ) -> MeridianFitDispatch:
+        key = f"{dispatch.model_version_id}::{dispatch.fit_plan_fingerprint}"
+        with self._lock:
+            existing_id = self.canonical_dispatches.get(key)
+            if existing_id is not None:
+                return self.dispatches[existing_id]
+            self.dispatches[dispatch.dispatch_id] = dispatch
+            self.canonical_dispatches[key] = dispatch.dispatch_id
+            return dispatch
+
+    def list_dispatches(self, model_version_id: str) -> list[MeridianFitDispatch]:
+        return [
+            item
+            for item in self.dispatches.values()
+            if item.model_version_id == model_version_id
+        ]
+
+    def put_reproducibility(
+        self, manifest: MMMReproducibilityManifest
+    ) -> MMMReproducibilityManifest:
+        self.reproducibility[manifest.model_plan_fingerprint] = manifest
+        return manifest
+
+    def get_reproducibility(
+        self, model_version_id: str
+    ) -> MMMReproducibilityManifest | None:
+        version = self.versions.get(model_version_id)
+        if version is None or version.model_plan_fingerprint is None:
+            return None
+        return self.reproducibility.get(version.model_plan_fingerprint)

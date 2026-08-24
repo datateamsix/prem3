@@ -93,6 +93,39 @@ class FitRunStatus(StrEnum):
     FAILED = "FAILED"
 
 
+class MeridianRuntimeMode(StrEnum):
+    FAKE_TEST = "FAKE_TEST"
+    OFFICIAL_CPU_SMOKE = "OFFICIAL_CPU_SMOKE"
+    OFFICIAL_GPU = "OFFICIAL_GPU"
+
+
+class ReviewSource(StrEnum):
+    FAKE_TEST = "FAKE_TEST"
+    OFFICIAL_MERIDIAN = "OFFICIAL_MERIDIAN"
+
+
+class FitDispatchStatus(StrEnum):
+    PENDING = "PENDING"
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    COMPLETE = "COMPLETE"
+    FAILED = "FAILED"
+
+
+class LedgerPublicationStatus(StrEnum):
+    NOT_ATTEMPTED = "NOT_ATTEMPTED"
+    VERIFIED = "VERIFIED"
+    PENDING_PUBLICATION = "PENDING_PUBLICATION"
+    FAILED = "FAILED"
+
+
+class DecisionIntelligenceAuthority(StrEnum):
+    VERIFIED = "VERIFIED"
+    INTERPRETATION = "INTERPRETATION"
+    RECOMMENDATION = "RECOMMENDATION"
+    DECISION_REQUIRED = "DECISION_REQUIRED"
+
+
 class NormativeSourceKind(StrEnum):
     PINNED_REPO_SOURCE = "PINNED_REPO_SOURCE"
     OFFICIAL_MERIDIAN_WEB_DOC = "OFFICIAL_MERIDIAN_WEB_DOC"
@@ -190,6 +223,19 @@ class ModelDecision(FrozenModel):
     created_at: datetime = Field(default_factory=utc_now)
 
 
+class ModelReadyCoverage(FrozenModel):
+    earliest_time: str
+    latest_time: str
+    n_times: int
+    n_geos: int
+    n_treatments: int = 0
+    n_controls: int = 0
+    geos: tuple[str, ...] = ()
+    source: str | None = None
+    shared_usable_historical_coverage: str | None = None
+    channel_limiting_coverage: dict[str, str] = Field(default_factory=dict)
+
+
 class MMMModelVersion(FrozenModel):
     model_version_id: str
     tenant_id: str
@@ -204,6 +250,8 @@ class MMMModelVersion(FrozenModel):
     meridian_version: str = "1.8.0"
     model_plan_id: str | None = None
     model_plan_fingerprint: str | None = None
+    model_window_start: str | None = None
+    model_window_end: str | None = None
     version: int = 1
     supersedes_model_version_id: str | None = None
     iteration_reason: str | None = None
@@ -243,6 +291,12 @@ class MMMModelDesignBrief(FrozenModel):
     decisions_requiring_human_input: tuple[str, ...] = ()
     evidence_refs: tuple[str, ...] = ()
     sections: tuple[DesignBriefSection, ...] = ()
+    candidate_window: str | None = None
+    n_times: int | None = None
+    n_geos: int | None = None
+    n_treatments: int | None = None
+    n_controls: int | None = None
+    adequacy_evidence: tuple[str, ...] = ()
     generated_at: datetime = Field(default_factory=utc_now)
 
 
@@ -254,6 +308,7 @@ class MeridianPriorValidationReceipt(FrozenModel):
     n_draws: int
     seed: int
     status: PriorValidationStatus
+    runtime_mode: MeridianRuntimeMode = MeridianRuntimeMode.FAKE_TEST
     artifact_refs: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
     generated_at: datetime = Field(default_factory=utc_now)
@@ -299,10 +354,15 @@ class FitRun(FrozenModel):
     fit_plan_fingerprint: str
     status: FitRunStatus = FitRunStatus.PENDING
     compute_profile: ComputeProfile
+    runtime_mode: MeridianRuntimeMode = MeridianRuntimeMode.FAKE_TEST
     python_version: str | None = None
     meridian_version: str | None = None
     tensorflow_version: str | None = None
     worker_image_digest: str | None = None
+    dispatch_id: str | None = None
+    attempt: int = 1
+    ledger_readback_verified: bool = False
+    ledger_status: LedgerPublicationStatus = LedgerPublicationStatus.NOT_ATTEMPTED
     error_code: str | None = None
     created_at: datetime = Field(default_factory=utc_now)
     started_at: datetime | None = None
@@ -320,6 +380,8 @@ class MeridianModelArtifactManifest(FrozenModel):
     fit_plan_fingerprint: str
     binary_model_ref: str
     binary_sha256: str
+    runtime_mode: MeridianRuntimeMode = MeridianRuntimeMode.FAKE_TEST
+    serde_readback_ok: bool = False
     created_at: datetime = Field(default_factory=utc_now)
 
 
@@ -339,11 +401,15 @@ class MeridianModelHealthReceipt(FrozenModel):
     blocking_fail_count: int = 0
     review_count: int = 0
     health_html_ref: str | None = None
+    health_html_sha256: str | None = None
+    runtime_mode: MeridianRuntimeMode = MeridianRuntimeMode.FAKE_TEST
+    review_source: ReviewSource = ReviewSource.FAKE_TEST
     generated_at: datetime = Field(default_factory=utc_now)
 
 
 class ResultsSummary(FrozenModel):
     html_ref: str | None = None
+    html_sha256: str | None = None
     requested_date_range: str | None = None
     effective_date_range: str | None = None
     model_fit: dict[str, Any] = Field(default_factory=dict)
@@ -421,3 +487,49 @@ class NormativeRecommendation(FrozenModel):
     meridian_version: str
     source_kind: NormativeSourceKind
     available: bool = True
+
+
+class MeridianFitDispatch(FrozenModel):
+    dispatch_id: str
+    tenant_id: str
+    project_id: str
+    cycle_id: str
+    track_id: str
+    model_version_id: str
+    fit_run_id: str
+    fit_plan_fingerprint: str
+    fit_approval_id: str
+    runtime_mode: MeridianRuntimeMode
+    compute_profile: ComputeProfile
+    status: FitDispatchStatus = FitDispatchStatus.PENDING
+    cloud_task_name: str | None = None
+    cloud_run_execution_name: str | None = None
+    attempt: int = 1
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+class DecisionIntelligenceRecommendation(FrozenModel):
+    recommendation_id: str
+    statement: str
+    evidence_refs: tuple[str, ...] = ()
+    counterevidence_refs: tuple[str, ...] = ()
+    uncertainty: str | None = None
+    recommended_action: str | None = None
+    requires_human_decision: bool = True
+    authority: DecisionIntelligenceAuthority = DecisionIntelligenceAuthority.RECOMMENDATION
+
+
+class MMMDecisionIntelligenceBrief(FrozenModel):
+    model_version_id: str
+    fit_run_id: str | None = None
+    headline: str
+    summary: str
+    verified_findings: tuple[str, ...] = ()
+    review_items: tuple[str, ...] = ()
+    limitations: tuple[str, ...] = ()
+    recommendations: tuple[DecisionIntelligenceRecommendation, ...] = ()
+    evidence_refs: tuple[str, ...] = ()
+    model_health_receipt_ref: str | None = None
+    review_pack_ref: str | None = None
+    generated_at: datetime = Field(default_factory=utc_now)

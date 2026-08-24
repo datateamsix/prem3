@@ -4,19 +4,28 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+import platform
+import tempfile
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol
 
 from app.modeling.common.errors import FitRuntimeError, PriorValidationFailedError, SerdeError
 from app.modeling.common.external_assets import PINNED_RUNTIME_VERSION
 from app.modeling.mmm.contracts import (
     MeridianFitPlan,
+    MeridianRuntimeMode,
     ModelPlan,
     OfficialCheckResult,
     OfficialHealthStatus,
     PriorValidationStatus,
+    ReviewSource,
 )
-from app.modeling.mmm.meridian.builder import assert_input_fingerprint, assert_not_eda_spec
+from app.modeling.mmm.meridian.builder import (
+    assert_input_fingerprint,
+    assert_not_eda_spec,
+    compile_input_mapping,
+)
 
 
 @dataclass(frozen=True)
@@ -26,6 +35,8 @@ class PriorSampleResult:
     seed: int
     warnings: tuple[str, ...] = ()
     artifact: bytes = b""
+    runtime_mode: MeridianRuntimeMode = MeridianRuntimeMode.FAKE_TEST
+    calls_made: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -39,9 +50,17 @@ class FitExecutionResult:
     tensorflow_version: str | None
     meridian_version: str
     worker_image_digest: str | None = None
+    runtime_mode: MeridianRuntimeMode = MeridianRuntimeMode.FAKE_TEST
+    review_source: ReviewSource = ReviewSource.FAKE_TEST
+    calls_made: tuple[str, ...] = ()
+    serde_readback_ok: bool = False
+    health_html: str = ""
+    results_html_sha256: str | None = None
 
 
 class MeridianRuntime(Protocol):
+    runtime_mode: MeridianRuntimeMode
+
     def sample_prior(self, plan: ModelPlan, *, n_draws: int, seed: int) -> PriorSampleResult: ...
 
     def sample_posterior(
@@ -49,8 +68,39 @@ class MeridianRuntime(Protocol):
     ) -> FitExecutionResult: ...
 
 
+class MeridianLibrary(Protocol):
+    """Real google-meridian surface. Test stubs must not be FakeMeridianRuntime."""
+
+    def sample_prior(self, model: Any, *, n_draws: int, seed: int) -> None: ...
+
+    def sample_posterior(
+        self,
+        model: Any,
+        *,
+        n_chains: int,
+        n_adapt: int,
+        n_burnin: int,
+        n_keep: int,
+        seed: int,
+    ) -> None: ...
+
+    def save_meridian(self, model: Any, path: str) -> None: ...
+
+    def load_meridian(self, path: str) -> Any: ...
+
+    def run_reviewer(self, model: Any) -> tuple[OfficialCheckResult, ...]: ...
+
+    def run_summarizer(self, model: Any, *, start: str, end: str) -> str: ...
+
+    def construct_model(self, plan: ModelPlan, mapping: dict[str, Any]) -> Any: ...
+
+    def structured_outputs(self, model: Any) -> dict[str, Any]: ...
+
+
 class FakeMeridianRuntime:
-    """CPU-test runtime. Does not import google-meridian."""
+    """Explicit CI twin. Never eligible for production MODEL_ACCEPTED."""
+
+    runtime_mode = MeridianRuntimeMode.FAKE_TEST
 
     def sample_prior(self, plan: ModelPlan, *, n_draws: int, seed: int) -> PriorSampleResult:
         if n_draws < 1:
@@ -64,6 +114,8 @@ class FakeMeridianRuntime:
             n_draws=n_draws,
             seed=seed,
             artifact=payload,
+            runtime_mode=MeridianRuntimeMode.FAKE_TEST,
+            calls_made=("fake_sample_prior",),
         )
 
     def sample_posterior(self, plan: ModelPlan, fit_plan: MeridianFitPlan) -> FitExecutionResult:
@@ -113,11 +165,12 @@ class FakeMeridianRuntime:
                 summary="Fake runtime ROI PASS.",
             ),
         )
+        html = "<html><body>results_summary</body></html>"
         return FitExecutionResult(
             binary=blob,
             binary_sha256=digest,
             health_checks=checks,
-            results_html="<html><body>results_summary</body></html>",
+            results_html=html,
             structured={
                 "model_fit": {"r_hat_ok": True},
                 "roi": {"paid_search": 1.4},
@@ -127,28 +180,364 @@ class FakeMeridianRuntime:
             tensorflow_version=None,
             meridian_version=PINNED_RUNTIME_VERSION,
             worker_image_digest="sha256:fake-cpu-test",
+            runtime_mode=MeridianRuntimeMode.FAKE_TEST,
+            review_source=ReviewSource.FAKE_TEST,
+            calls_made=("fake_sample_posterior", "fake_serde", "fake_reviewer"),
+            serde_readback_ok=True,
+            health_html="<html><body>model_health</body></html>",
+            results_html_sha256=hashlib.sha256(html.encode()).hexdigest(),
         )
 
 
+class InstalledMeridianLibrary:
+    """Pinned google-meridian==1.8.0. Fail closed if the package is missing."""
+
+    def __init__(self, modules: dict[str, Any]) -> None:
+        self._modules = modules
+        self.calls: list[str] = []
+
+    @classmethod
+    def load(cls) -> InstalledMeridianLibrary:
+        try:
+            from meridian.analysis import summarizer
+            from meridian.analysis.review import reviewer
+            from meridian.data import data_frame_input_data_builder as data_builder
+            from meridian.model.model import Meridian
+            from meridian.model.prior_distribution import PriorDistribution
+            from meridian.model.spec import ModelSpec
+            from meridian.schema.serde import meridian_serde
+        except Exception as exc:
+            raise FitRuntimeError(
+                "google-meridian is not available; OfficialMeridianRuntime fails closed."
+            ) from exc
+        return cls(
+            {
+                "Meridian": Meridian,
+                "ModelSpec": ModelSpec,
+                "PriorDistribution": PriorDistribution,
+                "data_builder": data_builder,
+                "meridian_serde": meridian_serde,
+                "reviewer": reviewer,
+                "summarizer": summarizer,
+            }
+        )
+
+    def construct_model(self, plan: ModelPlan, mapping: dict[str, Any]) -> Any:
+        frame = mapping.get("frame")
+        if frame is None:
+            raise FitRuntimeError("INPUT_CONTRACT_MISMATCH: ModelReady frame is missing.")
+        builder_mod = self._modules["data_builder"]
+        kpi_type = str(mapping.get("kpi_type") or "revenue")
+        builder = builder_mod.DataFrameInputDataBuilder(
+            kpi_type=kpi_type,
+            default_kpi_column=mapping["kpi"],
+            default_revenue_per_kpi_column=mapping.get("revenue_per_kpi"),
+            default_time_column=mapping["time"],
+            default_geo_column=mapping.get("geo") or "geo",
+            default_population_column=mapping.get("population") or "population",
+            default_media_time_column=mapping["time"],
+        )
+        builder = builder.with_kpi(frame, kpi_col=mapping["kpi"])
+        media = tuple(mapping.get("media") or ())
+        media_spend = tuple(mapping.get("media_spend") or ())
+        media_channels = tuple(mapping.get("media_channels") or ())
+        if media:
+            builder = builder.with_media(
+                frame,
+                media_cols=list(media),
+                media_spend_cols=list(media_spend),
+                media_channels=list(media_channels or media),
+            )
+        rf = tuple(mapping.get("rf") or ())
+        if rf and hasattr(builder, "with_reach_frequency"):
+            builder = builder.with_reach_frequency(frame, **mapping["rf_kwargs"])
+        if mapping.get("organic_media"):
+            builder = builder.with_organic_media(
+                frame,
+                organic_media_cols=list(mapping["organic_media"]),
+                organic_media_channels=list(
+                    mapping.get("organic_media_channels") or mapping["organic_media"]
+                ),
+            )
+        if mapping.get("controls"):
+            builder = builder.with_controls(frame, control_cols=list(mapping["controls"]))
+        if mapping.get("non_media_treatments") and hasattr(builder, "with_non_media_treatments"):
+            builder = builder.with_non_media_treatments(
+                frame, non_media_treatment_cols=list(mapping["non_media_treatments"])
+            )
+        if mapping.get("population"):
+            builder = builder.with_population(frame, population_col=mapping["population"])
+        if kpi_type == "non_revenue" and mapping.get("revenue_per_kpi"):
+            builder = builder.with_revenue_per_kpi(
+                frame, revenue_per_kpi_col=mapping["revenue_per_kpi"]
+            )
+        input_data = builder.build()
+        spec_kwargs = plan.spec.model_dump(mode="python", exclude_none=True)
+        spec_kwargs.pop("paid_media_prior_type", None)
+        spec = self._modules["ModelSpec"](
+            prior=self._modules["PriorDistribution"](),
+            **spec_kwargs,
+        )
+        self.calls.append("DataFrameInputDataBuilder")
+        self.calls.append("ModelSpec")
+        self.calls.append("Meridian")
+        return self._modules["Meridian"](input_data=input_data, model_spec=spec)
+
+    def sample_prior(self, model: Any, *, n_draws: int, seed: int) -> None:
+        del seed
+        self.calls.append("sample_prior")
+        model.sample_prior(n_draws)
+
+    def sample_posterior(
+        self,
+        model: Any,
+        *,
+        n_chains: int,
+        n_adapt: int,
+        n_burnin: int,
+        n_keep: int,
+        seed: int,
+    ) -> None:
+        del seed
+        self.calls.append("sample_posterior")
+        model.sample_posterior(
+            n_chains=n_chains,
+            n_adapt=n_adapt,
+            n_burnin=n_burnin,
+            n_keep=n_keep,
+        )
+
+    def save_meridian(self, model: Any, path: str) -> None:
+        self.calls.append("save_meridian")
+        self._modules["meridian_serde"].save_meridian(model, path)
+
+    def load_meridian(self, path: str) -> Any:
+        self.calls.append("load_meridian")
+        return self._modules["meridian_serde"].load_meridian(path)
+
+    def run_reviewer(self, model: Any) -> tuple[OfficialCheckResult, ...]:
+        self.calls.append("ModelReviewer")
+        review = self._modules["reviewer"].ModelReviewer(
+            model_context=model.model_context,
+            inference_data=model.inference_data,
+        )
+        summary = review.run()
+        return _map_official_review(summary)
+
+    def run_summarizer(self, model: Any, *, start: str, end: str) -> str:
+        self.calls.append("Summarizer")
+        with tempfile.TemporaryDirectory() as tmp:
+            out = self._modules["summarizer"].Summarizer(model, use_kpi=True)
+            out.output_model_results_summary(
+                filename="results_summary.html",
+                filepath=tmp,
+                start_date=start,
+                end_date=end,
+            )
+            html_path = Path(tmp) / "results_summary.html"
+            if html_path.is_file():
+                return html_path.read_text(encoding="utf-8")
+        return ""
+
+    def structured_outputs(self, model: Any) -> dict[str, Any]:
+        del model
+        return {}
+
+
+def _map_official_review(summary: Any) -> tuple[OfficialCheckResult, ...]:
+    checks = (
+        getattr(summary, "results", None)
+        or getattr(summary, "checks", None)
+        or getattr(summary, "check_results", None)
+    )
+    if not checks:
+        raise FitRuntimeError("Official ModelReviewer returned no check results.")
+    mapped: list[OfficialCheckResult] = []
+    for item in checks:
+        name = str(getattr(item, "name", None) or getattr(item, "check_name", "") or "")
+        raw = str(getattr(item, "status", "") or "").upper()
+        if raw not in OfficialHealthStatus.__members__:
+            raise FitRuntimeError(f"Official reviewer status {raw!r} is not PASS/REVIEW/FAIL.")
+        if not name:
+            raise FitRuntimeError("Official reviewer check is missing a name.")
+        mapped.append(
+            OfficialCheckResult(
+                check_name=name,
+                status=OfficialHealthStatus(raw),
+                summary=str(getattr(item, "summary", None) or getattr(item, "message", "") or ""),
+            )
+        )
+    return tuple(mapped)
+
+
+@dataclass
+class RecordingMeridianLibrary:
+    """Official-runtime test double. Not FakeMeridianRuntime and not production evidence."""
+
+    checks: tuple[OfficialCheckResult, ...]
+    calls: list[str] = field(default_factory=list)
+    binary: bytes = b"official-stub-binpb"
+
+    def construct_model(self, plan: ModelPlan, mapping: dict[str, Any]) -> Any:
+        del mapping
+        self.calls.append("DataFrameInputDataBuilder")
+        self.calls.append("ModelSpec")
+        self.calls.append("Meridian")
+        return {"plan": plan.fingerprint}
+
+    def sample_prior(self, model: Any, *, n_draws: int, seed: int) -> None:
+        del model, n_draws, seed
+        self.calls.append("sample_prior")
+
+    def sample_posterior(
+        self,
+        model: Any,
+        *,
+        n_chains: int,
+        n_adapt: int,
+        n_burnin: int,
+        n_keep: int,
+        seed: int,
+    ) -> None:
+        del model, n_chains, n_adapt, n_burnin, n_keep, seed
+        self.calls.append("sample_posterior")
+
+    def save_meridian(self, model: Any, path: str) -> None:
+        del model
+        self.calls.append("save_meridian")
+        Path(path).write_bytes(self.binary)
+
+    def load_meridian(self, path: str) -> Any:
+        self.calls.append("load_meridian")
+        payload = Path(path).read_bytes()
+        if payload != self.binary:
+            raise SerdeError("serde read-back did not match saved bytes.")
+        return {"loaded": True}
+
+    def run_reviewer(self, model: Any) -> tuple[OfficialCheckResult, ...]:
+        del model
+        self.calls.append("ModelReviewer")
+        return self.checks
+
+    def run_summarizer(self, model: Any, *, start: str, end: str) -> str:
+        del model, start, end
+        self.calls.append("Summarizer")
+        return "<html><body>official-stub-results</body></html>"
+
+    def structured_outputs(self, model: Any) -> dict[str, Any]:
+        del model
+        return {}
+
+
 class OfficialMeridianRuntime:
-    """Pinned google-meridian==1.8.0 worker. Used only inside the model worker image."""
+    """Pinned google-meridian worker. Never falls back to FakeMeridianRuntime."""
+
+    def __init__(
+        self,
+        *,
+        mode: MeridianRuntimeMode,
+        library: MeridianLibrary | None = None,
+        input_mapping: dict[str, Any] | None = None,
+        worker_image_digest: str | None = None,
+    ) -> None:
+        if mode is MeridianRuntimeMode.FAKE_TEST:
+            raise FitRuntimeError("OfficialMeridianRuntime cannot run FAKE_TEST.")
+        self.runtime_mode = mode
+        self._library = library
+        self._input_mapping = input_mapping or {}
+        self.worker_image_digest = worker_image_digest
+
+    def _library_or_fail(self) -> MeridianLibrary:
+        if self._library is not None:
+            return self._library
+        self._library = InstalledMeridianLibrary.load()
+        return self._library
 
     def sample_prior(self, plan: ModelPlan, *, n_draws: int, seed: int) -> PriorSampleResult:
-        try:
-            from meridian.model.model import Meridian
-            from meridian.model.spec import ModelSpec
-        except Exception as exc:  # pragma: no cover - optional extra
-            raise FitRuntimeError("google-meridian is not available in this process.") from exc
-        del Meridian, ModelSpec
-        return FakeMeridianRuntime().sample_prior(plan, n_draws=n_draws, seed=seed)
+        if n_draws < 1:
+            raise PriorValidationFailedError("n_draws must be positive.")
+        library = self._library_or_fail()
+        mapping = compile_input_mapping(plan=plan, mapping=self._input_mapping)
+        model = library.construct_model(plan, mapping)
+        library.sample_prior(model, n_draws=n_draws, seed=seed)
+        calls = tuple(getattr(library, "calls", ("sample_prior",)))
+        return PriorSampleResult(
+            status=PriorValidationStatus.PASS,
+            n_draws=n_draws,
+            seed=seed,
+            runtime_mode=self.runtime_mode,
+            calls_made=calls,
+        )
 
     def sample_posterior(self, plan: ModelPlan, fit_plan: MeridianFitPlan) -> FitExecutionResult:
+        if fit_plan.model_plan_fingerprint != plan.fingerprint:
+            raise FitRuntimeError("FitPlan fingerprint does not match ModelPlan.")
+        if (
+            fit_plan.n_chains != int(plan.mcmc.get("n_chains", fit_plan.n_chains))
+            or fit_plan.n_adapt != int(plan.mcmc.get("n_adapt", fit_plan.n_adapt))
+            or fit_plan.n_burnin != int(plan.mcmc.get("n_burnin", fit_plan.n_burnin))
+            or fit_plan.n_keep != int(plan.mcmc.get("n_keep", fit_plan.n_keep))
+        ):
+            raise FitRuntimeError("Worker must not mutate approved MCMC settings.")
+        library = self._library_or_fail()
+        mapping = compile_input_mapping(plan=plan, mapping=self._input_mapping)
+        model = library.construct_model(plan, mapping)
+        library.sample_prior(model, n_draws=max(1, min(32, fit_plan.n_keep)), seed=fit_plan.seed)
+        library.sample_posterior(
+            model,
+            n_chains=fit_plan.n_chains,
+            n_adapt=fit_plan.n_adapt,
+            n_burnin=fit_plan.n_burnin,
+            n_keep=fit_plan.n_keep,
+            seed=fit_plan.seed,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "meridian_model.binpb")
+            library.save_meridian(model, path)
+            payload = Path(path).read_bytes()
+            if not payload:
+                raise SerdeError("Official serde produced an empty model binary.")
+            loaded = library.load_meridian(path)
+            if loaded is None:
+                raise SerdeError("Official serde read-back failed.")
+        checks = library.run_reviewer(model)
+        html = library.run_summarizer(
+            model, start=plan.model_window_start, end=plan.model_window_end
+        )
+        digest = hashlib.sha256(payload).hexdigest()
+        tensorflow_version = None
         try:
-            from meridian.model.model import Meridian
-        except Exception as exc:  # pragma: no cover
-            raise FitRuntimeError("google-meridian is not available in this process.") from exc
-        del Meridian
-        return FakeMeridianRuntime().sample_posterior(plan, fit_plan)
+            import tensorflow as tf
+
+            tensorflow_version = getattr(tf, "__version__", None)
+        except Exception:
+            tensorflow_version = None
+        calls = tuple(getattr(library, "calls", ()))
+        return FitExecutionResult(
+            binary=payload,
+            binary_sha256=digest,
+            health_checks=checks,
+            results_html=html,
+            structured=library.structured_outputs(model),
+            python_version=platform.python_version(),
+            tensorflow_version=tensorflow_version,
+            meridian_version=PINNED_RUNTIME_VERSION,
+            worker_image_digest=self.worker_image_digest,
+            runtime_mode=self.runtime_mode,
+            review_source=ReviewSource.OFFICIAL_MERIDIAN,
+            calls_made=calls,
+            serde_readback_ok=True,
+            health_html="",
+            results_html_sha256=hashlib.sha256(html.encode()).hexdigest() if html else None,
+        )
+
+
+def runtime_mode_for_profile(profile: str, *, official: bool) -> MeridianRuntimeMode:
+    if not official:
+        return MeridianRuntimeMode.FAKE_TEST
+    if profile == "CPU_TEST":
+        return MeridianRuntimeMode.OFFICIAL_CPU_SMOKE
+    return MeridianRuntimeMode.OFFICIAL_GPU
 
 
 def execute_prior_validation(

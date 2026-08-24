@@ -9,6 +9,7 @@ from typing import Any
 
 from app.control_plane.ids import (
     new_approval_id,
+    new_fit_dispatch_id,
     new_fit_run_id,
     new_model_plan_id,
     new_model_version_id,
@@ -16,8 +17,10 @@ from app.control_plane.ids import (
 from app.core.contracts import utc_now
 from app.modeling.common.errors import (
     ArtifactVerificationFailedError,
+    FakeRuntimeAcceptanceError,
     FitApprovalRequiredError,
     InputContractMismatchError,
+    LedgerPublicationError,
     ModelReviewFailedError,
     ModelSpecInvalidError,
     ModelVersionImmutableError,
@@ -34,15 +37,26 @@ from app.modeling.mmm.contracts import (
     DecisionStatus,
     DecisionType,
     FitApproval,
+    FitDispatchStatus,
     FitRun,
     FitRunStatus,
+    LedgerPublicationStatus,
+    MeridianFitDispatch,
     MeridianFitPlan,
     MeridianModelArtifactManifest,
     MeridianPriorValidationReceipt,
+    MeridianRuntimeMode,
     MMMModelVersion,
     ModelAcceptanceApproval,
+    ModelReadyCoverage,
     OfficialHealthStatus,
     PriorValidationStatus,
+    ReviewSource,
+)
+from app.modeling.mmm.coverage import (
+    assert_cycle_does_not_define_window,
+    assert_model_window_inside_coverage,
+    assert_window_change_invalidates_approval,
 )
 from app.modeling.mmm.design import (
     REQUIRED_DECISION_TYPES,
@@ -50,12 +64,14 @@ from app.modeling.mmm.design import (
     initial_decisions,
     proposed_model_plan,
 )
+from app.modeling.mmm.ledger import InMemoryModelLedger, ModelLedger, publish_fit_ledger
 from app.modeling.mmm.meridian.reviewer import interpret_reviewer_results
 from app.modeling.mmm.meridian.runner import (
     FakeMeridianRuntime,
     MeridianRuntime,
     execute_approved_fit,
     execute_prior_validation,
+    runtime_mode_for_profile,
 )
 from app.modeling.mmm.meridian.summarizer import structured_results
 from app.modeling.mmm.repository import InMemoryModelingRepository, ModelingRepository
@@ -75,9 +91,17 @@ class MMMModelingService:
         repo: ModelingRepository | None = None,
         *,
         runtime: MeridianRuntime | None = None,
+        ledger: ModelLedger | None = None,
+        dispatcher: object | None = None,
+        object_store: object | None = None,
+        artifact_bucket: str | None = None,
     ) -> None:
         self.repo = repo or InMemoryModelingRepository()
         self.runtime = runtime or FakeMeridianRuntime()
+        self.ledger = ledger or InMemoryModelLedger()
+        self.dispatcher = dispatcher
+        self.object_store = object_store
+        self.artifact_bucket = artifact_bucket
         self._lock = Lock()
 
     def start_design(
@@ -103,11 +127,27 @@ class MMMModelingService:
         include_insufficient_controls: bool = False,
         include_experiment_prior: bool = False,
         eda_context: dict[str, Any] | None = None,
+        coverage: ModelReadyCoverage | None = None,
+        cycle_window_start: str | None = None,
+        cycle_window_end: str | None = None,
     ) -> MMMModelVersion:
         if eda_context and eda_context.get("approved_for_final_modeling") is True:
             raise InputContractMismatchError("EDA spec cannot be approved for final modeling.")
         if not model_ready_manifest_fingerprint:
             raise InputContractMismatchError("MODEL_READY manifest fingerprint is required.")
+        assert_cycle_does_not_define_window(
+            cycle_start=cycle_window_start,
+            cycle_end=cycle_window_end,
+            model_window_start=model_window_start,
+            model_window_end=model_window_end,
+            coverage=coverage,
+        )
+        if coverage is not None:
+            assert_model_window_inside_coverage(
+                model_window_start=model_window_start,
+                model_window_end=model_window_end,
+                coverage=coverage,
+            )
         version = MMMModelVersion(
             model_version_id=new_model_version_id(),
             tenant_id=tenant_id,
@@ -121,6 +161,8 @@ class MMMModelingService:
             meridian_version=PINNED_RUNTIME_VERSION,
             state=MMMModelingStage.DESIGNING_MODEL,
             created_by=actor_id,
+            model_window_start=model_window_start,
+            model_window_end=model_window_end,
         )
         plan = proposed_model_plan(
             model_plan_id=new_model_plan_id(),
@@ -144,6 +186,7 @@ class MMMModelingService:
             media_channels=media_channels,
             rf_channels=rf_channels,
             evidence_refs=(model_ready_run_id, model_ready_manifest_fingerprint),
+            coverage=coverage,
         )
         version = version.model_copy(
             update={
@@ -319,6 +362,7 @@ class MMMModelingService:
             n_draws=result.n_draws,
             seed=result.seed,
             status=result.status,
+            runtime_mode=getattr(self.runtime, "runtime_mode", MeridianRuntimeMode.FAKE_TEST),
             warnings=result.warnings,
         )
         self.repo.put_prior_receipt(receipt)
@@ -417,6 +461,7 @@ class MMMModelingService:
                 raise StaleApprovalError("Stale fit approval cannot run.")
             if approval.model_plan_fingerprint != plan.fingerprint:
                 raise StaleApprovalError("Changed ModelPlan invalidates fit approval.")
+            assert_window_change_invalidates_approval(plan=plan, approval=approval)
             if approval.tenant_id != tenant_id or approval.project_id != project_id:
                 raise StaleApprovalError("Cross-project fit approval rejected.")
             existing = [
@@ -443,13 +488,60 @@ class MMMModelingService:
                 fit_plan_fingerprint=fit_plan.fingerprint,
                 status=FitRunStatus.RUNNING,
                 compute_profile=fit_plan.compute_profile,
+                runtime_mode=getattr(
+                    self.runtime, "runtime_mode", MeridianRuntimeMode.FAKE_TEST
+                ),
                 meridian_version=PINNED_RUNTIME_VERSION,
                 started_at=utc_now(),
             )
             self.repo.put_fit_run(run)
             if version.state is MMMModelingStage.AWAITING_FIT_APPROVAL:
                 version = self._transition(version, MMMModelingStage.FITTING_MODEL)
+            if self.dispatcher is not None:
+                return self._dispatch_fit(version, plan, fit_plan, run, approval)
         return self._execute_fit(version, plan, fit_plan, run)
+
+    def _dispatch_fit(self, version, plan, fit_plan, run: FitRun, approval: FitApproval) -> FitRun:
+        del plan
+        mode = runtime_mode_for_profile(
+            fit_plan.compute_profile.value,
+            official=not isinstance(self.runtime, FakeMeridianRuntime),
+        )
+        dispatch = MeridianFitDispatch(
+            dispatch_id=new_fit_dispatch_id(),
+            tenant_id=version.tenant_id,
+            project_id=version.project_id,
+            cycle_id=version.cycle_id,
+            track_id=version.track_id,
+            model_version_id=version.model_version_id,
+            fit_run_id=run.fit_run_id,
+            fit_plan_fingerprint=fit_plan.fingerprint,
+            fit_approval_id=approval.approval_id,
+            runtime_mode=mode,
+            compute_profile=fit_plan.compute_profile,
+            status=FitDispatchStatus.QUEUED,
+        )
+        canonical = self.repo.claim_canonical_dispatch(dispatch)
+        if canonical.dispatch_id != dispatch.dispatch_id:
+            existing = self.repo.get_fit_run(
+                tenant_id=version.tenant_id,
+                project_id=version.project_id,
+                fit_run_id=canonical.fit_run_id,
+            )
+            if existing is not None:
+                return existing
+        task_name = self.dispatcher.enqueue(canonical)
+        stored = canonical.model_copy(
+            update={
+                "cloud_task_name": task_name,
+                "status": FitDispatchStatus.QUEUED,
+                "updated_at": utc_now(),
+            }
+        )
+        self.repo.put_dispatch(stored)
+        return run.model_copy(
+            update={"dispatch_id": stored.dispatch_id, "status": FitRunStatus.PENDING}
+        )
 
     def _execute_fit(self, version, plan, fit_plan, run: FitRun) -> FitRun:
         result = execute_approved_fit(
@@ -458,11 +550,15 @@ class MMMModelingService:
             fit_plan,
             expected_input_fingerprint=plan.model_ready_manifest_fingerprint,
         )
-        loaded = self.repo.get_binary(run.fit_run_id)
-        if loaded is None:
-            self.repo.put_binary(fit_run_id=run.fit_run_id, payload=result.binary)
-        stored = self.repo.get_binary(run.fit_run_id)
-        if stored is None or hashlib.sha256(stored).hexdigest() != result.binary_sha256:
+        stored = result.binary
+        try:
+            loaded = self.repo.get_binary(run.fit_run_id)
+            if loaded is None:
+                self.repo.put_binary(fit_run_id=run.fit_run_id, payload=result.binary)
+            stored = self.repo.get_binary(run.fit_run_id) or result.binary
+        except ModelVersionImmutableError:
+            stored = result.binary
+        if hashlib.sha256(stored).hexdigest() != result.binary_sha256:
             raise ArtifactVerificationFailedError("Model binary read-back hash mismatch.")
         manifest = MeridianModelArtifactManifest(
             model_version_id=version.model_version_id,
@@ -475,6 +571,8 @@ class MMMModelingService:
             fit_plan_fingerprint=fit_plan.fingerprint,
             binary_model_ref=f"modeling/{version.model_version_id}/meridian_model.binpb",
             binary_sha256=result.binary_sha256,
+            runtime_mode=result.runtime_mode,
+            serde_readback_ok=result.serde_readback_ok,
         )
         self.repo.put_artifact(manifest)
         health = interpret_reviewer_results(
@@ -482,6 +580,8 @@ class MMMModelingService:
             fit_run_id=run.fit_run_id,
             meridian_version=result.meridian_version,
             results=result.health_checks,
+            runtime_mode=result.runtime_mode,
+            review_source=result.review_source,
         )
         self.repo.put_health(health)
         results = structured_results(
@@ -489,6 +589,7 @@ class MMMModelingService:
             requested_date_range=f"{plan.model_window_start}/{plan.model_window_end}",
             effective_date_range=f"{plan.model_window_start}/{plan.model_window_end}",
             values=result.structured,
+            html_sha256=result.results_html_sha256,
         )
         review_required = tuple(
             item.check_name
@@ -510,6 +611,20 @@ class MMMModelingService:
             review_required=review_required,
         )
         self.repo.put_review(pack)
+        ledger_verified = False
+        ledger_status = LedgerPublicationStatus.NOT_ATTEMPTED
+        try:
+            publish_fit_ledger(
+                self.ledger,
+                version=version,
+                run=run,
+                decisions=self.repo.list_decisions(version.model_version_id),
+                health=health,
+            )
+            ledger_verified = True
+            ledger_status = LedgerPublicationStatus.VERIFIED
+        except LedgerPublicationError:
+            ledger_status = LedgerPublicationStatus.PENDING_PUBLICATION
         completed = run.model_copy(
             update={
                 "status": FitRunStatus.SUCCEEDED,
@@ -517,6 +632,9 @@ class MMMModelingService:
                 "python_version": result.python_version,
                 "tensorflow_version": result.tensorflow_version,
                 "worker_image_digest": result.worker_image_digest,
+                "runtime_mode": result.runtime_mode,
+                "ledger_readback_verified": ledger_verified,
+                "ledger_status": ledger_status,
             }
         )
         self.repo.put_fit_run(completed)
@@ -583,6 +701,25 @@ class MMMModelingService:
         run = next(iter(self.repo.list_fit_runs(model_version_id)), None)
         if health is None or pack is None or artifact is None or run is None:
             raise ModelReviewFailedError("Fit, health, and review pack are required.")
+        stored = self.repo.get_binary(run.fit_run_id)
+        if stored is not None and hashlib.sha256(stored).hexdigest() != artifact.binary_sha256:
+            raise ArtifactVerificationFailedError(
+                "Stored model binary SHA-256 does not match the artifact manifest."
+            )
+        if run.runtime_mode is MeridianRuntimeMode.FAKE_TEST:
+            raise FakeRuntimeAcceptanceError(
+                "FAKE_TEST is permanently ineligible for production MODEL_ACCEPTED."
+            )
+        if health.review_source is not ReviewSource.OFFICIAL_MERIDIAN:
+            raise FakeRuntimeAcceptanceError(
+                "Production MODEL_ACCEPTED requires review_source=OFFICIAL_MERIDIAN."
+            )
+        if not artifact.serde_readback_ok:
+            raise ModelReviewFailedError("Official serde read-back is required.")
+        if not run.ledger_readback_verified:
+            raise LedgerPublicationError(
+                "MODEL_ACCEPTED requires durable BigQuery ledger write/read-back."
+            )
         if any(
             item.check_name == "ConvergenceCheck" and item.status is OfficialHealthStatus.FAIL
             for item in health.check_results
