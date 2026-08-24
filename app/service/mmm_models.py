@@ -92,3 +92,41 @@ class FitRunResponse(ApiModel):
     meridian_version: str | None = None
     tensorflow_version: str | None = None
     worker_image_digest: str | None = None
+
+
+class OfficialEdaReportView(ApiModel):
+    official_report_available: bool
+    content_type: str = "text/html"
+    authorized_view_url: str | None = None
+    sha256: str | None = None
+    artifact_class: str | None = None
+
+
+class EdaLatestRunView(ApiModel):
+    premodel_run_id: str
+    official_gate_status: str
+    official_gate_outcome: str
+
+
+class EdaAttentionView(ApiModel):
+    review_recommended: bool
+    max_official_severity: str
+    attention_count: int
+    error_count: int
+
+
+class EdaNextActionView(ApiModel):
+    action_type: str
+    statement: str
+    owner: str
+    blocking: bool
+    route_hint: str | None = None
+
+
+class ExtendedEdaReadModelResponse(ApiModel):
+    status: str
+    extended_report: dict[str, Any]
+    official_report: OfficialEdaReportView
+    latest_run: EdaLatestRunView
+    attention: EdaAttentionView
+    next_actions: list[EdaNextActionView] = Field(default_factory=list)

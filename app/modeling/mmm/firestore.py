@@ -29,6 +29,11 @@ COL_WORKSPACES = "workspaces"
 COL_INDEX = "mmm_modeling_index"
 
 
+def _already_exists(exc: BaseException) -> bool:
+    """Live Firestore raises AlreadyExists; FakeFirestore raises FileExistsError."""
+    return isinstance(exc, FileExistsError) or "AlreadyExists" in type(exc).__name__
+
+
 class FirestoreModelingRepository:
     def __init__(self, client: Any) -> None:
         self._db = client
@@ -367,7 +372,9 @@ class FirestoreModelingRepository:
         )
         try:
             ref.create(model_to_document(dispatch))
-        except FileExistsError:
+        except Exception as exc:
+            if not _already_exists(exc):
+                raise
             snap = ref.get()
             return document_to_model(MeridianFitDispatch, snap.to_dict())
         return self.put_dispatch(dispatch)

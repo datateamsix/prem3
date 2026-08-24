@@ -15,6 +15,7 @@ from app.modeling.mmm.compatibility import (
 )
 from app.modeling.mmm.contracts import (
     CompiledMeridianModelSpec,
+    FitPurpose,
     ModelPlan,
     PriorSource,
     PriorSpec,
@@ -92,7 +93,12 @@ def compile_meridian_model_spec(
     )
 
 
-def compile_fit_plan_payload(plan: ModelPlan) -> dict[str, Any]:
+def compile_fit_plan_payload(
+    plan: ModelPlan,
+    *,
+    fit_purpose: FitPurpose = FitPurpose.MODEL_ITERATION,
+    container_image_digest: str | None = None,
+) -> dict[str, Any]:
     return {
         "n_chains": int(plan.mcmc.get("n_chains", 4)),
         "n_adapt": int(plan.mcmc.get("n_adapt", 500)),
@@ -100,6 +106,8 @@ def compile_fit_plan_payload(plan: ModelPlan) -> dict[str, Any]:
         "n_keep": int(plan.mcmc.get("n_keep", 1000)),
         "seed": int(plan.mcmc.get("seed", 1)),
         "compute_profile": plan.compute_profile.value,
+        "fit_purpose": fit_purpose.value,
+        "container_image_digest": container_image_digest,
         "meridian_version": plan.meridian_version,
         "model_plan_fingerprint": plan.fingerprint,
         "input_fingerprint": plan.model_ready_manifest_fingerprint,

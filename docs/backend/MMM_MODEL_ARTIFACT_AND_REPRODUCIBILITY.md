@@ -28,9 +28,12 @@ Customer BigQuery holds queryable metadata/summary artifacts, not the binary:
 - `mmm_model_health`
 - `mmm_model_channel_summary`
 
-Writes are versioned/run-scoped and must be read-back verified. Mission 3 ships
-the typed table set and an in-memory ledger; live customer-project writes follow
-the GPU execution qualification.
+The `[and-cuda]` extra is required for Linux GPU workers. CPU-only
+`google-meridian==1.8.0` does not enable Cloud Run GPU acceleration.
+
+Writes are versioned/run-scoped and must be read-back verified. Live Project
+Measurement Home writes use `CanonicalBigQueryModelLedger` with an injected
+project/dataset. Do not hard-code customer destinations in reusable code.
 
 ## Official review artifacts
 

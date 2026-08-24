@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from datetime import UTC, datetime
 from threading import Lock
 from typing import Any
@@ -15,21 +16,35 @@ from app.control_plane.ids import (
     new_model_version_id,
 )
 from app.core.contracts import utc_now
+from app.eda.extended_contracts import EDAModelDesignHandoff
 from app.modeling.common.errors import (
     ArtifactVerificationFailedError,
     FakeRuntimeAcceptanceError,
     FitApprovalRequiredError,
+    GcsPersistenceError,
+    HumanApprovalRequiredError,
     InputContractMismatchError,
     LedgerPublicationError,
     ModelReviewFailedError,
     ModelSpecInvalidError,
     ModelVersionImmutableError,
     ModelVersionNotFoundError,
+    QualificationAcceptanceError,
     ResourceExhaustedError,
     StaleApprovalError,
 )
 from app.modeling.common.external_assets import PINNED_RUNTIME_VERSION
 from app.modeling.common.fingerprints import canonical_fingerprint
+from app.modeling.mmm.artifacts import (
+    ARTIFACT_MANIFEST_NAME,
+    CANONICAL_MODEL_BINARY_NAME,
+    HEALTH_HTML_NAME,
+    REPRODUCIBILITY_NAME,
+    RESULTS_HTML_NAME,
+    REVIEW_PACK_NAME,
+    modeling_prefix,
+    persist_immutable_bytes,
+)
 from app.modeling.mmm.compiler import compile_fit_plan_payload, compile_meridian_model_spec
 from app.modeling.mmm.contracts import (
     AcceptanceDecision,
@@ -38,6 +53,7 @@ from app.modeling.mmm.contracts import (
     DecisionType,
     FitApproval,
     FitDispatchStatus,
+    FitPurpose,
     FitRun,
     FitRunStatus,
     LedgerPublicationStatus,
@@ -85,6 +101,11 @@ MAX_CONCURRENT_FITS_PER_PROJECT = 1
 MAX_CONCURRENT_FITS_PER_TENANT = 2
 
 
+def _is_service_account_actor(actor_id: str) -> bool:
+    value = actor_id.strip().lower()
+    return value.endswith(".gserviceaccount.com") or value.startswith("serviceaccount:")
+
+
 class MMMModelingService:
     def __init__(
         self,
@@ -95,6 +116,7 @@ class MMMModelingService:
         dispatcher: object | None = None,
         object_store: object | None = None,
         artifact_bucket: str | None = None,
+        worker_image_digest: str | None = None,
     ) -> None:
         self.repo = repo or InMemoryModelingRepository()
         self.runtime = runtime or FakeMeridianRuntime()
@@ -102,6 +124,7 @@ class MMMModelingService:
         self.dispatcher = dispatcher
         self.object_store = object_store
         self.artifact_bucket = artifact_bucket
+        self.worker_image_digest = worker_image_digest
         self._lock = Lock()
 
     def start_design(
@@ -130,6 +153,7 @@ class MMMModelingService:
         coverage: ModelReadyCoverage | None = None,
         cycle_window_start: str | None = None,
         cycle_window_end: str | None = None,
+        eda_handoff: EDAModelDesignHandoff | None = None,
     ) -> MMMModelVersion:
         if eda_context and eda_context.get("approved_for_final_modeling") is True:
             raise InputContractMismatchError("EDA spec cannot be approved for final modeling.")
@@ -187,6 +211,7 @@ class MMMModelingService:
             rf_channels=rf_channels,
             evidence_refs=(model_ready_run_id, model_ready_manifest_fingerprint),
             coverage=coverage,
+            eda_handoff=eda_handoff,
         )
         version = version.model_copy(
             update={
@@ -374,28 +399,50 @@ class MMMModelingService:
             self._transition(version, MMMModelingStage.AWAITING_FIT_APPROVAL)
         return receipt
 
-    def compile_fit_plan(self, version: MMMModelVersion) -> MeridianFitPlan:
+    def compile_fit_plan(
+        self,
+        version: MMMModelVersion,
+        *,
+        fit_purpose: FitPurpose | None = None,
+    ) -> MeridianFitPlan:
         plan = self.repo.get_plan(version.model_version_id)
         if plan is None:
             raise ModelVersionNotFoundError("Model plan was not found.")
-        payload = compile_fit_plan_payload(plan)
+        purpose = fit_purpose or (
+            FitPurpose.RUNTIME_QUALIFICATION
+            if plan.compute_profile is ComputeProfile.CPU_TEST
+            else FitPurpose.MODEL_ITERATION
+        )
+        payload = compile_fit_plan_payload(
+            plan,
+            fit_purpose=purpose,
+            container_image_digest=self.worker_image_digest,
+        )
         fit_plan = MeridianFitPlan(
             model_version_id=version.model_version_id,
             model_plan_fingerprint=plan.fingerprint,
             meridian_version=PINNED_RUNTIME_VERSION,
+            container_image_digest=self.worker_image_digest,
             n_chains=payload["n_chains"],
             n_adapt=payload["n_adapt"],
             n_burnin=payload["n_burnin"],
             n_keep=payload["n_keep"],
             seed=payload["seed"],
             compute_profile=plan.compute_profile,
+            fit_purpose=purpose,
             input_fingerprint=plan.model_ready_manifest_fingerprint,
             fingerprint=canonical_fingerprint(payload),
         )
         return self.repo.put_fit_plan(fit_plan)
 
     def approve_fit(
-        self, *, tenant_id: str, project_id: str, model_version_id: str, actor_id: str
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        model_version_id: str,
+        actor_id: str,
+        fit_purpose: FitPurpose | None = None,
     ) -> FitApproval:
         version = self.get_version(
             tenant_id=tenant_id, project_id=project_id, model_version_id=model_version_id
@@ -405,7 +452,7 @@ class MMMModelingService:
         if prior is None or prior.status is not PriorValidationStatus.PASS:
             raise FitApprovalRequiredError("Final prior validation must pass before fit approval.")
         existing = self.repo.get_fit_approval(model_version_id)
-        fit_plan = self.compile_fit_plan(version)
+        fit_plan = self.compile_fit_plan(version, fit_purpose=fit_purpose)
         plan = self.repo.get_plan(model_version_id)
         assert plan is not None
         if (
@@ -480,6 +527,14 @@ class MMMModelingService:
                 raise ResourceExhaustedError("Max concurrent fits for this Project.")
             if self._count_running(tenant_id=tenant_id) >= MAX_CONCURRENT_FITS_PER_TENANT:
                 raise ResourceExhaustedError("Max concurrent fits for this tenant.")
+            if self.dispatcher is not None:
+                runtime_mode = runtime_mode_for_profile(
+                    fit_plan.compute_profile.value, official=True
+                )
+            else:
+                runtime_mode = getattr(
+                    self.runtime, "runtime_mode", MeridianRuntimeMode.FAKE_TEST
+                )
             run = FitRun(
                 fit_run_id=new_fit_run_id(),
                 model_version_id=model_version_id,
@@ -488,10 +543,9 @@ class MMMModelingService:
                 fit_plan_fingerprint=fit_plan.fingerprint,
                 status=FitRunStatus.RUNNING,
                 compute_profile=fit_plan.compute_profile,
-                runtime_mode=getattr(
-                    self.runtime, "runtime_mode", MeridianRuntimeMode.FAKE_TEST
-                ),
+                runtime_mode=runtime_mode,
                 meridian_version=PINNED_RUNTIME_VERSION,
+                worker_image_digest=fit_plan.container_image_digest,
                 started_at=utc_now(),
             )
             self.repo.put_fit_run(run)
@@ -503,10 +557,7 @@ class MMMModelingService:
 
     def _dispatch_fit(self, version, plan, fit_plan, run: FitRun, approval: FitApproval) -> FitRun:
         del plan
-        mode = runtime_mode_for_profile(
-            fit_plan.compute_profile.value,
-            official=not isinstance(self.runtime, FakeMeridianRuntime),
-        )
+        mode = runtime_mode_for_profile(fit_plan.compute_profile.value, official=True)
         dispatch = MeridianFitDispatch(
             dispatch_id=new_fit_dispatch_id(),
             tenant_id=version.tenant_id,
@@ -611,6 +662,14 @@ class MMMModelingService:
             review_required=review_required,
         )
         self.repo.put_review(pack)
+        if self.object_store is not None and self.artifact_bucket:
+            self._persist_fit_artifacts(
+                version=version,
+                run=run,
+                result=result,
+                manifest=manifest,
+                pack=pack,
+            )
         ledger_verified = False
         ledger_status = LedgerPublicationStatus.NOT_ATTEMPTED
         try:
@@ -710,6 +769,19 @@ class MMMModelingService:
             raise FakeRuntimeAcceptanceError(
                 "FAKE_TEST is permanently ineligible for production MODEL_ACCEPTED."
             )
+        fit_plan = self.repo.get_fit_plan(model_version_id)
+        if fit_plan is None or fit_plan.fit_purpose is not FitPurpose.FINAL_MODEL:
+            raise QualificationAcceptanceError(
+                "RUNTIME_QUALIFICATION and MODEL_ITERATION cannot become MODEL_ACCEPTED."
+            )
+        if run.runtime_mode is not MeridianRuntimeMode.OFFICIAL_GPU:
+            raise QualificationAcceptanceError(
+                "MODEL_ACCEPTED requires OFFICIAL_GPU production runtime."
+            )
+        if _is_service_account_actor(actor_id):
+            raise HumanApprovalRequiredError(
+                "A service account cannot be the human ModelAcceptance actor."
+            )
         if health.review_source is not ReviewSource.OFFICIAL_MERIDIAN:
             raise FakeRuntimeAcceptanceError(
                 "Production MODEL_ACCEPTED requires review_source=OFFICIAL_MERIDIAN."
@@ -751,6 +823,79 @@ class MMMModelingService:
         )
         self.repo.put_version(current.model_copy(update={"accepted": True}))
         return approval
+
+    def _persist_fit_artifacts(
+        self,
+        *,
+        version: MMMModelVersion,
+        run: FitRun,
+        result: Any,
+        manifest: MeridianModelArtifactManifest,
+        pack: Any,
+    ) -> None:
+        del run
+        prefix = modeling_prefix(version.tenant_id, version.project_id, version.model_version_id)
+        bucket = self.artifact_bucket or ""
+        store = self.object_store
+        try:
+            persist_immutable_bytes(
+                store,
+                bucket=bucket,
+                object_name=f"{prefix}{CANONICAL_MODEL_BINARY_NAME}",
+                data=result.binary,
+                content_type="application/octet-stream",
+                expected_sha256=result.binary_sha256,
+            )
+            health_html = (result.health_html or "").encode("utf-8")
+            results_html = (result.results_html or "").encode("utf-8")
+            persist_immutable_bytes(
+                store,
+                bucket=bucket,
+                object_name=f"{prefix}{HEALTH_HTML_NAME}",
+                data=health_html,
+                content_type="text/html; charset=utf-8",
+            )
+            persist_immutable_bytes(
+                store,
+                bucket=bucket,
+                object_name=f"{prefix}{RESULTS_HTML_NAME}",
+                data=results_html,
+                content_type="text/html; charset=utf-8",
+            )
+            persist_immutable_bytes(
+                store,
+                bucket=bucket,
+                object_name=f"{prefix}{ARTIFACT_MANIFEST_NAME}",
+                data=json.dumps(manifest.model_dump(mode="json"), sort_keys=True).encode("utf-8"),
+                content_type="application/json",
+            )
+            persist_immutable_bytes(
+                store,
+                bucket=bucket,
+                object_name=f"{prefix}{REVIEW_PACK_NAME}",
+                data=json.dumps(pack.model_dump(mode="json"), sort_keys=True).encode("utf-8"),
+                content_type="application/json",
+            )
+            repro = {
+                "model_version_id": version.model_version_id,
+                "model_plan_fingerprint": version.model_plan_fingerprint,
+                "fit_plan_fingerprint": manifest.fit_plan_fingerprint,
+                "binary_sha256": manifest.binary_sha256,
+                "worker_image_digest": manifest.worker_image_digest,
+                "meridian_version": manifest.meridian_version,
+                "runtime_mode": manifest.runtime_mode.value,
+            }
+            persist_immutable_bytes(
+                store,
+                bucket=bucket,
+                object_name=f"{prefix}{REPRODUCIBILITY_NAME}",
+                data=json.dumps(repro, sort_keys=True).encode("utf-8"),
+                content_type="application/json",
+            )
+        except ArtifactVerificationFailedError as exc:
+            raise GcsPersistenceError(str(exc)) from exc
+        except FileExistsError as exc:
+            raise GcsPersistenceError("Model-version artifact path already exists.") from exc
 
     def iterate(
         self,

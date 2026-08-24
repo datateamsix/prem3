@@ -1,14 +1,40 @@
+substitutions:
+  _TAG: untagged
 steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - build
       - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:${_TAG}
+      - -t
       - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:1.8.0
       - -f
       - deployment/prem3_meridian_model_worker/Dockerfile
       - .
-    images:
-      - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:1.8.0
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - run
+      - --rm
+      - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:${_TAG}
+      - import-smoke
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - run
+      - --rm
+      - -e
+      - PREM3_REQUIRE_GPU=false
+      - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:${_TAG}
+      - gpu-detect
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - run
+      - --rm
+      - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:${_TAG}
+      - cpu-smoke
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:${_TAG}
+  - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-meridian-model-worker:1.8.0
 options:
-  machineType: E2_HIGHCPU_8
-timeout: 3600s
+  machineType: E2_HIGHCPU_32
+  diskSizeGb: 200
+timeout: 7200s

@@ -21,6 +21,7 @@ from app.modeling.mmm.artifacts import persist_immutable_bytes
 from app.modeling.mmm.contracts import (
     ComputeProfile,
     FitDispatchStatus,
+    FitPurpose,
     MeridianFitDispatch,
     MeridianRuntimeMode,
     ReviewSource,
@@ -62,6 +63,7 @@ from tests.unit.test_mmm_modeling import (
     MUSIC_CENTER_WINDOW,
     PASS_CHECKS,
     _approve_required,
+    _final_official_service,
     _fit_ready,
     _official_service,
     _service,
@@ -246,9 +248,9 @@ def test_model_window_persisted_on_model_version() -> None:
 
 
 def test_historical_model_window_is_immutable() -> None:
-    service = _official_service()
-    version = _start(service)
-    _fit_ready(service, version)
+    service = _final_official_service()
+    version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
+    _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)
     service.accept(
         tenant_id="ten_a",
         project_id="prj_a",
@@ -298,11 +300,14 @@ def test_builder_supports_required_input_cases() -> None:
     }.issubset(cases)
 
 
-def _firestore_service() -> MMMModelingService:
+def _firestore_service(
+    *,
+    mode: MeridianRuntimeMode = MeridianRuntimeMode.OFFICIAL_CPU_SMOKE,
+) -> MMMModelingService:
     return MMMModelingService(
         FirestoreModelingRepository(FakeFirestore()),
         runtime=OfficialMeridianRuntime(
-            mode=MeridianRuntimeMode.OFFICIAL_CPU_SMOKE,
+            mode=mode,
             library=RecordingMeridianLibrary(checks=PASS_CHECKS),
         ),
     )
@@ -363,9 +368,9 @@ def test_firestore_fit_run_round_trip() -> None:
 
 
 def test_firestore_acceptance_round_trip() -> None:
-    service = _firestore_service()
-    version = _start(service)
-    _fit_ready(service, version)
+    service = _firestore_service(mode=MeridianRuntimeMode.OFFICIAL_GPU)
+    version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
+    _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)
     approval = service.accept(
         tenant_id="ten_a",
         project_id="prj_a",
@@ -379,9 +384,9 @@ def test_firestore_acceptance_round_trip() -> None:
 
 
 def test_firestore_consumed_model_version_immutable() -> None:
-    service = _firestore_service()
-    version = _start(service)
-    _fit_ready(service, version)
+    service = _firestore_service(mode=MeridianRuntimeMode.OFFICIAL_GPU)
+    version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
+    _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)
     service.accept(
         tenant_id="ten_a",
         project_id="prj_a",
@@ -698,13 +703,13 @@ def test_missing_ledger_blocks_acceptance() -> None:
     service = MMMModelingService(
         InMemoryModelingRepository(),
         runtime=OfficialMeridianRuntime(
-            mode=MeridianRuntimeMode.OFFICIAL_CPU_SMOKE,
+            mode=MeridianRuntimeMode.OFFICIAL_GPU,
             library=RecordingMeridianLibrary(checks=PASS_CHECKS),
         ),
         ledger=_BrokenLedger(),
     )
-    version = _start(service)
-    _fit_ready(service, version)
+    version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
+    _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)
     with pytest.raises(LedgerPublicationError):
         service.accept(
             tenant_id="ten_a",
@@ -715,9 +720,9 @@ def test_missing_ledger_blocks_acceptance() -> None:
 
 
 def test_official_runtime_with_ledger_can_accept() -> None:
-    service = _official_service()
-    version = _start(service)
-    _fit_ready(service, version)
+    service = _final_official_service()
+    version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
+    _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)
     approval = service.accept(
         tenant_id="ten_a",
         project_id="prj_a",
@@ -734,9 +739,9 @@ def test_official_runtime_with_ledger_can_accept() -> None:
 
 
 def test_wrong_hash_on_manifest_blocks_gate() -> None:
-    service = _official_service()
-    version = _start(service)
-    _fit_ready(service, version)
+    service = _final_official_service()
+    version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
+    _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)
     artifact = service.repo.get_artifact(version.model_version_id)
     assert artifact is not None
     service.repo.put_artifact(artifact.model_copy(update={"serde_readback_ok": False}))

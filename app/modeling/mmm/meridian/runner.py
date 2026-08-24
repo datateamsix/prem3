@@ -340,8 +340,85 @@ class InstalledMeridianLibrary:
         return ""
 
     def structured_outputs(self, model: Any) -> dict[str, Any]:
-        del model
-        return {}
+        payload: dict[str, Any] = {}
+        try:
+            from meridian.analysis import analyzer as analyzer_mod
+        except Exception:
+            return payload
+        ctor = getattr(analyzer_mod, "Analyzer", None)
+        if ctor is None:
+            return payload
+        try:
+            anal = ctor(model)
+        except Exception:
+            return payload
+        for name in (
+            "roi",
+            "incremental_outcome",
+            "contribution",
+            "marginal_roi",
+        ):
+            fn = getattr(anal, name, None)
+            if not callable(fn):
+                continue
+            try:
+                value = fn()
+            except Exception:
+                continue
+            converted = _jsonable_metric(value)
+            if converted is None:
+                continue
+            payload[name] = converted
+        return payload
+
+
+def _jsonable_metric(value: Any) -> Any:
+    if value is None:
+        return None
+    if hasattr(value, "numpy"):
+        try:
+            value = value.numpy()
+        except Exception:
+            return None
+    if hasattr(value, "tolist"):
+        try:
+            return value.tolist()
+        except Exception:
+            return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, dict):
+        return {str(key): _jsonable_metric(item) for key, item in value.items()}
+    return None
+
+
+def _official_status_name(item: Any) -> str:
+    case = getattr(item, "case", None)
+    status = getattr(case, "status", None) if case is not None else None
+    if status is None:
+        status = getattr(item, "status", None)
+    if status is None:
+        return ""
+    name = getattr(status, "name", None)
+    if name:
+        return str(name).upper()
+    value = getattr(status, "value", None)
+    if isinstance(value, str):
+        return value.upper()
+    raw = str(status).split(".")[-1]
+    return raw.upper()
+
+
+def _official_check_name(item: Any) -> str:
+    name = str(getattr(item, "name", None) or getattr(item, "check_name", "") or "")
+    if name:
+        return name
+    cls = type(item).__name__
+    if cls.endswith("CheckResult"):
+        return cls[: -len("Result")]
+    if cls.endswith("Result"):
+        return cls[: -len("Result")]
+    return cls
 
 
 def _map_official_review(summary: Any) -> tuple[OfficialCheckResult, ...]:
@@ -354,17 +431,26 @@ def _map_official_review(summary: Any) -> tuple[OfficialCheckResult, ...]:
         raise FitRuntimeError("Official ModelReviewer returned no check results.")
     mapped: list[OfficialCheckResult] = []
     for item in checks:
-        name = str(getattr(item, "name", None) or getattr(item, "check_name", "") or "")
-        raw = str(getattr(item, "status", "") or "").upper()
+        name = _official_check_name(item)
+        raw = _official_status_name(item)
         if raw not in OfficialHealthStatus.__members__:
             raise FitRuntimeError(f"Official reviewer status {raw!r} is not PASS/REVIEW/FAIL.")
         if not name:
             raise FitRuntimeError("Official reviewer check is missing a name.")
+        rec = getattr(item, "recommendation", None)
+        if rec is None:
+            case = getattr(item, "case", None)
+            rec = getattr(case, "recommendation", None) if case is not None else None
         mapped.append(
             OfficialCheckResult(
                 check_name=name,
                 status=OfficialHealthStatus(raw),
-                summary=str(getattr(item, "summary", None) or getattr(item, "message", "") or ""),
+                summary=str(
+                    rec
+                    or getattr(item, "summary", None)
+                    or getattr(item, "message", "")
+                    or ""
+                ),
             )
         )
     return tuple(mapped)

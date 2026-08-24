@@ -36,15 +36,19 @@ def persist_immutable_bytes(
         raise ArtifactVerificationFailedError("Artifact bytes do not match expected SHA-256.")
     existing = store.get_object_metadata(bucket=bucket, object_name=object_name)
     if existing is not None:
-        current = store.objects.get((bucket, object_name)) if hasattr(store, "objects") else None
-        if current is not None:
-            stored_digest = hashlib.sha256(bytes(current["data"])).hexdigest()
-            if stored_digest != digest:
-                raise ArtifactVerificationFailedError(
-                    "Model-version artifact path is immutable; SHA-256 mismatch."
-                )
-            return digest
-        raise ArtifactVerificationFailedError("Model-version artifact path already exists.")
+        reader = getattr(store, "read_bytes", None)
+        stored = reader(bucket=bucket, object_name=object_name) if callable(reader) else None
+        if stored is None and hasattr(store, "objects"):
+            current = store.objects.get((bucket, object_name))
+            stored = bytes(current["data"]) if current is not None else None
+        if stored is None:
+            raise ArtifactVerificationFailedError("Model-version artifact path already exists.")
+        stored_digest = hashlib.sha256(stored).hexdigest()
+        if stored_digest != digest:
+            raise ArtifactVerificationFailedError(
+                "Model-version artifact path is immutable; SHA-256 mismatch."
+            )
+        return digest
     store.write_bytes(
         bucket=bucket,
         object_name=object_name,

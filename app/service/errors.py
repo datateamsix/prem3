@@ -231,6 +231,15 @@ def evaluation_dispatch_unavailable() -> APIError:
     )
 
 
+def artifact_not_trusted(*, detail: str) -> APIError:
+    return APIError(
+        code="ARTIFACT_NOT_TRUSTED",
+        status=403,
+        title="Artifact not trusted",
+        detail=detail,
+    )
+
+
 def service_identity_required() -> APIError:
     return APIError(
         code="SERVICE_IDENTITY_REQUIRED",

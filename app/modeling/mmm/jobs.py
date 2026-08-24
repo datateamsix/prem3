@@ -25,8 +25,8 @@ def gpu_standard_job_spec(settings: Settings) -> dict[str, Any]:
         "region": settings.cloud_region,
         "image": settings.meridian_model_worker_image,
         "service_account": settings.runtime_sa,
-        "cpu": settings.meridian_model_cpu,
-        "memory": settings.meridian_model_memory,
+        "cpu": settings.meridian_model_cpu or "4",
+        "memory": settings.meridian_model_memory or "16Gi",
         "gpu": settings.meridian_model_gpu or DEFAULT_GPU_TYPE,
         "timeout_seconds": settings.meridian_model_timeout_seconds,
         "retry_policy": "server-owned",
@@ -85,6 +85,7 @@ def default_fit_launcher(settings: Settings, *, local: bool) -> Any:
         project_id=settings.project_id,
         location=settings.cloud_region,
         job_name=job_name,
+        dispatch_env_var="PREM3_MMM_FIT_DISPATCH_ID",
     )
 
 

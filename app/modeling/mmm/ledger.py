@@ -13,6 +13,12 @@ from app.modeling.mmm.contracts import (
     ModelDecision,
 )
 
+try:
+    from google.cloud.bigquery import QueryJobConfig, ScalarQueryParameter
+except ImportError:  # pragma: no cover - live ledger only
+    QueryJobConfig = None
+    ScalarQueryParameter = None
+
 BQ_MODEL_LEDGER_TABLES = (
     "mmm_model_versions",
     "mmm_fit_runs",
@@ -82,6 +88,33 @@ LEDGER_COLUMNS = {
         "meridian_version",
         "created_at",
     ),
+}
+
+LEDGER_COLUMN_TYPES = {
+    "project_id": "STRING",
+    "cycle_id": "STRING",
+    "track_id": "STRING",
+    "model_version_id": "STRING",
+    "model_plan_fingerprint": "STRING",
+    "meridian_version": "STRING",
+    "state": "STRING",
+    "accepted": "BOOL",
+    "model_window_start": "STRING",
+    "model_window_end": "STRING",
+    "created_at": "TIMESTAMP",
+    "fit_run_id": "STRING",
+    "fit_plan_fingerprint": "STRING",
+    "runtime_mode": "STRING",
+    "status": "STRING",
+    "decision_id": "STRING",
+    "decision_type": "STRING",
+    "plan_fingerprint": "STRING",
+    "review_source": "STRING",
+    "blocking_fail_count": "INT64",
+    "review_count": "INT64",
+    "channel": "STRING",
+    "roi": "FLOAT64",
+    "contribution": "FLOAT64",
 }
 
 
@@ -308,3 +341,124 @@ def publish_fit_ledger(
         raise LedgerPublicationError("Ledger read-back fingerprint mismatch.")
     written["readback"] = readback
     return written
+
+
+class CanonicalBigQueryModelLedger:
+    """Append-only Project Measurement Home ledger. Destinations are injected."""
+
+    def __init__(self, *, client: Any, project_id: str, dataset_id: str) -> None:
+        self._client = client
+        self._project_id = project_id
+        self._dataset_id = dataset_id
+
+    def write(self, *, table: str, row: dict[str, Any]) -> dict[str, Any]:
+        if table not in BQ_MODEL_LEDGER_TABLES:
+            raise ValueError(f"Unknown model ledger table {table}.")
+        if QueryJobConfig is None or ScalarQueryParameter is None:
+            raise LedgerPublicationError(
+                "google-cloud-bigquery is required for live ledger writes."
+            )
+        columns = LEDGER_COLUMNS[table]
+        table_ref = f"{self._project_id}.{self._dataset_id}.{table}"
+        colsql = ", ".join(f"`{name}`" for name in columns)
+        placeholders = ", ".join(f"@{name}" for name in columns)
+        sql = f"INSERT INTO `{table_ref}` ({colsql}) VALUES ({placeholders})"
+        parameters = [
+            ScalarQueryParameter(
+                name,
+                _parameter_type(LEDGER_COLUMN_TYPES[name]),
+                row.get(name),
+            )
+            for name in columns
+        ]
+        try:
+            self._client.query(
+                sql, job_config=QueryJobConfig(query_parameters=parameters)
+            ).result()
+        except Exception as exc:
+            raise LedgerPublicationError(f"BQ_LEDGER_FAILED: {exc}") from exc
+        return dict(row)
+
+    def read_back(self, *, table: str, model_version_id: str) -> dict[str, Any] | None:
+        if QueryJobConfig is None or ScalarQueryParameter is None:
+            raise LedgerPublicationError(
+                "google-cloud-bigquery is required for live ledger read-back."
+            )
+        sql = (
+            f"SELECT * FROM `{self._project_id}.{self._dataset_id}.{table}` "
+            "WHERE model_version_id = @model_version_id "
+            "ORDER BY created_at DESC LIMIT 1"
+        )
+        job = self._client.query(
+            sql,
+            job_config=QueryJobConfig(
+                query_parameters=[
+                    ScalarQueryParameter("model_version_id", "STRING", model_version_id)
+                ]
+            ),
+        )
+        rows = list(job.result())
+        if not rows:
+            return None
+        return _row_to_dict(rows[0])
+
+    def read_history(
+        self, *, table: str, model_version_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        if table not in BQ_MODEL_LEDGER_TABLES:
+            raise ValueError(f"Unknown model ledger table {table}.")
+        if QueryJobConfig is None or ScalarQueryParameter is None:
+            raise LedgerPublicationError(
+                "google-cloud-bigquery is required for live ledger read-back."
+            )
+        sql = f"SELECT * FROM `{self._project_id}.{self._dataset_id}.{table}`"
+        parameters: list[Any] = []
+        if model_version_id is not None:
+            sql += " WHERE model_version_id = @model_version_id"
+            parameters.append(
+                ScalarQueryParameter("model_version_id", "STRING", model_version_id)
+            )
+        sql += " ORDER BY created_at ASC"
+        job = self._client.query(
+            sql,
+            job_config=QueryJobConfig(query_parameters=parameters),
+        )
+        return [_row_to_dict(row) for row in job.result()]
+
+
+def ledger_table_ddl(*, project_id: str, dataset_id: str, table: str) -> str:
+    if table not in BQ_MODEL_LEDGER_TABLES:
+        raise ValueError(f"Unknown model ledger table {table}.")
+    columns = ", ".join(
+        f"`{name}` {LEDGER_COLUMN_TYPES[name]}" for name in LEDGER_COLUMNS[table]
+    )
+    return f"CREATE TABLE IF NOT EXISTS `{project_id}.{dataset_id}.{table}` ({columns})"
+
+
+def ensure_model_ledger_tables(client: Any, *, project_id: str, dataset_id: str) -> tuple[str, ...]:
+    created: list[str] = []
+    for table in BQ_MODEL_LEDGER_TABLES:
+        sql = ledger_table_ddl(project_id=project_id, dataset_id=dataset_id, table=table)
+        client.query(sql).result()
+        created.append(table)
+    return tuple(created)
+
+
+def _row_to_dict(row: Any) -> dict[str, Any]:
+    payload = dict(row)
+    for key, value in list(payload.items()):
+        if hasattr(value, "isoformat"):
+            payload[key] = value.isoformat()
+    return payload
+
+
+def _parameter_type(bq_type: str) -> str:
+    if bq_type == "BOOL":
+        return "BOOL"
+    if bq_type == "INT64":
+        return "INT64"
+    if bq_type == "FLOAT64":
+        return "FLOAT64"
+    if bq_type == "TIMESTAMP":
+        return "TIMESTAMP"
+    return "STRING"

@@ -5,6 +5,7 @@
     "parent_feature_sha": "f5a0851fb095829ea7a286ed8f07d0673c35566a",
     "mission3_base_sha": "f5a0851fb095829ea7a286ed8f07d0673c35566a",
     "m3_00_checkpoint_sha": "e6fc551273f940571f5ce2bb371c83f7a1685506",
+    "m3_01_checkpoint_sha": "3204c3d9957560c60ae2d27bc1cf2037953123a6",
     "stacked": true,
     "restack_required": true,
     "restack_plan": "After PR 18 merges: fetch latest main, rebase this M3 branch onto main, verify the diff is M3-only, rerun Project Architecture + M3 tests, regenerate contracts if needed. Do not open a standalone merge PR against main while PR 18 remains the parent.",
@@ -12,27 +13,106 @@
     "mission_branch": "feature/prem3-m3-meridian-modeling-runtime"
   },
   "proof_layers": {
+    "m3_00_architecture": {
+      "status": "PASS",
+      "evidence_ref": "docs/backend/MMM_MODELING_STATE_MACHINE.md"
+    },
+    "m3_01_runtime_gates": {
+      "status": "PASS",
+      "checkpoint_sha": "3204c3d9957560c60ae2d27bc1cf2037953123a6",
+      "evidence": "FitPurpose, official-only Cloud dispatch, human actor rejection, no Fake/Recording path to MODEL_ACCEPTED."
+    },
     "logic_proof": {
-      "status": "RUN",
+      "status": "PASS",
       "runtime_mode": "FAKE_TEST",
       "evidence": "Unit state-machine, approvals, iteration, and FAKE_TEST rejection of MODEL_ACCEPTED. Explicit FakeMeridianRuntime injection only."
     },
     "official_cpu_smoke": {
-      "status": "BLOCKED",
+      "status": "PASS",
       "runtime_mode": "OFFICIAL_CPU_SMOKE",
-      "evidence": "OfficialMeridianRuntime has no fake fallback. RecordingMeridianLibrary proves sample_prior, sample_posterior, meridian_serde save/load, ModelReviewer, and Summarizer call order. Live google-meridian==1.8.0 is not importable on local Python 3.13 (ModuleNotFoundError: meridian). Worker image remains Python 3.12."
+      "fit_purpose": "RUNTIME_QUALIFICATION",
+      "label": "EXECUTION_COMPATIBILITY_ONLY",
+      "library_class": "InstalledMeridianLibrary",
+      "evidence_ref": "evaluation/meridian_official_cpu_smoke.json",
+      "worker_image_digest": "sha256:e4bda7be5bb6ec92dc1576d076f7800745c0c16e071e0d74964d65dfb25a930e",
+      "python_version": "3.12.14",
+      "meridian_version": "1.8.0",
+      "tensorflow_version": "2.21.0",
+      "model_artifact_sha256": "f8dc32f85a7dab1607c5f921ec7f9873a1ba50df1abdce369f990013157dafe5"
     },
-    "official_gpu_proof": {
+    "worker_image": {
+      "status": "PASS",
+      "image_uri": "us-central1-docker.pkg.dev/modelready-m3/cloud-run-source-deploy/prem3-meridian-model-worker",
+      "digest": "sha256:e4bda7be5bb6ec92dc1576d076f7800745c0c16e071e0d74964d65dfb25a930e",
+      "cloud_build_id": "653868da-5283-4219-bba3-7bc8768fedb4",
+      "gpu_extra": "google-meridian[and-cuda,schema]==1.8.0",
+      "python_version": "3.12.14",
+      "meridian_version": "1.8.0",
+      "tensorflow_version": "2.21.0",
+      "note": "Image was built from the M3-02 working tree, not solely from M3-01 checkpoint 3204c3d."
+    },
+    "cloud_run_deployment": {
+      "status": "PASS",
+      "job": "prem3-meridian-model-worker",
+      "region": "us-central1",
+      "service_account": "m3-runtime@modelready-m3.iam.gserviceaccount.com",
+      "cpu": "4",
+      "memory": "16Gi",
+      "gpu": null,
+      "parallelism": 1,
+      "timeout_seconds": 3600,
+      "image_digest": "sha256:e4bda7be5bb6ec92dc1576d076f7800745c0c16e071e0d74964d65dfb25a930e",
+      "fallback": "CPU-only after LIVE_GPU_DEPLOY_BLOCKED"
+    },
+    "cloud_runtime_qualification": {
+      "status": "PASS",
+      "runtime_mode": "OFFICIAL_CPU_SMOKE",
+      "execution_id": "prem3-meridian-model-worker-9zcs9",
+      "library_class": "InstalledMeridianLibrary",
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json",
+      "note": "Real Meridian in the deployed CPU Cloud Run Job. Not GPU proof. Not FINAL_MODEL."
+    },
+    "gpu_detection": {
       "status": "BLOCKED",
-      "runtime_mode": "OFFICIAL_GPU",
-      "result": "LIVE_GPU_PROOF_BLOCKED",
-      "attempt": "gcloud run jobs describe prem3-meridian-model-worker --region=us-central1",
-      "blocker": "Cannot find job [prem3-meridian-model-worker]. Project modelready-m3 us-central1 currently has meridian-eda-worker and prem3-evaluation-worker only. GPU adapter maps GPU_STANDARD to that server-owned job name; the job is not deployed, so no Cloud Task or execution ID exists yet.",
-      "gpu_preference": "nvidia-l4"
+      "result": "LIVE_GPU_DEPLOY_BLOCKED",
+      "execution_id": "prem3-meridian-model-worker-zxl49",
+      "tensorflow_gpu_devices": [],
+      "gpu_visible": false,
+      "cuda_init": "UNKNOWN ERROR (303)",
+      "without_zonal_redundancy_error": "You do not have quota for using GPUs without zonal redundancy.",
+      "with_zonal_redundancy_error": "Currently Cloud Run jobs are unable to offer GPU enabled instances with zonal redundancy due to capacity limitations.",
+      "quota_id": "NvidiaL4GpuAllocNoZonalRedundancyPerProjectRegion",
+      "quota_increase_eligibility": "NOT_ENOUGH_USAGE_HISTORY"
     },
-    "music_center_fit_proof": {
-      "status": "NOT_RUN",
-      "reason": "Music Center official GPU fit is pending the worker job. Do not conflate with CPU smoke or FAKE_TEST logic proof.",
+    "cloud_tasks_dispatch": {
+      "status": "BLOCKED",
+      "enqueue_idempotency": "PASS",
+      "integrated_api_path": "BLOCKED",
+      "queue": "prem3-meridian-fit-dispatch",
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json",
+      "blocker": "Live prem3-api returns HTTP 404 for POST /internal/v1/mmm-fit-dispatches/{id}/launch. M3 routes exist in source but not in the deployed Mission 10 revision. Duplicate Cloud Task names return AlreadyExists. Firestore claim_canonical_dispatch returns one dispatch_id."
+    },
+    "firestore_live": {
+      "status": "PASS",
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json",
+      "new_process_reload": true,
+      "cross_tenant_denied": true,
+      "canonical_dispatch_idempotent": true
+    },
+    "gcs_live": {
+      "status": "PASS",
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json",
+      "conflict_overwrite_rejected": true
+    },
+    "bigquery_live": {
+      "status": "PASS",
+      "dataset": "modelready-m3.prem3_modeling",
+      "history_retained": true,
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json"
+    },
+    "music_center_final_fit": {
+      "status": "BLOCKED",
+      "reason": "OFFICIAL_GPU L4 job could not be created. FINAL_MODEL / MODEL_ACCEPTED remains blocked. Do not relabel CPU cloud proof as GPU proof.",
       "coverage": {
         "earliest_time": "2024-01-01",
         "latest_time": "2026-06-29",
@@ -44,18 +124,39 @@
         "source": "datasets/music_center/dataset_a/truth/expected_model_ready_weekly.csv",
         "shared_usable_historical_coverage": "2024-01-01/2026-06-29"
       },
+      "selected_cycle_name": "Q3 2026",
       "selected_model_window": ["2024-01-01", "2026-06-29"],
       "window_rationale": "Verified shared usable history. Q3 2026 Measurement Cycle 2026-07-01/2026-09-30 starts after coverage ends and is not the MMM model window."
     },
+    "official_model_review": {
+      "status": "PASS",
+      "scope": "OFFICIAL_CPU_SMOKE only",
+      "review_source": "OFFICIAL_MERIDIAN",
+      "evidence_ref": "evaluation/meridian_official_cpu_smoke.json",
+      "note": "Tiny smoke MCMC is EXECUTION_COMPATIBILITY_ONLY. Music Center official review is BLOCKED until FINAL_MODEL GPU fit."
+    },
+    "human_model_acceptance": {
+      "status": "BLOCKED",
+      "blocking_state": "AWAITING_MODEL_REVIEW",
+      "reason": "No authorized human member accepted a FINAL_MODEL OFFICIAL_GPU artifact. Service accounts cannot masquerade as approved_by. Do not self-approve."
+    },
     "firestore_proof": {
-      "status": "RUN",
-      "evidence": "FirestoreModelingRepository round-trips version, decision, fit approval, fit run, and acceptance against FakeFirestore. Restart via a new repository instance on the same client preserves fingerprints. Accepted versions are immutable. Cross-tenant get returns None. Concurrent claim_canonical_dispatch resolves to one dispatch_id."
+      "status": "PASS",
+      "fake_firestore": "PASS",
+      "live_firestore": "PASS",
+      "evidence": "FakeFirestore unit round-trip plus live control-plane reload and cross-tenant denial."
     },
     "bigquery_ledger_proof": {
-      "status": "RUN",
-      "environment": "InMemoryModelLedger CI twin",
-      "live_bigquery": "NOT_RUN",
-      "evidence": "compile_*_row helpers and publish_fit_ledger write+read-back fingerprint match. Historical rows append; no WRITE_TRUNCATE. Live Project Measurement Home write is pending a bound depot in this local runtime."
+      "status": "PASS",
+      "environment": "InMemoryModelLedger CI twin plus live modelready-m3.prem3_modeling",
+      "live_bigquery": "PASS",
+      "evidence": "compile_*_row helpers and live DML INSERT write/read-back. Historical rows retained."
+    },
+    "official_gpu_proof": {
+      "status": "BLOCKED",
+      "runtime_mode": "OFFICIAL_GPU",
+      "result": "LIVE_GPU_DEPLOY_BLOCKED",
+      "gpu_preference": "nvidia-l4"
     }
   },
   "upstream": {
@@ -410,7 +511,7 @@
     "acceptance_approval_id": "mapv_2da3461aecbe48a6885b"
   },
   "brief_objective": "Fit a reviewed Meridian MMM for incremental paid-media contribution.",
-  "live_gpu_proof": "LIVE_GPU_PROOF_BLOCKED",
+  "live_gpu_proof": "LIVE_GPU_DEPLOY_BLOCKED",
   "eda_spec_promoted": false,
   "autonomous_posterior_sampling": false
 }

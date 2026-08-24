@@ -1,0 +1,495 @@
+{
+  "assignment": "Music Center Dataset A",
+  "source_finding_ids": [
+    "DATA_ADEQUACY.OVERALL.NONE.INFO.01",
+    "KPI_INVARIABILITY.NA.NONE.INFO.01",
+    "PAIRWISE_CORRELATION.NA.NONE.INFO.01",
+    "MULTICOLLINEARITY.NA.NONE.INFO.01",
+    "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01",
+    "STANDARD_DEVIATION.GEO.VARIABILITY.ATTENTION.01",
+    "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.02",
+    "COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.01",
+    "PRIOR_PROBABILITY.OVERALL.NONE.INFO.01",
+    "POPULATION_CORRELATION.OVERALL.NONE.INFO.01",
+    "POPULATION_CORRELATION.OVERALL.NONE.INFO.02",
+    "VARIABLE_GEO_TIME_COLLINEARITY.NA.NONE.INFO.01",
+    "VARIABLE_GEO_TIME_COLLINEARITY.NA.NONE.INFO.02",
+    "COST_PER_MEDIA_UNIT.NATIONAL.OUTLIER.ATTENTION.01",
+    "STANDARD_DEVIATION.NATIONAL.OUTLIER.ATTENTION.01",
+    "STANDARD_DEVIATION.NATIONAL.VARIABILITY.ATTENTION.01",
+    "STANDARD_DEVIATION.NATIONAL.OUTLIER.ATTENTION.02",
+    "PAIRWISE_CORRELATION.NA.NONE.INFO.02",
+    "COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.02",
+    "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.03",
+    "STANDARD_DEVIATION.GEO.VARIABILITY.ATTENTION.02",
+    "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.04"
+  ],
+  "source_finding_ids_are_published_cloud_evidence": true,
+  "published_evidence_ref": "evaluation/dataset_a_cloud_run_bundle.json",
+  "premodel_run_id": "m3cloud653724094004",
+  "official_html_ref": "gs://modelready-m3-912257136465-artifacts/music-center/mmm-demo/runs/m3cloud653724094004/eda/meridian_eda_report.html",
+  "official_html_sha256": "371287f4ba0906fa3a9e5956c9bbf180497e7dfa66bbf01f292bb24cc01266fb",
+  "official_html_live_gcs_bytes_vendored": true,
+  "official_html_sha256_scope": "SHA-256 of the live GCS object bytes. The vendored copy at evaluation/fixtures/music_center_meridian_eda_report.html is byte-identical and unaltered.",
+  "local_html_fixture_sha256": "87c1cadabbafe301ca463838f8f366587be554ec291d3457b4f8cb6113995de8",
+  "local_html_fixture_ref": "prem3-fixture://meridian_eda_report.html",
+  "live_and_fixture_sha_are_distinct": true,
+  "official_html_embed": {
+    "artifact_class": "TRUSTED_GENERATED_MERIDIAN_HTML",
+    "has_scripts": true,
+    "sandbox": "allow-scripts",
+    "csp": "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline' https://www.gstatic.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob: https://www.gstatic.com; connect-src 'none'; frame-src 'none'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'",
+    "allow_same_origin": false,
+    "allow_top_navigation": false
+  },
+  "eda_receipt_ref": "gs://modelready-m3-912257136465-artifacts/music-center/mmm-demo/runs/m3cloud653724094004/eda/meridian_eda_receipt.json",
+  "eda_receipt_fingerprint": "4f55502d7d382ad641fe668154312247457f2614e6360d188b9706e2ed0e8225",
+  "business_profile_snapshot_id": "bpsnap_music_center_dataset_a",
+  "model_ready_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+  "data_foundation_fingerprint": "7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f",
+  "official_severity_summary": {
+    "max_severity": "ATTENTION",
+    "error_count": 0,
+    "attention_count": 12,
+    "info_count": 10,
+    "official_gate_status": "PASS",
+    "official_gate_outcome": "PRE_MODELING_COMPLETE",
+    "review_recommended": true,
+    "safe_to_model": true
+  },
+  "extended_finding_count": 19,
+  "modeling_implication_count": 7,
+  "open_decision_count": 3,
+  "next_actions": [
+    {
+      "action_type": "REVIEW_ATTENTION_FINDING",
+      "owner": "MODELER",
+      "blocking": false,
+      "route_hint": "REVIEW_ATTENTION_FINDING"
+    },
+    {
+      "action_type": "PROCEED_TO_MODEL_DESIGN",
+      "owner": "MODELER",
+      "blocking": false,
+      "route_hint": "PROCEED_TO_MODEL_DESIGN"
+    },
+    {
+      "action_type": "REVIEW_MODEL_SPEC",
+      "owner": "MODELER",
+      "blocking": false,
+      "route_hint": "REVIEW_MODEL_SPEC"
+    }
+  ],
+  "report_version": 1,
+  "report_fingerprint": "4dd7b79a6c175853de531e348d19285ee95c8ec43d26d97c81a83f2650326583",
+  "interpretation_policy_version": "extended-eda/v1",
+  "knowledge_version": "2.0.0",
+  "authority_example": {
+    "finding_id": "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01",
+    "official_meridian": {
+      "authority": "OFFICIAL_MERIDIAN",
+      "severity": "ATTENTION",
+      "explanation": "Official Meridian STANDARD_DEVIATION ATTENTION finding STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01."
+    },
+    "prem3_interpretation": {
+      "authority": "PREM3_INTERPRETATION",
+      "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window."
+    },
+    "prem3_recommendation": {
+      "authority": "PREM3_RECOMMENDATION",
+      "statement": "Review this finding during Model Design; do not silently change ModelSpec."
+    },
+    "human_decision_required": {
+      "authority": "HUMAN_DECISION_REQUIRED",
+      "open_decision_types": [
+        "KNOT_STRATEGY",
+        "GEO_SCOPE_REVIEW",
+        "TREATMENT_CLASSIFICATION"
+      ]
+    },
+    "severity_unchanged": true
+  },
+  "eda_model_design_handoff": {
+    "report_id": "edarep_music_center_proof",
+    "modeling_implications": [
+      {
+        "implication_id": "imp_knot_strategy",
+        "implication_type": "KNOT_STRATEGY",
+        "statement": "This enabled official EDA only. It does not establish the final knot strategy.",
+        "finding_refs": [],
+        "evidence_refs": [
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots",
+          "eda_model_spec:EDA_ONLY_OFFICIAL_GEO_TIME_CONTROL_INVARIANT"
+        ],
+        "approved_model_change": false,
+        "authority": "PREM3_RECOMMENDATION"
+      },
+      {
+        "implication_id": "imp_data_adequacy",
+        "implication_type": "DATA_ADEQUACY",
+        "statement": "Data-to-parameter ratio informs MCMC preparation and holdout ambition, not MODEL_READY.",
+        "finding_refs": [
+          "DATA_ADEQUACY.OVERALL.NONE.INFO.01"
+        ],
+        "evidence_refs": [
+          "official_finding:DATA_ADEQUACY.OVERALL.NONE.INFO.01",
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots",
+          "meridian:8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+          "google-meridian==1.8.0"
+        ],
+        "approved_model_change": false,
+        "authority": "PREM3_RECOMMENDATION"
+      },
+      {
+        "implication_id": "imp_collinearity_review",
+        "implication_type": "COLLINEARITY_REVIEW",
+        "statement": "Review whether correlated series should stay as separate treatments or be combined.",
+        "finding_refs": [
+          "PAIRWISE_CORRELATION.NA.NONE.INFO.01"
+        ],
+        "evidence_refs": [
+          "official_finding:PAIRWISE_CORRELATION.NA.NONE.INFO.01",
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots",
+          "meridian:8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+          "google-meridian==1.8.0"
+        ],
+        "approved_model_change": false,
+        "authority": "PREM3_RECOMMENDATION"
+      },
+      {
+        "implication_id": "imp_geo_scope_review",
+        "implication_type": "GEO_SCOPE_REVIEW",
+        "statement": "Outliers or low variability can change geo pooling, transformations, or channel inclusion.",
+        "finding_refs": [
+          "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01"
+        ],
+        "evidence_refs": [
+          "official_finding:STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01",
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots",
+          "meridian:8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+          "google-meridian==1.8.0"
+        ],
+        "approved_model_change": false,
+        "authority": "PREM3_RECOMMENDATION"
+      },
+      {
+        "implication_id": "imp_treatment_classification",
+        "implication_type": "TREATMENT_CLASSIFICATION",
+        "statement": "Cost-per-unit outliers can indicate mapping, scaling, or treatment-definition issues.",
+        "finding_refs": [
+          "COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.01"
+        ],
+        "evidence_refs": [
+          "official_finding:COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.01",
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots",
+          "meridian:8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+          "google-meridian==1.8.0"
+        ],
+        "approved_model_change": false,
+        "authority": "PREM3_RECOMMENDATION"
+      },
+      {
+        "implication_id": "imp_prior_review",
+        "implication_type": "PRIOR_REVIEW",
+        "statement": "Prior predictive diagnostics belong in Model Design prior review, not EDA ModelSpec promotion.",
+        "finding_refs": [
+          "PRIOR_PROBABILITY.OVERALL.NONE.INFO.01"
+        ],
+        "evidence_refs": [
+          "official_finding:PRIOR_PROBABILITY.OVERALL.NONE.INFO.01",
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots",
+          "meridian:8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+          "google-meridian==1.8.0"
+        ],
+        "approved_model_change": false,
+        "authority": "PREM3_RECOMMENDATION"
+      },
+      {
+        "implication_id": "imp_control_selection",
+        "implication_type": "CONTROL_SELECTION",
+        "statement": "Time-only or geo-invariant controls affect knot identifiability and time-effect design.",
+        "finding_refs": [
+          "VARIABLE_GEO_TIME_COLLINEARITY.NA.NONE.INFO.01"
+        ],
+        "evidence_refs": [
+          "official_finding:VARIABLE_GEO_TIME_COLLINEARITY.NA.NONE.INFO.01",
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots",
+          "meridian:8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+          "google-meridian==1.8.0"
+        ],
+        "approved_model_change": false,
+        "authority": "PREM3_RECOMMENDATION"
+      }
+    ],
+    "open_modeling_decisions": [
+      {
+        "decision_type": "KNOT_STRATEGY",
+        "question": "What knot strategy should the fitted ModelSpec use?",
+        "why_required": "EDA used a geo-time knot fallback for official EDA compatibility only.",
+        "finding_refs": [],
+        "evidence_refs": [
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots"
+        ],
+        "recommended_option": null,
+        "alternatives": [
+          "Meridian default knots",
+          "modeler-specified knots",
+          "AKS later"
+        ],
+        "authority": "HUMAN_DECISION_REQUIRED",
+        "status": "PENDING"
+      },
+      {
+        "decision_type": "GEO_SCOPE_REVIEW",
+        "question": "How should Model Design treat STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01?",
+        "why_required": "ATTENTION can change Model Design choices without blocking MODEL_READY.",
+        "finding_refs": [
+          "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01"
+        ],
+        "evidence_refs": [
+          "official_finding:STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01",
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots",
+          "meridian:8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+          "google-meridian==1.8.0"
+        ],
+        "recommended_option": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "alternatives": [],
+        "authority": "HUMAN_DECISION_REQUIRED",
+        "status": "PENDING"
+      },
+      {
+        "decision_type": "TREATMENT_CLASSIFICATION",
+        "question": "How should Model Design treat COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.01?",
+        "why_required": "ATTENTION can change Model Design choices without blocking MODEL_READY.",
+        "finding_refs": [
+          "COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.01"
+        ],
+        "evidence_refs": [
+          "official_finding:COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.01",
+          "https://developers.google.com/meridian/docs/advanced-modeling/setting-knots",
+          "meridian:8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+          "google-meridian==1.8.0"
+        ],
+        "recommended_option": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "alternatives": [],
+        "authority": "HUMAN_DECISION_REQUIRED",
+        "status": "PENDING"
+      }
+    ],
+    "known_limitations": [
+      "EDA ModelSpec is PRE_MODELING_EDA_ONLY and is not the fitted spec.",
+      "PreM3 interpretation cannot change official severity or MODEL_READY.",
+      "This enabled official EDA only. It does not establish the final knot strategy."
+    ],
+    "relevant_finding_refs": [
+      "DATA_ADEQUACY.OVERALL.NONE.INFO.01",
+      "PAIRWISE_CORRELATION.NA.NONE.INFO.01",
+      "MULTICOLLINEARITY.NA.NONE.INFO.01",
+      "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01",
+      "STANDARD_DEVIATION.GEO.VARIABILITY.ATTENTION.01",
+      "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.02",
+      "COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.01",
+      "PRIOR_PROBABILITY.OVERALL.NONE.INFO.01",
+      "VARIABLE_GEO_TIME_COLLINEARITY.NA.NONE.INFO.01",
+      "VARIABLE_GEO_TIME_COLLINEARITY.NA.NONE.INFO.02",
+      "COST_PER_MEDIA_UNIT.NATIONAL.OUTLIER.ATTENTION.01",
+      "STANDARD_DEVIATION.NATIONAL.OUTLIER.ATTENTION.01",
+      "STANDARD_DEVIATION.NATIONAL.VARIABILITY.ATTENTION.01",
+      "STANDARD_DEVIATION.NATIONAL.OUTLIER.ATTENTION.02",
+      "PAIRWISE_CORRELATION.NA.NONE.INFO.02",
+      "COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.02",
+      "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.03",
+      "STANDARD_DEVIATION.GEO.VARIABILITY.ATTENTION.02",
+      "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.04"
+    ],
+    "recommended_starting_actions": [
+      "REVIEW_ATTENTION_FINDING",
+      "PROCEED_TO_MODEL_DESIGN",
+      "REVIEW_MODEL_SPEC"
+    ]
+  },
+  "knot_fallback_is_not_final_knots": true,
+  "mel_evidence": {
+    "domain": "EXTENDED_EDA",
+    "lesson_type": "eda_interpretation_pattern",
+    "authority": "EVIDENCE_ONLY",
+    "can_promote": false,
+    "can_mutate_plan": false,
+    "report_id": "edarep_music_center_proof",
+    "report_fingerprint": "4dd7b79a6c175853de531e348d19285ee95c8ec43d26d97c81a83f2650326583",
+    "official_gate_outcome": "PRE_MODELING_COMPLETE",
+    "findings": [
+      {
+        "finding_id": "DATA_ADEQUACY.OVERALL.NONE.INFO.01",
+        "official_severity": "INFO",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian recorded an informational finding. PreM3 keeps commentary concise unless it is material to design. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "No blocking action. Carry forward if Model Design needs the signal.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "PAIRWISE_CORRELATION.NA.NONE.INFO.01",
+        "official_severity": "INFO",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian recorded an informational finding. PreM3 keeps commentary concise unless it is material to design. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "No blocking action. Carry forward if Model Design needs the signal.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "MULTICOLLINEARITY.NA.NONE.INFO.01",
+        "official_severity": "INFO",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian recorded an informational finding. PreM3 keeps commentary concise unless it is material to design. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "No blocking action. Carry forward if Model Design needs the signal.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.01",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "STANDARD_DEVIATION.GEO.VARIABILITY.ATTENTION.01",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.02",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.01",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "PRIOR_PROBABILITY.OVERALL.NONE.INFO.01",
+        "official_severity": "INFO",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian recorded an informational finding. PreM3 keeps commentary concise unless it is material to design. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "No blocking action. Carry forward if Model Design needs the signal.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "VARIABLE_GEO_TIME_COLLINEARITY.NA.NONE.INFO.01",
+        "official_severity": "INFO",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian recorded an informational finding. PreM3 keeps commentary concise unless it is material to design. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "No blocking action. Carry forward if Model Design needs the signal.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "VARIABLE_GEO_TIME_COLLINEARITY.NA.NONE.INFO.02",
+        "official_severity": "INFO",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian recorded an informational finding. PreM3 keeps commentary concise unless it is material to design. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "No blocking action. Carry forward if Model Design needs the signal.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "COST_PER_MEDIA_UNIT.NATIONAL.OUTLIER.ATTENTION.01",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "STANDARD_DEVIATION.NATIONAL.OUTLIER.ATTENTION.01",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "STANDARD_DEVIATION.NATIONAL.VARIABILITY.ATTENTION.01",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "STANDARD_DEVIATION.NATIONAL.OUTLIER.ATTENTION.02",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "PAIRWISE_CORRELATION.NA.NONE.INFO.02",
+        "official_severity": "INFO",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian recorded an informational finding. PreM3 keeps commentary concise unless it is material to design. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "No blocking action. Carry forward if Model Design needs the signal.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "COST_PER_MEDIA_UNIT.GEO.OUTLIER.ATTENTION.02",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.03",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "STANDARD_DEVIATION.GEO.VARIABILITY.ATTENTION.02",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      },
+      {
+        "finding_id": "STANDARD_DEVIATION.GEO.OUTLIER.ATTENTION.04",
+        "official_severity": "ATTENTION",
+        "official_authority": "OFFICIAL_MERIDIAN",
+        "interpretation": "Official Meridian flagged this as ATTENTION. It remains ATTENTION; PreM3 concern does not change official severity. Business IQ is context, not a Meridian finding. BUSINESS_IQ_CONTEXT: Paid Search is primarily demand capture for Music Center. DATA_FOUNDATION_CONTEXT: Shared usable weekly coverage is 2024-01-01/2026-06-29 across CA, FL, NY, TX. Dataset A fingerprint 7cfc15152067923b6ec6d2b77d6b4e4fae16b748eae24deb250939e7458fe18f. MODEL_READY_CONTEXT: MODEL_READY is already established for this run. Q3 2026 is the Measurement Cycle, not the MMM model window.",
+        "recommendation": "Review this finding during Model Design; do not silently change ModelSpec.",
+        "interpretation_authority": "PREM3_INTERPRETATION"
+      }
+    ],
+    "open_modeling_decisions": [
+      {
+        "decision_type": "KNOT_STRATEGY",
+        "status": "PENDING",
+        "authority": "HUMAN_DECISION_REQUIRED"
+      },
+      {
+        "decision_type": "GEO_SCOPE_REVIEW",
+        "status": "PENDING",
+        "authority": "HUMAN_DECISION_REQUIRED"
+      },
+      {
+        "decision_type": "TREATMENT_CLASSIFICATION",
+        "status": "PENDING",
+        "authority": "HUMAN_DECISION_REQUIRED"
+      }
+    ],
+    "note": "Which EDA interpretations lead to better accepted models is a later MEL evaluation. This payload does not promote an interpretation."
+  },
+  "business_iq_labeled_as_context": true
+}

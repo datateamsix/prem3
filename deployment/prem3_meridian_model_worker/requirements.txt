@@ -1,4 +1,9 @@
 # Isolated Meridian model worker. Do not add google-adk.
-google-meridian==1.8.0
+# Linux GPU execution requires the CUDA extra, which pulls tensorflow[and-cuda].
+# Official serde requires the schema extra (mmm-proto-schema).
+# The CPU-only google-meridian==1.8.0 pin does not enable GPU acceleration.
+google-meridian[and-cuda,schema]==1.8.0
 google-cloud-storage
+google-cloud-firestore
+google-cloud-bigquery
 pydantic>=2.10

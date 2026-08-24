@@ -5,10 +5,13 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import HTMLResponse
 
 from app.control_plane.models import Feature, Workspace
 from app.control_plane.repository import ControlPlaneRepository
 from app.core.tenancy import TenantContext, require_tenant
+from app.eda.html_trust import HtmlNotTrustedError, embed_headers, inspect_generated_html
+from app.eda.service import ExtendedEDAService
 from app.modeling.common.errors import ModelingError
 from app.modeling.mmm.contracts import ComputeProfile
 from app.modeling.mmm.service import MMMModelingService
@@ -19,18 +22,23 @@ from app.service.dependencies import (
     get_control_plane,
 )
 from app.service.entitlements import require_feature
-from app.service.errors import APIError, resource_not_found
+from app.service.errors import APIError, artifact_not_trusted, resource_not_found
 from app.service.mmm_models import (
     AcceptModelRequest,
     AcknowledgeReviewRequest,
     CreateModelDesignRequest,
     DecisionActionRequest,
+    EdaAttentionView,
+    EdaLatestRunView,
+    EdaNextActionView,
+    ExtendedEdaReadModelResponse,
     FitRunResponse,
     IterateModelRequest,
     MeasurementCycleView,
     MMMSummaryResponse,
     MmmTrackWindowView,
     ModelVersionResponse,
+    OfficialEdaReportView,
 )
 
 router = APIRouter(prefix="/v1", tags=["mmm-modeling"])
@@ -39,12 +47,14 @@ router = APIRouter(prefix="/v1", tags=["mmm-modeling"])
 def _modeling(request: Request) -> MMMModelingService:
     service = getattr(request.app.state, "mmm_modeling", None)
     if service is None:
-        raise APIError(
-            code="MODELING_UNAVAILABLE",
-            status=503,
-            title="Modeling unavailable",
-            detail="The MMM modeling service is not configured.",
-        )
+        raise RuntimeError("MMM modeling service is not configured.")
+    return service
+
+
+def _extended_eda(request: Request) -> ExtendedEDAService:
+    service = getattr(request.app.state, "extended_eda", None)
+    if service is None:
+        raise RuntimeError("Extended EDA service is not configured.")
     return service
 
 
@@ -118,6 +128,96 @@ async def get_cycle_mmm(
     )
 
 
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mmm/eda",
+    operation_id="getProjectCycleMmmEda",
+)
+async def get_cycle_mmm_eda(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> ExtendedEdaReadModelResponse:
+    require_tenant()
+    require_feature(repo, Feature.MMM)
+    workspace = repo.get_workspace_for_tenant(
+        tenant_id=tenant.tenant_id, workspace_id=project_id
+    )
+    if workspace is None:
+        raise resource_not_found()
+    report = _extended_eda(request).latest_for_cycle(
+        tenant_id=tenant.tenant_id, project_id=project_id, cycle_id=cycle_id
+    )
+    if report is None:
+        raise resource_not_found()
+    view_url = f"/v1/projects/{project_id}/cycles/{cycle_id}/mmm/eda/official-html"
+    official = _extended_eda(request).official_report_view(
+        report, authorized_view_url=view_url
+    )
+    ready = report.readiness_summary
+    return ExtendedEdaReadModelResponse(
+        status=report.status.value,
+        extended_report=report.model_dump(mode="json"),
+        official_report=OfficialEdaReportView(**official.model_dump(mode="json")),
+        latest_run=EdaLatestRunView(
+            premodel_run_id=report.premodel_run_id,
+            official_gate_status=ready.official_gate_status,
+            official_gate_outcome=ready.official_gate_outcome,
+        ),
+        attention=EdaAttentionView(
+            review_recommended=ready.review_recommended,
+            max_official_severity=ready.max_official_severity,
+            attention_count=ready.attention_count,
+            error_count=ready.error_count,
+        ),
+        next_actions=[
+            EdaNextActionView(
+                action_type=item.action_type.value,
+                statement=item.statement,
+                owner=item.owner.value,
+                blocking=item.blocking,
+                route_hint=item.route_hint,
+            )
+            for item in report.recommended_next_steps
+        ],
+    )
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mmm/eda/official-html",
+    operation_id="getProjectCycleMmmEdaOfficialHtml",
+)
+async def get_cycle_mmm_eda_official_html(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> HTMLResponse:
+    require_tenant()
+    require_feature(repo, Feature.MMM)
+    workspace = repo.get_workspace_for_tenant(
+        tenant_id=tenant.tenant_id, workspace_id=project_id
+    )
+    if workspace is None:
+        raise resource_not_found()
+    try:
+        payload, report = _extended_eda(request).load_trusted_html(
+            tenant_id=tenant.tenant_id,
+            project_id=project_id,
+            cycle_id=cycle_id,
+        )
+    except KeyError:
+        raise resource_not_found() from None
+    except HtmlNotTrustedError as exc:
+        raise artifact_not_trusted(detail=str(exc)) from exc
+    inspection = inspect_generated_html(
+        payload, artifact_class=report.official_html_artifact_class
+    )
+    return HTMLResponse(content=payload, headers=embed_headers(inspection))
+
+
 @router.post(
     "/projects/{project_id}/cycles/{cycle_id}/mmm/model-design",
     operation_id="createMmmModelDesign",
@@ -139,6 +239,10 @@ async def create_model_design(
         raise resource_not_found()
     tracks = ensure_tracks_for_cycle(repo, workspace=workspace, cycle_id=cycle_id)
     mmm = next(item for item in tracks if item.track_type.value == "MMM")
+    eda_report = _extended_eda(request).latest_for_cycle(
+        tenant_id=tenant.tenant_id, project_id=project_id, cycle_id=cycle_id
+    )
+    eda_handoff = None if eda_report is None else eda_report.model_design_handoff
     try:
         version = _modeling(request).start_design(
             tenant_id=tenant.tenant_id,
@@ -160,6 +264,7 @@ async def create_model_design(
             include_ambiguous_promotion=body.include_ambiguous_promotion,
             include_insufficient_controls=body.include_insufficient_controls,
             include_experiment_prior=body.include_experiment_prior,
+            eda_handoff=eda_handoff,
         )
     except ModelingError as exc:
         _raise_modeling(exc)

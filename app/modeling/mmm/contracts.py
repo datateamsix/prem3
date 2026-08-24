@@ -99,6 +99,12 @@ class MeridianRuntimeMode(StrEnum):
     OFFICIAL_GPU = "OFFICIAL_GPU"
 
 
+class FitPurpose(StrEnum):
+    RUNTIME_QUALIFICATION = "RUNTIME_QUALIFICATION"
+    MODEL_ITERATION = "MODEL_ITERATION"
+    FINAL_MODEL = "FINAL_MODEL"
+
+
 class ReviewSource(StrEnum):
     FAKE_TEST = "FAKE_TEST"
     OFFICIAL_MERIDIAN = "OFFICIAL_MERIDIAN"
@@ -327,6 +333,7 @@ class MeridianFitPlan(FrozenModel):
     seed: int
     reconstruction_batch_size: int | None = None
     compute_profile: ComputeProfile
+    fit_purpose: FitPurpose = FitPurpose.MODEL_ITERATION
     artifact_destinations: dict[str, str] = Field(default_factory=dict)
     input_artifact_ref: str | None = None
     input_fingerprint: str

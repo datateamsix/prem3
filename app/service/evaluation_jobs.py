@@ -52,9 +52,11 @@ class CloudRunEvaluationJobLauncher:
         location: str,
         job_name: str,
         client: object | None = None,
+        dispatch_env_var: str = "PREM3_EVALUATION_DISPATCH_ID",
     ) -> None:
         self._job_path = f"projects/{project_id}/locations/{location}/jobs/{job_name}"
         self._client = client
+        self._dispatch_env_var = dispatch_env_var
 
     def launch(self, dispatch_id: str) -> str:
         client = self._client or _run_jobs_client()
@@ -65,7 +67,7 @@ class CloudRunEvaluationJobLauncher:
                     {
                         "env": [
                             {
-                                "name": "PREM3_EVALUATION_DISPATCH_ID",
+                                "name": self._dispatch_env_var,
                                 "value": dispatch_id,
                             }
                         ]

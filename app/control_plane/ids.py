@@ -103,3 +103,7 @@ def new_approval_id() -> str:
 
 def new_fit_dispatch_id() -> str:
     return _opaque("mdsp")
+
+
+def new_eda_report_id() -> str:
+    return _opaque("edarep")

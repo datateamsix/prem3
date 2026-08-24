@@ -86,3 +86,27 @@ class LedgerPublicationError(ModelingError):
 
 class FakeRuntimeAcceptanceError(ModelingError):
     code = "FAKE_RUNTIME_INELIGIBLE"
+
+
+class QualificationAcceptanceError(ModelingError):
+    code = "QUALIFICATION_INELIGIBLE"
+
+
+class HumanApprovalRequiredError(ModelingError):
+    code = "HUMAN_APPROVAL_REQUIRED"
+
+
+class GcsPersistenceError(ModelingError):
+    code = "GCS_PERSISTENCE_FAILED"
+
+
+class FirestorePersistenceError(ModelingError):
+    code = "FIRESTORE_PERSISTENCE_FAILED"
+
+
+class MeridianImportError(ModelingError):
+    code = "MERIDIAN_IMPORT_FAILED"
+
+
+class GpuNotVisibleError(ModelingError):
+    code = "GPU_NOT_VISIBLE"

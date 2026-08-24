@@ -19,6 +19,8 @@ from app.config import Settings, load_settings
 from app.control_plane.repository import ControlPlaneRepository
 from app.data_foundation.service import DataFoundationService
 from app.data_foundation.warehouse import FoundationWarehouse
+from app.eda.repository import FirestoreExtendedEDARepository, InMemoryExtendedEDARepository
+from app.eda.service import ExtendedEDAService
 from app.integrations.google.adapters import (
     FakeBigQueryClient,
     FakeDriveClient,
@@ -34,6 +36,8 @@ from app.integrations.google.vault import (
 from app.materialization.canonical_gate import CanonicalFoundationSourceGate
 from app.materialization.foundation_compat import FoundationSourceGate
 from app.materialization.service import MaterializationService
+from app.modeling.mmm.dispatch import CloudTasksFitDispatcher
+from app.modeling.mmm.firestore import FirestoreModelingRepository
 from app.modeling.mmm.service import MMMModelingService
 from app.publish_execution.model_ready import (
     ModelReadyEvidenceResolver,
@@ -142,6 +146,8 @@ def create_app(
     foundation_source_gate: FoundationSourceGate | None = None,
     model_ready_resolver: ModelReadyEvidenceResolver | None = None,
     mmm_modeling: MMMModelingService | None = None,
+    mmm_fit_launcher=None,
+    extended_eda: ExtendedEDAService | None = None,
 ) -> FastAPI:
     cfg = settings or load_settings()
     assert_provider_mode_safe(cfg)
@@ -267,7 +273,26 @@ def create_app(
         bigquery=google_services["bq_client"],
         model_ready=google_services["model_ready"],
     )
-    app.state.mmm_modeling = mmm_modeling or MMMModelingService()
+    modeling, fit_launcher = _default_mmm_stack(
+        cfg,
+        repo,
+        modeling=mmm_modeling,
+        launcher=mmm_fit_launcher,
+    )
+    app.state.mmm_modeling = modeling
+    app.state.mmm_fit_launcher = fit_launcher
+    if extended_eda is None:
+        if uses_cloud_runtime():
+            client = getattr(repo, "client", None)
+            eda_repo = (
+                FirestoreExtendedEDARepository(client)
+                if client is not None
+                else InMemoryExtendedEDARepository()
+            )
+            extended_eda = ExtendedEDAService(eda_repo)
+        else:
+            extended_eda = ExtendedEDAService()
+    app.state.extended_eda = extended_eda
 
     app.add_middleware(RequestIdMiddleware)
     app.include_router(health.router)
@@ -548,6 +573,55 @@ def _default_evaluation_stack(
             audience=settings.evaluation_launch_audience or "",
         ),
         job_name,
+    )
+
+
+def _default_mmm_stack(
+    settings: Settings,
+    control_plane: ControlPlaneRepository,
+    *,
+    modeling: MMMModelingService | None,
+    launcher,
+):
+    if modeling is not None:
+        return modeling, launcher or FakeEvaluationJobLauncher()
+    if not uses_cloud_runtime():
+        return MMMModelingService(), launcher or FakeEvaluationJobLauncher()
+    client = getattr(control_plane, "client", None)
+    repo = FirestoreModelingRepository(client) if client is not None else None
+    configured = bool(
+        settings.meridian_fit_dispatch_queue
+        and settings.meridian_fit_dispatcher_sa
+        and settings.meridian_fit_launch_url
+        and settings.meridian_fit_launch_audience
+    )
+    dispatcher = None
+    if configured:
+        dispatcher = CloudTasksFitDispatcher(
+            project_id=settings.project_id,
+            location=settings.cloud_region,
+            queue=settings.meridian_fit_dispatch_queue or "prem3-meridian-fit-dispatch",
+            launch_url=settings.meridian_fit_launch_url or "",
+            service_account_email=settings.meridian_fit_dispatcher_sa or "",
+            audience=settings.meridian_fit_launch_audience or "",
+        )
+    service = MMMModelingService(
+        repo,
+        dispatcher=dispatcher,
+        worker_image_digest=settings.meridian_model_worker_image,
+        object_store=GcsObjectStore() if settings.artifact_bucket else None,
+        artifact_bucket=settings.artifact_bucket,
+    )
+    if launcher is not None:
+        return service, launcher
+    if not configured:
+        return service, UnavailableEvaluationJobLauncher()
+    job_name = settings.meridian_model_worker_job or "prem3-meridian-model-worker"
+    return service, CloudRunEvaluationJobLauncher(
+        project_id=settings.project_id,
+        location=settings.cloud_region,
+        job_name=job_name,
+        dispatch_env_var="PREM3_MMM_FIT_DISPATCH_ID",
     )
 
 

@@ -222,7 +222,7 @@ def load_settings() -> Settings:
         meridian_model_cpu=os.getenv("MERIDIAN_MODEL_CPU") or None,
         meridian_model_memory=os.getenv("MERIDIAN_MODEL_MEMORY") or None,
         meridian_model_timeout_seconds=int(
-            os.getenv("MERIDIAN_MODEL_TIMEOUT_SECONDS", "3300")
+            os.getenv("MERIDIAN_MODEL_TIMEOUT_SECONDS", "3600")
         ),
     )
 

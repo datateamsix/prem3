@@ -1,0 +1,70 @@
+{
+  "bigquery": {
+    "dataset": "modelready-m3.prem3_modeling",
+    "fit_plan_fingerprint": "39ec74fa24337a5a447f6d1458b808dc08b6e356f5acffd67dc19787cf26657b",
+    "fit_run_readback": "frun_5939a161b0e246129005",
+    "history_retained": true,
+    "history_row_count": 2,
+    "model_version_readback": "mver_3f8619d144934e4a",
+    "status": "PASS"
+  },
+  "cloud_tasks": {
+    "deleted_unfired_task": true,
+    "dispatch_id": "fdsp_b76377968f3d497c9711",
+    "duplicate_result": "AlreadyExists",
+    "note": "Task was scheduled 24h ahead and deleted so the live prem3-api revision is not required to serve /mmm-fit-dispatches.",
+    "queue": "prem3-meridian-fit-dispatch",
+    "status": "PASS",
+    "task_name": "projects/modelready-m3/locations/us-central1/queues/prem3-meridian-fit-dispatch/tasks/prem3-mmm-qual-6562a4d1cd50425b"
+  },
+  "firestore": {
+    "acceptance_actor": "user_music_center",
+    "approval_id": "fapv_50f2683371874c69b7f4",
+    "dispatch_id": "fdsp_b76377968f3d497c9711",
+    "duplicate_dispatch_id": "fdsp_b76377968f3d497c9711",
+    "fit_plan_fingerprint": "39ec74fa24337a5a447f6d1458b808dc08b6e356f5acffd67dc19787cf26657b",
+    "fit_run_id": "frun_5939a161b0e246129005",
+    "foreign_approval_cannot_authorize": true,
+    "foreign_get_denied": true,
+    "model_plan_fingerprint": "9ca94c9e7be8b32a6b42c411d5a031b099e5963e7417e7369ed683788b4c84be",
+    "model_version_id": "mver_3f8619d144934e4a",
+    "reload_fingerprint": "9ca94c9e7be8b32a6b42c411d5a031b099e5963e7417e7369ed683788b4c84be",
+    "status": "PASS"
+  },
+  "gcs": {
+    "bucket": "modelready-m3-912257136465-artifacts",
+    "conflict_overwrite_rejected": true,
+    "hashes": {
+      "meridian_model.binpb": "16664fdeb739920e8ab71b5c37c10c1fa77b5207c80493a1e389d5e9b882a55a",
+      "model_artifact_manifest.json": "2d511d9adee14cb3f84921d93b664c157d08950fe7f3028e4beb7557f6a9c019",
+      "model_health.html": "96afb724b5f5ac9769b18aaeb57d2e8c69de3480d7c202f9a81b10431abe1b88",
+      "model_review_pack.json": "10bd2a6a6ab5e06d2aca646047eb91f36d3864169a3a6f491c9f59ddf9fcb942",
+      "reproducibility_manifest.json": "69539045cf395607c4d7a34d4b18e03c36b0a3f3006d0f5228323493d8643509",
+      "results_summary.html": "caefb97cca38c1d269e2adddbf0fd21934b2193b18b942123491dbe622cf97cd"
+    },
+    "prefix": "tenm3q617e0465e17d/prjm3q617e0465e17d/modeling/mver_3f8619d144934e4a/",
+    "status": "PASS"
+  },
+  "job_launch": {
+    "status": "PASS",
+    "mode": "OFFICIAL_CPU_SMOKE",
+    "fit_purpose": "RUNTIME_QUALIFICATION",
+    "execution_id": "prem3-meridian-model-worker-9zcs9",
+    "gpu_detect_execution_id": "prem3-meridian-model-worker-zxl49",
+    "sample_prior": "PASS",
+    "sample_posterior": "PASS",
+    "serde_save": "PASS",
+    "serde_load": "PASS",
+    "reviewer": "PASS",
+    "summarizer": "PASS",
+    "library_class": "InstalledMeridianLibrary",
+    "duration_seconds": 156.288006,
+    "model_artifact_sha256": "7b8dfb316fb1d6ed15e7a86c3b7719581a054f48fb7e9bf3dc99da9793f6c2df",
+    "note": "Direct gcloud run jobs execute --args=cpu-smoke on the CPU job. Integrated Cloud Tasks to live prem3-api is BLOCKED (HTTP 404)."
+  },
+  "model_window_end": "2026-06-29",
+  "model_window_start": "2024-01-01",
+  "project_id": "prjm3q617e0465e17d",
+  "selected_cycle_name": "Q3 2026",
+  "tenant_id": "tenm3q617e0465e17d"
+}

@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY app /app/app
 
-CMD ["python", "-m", "app.tools.meridian_model_worker"]
+ENTRYPOINT ["python", "-m", "app.tools.meridian_model_worker"]

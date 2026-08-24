@@ -36,6 +36,7 @@ from app.modeling.mmm.compatibility import generate_compatibility_report
 from app.modeling.mmm.compiler import compile_meridian_model_spec
 from app.modeling.mmm.contracts import (
     ComputeProfile,
+    FitPurpose,
     MeridianModelSpecProposal,
     MeridianRuntimeMode,
     OfficialCheckResult,
@@ -121,15 +122,22 @@ class ScriptedRuntime(FakeMeridianRuntime):
         )
 
 
-def _official_service(checks: tuple[OfficialCheckResult, ...] | None = None) -> MMMModelingService:
+def _official_service(
+    checks: tuple[OfficialCheckResult, ...] | None = None,
+    *,
+    mode: MeridianRuntimeMode = MeridianRuntimeMode.OFFICIAL_CPU_SMOKE,
+) -> MMMModelingService:
     library = RecordingMeridianLibrary(checks=checks or PASS_CHECKS)
     return MMMModelingService(
         InMemoryModelingRepository(),
-        runtime=OfficialMeridianRuntime(
-            mode=MeridianRuntimeMode.OFFICIAL_CPU_SMOKE,
-            library=library,
-        ),
+        runtime=OfficialMeridianRuntime(mode=mode, library=library),
     )
+
+
+def _final_official_service(
+    checks: tuple[OfficialCheckResult, ...] | None = None,
+) -> MMMModelingService:
+    return _official_service(checks, mode=MeridianRuntimeMode.OFFICIAL_GPU)
 
 
 def _service(runtime=None) -> MMMModelingService:
@@ -172,7 +180,7 @@ def _approve_required(service: MMMModelingService, version) -> None:
             )
 
 
-def _fit_ready(service: MMMModelingService, version):
+def _fit_ready(service: MMMModelingService, version, *, fit_purpose=None):
     _approve_required(service, version)
     service.validate_prior(
         tenant_id=version.tenant_id,
@@ -185,6 +193,7 @@ def _fit_ready(service: MMMModelingService, version):
         project_id=version.project_id,
         model_version_id=version.model_version_id,
         actor_id="user_a",
+        fit_purpose=fit_purpose,
     )
     return service.start_fit(
         tenant_id=version.tenant_id,
@@ -488,9 +497,11 @@ def _failing(check: str, status: OfficialHealthStatus) -> ScriptedRuntime:
 
 
 def test_convergence_fail_blocks_acceptance() -> None:
-    service = _official_service(_failing("ConvergenceCheck", OfficialHealthStatus.FAIL).checks)
-    version = _start(service)
-    _fit_ready(service, version)
+    service = _final_official_service(
+        _failing("ConvergenceCheck", OfficialHealthStatus.FAIL).checks
+    )
+    version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
+    _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)
     with pytest.raises(ModelReviewFailedError, match="Convergence FAIL"):
         service.accept(
             tenant_id="ten_a",
@@ -501,9 +512,11 @@ def test_convergence_fail_blocks_acceptance() -> None:
 
 
 def test_official_fail_blocks_acceptance() -> None:
-    service = _official_service(_failing("BaselineCheck", OfficialHealthStatus.FAIL).checks)
-    version = _start(service)
-    _fit_ready(service, version)
+    service = _final_official_service(
+        _failing("BaselineCheck", OfficialHealthStatus.FAIL).checks
+    )
+    version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
+    _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)
     with pytest.raises(ModelReviewFailedError, match="Official FAIL"):
         service.accept(
             tenant_id="ten_a",
@@ -514,11 +527,11 @@ def test_official_fail_blocks_acceptance() -> None:
 
 
 def test_review_requires_acknowledgment() -> None:
-    service = _official_service(
+    service = _final_official_service(
         _failing("ROIConsistencyCheck", OfficialHealthStatus.REVIEW).checks
     )
-    version = _start(service)
-    _fit_ready(service, version)
+    version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
+    _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)
     with pytest.raises(ModelReviewFailedError, match="REVIEW"):
         service.accept(
             tenant_id="ten_a",

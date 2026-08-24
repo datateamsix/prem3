@@ -9,23 +9,37 @@ tenant, storage path, image, or service-account authority from an agent payload.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 import traceback
 from typing import Any
 
+from google.cloud import bigquery, firestore
+
+from app.config import load_settings
 from app.modeling.common.errors import FitRuntimeError
 from app.modeling.mmm.contracts import (
     ComputeProfile,
     FitRunStatus,
     MeridianRuntimeMode,
 )
+from app.modeling.mmm.failures import classify_failure
+from app.modeling.mmm.firestore import FirestoreModelingRepository
+from app.modeling.mmm.ledger import CanonicalBigQueryModelLedger
 from app.modeling.mmm.meridian.runner import (
     OfficialMeridianRuntime,
     execute_approved_fit,
 )
 from app.modeling.mmm.repository import ModelingRepository
 from app.modeling.mmm.service import MMMModelingService
+from app.modeling.mmm.smoke import (
+    resolve_fit_input_mapping,
+    run_gpu_detect,
+    run_import_smoke,
+    run_official_cpu_smoke,
+)
+from app.service.object_store import GcsObjectStore
 
 FORBIDDEN_REQUEST_KEYS = frozenset(
     {
@@ -44,6 +58,8 @@ FORBIDDEN_REQUEST_KEYS = frozenset(
         "image_digest",
     }
 )
+
+LOGGER = logging.getLogger("prem3.meridian_model_worker")
 
 
 def _reject_untrusted(request: dict[str, Any]) -> None:
@@ -103,20 +119,48 @@ def execute_fit_dispatch(
         raise FitRuntimeError("Worker refuses FAKE_TEST.")
     if dispatch.compute_profile is ComputeProfile.CPU_TEST:
         mode = MeridianRuntimeMode.OFFICIAL_CPU_SMOKE
-    owned = runtime or OfficialMeridianRuntime(mode=mode)
+    digest = os.environ.get("PREM3_WORKER_IMAGE_DIGEST") or None
+    if runtime is None:
+        mapping = resolve_fit_input_mapping(plan)
+        owned = OfficialMeridianRuntime(
+            mode=mode,
+            input_mapping=mapping,
+            worker_image_digest=digest,
+        )
+    else:
+        owned = runtime
+    if service is not None:
+        service.runtime = owned
+        version = service.get_version(
+            tenant_id=dispatch.tenant_id,
+            project_id=dispatch.project_id,
+            model_version_id=dispatch.model_version_id,
+        )
+        executed = service._execute_fit(version, plan, fit_plan, run)
+        result_sha = None
+        artifact = service.repo.get_artifact(dispatch.model_version_id)
+        if artifact is not None:
+            result_sha = artifact.binary_sha256
+        return {
+            "status": "SUCCEEDED",
+            "tenant_id": dispatch.tenant_id,
+            "project_id": dispatch.project_id,
+            "cycle_id": dispatch.cycle_id,
+            "track_id": dispatch.track_id,
+            "model_version_id": dispatch.model_version_id,
+            "fit_run_id": executed.fit_run_id if executed is not None else dispatch.fit_run_id,
+            "dispatch_id": dispatch_id,
+            "binary_sha256": result_sha,
+            "runtime_mode": mode.value,
+            "fit_purpose": fit_plan.fit_purpose.value,
+            "worker_image_digest": digest,
+        }
     result = execute_approved_fit(
         owned,
         plan,
         fit_plan,
         expected_input_fingerprint=plan.model_ready_manifest_fingerprint,
     )
-    if service is not None:
-        version = service.get_version(
-            tenant_id=dispatch.tenant_id,
-            project_id=dispatch.project_id,
-            model_version_id=dispatch.model_version_id,
-        )
-        service._execute_fit(version, plan, fit_plan, run)
     return {
         "status": "SUCCEEDED",
         "tenant_id": dispatch.tenant_id,
@@ -135,29 +179,101 @@ def execute_fit_dispatch(
         "review_source": result.review_source.value,
         "calls_made": list(result.calls_made),
         "health_checks": [item.model_dump(mode="json") for item in result.health_checks],
+        "fit_purpose": fit_plan.fit_purpose.value,
     }
 
 
+def _production_service() -> tuple[FirestoreModelingRepository, MMMModelingService]:
+    settings = load_settings()
+    client = firestore.Client(
+        project=settings.project_id,
+        database=settings.firestore_database,
+    )
+    repo = FirestoreModelingRepository(client)
+    digest = os.environ.get("PREM3_WORKER_IMAGE_DIGEST") or settings.meridian_model_worker_image
+    dataset_id = os.environ.get("PREM3_MMM_LEDGER_DATASET") or "prem3_modeling"
+    ledger = CanonicalBigQueryModelLedger(
+        client=bigquery.Client(project=settings.project_id),
+        project_id=settings.project_id,
+        dataset_id=dataset_id,
+    )
+    service = MMMModelingService(
+        repo,
+        worker_image_digest=digest,
+        object_store=GcsObjectStore(),
+        artifact_bucket=settings.artifact_bucket,
+        ledger=ledger,
+    )
+    return repo, service
+
+
+def _emit(payload: dict[str, Any]) -> None:
+    print(json.dumps(payload, sort_keys=True, default=str))
+
+
 def main() -> int:
-    if len(sys.argv) > 1 and sys.argv[1] in {"-h", "--help"}:
+    logging.basicConfig(level=os.environ.get("MODELREADY_LOG_LEVEL", "INFO"))
+    args = [item for item in sys.argv[1:] if item]
+    if args and args[0] in {"-h", "--help"}:
         print(
-            "usage: PREM3_MMM_FIT_DISPATCH_ID=<dispatch_id> "
-            "python -m app.tools.meridian_model_worker\n"
-            "Cloud Run Job entrypoint for approved Meridian posterior sampling.\n"
+            "usage: python -m app.tools.meridian_model_worker "
+            "[import-smoke|cpu-smoke|gpu-detect]\n"
+            "Fit path: PREM3_MMM_FIT_DISPATCH_ID=<dispatch_id>\n"
             "Forbidden: generated Python, agent-supplied tenant, storage path, "
             "container image, or service account."
         )
         return 0
-    dispatch_id = (os.environ.get("PREM3_MMM_FIT_DISPATCH_ID") or "").strip()
-    if not dispatch_id:
-        print("PREM3_MMM_FIT_DISPATCH_ID is required", file=sys.stderr)
-        return 2
+    mode = (os.environ.get("PREM3_MMM_WORKER_MODE") or (args[0] if args else "")).strip()
     try:
-        raise FitRuntimeError(
-            "Worker process requires the production Firestore modeling repository."
+        if mode in {"import-smoke", "IMPORT_SMOKE"}:
+            payload = run_import_smoke()
+            _emit(payload)
+            return 0 if payload.get("version_match") else 3
+        if mode in {"cpu-smoke", "OFFICIAL_CPU_SMOKE"}:
+            artifact = os.environ.get("PREM3_SMOKE_ARTIFACT_PATH") or None
+            payload = run_official_cpu_smoke(artifact_path=artifact)
+            _emit(payload)
+            return 0
+        if mode in {"gpu-detect", "GPU_DETECT"}:
+            require = os.environ.get("PREM3_REQUIRE_GPU", "true").strip().lower() != "false"
+            payload = run_gpu_detect(require_gpu=require)
+            _emit(payload)
+            return 0
+        dispatch_id = (os.environ.get("PREM3_MMM_FIT_DISPATCH_ID") or "").strip()
+        if not dispatch_id:
+            print("PREM3_MMM_FIT_DISPATCH_ID is required", file=sys.stderr)
+            return 2
+        repo, service = _production_service()
+        LOGGER.info(
+            "meridian_fit_start dispatch_id=%s image=%s",
+            dispatch_id,
+            os.environ.get("PREM3_WORKER_IMAGE_DIGEST"),
         )
+        owned = service.runtime if isinstance(service.runtime, OfficialMeridianRuntime) else None
+        payload = execute_fit_dispatch(
+            dispatch_id=dispatch_id,
+            repo=repo,
+            runtime=owned,
+            service=service,
+        )
+        LOGGER.info(
+            "meridian_fit_complete dispatch_id=%s fit_run_id=%s status=%s",
+            dispatch_id,
+            payload.get("fit_run_id"),
+            payload.get("status"),
+        )
+        _emit(payload)
+        return 0
     except Exception as exc:
-        failure = {"status": "FAILED", "error": str(exc), "traceback": traceback.format_exc()}
+        failure = {
+            "status": "FAILED",
+            "failure_class": classify_failure(exc),
+            "error": str(exc),
+            "traceback": traceback.format_exc(),
+            "dispatch_id": os.environ.get("PREM3_MMM_FIT_DISPATCH_ID"),
+            "runtime_mode": os.environ.get("PREM3_MMM_WORKER_MODE"),
+            "worker_image_digest": os.environ.get("PREM3_WORKER_IMAGE_DIGEST"),
+        }
         print(json.dumps(failure), file=sys.stderr)
         return 1
 

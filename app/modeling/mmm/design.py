@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.control_plane.ids import new_decision_id
+from app.eda.extended_contracts import EDAModelDesignHandoff
 from app.modeling.common.external_assets import PINNED_RUNTIME_VERSION, PINNED_UPSTREAM_COMMIT
 from app.modeling.common.fingerprints import canonical_fingerprint
 from app.modeling.mmm.compiler import default_priors
@@ -19,6 +20,23 @@ from app.modeling.mmm.contracts import (
     ModelPlan,
     Recommendation,
 )
+
+# Official Meridian docs demonstrate a standard model run near these values.
+# This is a recommendation bound into a FitPlan after human approval, not a
+# silent PreM3 default that can masquerade as a final accepted model.
+OFFICIAL_STANDARD_MCMC = {
+    "n_chains": 7,
+    "n_adapt": 1000,
+    "n_burnin": 500,
+    "n_keep": 1000,
+}
+QUALIFICATION_MCMC = {
+    "n_chains": 1,
+    "n_adapt": 8,
+    "n_burnin": 2,
+    "n_keep": 2,
+    "label": "QUALIFICATION / ITERATION",
+}
 
 REQUIRED_DECISION_TYPES = (
     DecisionType.MODEL_WINDOW,
@@ -60,6 +78,7 @@ def build_design_brief(
     rf_channels: tuple[str, ...],
     evidence_refs: tuple[str, ...],
     coverage=None,
+    eda_handoff: EDAModelDesignHandoff | None = None,
 ) -> MMMModelDesignBrief:
     window = f"{model_window_start}/{model_window_end}"
     sections = (
@@ -113,8 +132,9 @@ def build_design_brief(
         ),
         _section(
             "MCMC",
-            {"n_chains": 4, "n_adapt": 500, "n_burnin": 500, "n_keep": 1000},
-            "Human must approve exact FitPlan.",
+            dict(OFFICIAL_STANDARD_MCMC),
+            "Official Meridian guidance for a standard model run. Human must "
+            "approve the exact FitPlan; qualification MCMC is labeled separately.",
             refs=evidence_refs,
         ),
     )
@@ -132,6 +152,19 @@ def build_design_brief(
         adequacy = (coverage_span, coverage.source or "model-ready-coverage")
     else:
         adequacy = ()
+    extra_refs: tuple[str, ...] = ()
+    extra_limitations: tuple[str, ...] = ()
+    extra_decisions: tuple[str, ...] = ()
+    if eda_handoff is not None:
+        extra_refs = (f"eda_report:{eda_handoff.report_id}",) + tuple(
+            eda_handoff.relevant_finding_refs
+        )
+        extra_limitations = tuple(eda_handoff.known_limitations)
+        extra_decisions = tuple(
+            item.decision_type for item in eda_handoff.open_modeling_decisions
+        )
+        for implication in eda_handoff.modeling_implications:
+            extra_refs = extra_refs + (implication.implication_id,)
     return MMMModelDesignBrief(
         model_version_id=model_version_id,
         model_objective="Fit a reviewed Meridian MMM for incremental paid-media contribution.",
@@ -147,15 +180,14 @@ def build_design_brief(
         population_scaling="Required for geo models when the contract requires population.",
         holdout_strategy="Optional holdout_id; default none.",
         mcmc_recommendation={
-            "n_chains": 4,
-            "n_adapt": 500,
-            "n_burnin": 500,
-            "n_keep": 1000,
+            **OFFICIAL_STANDARD_MCMC,
             "seed": 1,
+            "source": "OFFICIAL_MERIDIAN_WEB_DOC",
+            "note": "Guidance, not a silent PreM3 default.",
         },
-        known_limitations=limitations,
-        decisions_requiring_human_input=tuple(required),
-        evidence_refs=evidence_refs,
+        known_limitations=limitations + extra_limitations,
+        decisions_requiring_human_input=tuple(dict.fromkeys((*required, *extra_decisions))),
+        evidence_refs=evidence_refs + extra_refs,
         sections=sections,
         candidate_window=window,
         n_times=None if coverage is None else coverage.n_times,
@@ -191,7 +223,7 @@ def proposed_model_plan(
         adstock_decay_spec="geometric",
         saturation_spec="hill",
     )
-    mcmc = {"n_chains": 4, "n_adapt": 500, "n_burnin": 500, "n_keep": 1000, "seed": 1}
+    mcmc = {**OFFICIAL_STANDARD_MCMC, "seed": 1}
     fingerprint = canonical_fingerprint(
         {
             "input": model_ready_manifest_fingerprint,
