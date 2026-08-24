@@ -19,12 +19,18 @@ _PLAN_COPY: dict[str, tuple[str, str, list[str]]] = {
     ),
     PlanId.PORTFOLIO: (
         "Portfolio",
-        "Up to ten methodology-neutral active PreM3 Projects with unlimited commercial re-evaluations.",
+        (
+            "Up to ten methodology-neutral active PreM3 Projects "
+            "with unlimited commercial re-evaluations."
+        ),
         ["Up to 10 PreM3 Projects", "Unlimited re-evaluations", "Meridian Integration"],
     ),
     PlanId.ENTERPRISE: (
         "Enterprise",
-        "Up to fifty methodology-neutral active PreM3 Projects with unlimited commercial re-evaluations.",
+        (
+            "Up to fifty methodology-neutral active PreM3 Projects "
+            "with unlimited commercial re-evaluations."
+        ),
         ["Up to 50 PreM3 Projects", "Unlimited re-evaluations", "Meridian Integration"],
     ),
 }
