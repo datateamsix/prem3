@@ -1187,6 +1187,73 @@ components:
       - connection_id
       title: DriveBindingSetupRequest
       type: object
+    EdaAttentionView:
+      additionalProperties: false
+      properties:
+        attention_count:
+          title: Attention Count
+          type: integer
+        error_count:
+          title: Error Count
+          type: integer
+        max_official_severity:
+          title: Max Official Severity
+          type: string
+        review_recommended:
+          title: Review Recommended
+          type: boolean
+      required:
+      - review_recommended
+      - max_official_severity
+      - attention_count
+      - error_count
+      title: EdaAttentionView
+      type: object
+    EdaLatestRunView:
+      additionalProperties: false
+      properties:
+        official_gate_outcome:
+          title: Official Gate Outcome
+          type: string
+        official_gate_status:
+          title: Official Gate Status
+          type: string
+        premodel_run_id:
+          title: Premodel Run Id
+          type: string
+      required:
+      - premodel_run_id
+      - official_gate_status
+      - official_gate_outcome
+      title: EdaLatestRunView
+      type: object
+    EdaNextActionView:
+      additionalProperties: false
+      properties:
+        action_type:
+          title: Action Type
+          type: string
+        blocking:
+          title: Blocking
+          type: boolean
+        owner:
+          title: Owner
+          type: string
+        route_hint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Route Hint
+        statement:
+          title: Statement
+          type: string
+      required:
+      - action_type
+      - statement
+      - owner
+      - blocking
+      title: EdaNextActionView
+      type: object
     EvaluationExecutionView:
       additionalProperties: false
       properties:
@@ -1327,6 +1394,35 @@ components:
       required:
       - plan_id
       title: ExecutePlanRequest
+      type: object
+    ExtendedEdaReadModelResponse:
+      additionalProperties: false
+      properties:
+        attention:
+          $ref: '#/components/schemas/EdaAttentionView'
+        extended_report:
+          additionalProperties: true
+          title: Extended Report
+          type: object
+        latest_run:
+          $ref: '#/components/schemas/EdaLatestRunView'
+        next_actions:
+          items:
+            $ref: '#/components/schemas/EdaNextActionView'
+          title: Next Actions
+          type: array
+        official_report:
+          $ref: '#/components/schemas/OfficialEdaReportView'
+        status:
+          title: Status
+          type: string
+      required:
+      - status
+      - extended_report
+      - official_report
+      - latest_run
+      - attention
+      title: ExtendedEdaReadModelResponse
       type: object
     FitRunResponse:
       additionalProperties: false
@@ -2173,6 +2269,35 @@ components:
       - label
       - capability
       title: NextAction
+      type: object
+    OfficialEdaReportView:
+      additionalProperties: false
+      properties:
+        artifact_class:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Artifact Class
+        authorized_view_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorized View Url
+        content_type:
+          default: text/html
+          title: Content Type
+          type: string
+        official_report_available:
+          title: Official Report Available
+          type: boolean
+        sha256:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sha256
+      required:
+      - official_report_available
+      title: OfficialEdaReportView
       type: object
     OrganizationReadModel:
       additionalProperties: false
@@ -4112,6 +4237,73 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Cycle Mmm
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/eda:
+    get:
+      operationId: getProjectCycleMmmEda
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedEdaReadModelResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm Eda
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/eda/official-html:
+    get:
+      operationId: getProjectCycleMmmEdaOfficialHtml
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm Eda Official Html
       tags:
       - mmm-modeling
   /v1/projects/{project_id}/cycles/{cycle_id}/mmm/model-design:

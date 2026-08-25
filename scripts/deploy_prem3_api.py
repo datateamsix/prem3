@@ -47,6 +47,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--skip-build", action="store_true")
+    parser.add_argument(
+        "--no-traffic",
+        action="store_true",
+        help="Create a candidate revision without sending production traffic.",
+    )
     args = parser.parse_args(argv)
     if not args.execute:
         print("DEPLOY_PREM3_API_NOT_RUN")
@@ -61,7 +66,11 @@ def main(argv: list[str] | None = None) -> int:
     image_uri = f"{IMAGE_REPO}:{source_sha}"
     digest = _image_digest(image_uri)
     secrets = _available_secrets()
-    _deploy(image_uri=f"{IMAGE_REPO}@{digest}" if digest else image_uri, secrets=secrets)
+    _deploy(
+        image_uri=f"{IMAGE_REPO}@{digest}" if digest else image_uri,
+        secrets=secrets,
+        no_traffic=args.no_traffic,
+    )
     historical_after = _historical_fingerprint()
     if historical_before != historical_after:
         print("DEPLOY_PREM3_API_REFUSED")
@@ -158,15 +167,35 @@ def _runtime_env_file() -> Path:
         "EVALUATION_DISPATCHER_SA": DISPATCHER_SA,
         "EVALUATION_LAUNCH_URL": launch_url,
         "EVALUATION_LAUNCH_AUDIENCE": launch_url,
+        "MERIDIAN_FIT_DISPATCH_QUEUE": "prem3-meridian-fit-dispatch",
+        "MERIDIAN_MODEL_WORKER_JOB": "prem3-meridian-model-worker",
+        "MERIDIAN_FIT_DISPATCHER_SA": DISPATCHER_SA,
+        "MERIDIAN_FIT_LAUNCH_URL": f"{DEFAULT_API_URL}/internal/v1/mmm-fit-dispatches",
+        "MERIDIAN_FIT_LAUNCH_AUDIENCE": f"{DEFAULT_API_URL}/internal/v1/mmm-fit-dispatches",
+        "PREM3_SOURCE_COMMIT_SHA": _git_sha(),
     }
     for key, value in extras.items():
+        if key == "PREM3_SOURCE_COMMIT_SHA":
+            if "PREM3_SOURCE_COMMIT_SHA:" in existing:
+                lines = [
+                    (
+                        f'PREM3_SOURCE_COMMIT_SHA: "{value}"'
+                        if line.startswith("PREM3_SOURCE_COMMIT_SHA:")
+                        else line
+                    )
+                    for line in existing.splitlines()
+                ]
+                existing = "\n".join(lines) + "\n"
+            else:
+                existing = existing.rstrip() + f'\nPREM3_SOURCE_COMMIT_SHA: "{value}"\n'
+            continue
         if f"{key}:" not in existing:
             existing = existing.rstrip() + f'\n{key}: "{value}"\n'
     dest.write_text(existing)
     return dest
 
 
-def _deploy(*, image_uri: str, secrets: dict[str, str]) -> None:
+def _deploy(*, image_uri: str, secrets: dict[str, str], no_traffic: bool = False) -> None:
     args = [
         "run",
         "deploy",
@@ -186,6 +215,8 @@ def _deploy(*, image_uri: str, secrets: dict[str, str]) -> None:
         "--startup-probe=httpGet.path=/health,periodSeconds=5,timeoutSeconds=3,failureThreshold=12",
         "--quiet",
     ]
+    if no_traffic:
+        args.append("--no-traffic")
     args.append(f"--env-vars-file={_runtime_env_file()}")
     if secrets:
         packed = ",".join(f"{env}={ref}" for env, ref in secrets.items())

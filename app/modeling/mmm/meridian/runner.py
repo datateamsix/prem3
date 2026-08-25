@@ -13,6 +13,7 @@ from typing import Any, Protocol
 from app.modeling.common.errors import FitRuntimeError, PriorValidationFailedError, SerdeError
 from app.modeling.common.external_assets import PINNED_RUNTIME_VERSION
 from app.modeling.mmm.contracts import (
+    ComputeProfile,
     MeridianFitPlan,
     MeridianRuntimeMode,
     ModelPlan,
@@ -621,9 +622,19 @@ class OfficialMeridianRuntime:
 def runtime_mode_for_profile(profile: str, *, official: bool) -> MeridianRuntimeMode:
     if not official:
         return MeridianRuntimeMode.FAKE_TEST
-    if profile == "CPU_TEST":
+    if profile == ComputeProfile.CPU_TEST.value:
         return MeridianRuntimeMode.OFFICIAL_CPU_SMOKE
-    return MeridianRuntimeMode.OFFICIAL_GPU
+    if profile in {
+        ComputeProfile.CPU_STANDARD.value,
+        ComputeProfile.CPU_LARGE.value,
+    }:
+        return MeridianRuntimeMode.OFFICIAL_CPU
+    if profile in {
+        ComputeProfile.GPU_STANDARD.value,
+        ComputeProfile.GPU_LARGE.value,
+    }:
+        return MeridianRuntimeMode.OFFICIAL_GPU
+    raise FitRuntimeError(f"Unsupported compute profile {profile}.")
 
 
 def execute_prior_validation(

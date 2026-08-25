@@ -110,3 +110,7 @@ class MeridianImportError(ModelingError):
 
 class GpuNotVisibleError(ModelingError):
     code = "GPU_NOT_VISIBLE"
+
+
+class WorkerProvenanceError(ModelingError):
+    code = "WORKER_PROVENANCE_INVALID"

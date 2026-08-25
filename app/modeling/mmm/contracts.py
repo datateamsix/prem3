@@ -66,6 +66,8 @@ class PriorSource(StrEnum):
 
 class ComputeProfile(StrEnum):
     CPU_TEST = "CPU_TEST"
+    CPU_STANDARD = "CPU_STANDARD"
+    CPU_LARGE = "CPU_LARGE"
     GPU_STANDARD = "GPU_STANDARD"
     GPU_LARGE = "GPU_LARGE"
 
@@ -96,7 +98,16 @@ class FitRunStatus(StrEnum):
 class MeridianRuntimeMode(StrEnum):
     FAKE_TEST = "FAKE_TEST"
     OFFICIAL_CPU_SMOKE = "OFFICIAL_CPU_SMOKE"
+    OFFICIAL_CPU = "OFFICIAL_CPU"
     OFFICIAL_GPU = "OFFICIAL_GPU"
+
+
+PRODUCTION_OFFICIAL_RUNTIME_MODES = frozenset(
+    {MeridianRuntimeMode.OFFICIAL_CPU, MeridianRuntimeMode.OFFICIAL_GPU}
+)
+QUALIFICATION_RUNTIME_MODES = frozenset(
+    {MeridianRuntimeMode.FAKE_TEST, MeridianRuntimeMode.OFFICIAL_CPU_SMOKE}
+)
 
 
 class FitPurpose(StrEnum):
@@ -325,6 +336,10 @@ class MeridianFitPlan(FrozenModel):
     model_plan_fingerprint: str
     meridian_version: str
     container_image_digest: str | None = None
+    source_commit_sha: str | None = None
+    worker_build_id: str | None = None
+    python_version: str | None = None
+    tensorflow_version: str | None = None
     backend: str = "tensorflow"
     n_chains: int
     n_adapt: int
@@ -332,6 +347,7 @@ class MeridianFitPlan(FrozenModel):
     n_keep: int
     seed: int
     reconstruction_batch_size: int | None = None
+    n_chains_schedule: tuple[int, ...] | None = None
     compute_profile: ComputeProfile
     fit_purpose: FitPurpose = FitPurpose.MODEL_ITERATION
     artifact_destinations: dict[str, str] = Field(default_factory=dict)
@@ -362,10 +378,13 @@ class FitRun(FrozenModel):
     status: FitRunStatus = FitRunStatus.PENDING
     compute_profile: ComputeProfile
     runtime_mode: MeridianRuntimeMode = MeridianRuntimeMode.FAKE_TEST
+    fit_purpose: FitPurpose = FitPurpose.MODEL_ITERATION
     python_version: str | None = None
     meridian_version: str | None = None
     tensorflow_version: str | None = None
     worker_image_digest: str | None = None
+    source_commit_sha: str | None = None
+    worker_build_id: str | None = None
     dispatch_id: str | None = None
     attempt: int = 1
     ledger_readback_verified: bool = False

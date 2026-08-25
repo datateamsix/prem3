@@ -118,3 +118,7 @@ GPU-detect execution `prem3-meridian-model-worker-zxl49` (CPU job,
 
 Do not relabel this CPU job as OFFICIAL_GPU.
 
+GPU remains preferred production compute. `MODEL_ACCEPTED` requires
+`OFFICIAL_MERIDIAN_RUNTIME` (`OFFICIAL_CPU` or `OFFICIAL_GPU`) plus
+`fit_purpose=FINAL_MODEL`, not GPU hardware.
+

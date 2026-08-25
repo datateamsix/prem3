@@ -61,6 +61,7 @@ def main(argv: list[str] | None = None) -> int:
     resolved = f"{IMAGE_REPO}@{digest}" if digest else image_uri
     env = dict(WORKER_ENV)
     env["PREM3_WORKER_IMAGE_DIGEST"] = digest or source_sha
+    env["PREM3_SOURCE_COMMIT_SHA"] = source_sha
     try:
         _deploy(resolved, env, cpu_only=args.cpu_only)
     except RuntimeError as exc:

@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, ConfigDict
 
+from app.modeling.common.errors import ModelingError
 from app.service.dependencies import get_control_plane
 from app.service.errors import (
     evaluation_dispatch_unavailable,
@@ -66,6 +67,13 @@ async def launch_evaluation_dispatch(
     return LaunchAck(dispatch_id=result["dispatch_id"], status=result["status"])
 
 
+def get_mmm_service_identity_verifier(request: Request) -> ServiceIdentityVerifier | None:
+    return (
+        getattr(request.app.state, "mmm_service_identity_verifier", None)
+        or get_service_identity_verifier(request)
+    )
+
+
 @router.post(
     "/mmm-fit-dispatches/{dispatch_id}/launch",
     response_model=LaunchAck,
@@ -75,7 +83,7 @@ async def launch_mmm_fit_dispatch(
     dispatch_id: str,
     request: Request,
     verifier: Annotated[
-        ServiceIdentityVerifier | None, Depends(get_service_identity_verifier)
+        ServiceIdentityVerifier | None, Depends(get_mmm_service_identity_verifier)
     ],
     _control_plane: Annotated[object, Depends(get_control_plane)],
     x_cloudtasks_taskname: Annotated[str | None, Header(alias="X-CloudTasks-TaskName")] = None,
@@ -86,20 +94,16 @@ async def launch_mmm_fit_dispatch(
     verifier.verify(request.headers.get("authorization") or request.headers.get("Authorization"))
     modeling = getattr(request.app.state, "mmm_modeling", None)
     launcher = getattr(request.app.state, "mmm_fit_launcher", None)
-    if modeling is None:
+    if modeling is None or launcher is None:
         raise evaluation_dispatch_unavailable()
-    dispatch = modeling.repo.get_dispatch(dispatch_id)
-    if dispatch is None:
-        raise resource_not_found()
-    if launcher is None:
-        return LaunchAck(dispatch_id=dispatch_id, status=dispatch.status.value)
     try:
-        execution_name = launcher.launch(dispatch_id)
+        updated = modeling.launch_dispatch(dispatch_id, launcher=launcher)
+    except ModelingError as exc:
+        if exc.code == "RESOURCE_NOT_FOUND":
+            raise resource_not_found() from exc
+        security_log("mmm.fit_launch_rejected", dispatch_id=dispatch_id, code=exc.code)
+        raise evaluation_dispatch_unavailable() from exc
     except JobLaunchError:
         security_log("mmm.fit_launch_http_failed", dispatch_id=dispatch_id)
         raise evaluation_dispatch_unavailable() from None
-    updated = dispatch.model_copy(
-        update={"cloud_run_execution_name": execution_name}
-    )
-    modeling.repo.put_dispatch(updated)
-    return LaunchAck(dispatch_id=dispatch_id, status=updated.status.value)
+    return LaunchAck(dispatch_id=updated.dispatch_id, status=updated.status.value)

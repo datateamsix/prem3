@@ -8,12 +8,13 @@ Keep three artifacts separate:
 
 - `evaluation/meridian_official_cpu_smoke.json`
 - `evaluation/meridian_cloud_runtime_qualification.json`
-- Music Center final fit (not produced until OFFICIAL_GPU + human acceptance)
+- Music Center final fit (OFFICIAL_CPU or OFFICIAL_GPU + FINAL_MODEL + human acceptance)
 
 ## 0. Lineage
 
 - M3-00: `e6fc551273f940571f5ce2bb371c83f7a1685506`
 - M3-01: `3204c3d9957560c60ae2d27bc1cf2037953123a6`
+- M3-02: `981642e9e64b5657c0573de97173e4d535479d7b`
 - Branch: `feature/prem3-m3-meridian-modeling-runtime`
 - Parent until merge: PR 18 `feature/prem3-project-architecture-enablement`
 - Restack required after PR 18 merges onto `main`

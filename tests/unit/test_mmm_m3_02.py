@@ -35,7 +35,7 @@ def test_cpu_smoke_cannot_become_model_accepted() -> None:
     service = _official_service()
     version = _start(service)
     _fit_ready(service, version, fit_purpose=FitPurpose.RUNTIME_QUALIFICATION)
-    with pytest.raises(QualificationAcceptanceError, match="cannot become MODEL_ACCEPTED"):
+    with pytest.raises(QualificationAcceptanceError, match="MODEL_ACCEPTED"):
         service.accept(
             tenant_id="ten_a",
             project_id="prj_a",

@@ -8,6 +8,8 @@ No Firestore, Clerk, or Stripe network call on import.
 
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -281,6 +283,7 @@ def create_app(
     )
     app.state.mmm_modeling = modeling
     app.state.mmm_fit_launcher = fit_launcher
+    app.state.mmm_service_identity_verifier = _mmm_service_identity_verifier(cfg)
     if extended_eda is None:
         if uses_cloud_runtime():
             client = getattr(repo, "client", None)
@@ -576,6 +579,25 @@ def _default_evaluation_stack(
     )
 
 
+def _mmm_service_identity_verifier(settings: Settings):
+    if not uses_cloud_runtime():
+        return FakeServiceIdentityVerifier(
+            allowed_email=settings.meridian_fit_dispatcher_sa
+            or settings.evaluation_dispatcher_sa
+            or "prem3-evaluation-dispatcher@local",
+            audience=settings.meridian_fit_launch_audience
+            or "http://localhost/internal/v1/mmm-fit-dispatches",
+        )
+    if not (
+        settings.meridian_fit_dispatcher_sa and settings.meridian_fit_launch_audience
+    ):
+        return None
+    return GoogleOidcServiceIdentityVerifier(
+        allowed_email=settings.meridian_fit_dispatcher_sa,
+        audience=settings.meridian_fit_launch_audience,
+    )
+
+
 def _default_mmm_stack(
     settings: Settings,
     control_plane: ControlPlaneRepository,
@@ -609,6 +631,8 @@ def _default_mmm_stack(
         repo,
         dispatcher=dispatcher,
         worker_image_digest=settings.meridian_model_worker_image,
+        source_commit_sha=os.getenv("PREM3_SOURCE_COMMIT_SHA"),
+        worker_build_id=os.getenv("PREM3_WORKER_BUILD_ID"),
         object_store=GcsObjectStore() if settings.artifact_bucket else None,
         artifact_bucket=settings.artifact_bucket,
     )

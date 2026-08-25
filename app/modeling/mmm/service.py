@@ -47,6 +47,7 @@ from app.modeling.mmm.artifacts import (
 )
 from app.modeling.mmm.compiler import compile_fit_plan_payload, compile_meridian_model_spec
 from app.modeling.mmm.contracts import (
+    PRODUCTION_OFFICIAL_RUNTIME_MODES,
     AcceptanceDecision,
     ComputeProfile,
     DecisionStatus,
@@ -90,6 +91,12 @@ from app.modeling.mmm.meridian.runner import (
     runtime_mode_for_profile,
 )
 from app.modeling.mmm.meridian.summarizer import structured_results
+from app.modeling.mmm.provenance import (
+    SourceHistory,
+    assert_final_model_provenance,
+    resolve_source_commit_sha,
+    resolve_worker_build_id,
+)
 from app.modeling.mmm.repository import InMemoryModelingRepository, ModelingRepository
 from app.modeling.mmm.review import assemble_review_pack
 from app.modeling.mmm.states import (
@@ -117,6 +124,9 @@ class MMMModelingService:
         object_store: object | None = None,
         artifact_bucket: str | None = None,
         worker_image_digest: str | None = None,
+        source_commit_sha: str | None = None,
+        worker_build_id: str | None = None,
+        source_history: SourceHistory | None = None,
     ) -> None:
         self.repo = repo or InMemoryModelingRepository()
         self.runtime = runtime or FakeMeridianRuntime()
@@ -125,6 +135,9 @@ class MMMModelingService:
         self.object_store = object_store
         self.artifact_bucket = artifact_bucket
         self.worker_image_digest = worker_image_digest
+        self.source_commit_sha = source_commit_sha
+        self.worker_build_id = worker_build_id
+        self.source_history = source_history
         self._lock = Lock()
 
     def start_design(
@@ -413,21 +426,35 @@ class MMMModelingService:
             if plan.compute_profile is ComputeProfile.CPU_TEST
             else FitPurpose.MODEL_ITERATION
         )
+        source_sha = resolve_source_commit_sha(configured=self.source_commit_sha)
+        build_id = resolve_worker_build_id(configured=self.worker_build_id)
+        if purpose is FitPurpose.FINAL_MODEL:
+            assert_final_model_provenance(
+                source_commit_sha=source_sha,
+                worker_image_digest=self.worker_image_digest,
+                history=self.source_history,
+            )
         payload = compile_fit_plan_payload(
             plan,
             fit_purpose=purpose,
             container_image_digest=self.worker_image_digest,
+            source_commit_sha=source_sha,
+            worker_build_id=build_id,
         )
+        schedule = payload.get("n_chains_schedule")
         fit_plan = MeridianFitPlan(
             model_version_id=version.model_version_id,
             model_plan_fingerprint=plan.fingerprint,
             meridian_version=PINNED_RUNTIME_VERSION,
             container_image_digest=self.worker_image_digest,
+            source_commit_sha=source_sha,
+            worker_build_id=build_id,
             n_chains=payload["n_chains"],
             n_adapt=payload["n_adapt"],
             n_burnin=payload["n_burnin"],
             n_keep=payload["n_keep"],
             seed=payload["seed"],
+            n_chains_schedule=None if schedule is None else tuple(schedule),
             compute_profile=plan.compute_profile,
             fit_purpose=purpose,
             input_fingerprint=plan.model_ready_manifest_fingerprint,
@@ -544,8 +571,11 @@ class MMMModelingService:
                 status=FitRunStatus.RUNNING,
                 compute_profile=fit_plan.compute_profile,
                 runtime_mode=runtime_mode,
+                fit_purpose=fit_plan.fit_purpose,
                 meridian_version=PINNED_RUNTIME_VERSION,
                 worker_image_digest=fit_plan.container_image_digest,
+                source_commit_sha=fit_plan.source_commit_sha,
+                worker_build_id=fit_plan.worker_build_id,
                 started_at=utc_now(),
             )
             self.repo.put_fit_run(run)
@@ -590,9 +620,45 @@ class MMMModelingService:
             }
         )
         self.repo.put_dispatch(stored)
-        return run.model_copy(
+        pending = run.model_copy(
             update={"dispatch_id": stored.dispatch_id, "status": FitRunStatus.PENDING}
         )
+        self.repo.put_fit_run(pending)
+        return pending
+
+    def launch_dispatch(self, dispatch_id: str, *, launcher) -> MeridianFitDispatch:
+        dispatch = self.repo.get_dispatch(dispatch_id)
+        if dispatch is None:
+            raise ModelVersionNotFoundError("Fit dispatch was not found.")
+        approval = self.repo.get_fit_approval(dispatch.model_version_id)
+        fit_plan = self.repo.get_fit_plan(dispatch.model_version_id)
+        if approval is None or approval.superseded:
+            raise FitApprovalRequiredError(
+                "Fit cannot launch without an exact human approval."
+            )
+        if fit_plan is None:
+            raise FitApprovalRequiredError("Fit plan has not been compiled.")
+        if fit_plan.fingerprint != dispatch.fit_plan_fingerprint:
+            raise StaleApprovalError("Dispatch FitPlan fingerprint does not match.")
+        if approval.fit_plan_fingerprint != dispatch.fit_plan_fingerprint:
+            raise StaleApprovalError("Stale fit approval cannot launch.")
+        if approval.approval_id != dispatch.fit_approval_id:
+            raise StaleApprovalError("Dispatch is not bound to the current FitApproval.")
+        if dispatch.compute_profile is not fit_plan.compute_profile:
+            raise InputContractMismatchError(
+                "Dispatch compute profile must match the approved FitPlan."
+            )
+        if dispatch.cloud_run_execution_name:
+            return dispatch
+        execution_name = launcher.launch(dispatch_id)
+        updated = dispatch.model_copy(
+            update={
+                "cloud_run_execution_name": execution_name,
+                "status": FitDispatchStatus.RUNNING,
+                "updated_at": utc_now(),
+            }
+        )
+        return self.repo.put_dispatch(updated)
 
     def _execute_fit(self, version, plan, fit_plan, run: FitRun) -> FitRun:
         result = execute_approved_fit(
@@ -769,15 +835,25 @@ class MMMModelingService:
             raise FakeRuntimeAcceptanceError(
                 "FAKE_TEST is permanently ineligible for production MODEL_ACCEPTED."
             )
+        if run.runtime_mode is MeridianRuntimeMode.OFFICIAL_CPU_SMOKE:
+            raise QualificationAcceptanceError(
+                "OFFICIAL_CPU_SMOKE is ineligible for MODEL_ACCEPTED."
+            )
         fit_plan = self.repo.get_fit_plan(model_version_id)
         if fit_plan is None or fit_plan.fit_purpose is not FitPurpose.FINAL_MODEL:
             raise QualificationAcceptanceError(
                 "RUNTIME_QUALIFICATION and MODEL_ITERATION cannot become MODEL_ACCEPTED."
             )
-        if run.runtime_mode is not MeridianRuntimeMode.OFFICIAL_GPU:
+        if run.runtime_mode not in PRODUCTION_OFFICIAL_RUNTIME_MODES:
             raise QualificationAcceptanceError(
-                "MODEL_ACCEPTED requires OFFICIAL_GPU production runtime."
+                "MODEL_ACCEPTED requires OFFICIAL_MERIDIAN_RUNTIME "
+                "(OFFICIAL_CPU or OFFICIAL_GPU) with an approved compute profile."
             )
+        assert_final_model_provenance(
+            source_commit_sha=fit_plan.source_commit_sha or run.source_commit_sha,
+            worker_image_digest=fit_plan.container_image_digest or run.worker_image_digest,
+            history=self.source_history,
+        )
         if _is_service_account_actor(actor_id):
             raise HumanApprovalRequiredError(
                 "A service account cannot be the human ModelAcceptance actor."

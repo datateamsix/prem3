@@ -87,3 +87,7 @@ immutable human `FitApproval` bound to the exact FitPlan fingerprint.
 - Official `REVIEW` may proceed only after explicit human acknowledgment
 - Health score is not the sole criterion
 - Accepted versions cannot mutate; iteration creates a new `MMMModelVersion`
+- `MODEL_ACCEPTED` requires `OFFICIAL_MERIDIAN_RUNTIME` (`OFFICIAL_CPU` or
+  `OFFICIAL_GPU`) plus `fit_purpose=FINAL_MODEL`. GPU is preferred compute, not
+  modeling authority. `FAKE_TEST` and `OFFICIAL_CPU_SMOKE` are permanently
+  ineligible. A service account cannot be the human acceptance actor.

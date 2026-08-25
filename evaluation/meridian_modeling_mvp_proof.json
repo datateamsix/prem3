@@ -6,6 +6,7 @@
     "mission3_base_sha": "f5a0851fb095829ea7a286ed8f07d0673c35566a",
     "m3_00_checkpoint_sha": "e6fc551273f940571f5ce2bb371c83f7a1685506",
     "m3_01_checkpoint_sha": "3204c3d9957560c60ae2d27bc1cf2037953123a6",
+    "m3_02_checkpoint_sha": "981642e9e64b5657c0573de97173e4d535479d7b",
     "stacked": true,
     "restack_required": true,
     "restack_plan": "After PR 18 merges: fetch latest main, rebase this M3 branch onto main, verify the diff is M3-only, rerun Project Architecture + M3 tests, regenerate contracts if needed. Do not open a standalone merge PR against main while PR 18 remains the parent.",
@@ -21,6 +22,40 @@
       "status": "PASS",
       "checkpoint_sha": "3204c3d9957560c60ae2d27bc1cf2037953123a6",
       "evidence": "FitPurpose, official-only Cloud dispatch, human actor rejection, no Fake/Recording path to MODEL_ACCEPTED."
+    },
+    "m3_02_checkpoint": {
+      "status": "PASS",
+      "checkpoint_sha": "981642e9e64b5657c0573de97173e4d535479d7b",
+      "commit_message": "feat(eda): bind live Meridian HTML SHA and isolate official embed",
+      "note": "Live Meridian CPU qualification, Firestore/GCS/BQ, and M3-02A HTML trust landed together on this SHA. Working-tree leftovers PHASE1.md and two data-foundation proof JSON files remain excluded.",
+      "accepted_as": [
+        "REAL_MERIDIAN_RUNTIME_PROVEN",
+        "LIVE_FIRESTORE_PROVEN",
+        "LIVE_GCS_PROVEN",
+        "LIVE_BIGQUERY_LEDGER_PROVEN",
+        "GPU_ATTEMPTED_AND_EXTERNALLY_BLOCKED"
+      ]
+    },
+    "committed_worker_provenance": {
+      "status": "PENDING",
+      "note": "FINAL_MODEL cannot use historical uncommitted digest sha256:e4bda7be5bb6ec92dc1576d076f7800745c0c16e071e0d74964d65dfb25a930e. Rebuild after M3-03 commit."
+    },
+    "deployed_m3_api": {
+      "status": "PENDING"
+    },
+    "integrated_cloud_tasks_path": {
+      "status": "PENDING",
+      "note": "Direct gcloud run jobs execute no longer satisfies this proof."
+    },
+    "final_runtime": {
+      "status": "PENDING",
+      "preferred": "OFFICIAL_GPU",
+      "production_eligible": ["OFFICIAL_CPU", "OFFICIAL_GPU"],
+      "ineligible": ["FAKE_TEST", "OFFICIAL_CPU_SMOKE"]
+    },
+    "final_fit_purpose": {
+      "required": "FINAL_MODEL",
+      "note": "Acceptance depends on fit_purpose, not GPU."
     },
     "logic_proof": {
       "status": "PASS",
@@ -112,7 +147,7 @@
     },
     "music_center_final_fit": {
       "status": "BLOCKED",
-      "reason": "OFFICIAL_GPU L4 job could not be created. FINAL_MODEL / MODEL_ACCEPTED remains blocked. Do not relabel CPU cloud proof as GPU proof.",
+      "reason": "GPU is preferred, not required. Official CPU FINAL_MODEL on Dataset A with n_chains=7 / 1000 / 500 / 1000 is operationally NOT_FEASIBLE inside the 3600s Cloud Run timeout when scaled from the 140s tiny smoke. MCMC is not silently reduced. Integrated dispatch and a committed worker digest are still required before a real posterior attempt.",
       "coverage": {
         "earliest_time": "2024-01-01",
         "latest_time": "2026-06-29",
@@ -133,12 +168,12 @@
       "scope": "OFFICIAL_CPU_SMOKE only",
       "review_source": "OFFICIAL_MERIDIAN",
       "evidence_ref": "evaluation/meridian_official_cpu_smoke.json",
-      "note": "Tiny smoke MCMC is EXECUTION_COMPATIBILITY_ONLY. Music Center official review is BLOCKED until FINAL_MODEL GPU fit."
+      "note": "Tiny smoke MCMC is EXECUTION_COMPATIBILITY_ONLY. Music Center official review waits on a real FINAL_MODEL posterior."
     },
     "human_model_acceptance": {
       "status": "BLOCKED",
       "blocking_state": "AWAITING_MODEL_REVIEW",
-      "reason": "No authorized human member accepted a FINAL_MODEL OFFICIAL_GPU artifact. Service accounts cannot masquerade as approved_by. Do not self-approve."
+      "reason": "No authorized human member accepted a FINAL_MODEL official-runtime artifact. Service accounts cannot masquerade as approved_by. Do not self-approve. GPU is not the blocking semantic."
     },
     "firestore_proof": {
       "status": "PASS",

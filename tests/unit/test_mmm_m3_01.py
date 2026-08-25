@@ -62,6 +62,9 @@ from tests.unit.test_mmm_modeling import (
     MUSIC_CENTER_FP,
     MUSIC_CENTER_WINDOW,
     PASS_CHECKS,
+    TEST_HISTORY,
+    TEST_SOURCE_SHA,
+    TEST_WORKER_DIGEST,
     _approve_required,
     _final_official_service,
     _fit_ready,
@@ -310,6 +313,10 @@ def _firestore_service(
             mode=mode,
             library=RecordingMeridianLibrary(checks=PASS_CHECKS),
         ),
+        worker_image_digest=TEST_WORKER_DIGEST,
+        source_commit_sha=TEST_SOURCE_SHA,
+        worker_build_id="build-test",
+        source_history=TEST_HISTORY,
     )
 
 
@@ -707,6 +714,10 @@ def test_missing_ledger_blocks_acceptance() -> None:
             library=RecordingMeridianLibrary(checks=PASS_CHECKS),
         ),
         ledger=_BrokenLedger(),
+        worker_image_digest=TEST_WORKER_DIGEST,
+        source_commit_sha=TEST_SOURCE_SHA,
+        worker_build_id="build-test",
+        source_history=TEST_HISTORY,
     )
     version = _start(service, compute_profile=ComputeProfile.GPU_STANDARD)
     _fit_ready(service, version, fit_purpose=FitPurpose.FINAL_MODEL)

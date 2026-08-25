@@ -1,4 +1,4 @@
-"""Server-owned Cloud Run Job mapping for GPU_STANDARD Meridian fits."""
+"""Server-owned Cloud Run Job mapping for Meridian compute profiles."""
 
 from __future__ import annotations
 
@@ -20,17 +20,63 @@ DEFAULT_GPU_TYPE = "nvidia-l4"
 
 def gpu_standard_job_spec(settings: Settings) -> dict[str, Any]:
     """GPU_STANDARD maps to a server-owned job. Request/agent values are ignored."""
-    return {
-        "job_name": settings.meridian_model_worker_job or DEFAULT_MERIDIAN_MODEL_JOB_NAME,
+    return compute_profile_job_spec(ComputeProfile.GPU_STANDARD, settings)
+
+
+def compute_profile_job_spec(profile: ComputeProfile, settings: Settings) -> dict[str, Any]:
+    """Map an approved compute profile to server-owned job resources."""
+    job_name = settings.meridian_model_worker_job or DEFAULT_MERIDIAN_MODEL_JOB_NAME
+    timeout = settings.meridian_model_timeout_seconds
+    base = {
+        "job_name": job_name,
         "region": settings.cloud_region,
         "image": settings.meridian_model_worker_image,
         "service_account": settings.runtime_sa,
-        "cpu": settings.meridian_model_cpu or "4",
-        "memory": settings.meridian_model_memory or "16Gi",
-        "gpu": settings.meridian_model_gpu or DEFAULT_GPU_TYPE,
-        "timeout_seconds": settings.meridian_model_timeout_seconds,
+        "timeout_seconds": timeout,
         "retry_policy": "server-owned",
+        "compute_profile": profile.value,
     }
+    if profile is ComputeProfile.CPU_TEST:
+        return {
+            **base,
+            "cpu": settings.meridian_model_cpu or "4",
+            "memory": settings.meridian_model_memory or "16Gi",
+            "gpu": None,
+            "runtime_mode": "OFFICIAL_CPU_SMOKE",
+        }
+    if profile is ComputeProfile.CPU_STANDARD:
+        return {
+            **base,
+            "cpu": settings.meridian_model_cpu or "4",
+            "memory": settings.meridian_model_memory or "16Gi",
+            "gpu": None,
+            "runtime_mode": "OFFICIAL_CPU",
+        }
+    if profile is ComputeProfile.CPU_LARGE:
+        return {
+            **base,
+            "cpu": "8",
+            "memory": "32Gi",
+            "gpu": None,
+            "runtime_mode": "OFFICIAL_CPU",
+        }
+    if profile is ComputeProfile.GPU_STANDARD:
+        return {
+            **base,
+            "cpu": settings.meridian_model_cpu or "4",
+            "memory": settings.meridian_model_memory or "16Gi",
+            "gpu": settings.meridian_model_gpu or DEFAULT_GPU_TYPE,
+            "runtime_mode": "OFFICIAL_GPU",
+        }
+    if profile is ComputeProfile.GPU_LARGE:
+        return {
+            **base,
+            "cpu": "8",
+            "memory": "32Gi",
+            "gpu": settings.meridian_model_gpu or DEFAULT_GPU_TYPE,
+            "runtime_mode": "OFFICIAL_GPU",
+        }
+    raise JobLaunchError(f"Unsupported compute profile {profile.value}.")
 
 
 def assert_no_user_resource_authority(request: dict[str, Any]) -> None:
@@ -57,10 +103,7 @@ def assert_no_user_resource_authority(request: dict[str, Any]) -> None:
 
 
 def compute_profile_job_name(profile: ComputeProfile, settings: Settings) -> str:
-    spec = gpu_standard_job_spec(settings)
-    if profile is ComputeProfile.CPU_TEST:
-        return spec["job_name"]
-    return spec["job_name"]
+    return compute_profile_job_spec(profile, settings)["job_name"]
 
 
 class MeridianJobLauncher:
@@ -96,6 +139,7 @@ __all__ = [
     "MeridianJobLauncher",
     "assert_no_user_resource_authority",
     "compute_profile_job_name",
+    "compute_profile_job_spec",
     "default_fit_launcher",
     "execution_id_from_resource",
     "gpu_standard_job_spec",

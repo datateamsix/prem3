@@ -98,20 +98,32 @@ def compile_fit_plan_payload(
     *,
     fit_purpose: FitPurpose = FitPurpose.MODEL_ITERATION,
     container_image_digest: str | None = None,
+    source_commit_sha: str | None = None,
+    worker_build_id: str | None = None,
+    python_version: str | None = None,
+    tensorflow_version: str | None = None,
 ) -> dict[str, Any]:
-    return {
-        "n_chains": int(plan.mcmc.get("n_chains", 4)),
-        "n_adapt": int(plan.mcmc.get("n_adapt", 500)),
-        "n_burnin": int(plan.mcmc.get("n_burnin", 500)),
-        "n_keep": int(plan.mcmc.get("n_keep", 1000)),
-        "seed": int(plan.mcmc.get("seed", 1)),
+    schedule = plan.mcmc.get("n_chains_schedule")
+    payload: dict[str, Any] = {
+        "n_chains": int(plan.mcmc["n_chains"]) if "n_chains" in plan.mcmc else 4,
+        "n_adapt": int(plan.mcmc["n_adapt"]) if "n_adapt" in plan.mcmc else 500,
+        "n_burnin": int(plan.mcmc["n_burnin"]) if "n_burnin" in plan.mcmc else 500,
+        "n_keep": int(plan.mcmc["n_keep"]) if "n_keep" in plan.mcmc else 1000,
+        "seed": int(plan.mcmc["seed"]) if "seed" in plan.mcmc else 1,
         "compute_profile": plan.compute_profile.value,
         "fit_purpose": fit_purpose.value,
         "container_image_digest": container_image_digest,
+        "source_commit_sha": source_commit_sha,
+        "worker_build_id": worker_build_id,
+        "python_version": python_version,
+        "tensorflow_version": tensorflow_version,
         "meridian_version": plan.meridian_version,
         "model_plan_fingerprint": plan.fingerprint,
         "input_fingerprint": plan.model_ready_manifest_fingerprint,
     }
+    if isinstance(schedule, (list, tuple)):
+        payload["n_chains_schedule"] = [int(item) for item in schedule]
+    return payload
 
 
 def default_priors() -> tuple[PriorSpec, ...]:

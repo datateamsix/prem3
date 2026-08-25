@@ -53,6 +53,7 @@ from app.modeling.mmm.meridian.runner import (
     OfficialMeridianRuntime,
     RecordingMeridianLibrary,
 )
+from app.modeling.mmm.provenance import AllowlistedSourceHistory
 from app.modeling.mmm.receipts import receipt_cannot_mutate_plan, reproducibility_manifest
 from app.modeling.mmm.repository import InMemoryModelingRepository
 from app.modeling.mmm.service import MMMModelingService
@@ -97,6 +98,11 @@ PASS_CHECKS = (
 )
 
 
+TEST_SOURCE_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+TEST_WORKER_DIGEST = "sha256:committed-test-worker"
+TEST_HISTORY = AllowlistedSourceHistory(frozenset({TEST_SOURCE_SHA}))
+
+
 class ScriptedRuntime(FakeMeridianRuntime):
     def __init__(self, checks: tuple[OfficialCheckResult, ...]) -> None:
         self.checks = checks
@@ -131,13 +137,19 @@ def _official_service(
     return MMMModelingService(
         InMemoryModelingRepository(),
         runtime=OfficialMeridianRuntime(mode=mode, library=library),
+        worker_image_digest=TEST_WORKER_DIGEST,
+        source_commit_sha=TEST_SOURCE_SHA,
+        worker_build_id="build-test",
+        source_history=TEST_HISTORY,
     )
 
 
 def _final_official_service(
     checks: tuple[OfficialCheckResult, ...] | None = None,
+    *,
+    mode: MeridianRuntimeMode = MeridianRuntimeMode.OFFICIAL_GPU,
 ) -> MMMModelingService:
-    return _official_service(checks, mode=MeridianRuntimeMode.OFFICIAL_GPU)
+    return _official_service(checks, mode=mode)
 
 
 def _service(runtime=None) -> MMMModelingService:
