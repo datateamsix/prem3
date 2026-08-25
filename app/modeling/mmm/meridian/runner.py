@@ -10,7 +10,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
-from app.modeling.common.errors import FitRuntimeError, PriorValidationFailedError, SerdeError
+from app.modeling.common.errors import (
+    FitRuntimeError,
+    ModelSpecIdentifiabilityError,
+    ModelSpecInvalidError,
+    PriorValidationFailedError,
+    SerdeError,
+)
 from app.modeling.common.external_assets import PINNED_RUNTIME_VERSION
 from app.modeling.mmm.contracts import (
     ComputeProfile,
@@ -22,6 +28,7 @@ from app.modeling.mmm.contracts import (
     PriorValidationStatus,
     ReviewSource,
 )
+from app.modeling.mmm.failures import classify_fit_failure
 from app.modeling.mmm.meridian.builder import (
     assert_input_fingerprint,
     assert_not_eda_spec,
@@ -664,7 +671,13 @@ def execute_approved_fit(
         raise FitRuntimeError("FitPlan seed does not match approved MCMC plan.")
     try:
         return runtime.sample_posterior(plan, fit_plan)
-    except FitRuntimeError:
+    except (
+        FitRuntimeError,
+        SerdeError,
+        ModelSpecIdentifiabilityError,
+        ModelSpecInvalidError,
+        PriorValidationFailedError,
+    ):
         raise
     except Exception as exc:
-        raise SerdeError("Meridian fit or serde failed.") from exc
+        raise classify_fit_failure(exc).to_exception() from exc

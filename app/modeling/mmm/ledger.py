@@ -170,7 +170,7 @@ def compile_model_version_row(
 
 
 def compile_fit_run_row(run: FitRun, *, cycle_id: str, track_id: str) -> dict[str, Any]:
-    return {
+    row = {
         "project_id": run.project_id,
         "cycle_id": cycle_id,
         "track_id": track_id,
@@ -180,9 +180,16 @@ def compile_fit_run_row(run: FitRun, *, cycle_id: str, track_id: str) -> dict[st
         "runtime_mode": run.runtime_mode.value,
         "fit_purpose": run.fit_purpose.value,
         "status": run.status.value,
+        "fit_status": run.status.value,
         "meridian_version": run.meridian_version,
         "created_at": run.created_at.isoformat(),
+        "sampling_started": run.sampling_started,
     }
+    if run.failure_class is not None:
+        row["failure_class"] = run.failure_class.value
+    if run.failure_stage is not None:
+        row["failure_stage"] = run.failure_stage.value
+    return row
 
 
 def compile_decision_row(

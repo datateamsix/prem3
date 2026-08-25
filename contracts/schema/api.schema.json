@@ -183,9 +183,176 @@
       "title": "CreateModelDesignRequest",
       "type": "object"
     },
+    "app_service_mmm_models__FitEvidenceLinks": {
+      "additionalProperties": false,
+      "properties": {
+        "fit_approval_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit Approval Id"
+        },
+        "fit_plan_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit Plan Fingerprint"
+        },
+        "fit_run_id": {
+          "title": "Fit Run Id",
+          "type": "string"
+        },
+        "model_plan_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Plan Fingerprint"
+        },
+        "model_plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Plan Id"
+        },
+        "model_version_id": {
+          "title": "Model Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fit_run_id",
+        "model_version_id"
+      ],
+      "title": "FitEvidenceLinks",
+      "type": "object"
+    },
+    "app_service_mmm_models__FitNextActionView": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "title": "Action Type",
+          "type": "string"
+        },
+        "blocking": {
+          "default": true,
+          "title": "Blocking",
+          "type": "boolean"
+        },
+        "owner": {
+          "default": "human",
+          "title": "Owner",
+          "type": "string"
+        },
+        "route_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Route Hint"
+        },
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_type",
+        "statement"
+      ],
+      "title": "FitNextActionView",
+      "type": "object"
+    },
     "app_service_mmm_models__FitRunResponse": {
       "additionalProperties": false,
       "properties": {
+        "dispatch_outcome": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dispatch Outcome"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_mmm_models__FitEvidenceLinks"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "exception_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exception Type"
+        },
+        "failure_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Class"
+        },
+        "failure_stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Stage"
+        },
         "fit_plan_fingerprint": {
           "title": "Fit Plan Fingerprint",
           "type": "string"
@@ -193,6 +360,30 @@
         "fit_run_id": {
           "title": "Fit Run Id",
           "type": "string"
+        },
+        "library": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Library"
+        },
+        "library_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Library Version"
         },
         "meridian_version": {
           "anyOf": [
@@ -210,6 +401,37 @@
           "title": "Model Version Id",
           "type": "string"
         },
+        "next_actions": {
+          "items": {
+            "$ref": "#/$defs/app_service_mmm_models__FitNextActionView"
+          },
+          "title": "Next Actions",
+          "type": "array"
+        },
+        "official_message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Official Message"
+        },
+        "prem3_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prem3 Summary"
+        },
         "python_version": {
           "anyOf": [
             {
@@ -222,6 +444,18 @@
           "default": null,
           "title": "Python Version"
         },
+        "retry_semantics": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry Semantics"
+        },
         "runtime_mode": {
           "anyOf": [
             {
@@ -233,6 +467,18 @@
           ],
           "default": null,
           "title": "Runtime Mode"
+        },
+        "sampling_started": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sampling Started"
         },
         "status": {
           "title": "Status",

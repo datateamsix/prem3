@@ -90,9 +90,58 @@ class AcceptanceDecision(StrEnum):
 
 class FitRunStatus(StrEnum):
     PENDING = "PENDING"
+    QUEUED = "QUEUED"
     RUNNING = "RUNNING"
     SUCCEEDED = "SUCCEEDED"
+    COMPLETE = "COMPLETE"
     FAILED = "FAILED"
+    FAILED_PRE_FIT = "FAILED_PRE_FIT"
+    FAILED_RUNTIME = "FAILED_RUNTIME"
+    FAILED_POSTERIOR = "FAILED_POSTERIOR"
+    FAILED_REVIEW = "FAILED_REVIEW"
+    CANCELED = "CANCELED"
+
+
+class FitFailureClass(StrEnum):
+    MODEL_SPEC_IDENTIFIABILITY_ERROR = "MODEL_SPEC_IDENTIFIABILITY_ERROR"
+    MODEL_SPEC_VALIDATION_ERROR = "MODEL_SPEC_VALIDATION_ERROR"
+    PRIOR_VALIDATION_ERROR = "PRIOR_VALIDATION_ERROR"
+    INPUT_CONTRACT_ERROR = "INPUT_CONTRACT_ERROR"
+    SERIALIZATION_ERROR = "SERIALIZATION_ERROR"
+    RESOURCE_EXHAUSTED = "RESOURCE_EXHAUSTED"
+    TIMEOUT = "TIMEOUT"
+    INFRASTRUCTURE_ERROR = "INFRASTRUCTURE_ERROR"
+    AUTHORIZATION_ERROR = "AUTHORIZATION_ERROR"
+    MERIDIAN_RUNTIME_ERROR = "MERIDIAN_RUNTIME_ERROR"
+    POSTERIOR_SAMPLING_ERROR = "POSTERIOR_SAMPLING_ERROR"
+    OFFICIAL_REVIEW_ERROR = "OFFICIAL_REVIEW_ERROR"
+    UNKNOWN_ERROR = "UNKNOWN_ERROR"
+
+
+class FitFailureStage(StrEnum):
+    MODEL_INITIALIZATION = "MODEL_INITIALIZATION"
+    SERIALIZATION = "SERIALIZATION"
+    POSTERIOR_SAMPLING = "POSTERIOR_SAMPLING"
+    OFFICIAL_REVIEW = "OFFICIAL_REVIEW"
+    DISPATCH = "DISPATCH"
+    UNKNOWN = "UNKNOWN"
+
+
+class RetrySemantics(StrEnum):
+    EXACT_RETRY_ALLOWED = "EXACT_RETRY_ALLOWED"
+    NEW_FIT_PLAN_REQUIRED = "NEW_FIT_PLAN_REQUIRED"
+    NEW_MODEL_DESIGN_REQUIRED = "NEW_MODEL_DESIGN_REQUIRED"
+    NOT_RETRYABLE = "NOT_RETRYABLE"
+
+
+class FitNextActionType(StrEnum):
+    REVIEW_MODEL_IDENTIFIABILITY = "REVIEW_MODEL_IDENTIFIABILITY"
+    REVIEW_MODEL_SPEC = "REVIEW_MODEL_SPEC"
+
+
+class FitDispatchOutcome(StrEnum):
+    SUCCESSFULLY_LAUNCHED = "SUCCESSFULLY_LAUNCHED"
+    LAUNCH_FAILED = "LAUNCH_FAILED"
 
 
 class MeridianRuntimeMode(StrEnum):
@@ -390,6 +439,17 @@ class FitRun(FrozenModel):
     ledger_readback_verified: bool = False
     ledger_status: LedgerPublicationStatus = LedgerPublicationStatus.NOT_ATTEMPTED
     error_code: str | None = None
+    failure_class: FitFailureClass | None = None
+    failure_stage: FitFailureStage | None = None
+    sampling_started: bool | None = None
+    retry_semantics: RetrySemantics | None = None
+    library: str | None = None
+    library_version: str | None = None
+    exception_type: str | None = None
+    official_message: str | None = None
+    prem3_summary: str | None = None
+    next_actions: tuple[str, ...] = ()
+    dispatch_outcome: FitDispatchOutcome | None = None
     created_at: datetime = Field(default_factory=utc_now)
     started_at: datetime | None = None
     completed_at: datetime | None = None
@@ -528,6 +588,7 @@ class MeridianFitDispatch(FrozenModel):
     runtime_mode: MeridianRuntimeMode
     compute_profile: ComputeProfile
     status: FitDispatchStatus = FitDispatchStatus.PENDING
+    launch_outcome: FitDispatchOutcome | None = None
     cloud_task_name: str | None = None
     cloud_run_execution_name: str | None = None
     attempt: int = 1

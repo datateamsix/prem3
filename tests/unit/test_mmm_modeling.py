@@ -692,6 +692,12 @@ def test_legal_transitions_include_iteration_and_acceptance() -> None:
     assert_legal_modeling_transition(
         MMMModelingStage.AWAITING_MODEL_REVIEW, MMMModelingStage.ITERATING_MODEL
     )
+    assert_legal_modeling_transition(
+        MMMModelingStage.FITTING_MODEL, MMMModelingStage.ITERATION_REQUIRED
+    )
+    assert_legal_modeling_transition(
+        MMMModelingStage.AWAITING_FIT_APPROVAL, MMMModelingStage.ITERATION_REQUIRED
+    )
     with pytest.raises(IllegalModelingTransitionError):
         assert_legal_modeling_transition(
             MMMModelingStage.MODEL_ACCEPTED, MMMModelingStage.FITTING_MODEL

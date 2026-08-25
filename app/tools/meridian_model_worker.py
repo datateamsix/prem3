@@ -25,7 +25,7 @@ from app.modeling.mmm.contracts import (
     FitRunStatus,
     MeridianRuntimeMode,
 )
-from app.modeling.mmm.failures import classify_failure
+from app.modeling.mmm.failures import TERMINAL_FIT_STATUSES, classify_failure
 from app.modeling.mmm.firestore import FirestoreModelingRepository
 from app.modeling.mmm.ledger import CanonicalBigQueryModelLedger
 from app.modeling.mmm.meridian.runner import (
@@ -100,14 +100,21 @@ def execute_fit_dispatch(
         project_id=dispatch.project_id,
         fit_run_id=dispatch.fit_run_id,
     )
-    if run is not None and run.status is FitRunStatus.SUCCEEDED:
+    if run is None:
+        raise FitRuntimeError("Fit run was not found.")
+    if run.status in TERMINAL_FIT_STATUSES:
         return {
-            "status": "SUCCEEDED",
+            "status": run.status.value,
             "dispatch_id": dispatch_id,
             "fit_run_id": run.fit_run_id,
-            "skipped": "already COMPLETE",
+            "skipped": "already terminal",
+            "failure_class": None if run.failure_class is None else run.failure_class.value,
+            "sampling_started": run.sampling_started,
+            "retry_semantics": (
+                None if run.retry_semantics is None else run.retry_semantics.value
+            ),
         }
-    if run is not None and run.status is FitRunStatus.RUNNING and run.attempt > 0:
+    if run.status is FitRunStatus.RUNNING and run.attempt > 0:
         if dispatch.cloud_run_execution_name:
             return {
                 "status": "RUNNING",
@@ -143,7 +150,7 @@ def execute_fit_dispatch(
         if artifact is not None:
             result_sha = artifact.binary_sha256
         return {
-            "status": "SUCCEEDED",
+            "status": executed.status.value if executed is not None else "FAILED",
             "tenant_id": dispatch.tenant_id,
             "project_id": dispatch.project_id,
             "cycle_id": dispatch.cycle_id,
@@ -155,6 +162,29 @@ def execute_fit_dispatch(
             "runtime_mode": mode.value,
             "fit_purpose": fit_plan.fit_purpose.value,
             "worker_image_digest": digest,
+            "failure_class": (
+                None
+                if executed is None or executed.failure_class is None
+                else executed.failure_class.value
+            ),
+            "failure_stage": (
+                None
+                if executed is None or executed.failure_stage is None
+                else executed.failure_stage.value
+            ),
+            "sampling_started": None if executed is None else executed.sampling_started,
+            "retry_semantics": (
+                None
+                if executed is None or executed.retry_semantics is None
+                else executed.retry_semantics.value
+            ),
+            "next_actions": [] if executed is None else list(executed.next_actions),
+            "dispatch_outcome": (
+                None
+                if executed is None or executed.dispatch_outcome is None
+                else executed.dispatch_outcome.value
+            ),
+            "official_exception_type": None if executed is None else executed.exception_type,
         }
     result = execute_approved_fit(
         owned,
@@ -264,7 +294,26 @@ def main() -> int:
             payload.get("status"),
         )
         _emit(payload)
-        return 0
+        if payload.get("status") in {"SUCCEEDED", "RUNNING"}:
+            return 0
+        LOGGER.info(
+            "meridian_fit_failed tenant_id=%s project_id=%s cycle_id=%s "
+            "model_version_id=%s fit_run_id=%s fit_purpose=%s runtime_mode=%s "
+            "failure_class=%s failure_stage=%s sampling_started=%s "
+            "official_exception_type=%s",
+            payload.get("tenant_id"),
+            payload.get("project_id"),
+            payload.get("cycle_id"),
+            payload.get("model_version_id"),
+            payload.get("fit_run_id"),
+            payload.get("fit_purpose"),
+            payload.get("runtime_mode"),
+            payload.get("failure_class"),
+            payload.get("failure_stage"),
+            payload.get("sampling_started"),
+            payload.get("official_exception_type"),
+        )
+        return 1
     except Exception as exc:
         failure = {
             "status": "FAILED",

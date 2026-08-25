@@ -162,15 +162,23 @@
     "music_center_final_fit": {
       "status": "FAILED",
       "result": "POSTERIOR_DID_NOT_START",
-      "failure_class": "MERIDIAN_GEO_INVARIANT",
+      "integrated_dispatch": "PASS",
+      "official_runtime_reached": true,
+      "sampling_started": false,
+      "fit_outcome": "FAILED_PRE_FIT",
+      "failure_class": "MODEL_SPEC_IDENTIFIABILITY_ERROR",
+      "failure_stage": "MODEL_INITIALIZATION",
       "model_accepted": false,
-      "lifecycle_state": "AWAITING_FIT_APPROVAL",
-      "fit_run_status": "PENDING",
+      "next_state": "ITERATION_REQUIRED",
+      "lifecycle_state": "ITERATION_REQUIRED",
+      "fit_run_status": "FAILED_PRE_FIT",
       "runtime_mode": "OFFICIAL_CPU",
       "fit_purpose": "FINAL_MODEL",
       "execution": "prem3-meridian-model-worker-bc4sk",
       "evidence_ref": "evaluation/meridian_music_center_final_fit_proof.json",
       "official_meridian": {
+        "library": "google-meridian",
+        "library_version": "1.8.0",
         "exception": "ValueError",
         "message": "The following non_media_treatments variables do not vary across geos, making a model with n_knots=n_time unidentifiable: [b'music_center_promo'].",
         "meridian_options": [
@@ -178,7 +186,9 @@
           "drop geo-invariant non_media_treatments"
         ]
       },
-      "note": "Integrated Cloud Tasks path launched the approved FINAL_MODEL FitPlan. Official Meridian rejected ModelContext construction before posterior sampling. MCMC was not reduced. Worker wrapped the ValueError as SERDE_ERROR. Do not treat this as an accepted model. Do not self-approve.",
+      "historical_classification_choice": "A",
+      "historical_classification_note": "Canonical Music Center proof/current record is corrected. No broad Firestore migration. Live job prem3-meridian-model-worker-bc4sk may still show SERDE_ERROR in historical worker logs.",
+      "note": "Integrated Cloud Tasks path launched the approved FINAL_MODEL FitPlan. Official Meridian rejected ModelContext construction before posterior sampling. MCMC was not reduced. This is FAILED_PRE_FIT / MODEL_SPEC_IDENTIFIABILITY_ERROR, not SERDE_ERROR and not a dispatch failure. Do not treat this as an accepted model. Do not self-approve.",
       "reason": "Official Meridian geo-invariance check blocked construct_model. This is not a 3600s timeout and not MODEL_ACCEPTED.",
       "coverage": {
         "earliest_time": "2024-01-01",
@@ -204,8 +214,27 @@
     },
     "human_model_acceptance": {
       "status": "BLOCKED",
-      "blocking_state": "AWAITING_FIT_APPROVAL",
-      "reason": "No FINAL_MODEL posterior or official review pack exists to accept. Official Meridian blocked ModelContext construction. Service accounts cannot masquerade as approved_by. Do not self-approve."
+      "blocking_state": "ITERATION_REQUIRED",
+      "reason": "No FINAL_MODEL posterior or official review pack exists to accept. Official Meridian blocked ModelContext construction. FitApproval remains immutable historical evidence. Service accounts cannot masquerade as approved_by. Do not self-approve."
+    },
+    "m3_03b_pre_fit_failure_semantics": {
+      "status": "PASS",
+      "integrated_dispatch": "PASS",
+      "official_runtime_reached": true,
+      "sampling_started": false,
+      "fit_outcome": "FAILED_PRE_FIT",
+      "failure_class": "MODEL_SPEC_IDENTIFIABILITY_ERROR",
+      "model_accepted": false,
+      "next_state": "ITERATION_REQUIRED",
+      "retry_semantics": "NEW_MODEL_DESIGN_REQUIRED",
+      "next_action": "REVIEW_MODEL_IDENTIFIABILITY",
+      "historical_classification_choice": "A",
+      "historical_classification_note": "Safely correct only the canonical Music Center proof/current record. Do not run a broad destructive Firestore migration.",
+      "unresolved_model_design_alternatives": [
+        "A: Retain music_center_promo. Reduce time-effect knot flexibility.",
+        "B: Remove music_center_promo. Retain n_knots = n_time.",
+        "C: Use legitimate geo-varying promotion intensity if such data actually exists."
+      ]
     },
     "firestore_proof": {
       "status": "PASS",

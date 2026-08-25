@@ -18,6 +18,7 @@ class MMMModelingStage(StrEnum):
     FITTING_MODEL = "FITTING_MODEL"
     EVALUATING_MODEL = "EVALUATING_MODEL"
     AWAITING_MODEL_REVIEW = "AWAITING_MODEL_REVIEW"
+    ITERATION_REQUIRED = "ITERATION_REQUIRED"
     ITERATING_MODEL = "ITERATING_MODEL"
     MODEL_ACCEPTED = "MODEL_ACCEPTED"
     INTERPRETING_MODEL = "INTERPRETING_MODEL"
@@ -34,6 +35,7 @@ TRACK_PROJECTED_STAGES = frozenset(
         MMMModelingStage.READY_TO_FIT,
         MMMModelingStage.FITTING_MODEL,
         MMMModelingStage.AWAITING_MODEL_REVIEW,
+        MMMModelingStage.ITERATION_REQUIRED,
         MMMModelingStage.MODEL_ACCEPTED,
     }
 )
@@ -62,10 +64,18 @@ _LEGAL: dict[MMMModelingStage, frozenset[MMMModelingStage]] = {
         {MMMModelingStage.AWAITING_FIT_APPROVAL, MMMModelingStage.FAILED}
     ),
     MMMModelingStage.AWAITING_FIT_APPROVAL: frozenset(
-        {MMMModelingStage.FITTING_MODEL, MMMModelingStage.FAILED}
+        {
+            MMMModelingStage.FITTING_MODEL,
+            MMMModelingStage.ITERATION_REQUIRED,
+            MMMModelingStage.FAILED,
+        }
     ),
     MMMModelingStage.FITTING_MODEL: frozenset(
-        {MMMModelingStage.EVALUATING_MODEL, MMMModelingStage.FAILED}
+        {
+            MMMModelingStage.EVALUATING_MODEL,
+            MMMModelingStage.ITERATION_REQUIRED,
+            MMMModelingStage.FAILED,
+        }
     ),
     MMMModelingStage.EVALUATING_MODEL: frozenset(
         {MMMModelingStage.AWAITING_MODEL_REVIEW, MMMModelingStage.FAILED}
@@ -76,6 +86,9 @@ _LEGAL: dict[MMMModelingStage, frozenset[MMMModelingStage]] = {
             MMMModelingStage.MODEL_ACCEPTED,
             MMMModelingStage.FAILED,
         }
+    ),
+    MMMModelingStage.ITERATION_REQUIRED: frozenset(
+        {MMMModelingStage.DESIGNING_MODEL, MMMModelingStage.FAILED}
     ),
     MMMModelingStage.ITERATING_MODEL: frozenset(
         {

@@ -39,6 +39,7 @@ from app.service.mmm_models import (
     MmmTrackWindowView,
     ModelVersionResponse,
     OfficialEdaReportView,
+    to_fit_run_response,
 )
 
 router = APIRouter(prefix="/v1", tags=["mmm-modeling"])
@@ -62,7 +63,12 @@ def _raise_modeling(exc: ModelingError) -> None:
     status = 409
     if exc.code == "RESOURCE_NOT_FOUND":
         status = 404
-    if exc.code in {"FIT_APPROVAL_REQUIRED", "STALE_APPROVAL", "FAKE_RUNTIME_INELIGIBLE"}:
+    if exc.code in {
+        "FIT_APPROVAL_REQUIRED",
+        "STALE_APPROVAL",
+        "FAKE_RUNTIME_INELIGIBLE",
+        "EXACT_RETRY_NOT_ALLOWED",
+    }:
         status = 409
     if exc.code == "LEDGER_PUBLICATION_FAILED":
         status = 409
@@ -429,15 +435,10 @@ async def start_fit(
         )
     except ModelingError as exc:
         _raise_modeling(exc)
-    return FitRunResponse(
-        fit_run_id=run.fit_run_id,
-        model_version_id=run.model_version_id,
-        status=run.status.value,
-        fit_plan_fingerprint=run.fit_plan_fingerprint,
-        python_version=run.python_version,
-        meridian_version=run.meridian_version,
-        tensorflow_version=run.tensorflow_version,
-        worker_image_digest=run.worker_image_digest,
+    return to_fit_run_response(
+        run,
+        approval=_modeling(request).repo.get_fit_approval(model_version_id),
+        plan=_modeling(request).repo.get_plan(model_version_id),
     )
 
 
@@ -460,15 +461,16 @@ async def get_fit_run(
     )
     if run is None or run.model_version_id != model_version_id:
         raise resource_not_found()
-    return FitRunResponse(
-        fit_run_id=run.fit_run_id,
-        model_version_id=run.model_version_id,
-        status=run.status.value,
-        fit_plan_fingerprint=run.fit_plan_fingerprint,
-        python_version=run.python_version,
-        meridian_version=run.meridian_version,
-        tensorflow_version=run.tensorflow_version,
-        worker_image_digest=run.worker_image_digest,
+    modeling = _modeling(request)
+    return to_fit_run_response(
+        run,
+        approval=modeling.repo.get_fit_approval(model_version_id),
+        plan=modeling.repo.get_plan(model_version_id),
+        version=modeling.repo.get_version(
+            tenant_id=tenant.tenant_id,
+            project_id=project_id,
+            model_version_id=model_version_id,
+        ),
     )
 
 

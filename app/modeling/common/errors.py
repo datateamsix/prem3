@@ -28,6 +28,26 @@ class ModelSpecInvalidError(ModelingError):
     code = "MODEL_SPEC_INVALID"
 
 
+class ModelSpecIdentifiabilityError(ModelingError):
+    code = "MODEL_SPEC_IDENTIFIABILITY_ERROR"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        official_message: str | None = None,
+        exception_type: str = "ValueError",
+        code: str | None = None,
+    ) -> None:
+        super().__init__(message, code=code)
+        self.official_message = official_message or message
+        self.exception_type = exception_type
+
+
+class ExactRetryNotAllowedError(ModelingError):
+    code = "EXACT_RETRY_NOT_ALLOWED"
+
+
 class PriorValidationFailedError(ModelingError):
     code = "PRIOR_VALIDATION_FAILED"
 

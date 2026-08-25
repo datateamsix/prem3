@@ -19,6 +19,7 @@ from app.core.contracts import utc_now
 from app.eda.extended_contracts import EDAModelDesignHandoff
 from app.modeling.common.errors import (
     ArtifactVerificationFailedError,
+    ExactRetryNotAllowedError,
     FakeRuntimeAcceptanceError,
     FitApprovalRequiredError,
     GcsPersistenceError,
@@ -53,7 +54,9 @@ from app.modeling.mmm.contracts import (
     DecisionStatus,
     DecisionType,
     FitApproval,
+    FitDispatchOutcome,
     FitDispatchStatus,
+    FitFailureClass,
     FitPurpose,
     FitRun,
     FitRunStatus,
@@ -81,6 +84,12 @@ from app.modeling.mmm.design import (
     initial_decisions,
     proposed_model_plan,
 )
+from app.modeling.mmm.failures import (
+    ACTIVE_FIT_STATUSES,
+    TERMINAL_FIT_STATUSES,
+    classify_fit_failure,
+)
+from app.modeling.mmm.identifiability import identifiability_decision
 from app.modeling.mmm.ledger import InMemoryModelLedger, ModelLedger, publish_fit_ledger
 from app.modeling.mmm.meridian.reviewer import interpret_reviewer_results
 from app.modeling.mmm.meridian.runner import (
@@ -276,6 +285,10 @@ class MMMModelingService:
     def _require_mutable(self, version: MMMModelVersion) -> None:
         if version.accepted or version.state is MMMModelingStage.MODEL_ACCEPTED:
             raise ModelVersionImmutableError("Accepted model versions cannot mutate.")
+        if version.state is MMMModelingStage.ITERATION_REQUIRED:
+            raise ModelVersionImmutableError(
+                "Current specification cannot proceed. A model-design decision is required."
+            )
 
     def _transition(self, version: MMMModelVersion, nxt: MMMModelingStage) -> MMMModelVersion:
         assert_legal_modeling_transition(version.state, nxt)
@@ -516,12 +529,24 @@ class MMMModelingService:
             version = self.get_version(
                 tenant_id=tenant_id, project_id=project_id, model_version_id=model_version_id
             )
-            self._require_mutable(version)
             plan = self.repo.get_plan(model_version_id)
             fit_plan = self.repo.get_fit_plan(model_version_id)
             approval = self.repo.get_fit_approval(model_version_id)
+            if version.state is MMMModelingStage.ITERATION_REQUIRED:
+                raise ExactRetryNotAllowedError(
+                    "This FitPlan cannot be retried. A new model-design decision is required."
+                )
             if plan is None or fit_plan is None:
                 raise FitApprovalRequiredError("Fit plan has not been compiled.")
+            if any(
+                item.fit_plan_fingerprint == fit_plan.fingerprint
+                and item.status is FitRunStatus.FAILED_PRE_FIT
+                for item in self.repo.list_fit_runs(model_version_id)
+            ):
+                raise ExactRetryNotAllowedError(
+                    "This FitPlan cannot be retried. A new model-design decision is required."
+                )
+            self._require_mutable(version)
             if approval is None or approval.superseded:
                 raise FitApprovalRequiredError("Fit cannot run without an exact human approval.")
             if (
@@ -542,8 +567,7 @@ class MMMModelingService:
                 item
                 for item in self.repo.list_fit_runs(model_version_id)
                 if item.fit_plan_fingerprint == fit_plan.fingerprint
-                and item.status
-                in {FitRunStatus.PENDING, FitRunStatus.RUNNING, FitRunStatus.SUCCEEDED}
+                and item.status in ACTIVE_FIT_STATUSES
             ]
             if existing:
                 return existing[0]
@@ -621,7 +645,7 @@ class MMMModelingService:
         )
         self.repo.put_dispatch(stored)
         pending = run.model_copy(
-            update={"dispatch_id": stored.dispatch_id, "status": FitRunStatus.PENDING}
+            update={"dispatch_id": stored.dispatch_id, "status": FitRunStatus.QUEUED}
         )
         self.repo.put_fit_run(pending)
         return pending
@@ -655,18 +679,39 @@ class MMMModelingService:
             update={
                 "cloud_run_execution_name": execution_name,
                 "status": FitDispatchStatus.RUNNING,
+                "launch_outcome": FitDispatchOutcome.SUCCESSFULLY_LAUNCHED,
                 "updated_at": utc_now(),
             }
         )
         return self.repo.put_dispatch(updated)
 
     def _execute_fit(self, version, plan, fit_plan, run: FitRun) -> FitRun:
-        result = execute_approved_fit(
-            self.runtime,
-            plan,
-            fit_plan,
-            expected_input_fingerprint=plan.model_ready_manifest_fingerprint,
+        if run.status in TERMINAL_FIT_STATUSES:
+            return run
+        running = run.model_copy(
+            update={
+                "status": FitRunStatus.RUNNING,
+                "started_at": run.started_at or utc_now(),
+            }
         )
+        self.repo.put_fit_run(running)
+        current = self.get_version(
+            tenant_id=version.tenant_id,
+            project_id=version.project_id,
+            model_version_id=version.model_version_id,
+        )
+        if current.state is MMMModelingStage.AWAITING_FIT_APPROVAL:
+            current = self._transition(current, MMMModelingStage.FITTING_MODEL)
+        try:
+            result = execute_approved_fit(
+                self.runtime,
+                plan,
+                fit_plan,
+                expected_input_fingerprint=plan.model_ready_manifest_fingerprint,
+            )
+        except Exception as exc:
+            return self._record_fit_failure(current, plan, fit_plan, running, exc)
+        version = current
         stored = result.binary
         try:
             loaded = self.repo.get_binary(run.fit_run_id)
@@ -758,11 +803,27 @@ class MMMModelingService:
                 "tensorflow_version": result.tensorflow_version,
                 "worker_image_digest": result.worker_image_digest,
                 "runtime_mode": result.runtime_mode,
+                "sampling_started": True,
                 "ledger_readback_verified": ledger_verified,
                 "ledger_status": ledger_status,
             }
         )
         self.repo.put_fit_run(completed)
+        if run.dispatch_id:
+            dispatch = self.repo.get_dispatch(run.dispatch_id)
+            if dispatch is not None:
+                self.repo.put_dispatch(
+                    dispatch.model_copy(
+                        update={
+                            "status": FitDispatchStatus.COMPLETE,
+                            "launch_outcome": (
+                                dispatch.launch_outcome
+                                or FitDispatchOutcome.SUCCESSFULLY_LAUNCHED
+                            ),
+                            "updated_at": utc_now(),
+                        }
+                    )
+                )
         current = self.get_version(
             tenant_id=version.tenant_id,
             project_id=version.project_id,
@@ -772,6 +833,105 @@ class MMMModelingService:
             current = self._transition(current, MMMModelingStage.EVALUATING_MODEL)
             self._transition(current, MMMModelingStage.AWAITING_MODEL_REVIEW)
         return completed
+
+    def _record_fit_failure(
+        self,
+        version: MMMModelVersion,
+        plan,
+        fit_plan,
+        run: FitRun,
+        exc: BaseException,
+    ) -> FitRun:
+        del fit_plan
+        classified = classify_fit_failure(exc)
+        dispatch_outcome = run.dispatch_outcome
+        if run.dispatch_id:
+            dispatch = self.repo.get_dispatch(run.dispatch_id)
+            if dispatch is not None:
+                if (
+                    dispatch.cloud_run_execution_name
+                    or dispatch.launch_outcome is FitDispatchOutcome.SUCCESSFULLY_LAUNCHED
+                    or dispatch.status in {FitDispatchStatus.QUEUED, FitDispatchStatus.RUNNING}
+                ):
+                    dispatch_outcome = FitDispatchOutcome.SUCCESSFULLY_LAUNCHED
+                self.repo.put_dispatch(
+                    dispatch.model_copy(
+                        update={
+                            "status": FitDispatchStatus.COMPLETE,
+                            "launch_outcome": (
+                                dispatch_outcome or FitDispatchOutcome.SUCCESSFULLY_LAUNCHED
+                            ),
+                            "updated_at": utc_now(),
+                        }
+                    )
+                )
+        failed = run.model_copy(
+            update={
+                "status": classified.status,
+                "completed_at": utc_now(),
+                "error_code": classified.error_code,
+                "failure_class": classified.failure_class,
+                "failure_stage": classified.failure_stage,
+                "sampling_started": classified.sampling_started,
+                "retry_semantics": classified.retry_semantics,
+                "library": classified.library,
+                "library_version": classified.library_version,
+                "exception_type": classified.exception_type,
+                "official_message": classified.official_message,
+                "prem3_summary": classified.prem3_summary,
+                "next_actions": classified.next_actions,
+                "dispatch_outcome": dispatch_outcome,
+                "meridian_version": run.meridian_version or classified.library_version,
+            }
+        )
+        self.repo.put_fit_run(failed)
+        current = self.get_version(
+            tenant_id=version.tenant_id,
+            project_id=version.project_id,
+            model_version_id=version.model_version_id,
+        )
+        if classified.failure_class is FitFailureClass.MODEL_SPEC_IDENTIFIABILITY_ERROR:
+            self.repo.put_decision(
+                identifiability_decision(
+                    tenant_id=current.tenant_id,
+                    project_id=current.project_id,
+                    model_version_id=current.model_version_id,
+                    official_message=classified.official_message,
+                    plan_fingerprint=None if plan is None else plan.fingerprint,
+                    evidence_refs=(failed.fit_run_id, current.model_version_id),
+                )
+            )
+            if current.state in {
+                MMMModelingStage.AWAITING_FIT_APPROVAL,
+                MMMModelingStage.FITTING_MODEL,
+            }:
+                current = self._transition(current, MMMModelingStage.ITERATION_REQUIRED)
+        elif current.state in {
+            MMMModelingStage.AWAITING_FIT_APPROVAL,
+            MMMModelingStage.FITTING_MODEL,
+        }:
+            current = self._transition(current, MMMModelingStage.FAILED)
+        try:
+            publish_fit_ledger(
+                self.ledger,
+                version=current,
+                run=failed,
+                decisions=self.repo.list_decisions(current.model_version_id),
+                health=None,
+            )
+            failed = failed.model_copy(
+                update={
+                    "ledger_readback_verified": True,
+                    "ledger_status": LedgerPublicationStatus.VERIFIED,
+                }
+            )
+            self.repo.put_fit_run(failed)
+        except LedgerPublicationError:
+            failed = failed.model_copy(
+                update={"ledger_status": LedgerPublicationStatus.PENDING_PUBLICATION}
+            )
+            self.repo.put_fit_run(failed)
+        return failed
 
     def acknowledge_review(
         self, *, tenant_id: str, project_id: str, model_version_id: str, items: tuple[str, ...]
