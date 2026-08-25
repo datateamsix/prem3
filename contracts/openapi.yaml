@@ -1734,6 +1734,107 @@ components:
       - status
       title: HealthResponse
       type: object
+    IdentifiabilityDecisionRequest:
+      additionalProperties: false
+      properties:
+        evidence_refs:
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        rationale:
+          title: Rationale
+          type: string
+        selected_alternative:
+          title: Selected Alternative
+          type: string
+        selected_configuration:
+          additionalProperties: true
+          title: Selected Configuration
+          type: object
+      required:
+      - selected_alternative
+      - rationale
+      title: IdentifiabilityDecisionRequest
+      type: object
+    IdentifiabilityReviewResponse:
+      additionalProperties: false
+      properties:
+        alternatives:
+          items:
+            additionalProperties: true
+            type: object
+          title: Alternatives
+          type: array
+        business_context:
+          additionalProperties: true
+          title: Business Context
+          type: object
+        counter_evidence:
+          items:
+            type: string
+          title: Counter Evidence
+          type: array
+        data_evidence:
+          additionalProperties: true
+          title: Data Evidence
+          type: object
+        decision_required:
+          default: true
+          title: Decision Required
+          type: boolean
+        eda_evidence:
+          additionalProperties: true
+          title: Eda Evidence
+          type: object
+        fingerprint:
+          title: Fingerprint
+          type: string
+        human_decision:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Human Decision
+        next_actions:
+          items:
+            type: string
+          title: Next Actions
+          type: array
+        official_constraint:
+          title: Official Constraint
+          type: string
+        package_id:
+          title: Package Id
+          type: string
+        prem3_interpretation:
+          title: Prem3 Interpretation
+          type: string
+        recommendation:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Recommendation
+        selected_alternative:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Selected Alternative
+        title:
+          default: IDENTIFIABILITY REVIEW
+          title: Title
+          type: string
+      required:
+      - package_id
+      - official_constraint
+      - prem3_interpretation
+      - business_context
+      - data_evidence
+      - eda_evidence
+      - fingerprint
+      title: IdentifiabilityReviewResponse
+      type: object
     ImportReadinessReceiptResponse:
       additionalProperties: false
       properties:
@@ -4856,6 +4957,82 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Fit Run
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/identifiability:
+    get:
+      operationId: getMmmIdentifiabilityReview
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentifiabilityReviewResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Identifiability Review
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/identifiability/decide:
+    post:
+      operationId: recordMmmIdentifiabilityDecision
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentifiabilityDecisionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Recordmmmidentifiabilitydecision
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Record Identifiability Decision
       tags:
       - mmm-modeling
   /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/iterate:

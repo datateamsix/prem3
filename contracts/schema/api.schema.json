@@ -518,6 +518,123 @@
       "title": "FitRunResponse",
       "type": "object"
     },
+    "app_service_mmm_models__IdentifiabilityReviewResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "business_context": {
+          "additionalProperties": true,
+          "title": "Business Context",
+          "type": "object"
+        },
+        "counter_evidence": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Counter Evidence",
+          "type": "array"
+        },
+        "data_evidence": {
+          "additionalProperties": true,
+          "title": "Data Evidence",
+          "type": "object"
+        },
+        "decision_required": {
+          "default": true,
+          "title": "Decision Required",
+          "type": "boolean"
+        },
+        "eda_evidence": {
+          "additionalProperties": true,
+          "title": "Eda Evidence",
+          "type": "object"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "human_decision": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Human Decision"
+        },
+        "next_actions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Next Actions",
+          "type": "array"
+        },
+        "official_constraint": {
+          "title": "Official Constraint",
+          "type": "string"
+        },
+        "package_id": {
+          "title": "Package Id",
+          "type": "string"
+        },
+        "prem3_interpretation": {
+          "title": "Prem3 Interpretation",
+          "type": "string"
+        },
+        "recommendation": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendation"
+        },
+        "selected_alternative": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected Alternative"
+        },
+        "title": {
+          "default": "IDENTIFIABILITY REVIEW",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "package_id",
+        "official_constraint",
+        "prem3_interpretation",
+        "business_context",
+        "data_evidence",
+        "eda_evidence",
+        "fingerprint"
+      ],
+      "title": "IdentifiabilityReviewResponse",
+      "type": "object"
+    },
     "app_service_mmm_models__MMMSummaryResponse": {
       "additionalProperties": false,
       "properties": {
@@ -4230,6 +4347,9 @@
     },
     {
       "$ref": "#/$defs/app_service_mmm_models__FitRunResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__IdentifiabilityReviewResponse"
     }
   ],
   "title": "PreM3 prem3-api presentation contracts"
