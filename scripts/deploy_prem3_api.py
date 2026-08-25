@@ -77,10 +77,12 @@ def main(argv: list[str] | None = None) -> int:
         print("Historical modelready-m3 or meridian-eda-worker changed during deploy.")
         return 4
     describe = _service_describe()
+    status = describe.get("status") or {}
     revision = (
-        ((describe.get("status") or {}).get("latestReadyRevisionName"))
-        or ((describe.get("status") or {}).get("latestCreatedRevisionName"))
-    )
+        status.get("latestCreatedRevisionName")
+        if args.no_traffic
+        else status.get("latestReadyRevisionName")
+    ) or status.get("latestCreatedRevisionName")
     url = ((describe.get("status") or {}).get("url")) or ""
     spec = ((describe.get("spec") or {}).get("template") or {}).get("spec") or {}
     sa = spec.get("serviceAccountName")

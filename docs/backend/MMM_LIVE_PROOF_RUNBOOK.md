@@ -116,5 +116,6 @@ Stop at `AWAITING_MODEL_REVIEW` or `AWAITING_MODEL_ACCEPTANCE` until an
 authorized human member accepts the exact artifact, review pack, fit run, and
 ModelPlan fingerprints.
 
-`MODEL_ACCEPTED` also requires `FitPurpose.FINAL_MODEL` and
-`runtime_mode=OFFICIAL_GPU`.
+`MODEL_ACCEPTED` requires `FitPurpose.FINAL_MODEL` and a production official
+runtime (`OFFICIAL_CPU` or `OFFICIAL_GPU`). GPU is preferred compute, not
+acceptance authority. `FAKE_TEST` and `OFFICIAL_CPU_SMOKE` are ineligible.

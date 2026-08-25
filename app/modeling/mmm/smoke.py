@@ -20,6 +20,10 @@ from app.modeling.mmm.contracts import (
     MeridianRuntimeMode,
     ModelPlan,
 )
+from app.modeling.mmm.dataset_a import (
+    MUSIC_CENTER_FINAL_FINGERPRINTS,
+    music_center_dataset_a_mapping,
+)
 from app.modeling.mmm.design import QUALIFICATION_MCMC
 from app.modeling.mmm.meridian.runner import InstalledMeridianLibrary, OfficialMeridianRuntime
 
@@ -140,6 +144,8 @@ def resolve_fit_input_mapping(plan: ModelPlan) -> dict[str, Any]:
     """Server-owned mapping for the worker. Qualification uses the tiny fixture."""
     if plan.model_ready_manifest_fingerprint == "official-cpu-smoke-tiny":
         return tiny_smoke_mapping()
+    if plan.model_ready_manifest_fingerprint in MUSIC_CENTER_FINAL_FINGERPRINTS:
+        return music_center_dataset_a_mapping(plan)
     raise FitRuntimeError("INPUT_CONTRACT_MISMATCH: ModelReady frame is missing.")
 
 

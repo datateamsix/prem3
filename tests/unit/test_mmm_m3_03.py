@@ -17,6 +17,7 @@ from app.modeling.mmm.contracts import (
     FitPurpose,
     MeridianRuntimeMode,
 )
+from app.modeling.mmm.dataset_a import MUSIC_CENTER_DATASET_FINGERPRINT
 from app.modeling.mmm.feasibility import (
     CpuFeasibility,
     music_center_cpu_final_feasibility,
@@ -28,6 +29,7 @@ from app.modeling.mmm.provenance import (
     AllowlistedSourceHistory,
 )
 from app.modeling.mmm.service import MMMModelingService
+from app.modeling.mmm.smoke import resolve_fit_input_mapping, tiny_smoke_plan
 from app.service.app import create_app
 from app.service.evaluation_jobs import FakeEvaluationJobLauncher
 from app.service.service_identity import ServiceIdentity
@@ -207,3 +209,22 @@ def test_music_center_official_mcmc_on_cpu_is_not_feasible() -> None:
     assert status is CpuFeasibility.NOT_FEASIBLE
     assert "not reduced" in rationale.lower() or "MCMC is not reduced" in rationale
     assert scaled > 3600
+
+
+def test_music_center_dataset_a_mapping_uses_verified_coverage() -> None:
+    plan = tiny_smoke_plan().model_copy(
+        update={
+            "model_ready_manifest_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+            "model_window_start": "2024-01-01",
+            "model_window_end": "2026-06-29",
+            "media_channels": ("paid_search", "shopping", "paid_social"),
+            "scope": "GEO",
+        }
+    )
+    mapping = resolve_fit_input_mapping(plan)
+    assert mapping["fingerprint"] == "mc-q3-2026-model-ready-fingerprint"
+    assert mapping["dataset_a_fingerprint"] == MUSIC_CENTER_DATASET_FINGERPRINT
+    assert mapping["n_times"] == 131
+    assert mapping["n_geos"] == 4
+    assert len(mapping["frame"]) == 131 * 4
+    assert tuple(mapping["media_channels"]) == ("paid_search", "shopping", "paid_social")
