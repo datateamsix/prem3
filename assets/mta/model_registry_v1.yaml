@@ -1,0 +1,58 @@
+version: 1
+contract: PREM3_MTA_MODEL_REGISTRY
+models:
+  - id: FIRST_TOUCH
+    display_name: First Touch
+    explanation: Gives all observable conversion credit to the first eligible touchpoint in the journey.
+    configurable: false
+
+  - id: LAST_TOUCH
+    display_name: Last Touch
+    explanation: Gives all observable conversion credit to the final eligible touchpoint before conversion.
+    configurable: false
+
+  - id: LAST_NON_DIRECT
+    display_name: Last Non-Direct
+    explanation: Gives credit to the final eligible non-direct touchpoint according to the pinned Direct policy.
+    configurable: false
+
+  - id: LINEAR
+    display_name: Linear
+    explanation: Splits observable conversion credit equally across eligible touchpoints.
+    configurable: false
+
+  - id: TIME_DECAY
+    display_name: Time Decay
+    explanation: Gives more credit to touchpoints closer to conversion.
+    configurable: true
+    parameters:
+      - {id: decay_over_time, type: number, required: true, explanation: Credit multiplier applied as touchpoints age across decay intervals.}
+      - {id: frequency, type: number, required: true, explanation: Hours per decay interval used by the DP6 runtime.}
+
+  - id: POSITION_BASED
+    display_name: Position Based
+    explanation: Allocates configured shares to first, middle, and last journey positions.
+    configurable: true
+    parameters:
+      - {id: first_weight, type: number, required: true}
+      - {id: middle_weight, type: number, required: true}
+      - {id: last_weight, type: number, required: true}
+    validation: first_weight + middle_weight + last_weight = 1
+
+  - id: MARKOV
+    display_name: Markov Chain
+    explanation: Models observed channel-state transitions and channel removal sensitivity.
+    configurable: true
+    parameters:
+      - {id: transition_to_same_state, type: boolean, required: true, explanation: Whether repeated channel→same-channel transitions remain in the transition matrix.}
+      - {id: conversion_value_as_frequency, type: boolean, required: true, explanation: Use grouped path occurrence counts as frequency when the reduced-input contract supports it.}
+
+  - id: SHAPLEY
+    display_name: Shapley Value
+    explanation: Allocates observable journey credit using marginal contribution across channel coalitions.
+    configurable: true
+    parameters:
+      - {id: size, type: integer, required: true, explanation: Maximum number of journey channels considered by the DP6 Shapley calculation.}
+      - {id: order, type: boolean, required: true, explanation: Whether channel order is considered.}
+      - {id: values_col, type: enum, values: [conv_rate, conversions], required: true, explanation: Outcome basis used for coalition value.}
+    preflight_required: true

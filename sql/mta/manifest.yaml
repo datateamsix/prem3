@@ -1,0 +1,90 @@
+library_id: prem3_mta_sql_asset_library
+version: 1
+authority: PREM3_DETERMINISTIC_SQL
+canonical_channel_registry: assets/channels/channel_registry_v1.yaml
+channel_grouping_rules: assets/channels/channel_grouping_rules_v1.yaml
+model_registry: assets/mta/model_registry_v1.yaml
+assets:
+  - id: channel_grouping_v1
+    type: BIGQUERY_UDF_TEMPLATE
+    path: sql/mta/udf/channel_grouping_v1.sql.j2
+    approval: APPROVAL_REQUIRED
+    immutable_after_first_run: true
+
+  - id: channel_grouping_current
+    type: BIGQUERY_UDF_ALIAS_TEMPLATE
+    path: sql/mta/udf/channel_grouping_current.sql.j2
+    approval: APPROVAL_REQUIRED
+    note: Convenience alias only; historical runs pin versioned routine.
+
+  - id: create_operational_tables_v1
+    type: BIGQUERY_DDL
+    path: sql/mta/ddl/create_operational_tables_v1.sql.j2
+    approval: AUTO_SAFE_IF_WITHIN_BOUND_MODELING_DATASET
+
+  - id: create_run_output_tables_v1
+    type: BIGQUERY_DDL
+    path: sql/mta/ddl/create_run_output_tables_v1.sql.j2
+    approval: AUTO_SAFE_IF_WITHIN_BOUND_MODELING_DATASET
+
+  - id: ga4_sessions_last_click_v1
+    type: BIGQUERY_SOURCE_COMPILE
+    path: sql/mta/source/ga4_sessions_last_click_v1.sql.j2
+
+  - id: ga4_sessions_collected_fallback_v1
+    type: BIGQUERY_SOURCE_COMPILE
+    path: sql/mta/source/ga4_sessions_collected_fallback_v1.sql.j2
+
+  - id: merge_sessions_v1
+    type: BIGQUERY_DML
+    path: sql/mta/dml/merge_sessions_v1.sql.j2
+    write_mode: MERGE
+    unique_key: session_id
+
+  - id: merge_conversions_v1
+    type: BIGQUERY_DML
+    path: sql/mta/dml/merge_conversions_v1.sql.j2
+    write_mode: MERGE
+    unique_key: conversion_id
+
+  - id: merge_touchpoints_v1
+    type: BIGQUERY_DML
+    path: sql/mta/dml/merge_touchpoints_v1.sql.j2
+    write_mode: MERGE
+    unique_key: touchpoint_id
+
+  - id: rebuild_journeys_v1
+    type: BIGQUERY_DML
+    path: sql/mta/dml/rebuild_journeys_v1.sql.j2
+    write_mode: BOUNDED_PARTITION_REBUILD
+
+  - id: rebuild_path_frequencies_v1
+    type: BIGQUERY_DML
+    path: sql/mta/dml/rebuild_path_frequencies_v1.sql.j2
+    write_mode: BOUNDED_PARTITION_REBUILD
+
+  - id: update_watermark_v1
+    type: BIGQUERY_DML
+    path: sql/mta/dml/update_watermark_v1.sql.j2
+    write_mode: UPSERT
+
+  - id: daily_refresh_v1
+    type: BIGQUERY_SCHEDULED_QUERY_TEMPLATE
+    path: sql/mta/scheduled/daily_refresh_v1.sql.j2
+    approval: APPROVAL_REQUIRED
+
+  - id: validate_channel_grouping_v1
+    type: BIGQUERY_VALIDATION
+    path: sql/mta/validation/channel_grouping_v1.sql.j2
+
+  - id: validate_uniqueness_v1
+    type: BIGQUERY_VALIDATION
+    path: sql/mta/validation/uniqueness_v1.sql.j2
+
+  - id: validate_journey_ordering_v1
+    type: BIGQUERY_VALIDATION
+    path: sql/mta/validation/journey_ordering_v1.sql.j2
+
+  - id: validate_outputs_v1
+    type: BIGQUERY_VALIDATION
+    path: sql/mta/validation/outputs_v1.sql.j2

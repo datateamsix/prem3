@@ -1,0 +1,46 @@
+CREATE TEMP TABLE staged_conversions AS
+SELECT
+  TO_HEX(SHA256(CONCAT(
+    COALESCE(user_pseudo_id,''),'|',
+    CAST((SELECT value.int_value FROM UNNEST(event_params) WHERE key='ga_session_id') AS STRING),'|',
+    event_name,'|',CAST(event_timestamp AS STRING),'|',COALESCE(ecommerce.transaction_id,'')
+  ))) AS conversion_id,
+  TO_HEX(SHA256(
+    CASE '{{ identity_strategy }}'
+      WHEN 'USER_ID_ONLY' THEN COALESCE(user_id,'')
+      WHEN 'USER_ID_PREFERRED_WITH_PSEUDO_FALLBACK' THEN COALESCE(NULLIF(user_id,''),user_pseudo_id,'')
+      ELSE COALESCE(user_pseudo_id,'')
+    END
+  )) AS subject_key,
+  TO_HEX(SHA256(CONCAT(
+    COALESCE(user_pseudo_id,''),'|',
+    CAST((SELECT value.int_value FROM UNNEST(event_params) WHERE key='ga_session_id') AS STRING)
+  ))) AS session_id,
+  event_name AS conversion_event,
+  TIMESTAMP_MICROS(event_timestamp) AS conversion_ts,
+  PARSE_DATE('%Y%m%d',event_date) AS conversion_date,
+  ecommerce.transaction_id AS transaction_id,
+  CAST(ecommerce.purchase_revenue AS NUMERIC) AS conversion_value,
+  TO_HEX(SHA256(TO_JSON_STRING(STRUCT(event_name,event_timestamp,ecommerce.transaction_id,ecommerce.purchase_revenue)))) AS source_fingerprint
+FROM `{{ ga4_project_id }}.{{ ga4_dataset_id }}.events_*`
+WHERE _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d',@source_start_date)
+                        AND FORMAT_DATE('%Y%m%d',@source_end_date)
+  AND event_name='{{ conversion_event }}';
+
+MERGE `{{ project_id }}.{{ modeling_dataset }}.mta_conversions` T
+USING staged_conversions S
+ON T.conversion_id=S.conversion_id
+WHEN MATCHED AND T.source_fingerprint!=S.source_fingerprint THEN UPDATE SET
+  subject_key=S.subject_key, session_id=S.session_id, conversion_event=S.conversion_event,
+  conversion_ts=S.conversion_ts, conversion_date=S.conversion_date, transaction_id=S.transaction_id,
+  conversion_value=S.conversion_value, source_fingerprint=S.source_fingerprint, refreshed_at=CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (
+  conversion_id,subject_key,session_id,conversion_event,conversion_ts,conversion_date,transaction_id,
+  conversion_value,source_fingerprint,refreshed_at
+) VALUES (
+  S.conversion_id,S.subject_key,S.session_id,S.conversion_event,S.conversion_ts,S.conversion_date,S.transaction_id,
+  S.conversion_value,S.source_fingerprint,CURRENT_TIMESTAMP()
+)
+WHEN NOT MATCHED BY SOURCE
+  AND T.conversion_date BETWEEN @source_start_date AND @source_end_date
+THEN DELETE;

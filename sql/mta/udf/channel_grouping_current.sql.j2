@@ -1,0 +1,6 @@
+-- Convenience alias only. Historical runs pin immutable vN.
+CREATE OR REPLACE FUNCTION `{{ project_id }}.{{ modeling_dataset }}.channel_grouping_current`(
+  tsource STRING, medium STRING, campaign STRING
+) RETURNS STRING AS (
+  `{{ project_id }}.{{ modeling_dataset }}.channel_grouping_v{{ current_version }}`(tsource, medium, campaign)
+);

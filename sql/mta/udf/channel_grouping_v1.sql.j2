@@ -1,0 +1,56 @@
+-- PreM3 Channel Grouping V1
+-- Immutable after first production run. Output values MUST be canonical channel IDs.
+CREATE FUNCTION `{{ project_id }}.{{ modeling_dataset }}.channel_grouping_v1`(
+  tsource STRING,
+  medium STRING,
+  campaign STRING
+)
+RETURNS STRING
+AS (
+  CASE
+    WHEN LOWER(TRIM(COALESCE(tsource,''))) IN ('','direct')
+      AND LOWER(TRIM(COALESCE(medium,''))) IN ('','(not set)','(none)','none') THEN 'direct'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(campaign,'')), r'^(.*shop.*)$')
+      AND REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*cp.*|ppc|paid.*)$') THEN 'shopping_paid'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(tsource,'')), r'^(google|bing)$')
+      AND REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*cp.*|ppc|paid.*)$') THEN 'search_paid'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(tsource,'')), r'^(twitter|facebook|fb|instagram|ig|linkedin|pinterest)$')
+      AND REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*cp.*|ppc|paid.*|social_paid)$') THEN 'social_paid'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(tsource,'')), r'^(youtube)$')
+      AND REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*cp.*|ppc|paid.*)$') THEN 'video_paid'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(display|banner|expandable|interstitial|cpm)$') THEN 'display'
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*cp.*|ppc|paid.*)$') THEN 'other_paid'
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*shop.*)$') THEN 'shopping_organic'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(tsource,'')), r'^.*(twitter|t\.co|facebook|instagram|linkedin|lnkd\.in|pinterest).*$')
+      OR REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(social|social_advertising|social-advertising|social_network|social-network|social_media|social-media|sm|social-unpaid|social_unpaid)$') THEN 'social_organic'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*video.*)$') THEN 'video_organic'
+
+    -- PreM3 extension: identifiable AI-native search/answer-engine referrals.
+    WHEN REGEXP_CONTAINS(
+      LOWER(TRIM(COALESCE(tsource,''))),
+      r'^((.*\.)?chatgpt\.com|chatgpt|(.*\.)?perplexity\.ai|perplexity|(.*\.)?gemini\.google\.com|gemini|(.*\.)?copilot\.microsoft\.com|copilot|(.*\.)?claude\.ai|claude|(.*\.)?you\.com|you|(.*\.)?poe\.com|poe)$'
+    ) THEN 'ai_search'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(tsource,'')), r'^(google|bing|yahoo|baidu|duckduckgo|yandex|ask)$')
+      OR LOWER(TRIM(COALESCE(medium,''))) = 'organic' THEN 'search_organic'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(tsource,'')), r'^(email|mail|e-mail|e_mail|e mail|mail\.google\.com)$')
+      OR REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(email|mail|e-mail|e_mail|e mail)$') THEN 'email'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(affiliate|affiliates)$') THEN 'affiliate'
+    WHEN LOWER(TRIM(COALESCE(medium,''))) = 'referral' THEN 'referral'
+    WHEN LOWER(TRIM(COALESCE(medium,''))) = 'audio' THEN 'audio'
+    WHEN LOWER(TRIM(COALESCE(medium,''))) = 'sms' THEN 'sms'
+    WHEN ENDS_WITH(LOWER(TRIM(COALESCE(medium,''))), 'push')
+      OR REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'.*(mobile|notification).*') THEN 'mobile_push'
+
+    ELSE 'other'
+  END
+);

@@ -1,0 +1,17 @@
+-- Fallback for exports without session_traffic_source_last_click.
+WITH e AS (
+  SELECT
+    event_date,
+    event_timestamp,
+    user_pseudo_id,
+    user_id,
+    (SELECT value.int_value FROM UNNEST(event_params) WHERE key='ga_session_id') AS ga_session_id,
+    collected_traffic_source.manual_source AS source,
+    collected_traffic_source.manual_medium AS medium,
+    collected_traffic_source.manual_campaign_name AS campaign
+  FROM `{{ ga4_project_id }}.{{ ga4_dataset_id }}.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', @source_start_date)
+                          AND FORMAT_DATE('%Y%m%d', @source_end_date)
+)
+SELECT * FROM e;
+-- Backend compiler wraps this fallback into the canonical session-grain aggregation.
