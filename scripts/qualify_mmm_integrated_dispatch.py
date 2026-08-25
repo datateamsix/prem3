@@ -95,9 +95,11 @@ def main(argv: list[str] | None = None) -> int:
         "runtime_mode": MeridianRuntimeMode.OFFICIAL_CPU_SMOKE.value,
         "note": "Integrated path proof. Not FINAL_MODEL. Not MODEL_ACCEPTED.",
     }
+    should_cleanup = False
     try:
         ids = _seed(repo, tenant_id=tenant_id, project_id=project_id, window=window)
         evidence.update(ids)
+        should_cleanup = True
         dispatcher = CloudTasksFitDispatcher(
             project_id=PROJECT,
             location=REGION,
@@ -117,11 +119,6 @@ def main(argv: list[str] | None = None) -> int:
             repo, ids["dispatch_id"], timeout_seconds=min(90, args.wait_seconds)
         )
         evidence["launch"] = launched
-        if launched.get("status") == "PASS":
-            evidence["job"] = _wait_for_job(
-                str(launched["cloud_run_execution_name"]),
-                timeout_seconds=args.wait_seconds,
-            )
         if launched.get("status") != "PASS":
             EVIDENCE_PATH.write_text(
                 json.dumps(evidence, indent=2, sort_keys=True, default=str) + "\n",
@@ -130,8 +127,31 @@ def main(argv: list[str] | None = None) -> int:
             print("QUALIFY_MMM_INTEGRATED_DISPATCH_BLOCKED")
             print(json.dumps(evidence, indent=2, sort_keys=True, default=str))
             return 1
+        evidence["job"] = _wait_for_job(
+            str(launched["cloud_run_execution_name"]),
+            timeout_seconds=args.wait_seconds,
+        )
+        job = evidence["job"]
+        if job.get("status") == "BLOCKED":
+            should_cleanup = False
+            EVIDENCE_PATH.write_text(
+                json.dumps(evidence, indent=2, sort_keys=True, default=str) + "\n",
+                encoding="utf-8",
+            )
+            print("QUALIFY_MMM_INTEGRATED_DISPATCH_BLOCKED")
+            print(json.dumps(evidence, indent=2, sort_keys=True, default=str))
+            return 1
+        if job.get("status") != "PASS":
+            EVIDENCE_PATH.write_text(
+                json.dumps(evidence, indent=2, sort_keys=True, default=str) + "\n",
+                encoding="utf-8",
+            )
+            print("QUALIFY_MMM_INTEGRATED_DISPATCH_BLOCKED")
+            print(json.dumps(evidence, indent=2, sort_keys=True, default=str))
+            return 1
     finally:
-        _cleanup(fs_client, tenant_id, project_id)
+        if should_cleanup:
+            _cleanup(fs_client, tenant_id, project_id)
 
     EVIDENCE_PATH.write_text(
         json.dumps(evidence, indent=2, sort_keys=True, default=str) + "\n",
@@ -259,7 +279,6 @@ def _wait_for_job(execution_name: str, *, timeout_seconds: int) -> dict[str, Any
                 "executions",
                 "describe",
                 execution_name,
-                f"--job={JOB}",
                 f"--region={REGION}",
                 f"--project={PROJECT}",
                 "--format=json",
