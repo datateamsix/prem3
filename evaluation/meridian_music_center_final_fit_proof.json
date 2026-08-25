@@ -1,0 +1,67 @@
+{
+  "acceptance": "NOT_REQUESTED",
+  "classification": {
+    "failure_class": "MERIDIAN_GEO_INVARIANT",
+    "fit_run_status": "PENDING",
+    "lifecycle_state": "AWAITING_FIT_APPROVAL",
+    "model_accepted": false,
+    "official_meridian_exception": "ValueError",
+    "official_meridian_message": "The following non_media_treatments variables do not vary across geos, making a model with n_knots=n_time unidentifiable: [b'music_center_promo'].",
+    "note": "Posterior sampling did not start. Official Meridian rejected ModelContext. MCMC was not reduced. Do not self-approve.",
+    "result": "POSTERIOR_DID_NOT_START"
+  },
+  "cloud_task_name": "projects/modelready-m3/locations/us-central1/queues/prem3-meridian-fit-dispatch/tasks/prem3-mmm-fdsp_09124f1f636247ca9299",
+  "dispatch_id": "fdsp_09124f1f636247ca9299",
+  "duplicate_enqueue": "same_task",
+  "fit_approval_id": "fapv_6be3857b4a80443b8678",
+  "fit_plan_fingerprint": "7e76495680080c8fc1861f9b5ca255a639403a0cc003cf982009a8bd96647594",
+  "fit_purpose": "FINAL_MODEL",
+  "fit_run_id": "frun_56d19c77ff8d4308afdd",
+  "job": {
+    "cancelled_count": null,
+    "completion_time": "2026-08-25T16:09:09.374389Z",
+    "condition": "Task prem3-meridian-model-worker-bc4sk-task0 failed with exit code: 1 and message: The container exited with an error.",
+    "execution": "prem3-meridian-model-worker-bc4sk",
+    "failed_count": 1,
+    "start_time": "2026-08-25T16:06:26.113136Z",
+    "status": "FAILED",
+    "succeeded_count": 0
+  },
+  "launch": {
+    "cloud_run_execution_name": "prem3-meridian-model-worker-bc4sk",
+    "dispatch_status": "RUNNING",
+    "status": "PASS"
+  },
+  "launch_url": "https://prem3-api-vkcd3cbiea-uc.a.run.app/internal/v1/mmm-fit-dispatches",
+  "lifecycle": {
+    "acceptance_decision": null,
+    "accepted_by": null,
+    "artifact_sha256": null,
+    "dispatch_status": "RUNNING",
+    "fit_purpose": "FINAL_MODEL",
+    "fit_run_error_code": null,
+    "fit_run_status": "PENDING",
+    "official_health_checks": [],
+    "runtime_mode": "OFFICIAL_CPU",
+    "version_state": "AWAITING_FIT_APPROVAL"
+  },
+  "mcmc": {
+    "n_adapt": 1000,
+    "n_burnin": 500,
+    "n_chains": 7,
+    "n_keep": 1000
+  },
+  "model_plan_fingerprint": "c5aacc7604b6cbcc6b83109977883138d11157358809d758b45e89a1797e2693",
+  "model_version_id": "mver_ab97dadeaf40431a",
+  "model_window": {
+    "end": "2026-06-29",
+    "start": "2024-01-01"
+  },
+  "note": "Music Center FINAL_MODEL via Cloud Tasks. MCMC is not reduced. Do not treat timeout as an invalid model. Do not self-approve.",
+  "project_id": "prjm3f5b6833478623",
+  "queue": "prem3-meridian-fit-dispatch",
+  "runtime_mode": "OFFICIAL_CPU",
+  "source_commit_sha": "1474db61019688dd511e9304026b4e3657294ef7",
+  "tenant_id": "tenm3f5b6833478623",
+  "worker_image_digest": "sha256:1714b54a280bcf71e264bde435bb3438c06ccb5a94a9e001f2260520dc3782bb"
+}
