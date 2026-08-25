@@ -2,32 +2,32 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from app.modeling.mmm.contracts import ResultsSummary
 
 
+def _scalarize(value: Any) -> Any:
+    """Firestore rejects nested arrays; keep maps JSON-safe."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, dict):
+        return {str(key): _scalarize(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return json.dumps(list(value), default=str)
+    return str(value)
+
+
 def _metric_map(value: Any) -> dict[str, Any]:
-    """Coerce Analyzer outputs into a JSON object. Meridian often returns lists."""
+    """Coerce Analyzer outputs into a Firestore-safe JSON object."""
     if value is None:
         return {}
     if isinstance(value, dict):
-        return {str(key): item for key, item in value.items()}
-    if isinstance(value, tuple):
-        value = list(value)
-    if isinstance(value, list):
-        pairs = True
-        mapped: dict[str, Any] = {}
-        for item in value:
-            if isinstance(item, tuple) and len(item) == 2:
-                mapped[str(item[0])] = item[1]
-                continue
-            pairs = False
-            break
-        if pairs and mapped:
-            return mapped
-        return {"values": value}
-    return {"value": value}
+        return {str(key): _scalarize(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return {"json": json.dumps(list(value), default=str)}
+    return {"value": _scalarize(value)}
 
 
 def structured_results(

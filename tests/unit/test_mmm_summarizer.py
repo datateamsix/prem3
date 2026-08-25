@@ -8,7 +8,7 @@ def test_structured_results_accepts_list_roi() -> None:
         effective_date_range="2024-01-01/2024-03-18",
         values={"roi": [[1.1, 1.2], [0.9, 1.0]]},
     )
-    assert summary.roi == {"values": [[1.1, 1.2], [0.9, 1.0]]}
+    assert summary.roi == {"json": "[[1.1, 1.2], [0.9, 1.0]]"}
 
 
 def test_structured_results_maps_analyzer_aliases() -> None:
