@@ -25,6 +25,9 @@ MUSIC_CENTER_MODEL_READY_FINGERPRINT = "mc-q3-2026-model-ready-fingerprint"
 DATASET_A_CSV_RELATIVE = Path(
     "datasets/music_center/dataset_a/truth/expected_model_ready_weekly.csv"
 )
+MODULE_DATASET_A_CSV = (
+    Path(__file__).resolve().parent / "data" / "expected_model_ready_weekly.csv"
+)
 PACKAGED_DATASET_A_CSV = Path("/app") / DATASET_A_CSV_RELATIVE
 REPO_DATASET_A_CSV = Path(__file__).resolve().parents[3] / DATASET_A_CSV_RELATIVE
 
@@ -37,10 +40,9 @@ MUSIC_CENTER_FINAL_FINGERPRINTS = frozenset(
 
 
 def dataset_a_csv_path() -> Path:
-    if PACKAGED_DATASET_A_CSV.is_file():
-        return PACKAGED_DATASET_A_CSV
-    if REPO_DATASET_A_CSV.is_file():
-        return REPO_DATASET_A_CSV
+    for candidate in (MODULE_DATASET_A_CSV, PACKAGED_DATASET_A_CSV, REPO_DATASET_A_CSV):
+        if candidate.is_file():
+            return candidate
     raise FitRuntimeError("INPUT_CONTRACT_MISMATCH: Dataset A ModelReady CSV is missing.")
 
 

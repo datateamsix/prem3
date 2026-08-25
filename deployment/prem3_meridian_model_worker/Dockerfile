@@ -15,7 +15,5 @@ COPY deployment/prem3_meridian_model_worker/requirements.txt /tmp/requirements.t
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY app /app/app
-COPY datasets/music_center/dataset_a/truth/expected_model_ready_weekly.csv \
-    /app/datasets/music_center/dataset_a/truth/expected_model_ready_weekly.csv
 
 ENTRYPOINT ["python", "-m", "app.tools.meridian_model_worker"]

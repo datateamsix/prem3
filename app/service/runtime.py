@@ -71,6 +71,6 @@ def build_control_plane(
     except Exception as exc:  # noqa: BLE001 — cloud startup must fail closed on any probe error
         raise RuntimeError(
             "Cloud runtime requires a reachable Firestore control plane. "
-            "Grant roles/datastore.user to the Cloud Run service identity."
+            f"Grant roles/datastore.user to the Cloud Run service identity. ({exc})"
         ) from exc
     return repo, "configured"

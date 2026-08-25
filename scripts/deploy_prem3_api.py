@@ -209,7 +209,7 @@ def _deploy(*, image_uri: str, secrets: dict[str, str], no_traffic: bool = False
         "--no-invoker-iam-check",
         "--ingress=all",
         "--cpu=1",
-        "--memory=512Mi",
+        "--memory=1Gi",
         "--timeout=60",
         "--min-instances=0",
         "--max-instances=3",
@@ -219,6 +219,7 @@ def _deploy(*, image_uri: str, secrets: dict[str, str], no_traffic: bool = False
     ]
     if no_traffic:
         args.append("--no-traffic")
+        args.append("--tag=m303")
     args.append(f"--env-vars-file={_runtime_env_file()}")
     if secrets:
         packed = ",".join(f"{env}={ref}" for env, ref in secrets.items())
