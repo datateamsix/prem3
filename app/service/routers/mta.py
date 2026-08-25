@@ -6,22 +6,40 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
 
+from app.config import settings
 from app.control_plane.models import Feature
 from app.control_plane.repository import ControlPlaneRepository
 from app.core.tenancy import TenantContext, require_tenant
+from app.domain.channels import cached_channel_registry
+from app.modeling.mta.parameter_explanations import (
+    list_model_explanations,
+    parameter_explanations,
+)
+from app.modeling.mta.provisioning_service import MTAProvisioningService
 from app.modeling.mta.service import MTAService
+from app.modeling.mta.sql.registry import cached_sql_asset_manifest
+from app.modeling.mta.sql.renderer import render_sql_asset
 from app.project.tracks import ensure_tracks_for_cycle
 from app.service.dependencies import authenticated_tenant, get_control_plane
 from app.service.entitlements import require_feature
 from app.service.errors import resource_not_found
 from app.service.mta_models import (
+    ApproveProvisionRequest,
+    CanonicalChannelView,
     CreateMTARunRequest,
+    DisableScheduleRequest,
     EvaluateMTAReadinessRequest,
     MTAOverviewNextActionView,
     MTAOverviewResponse,
+    MTAProvisioningPlanView,
+    MTAProvisioningReceiptView,
     MTAReadinessResponse,
     MTARunReceiptResponse,
     MTARunResponse,
+    ParameterExplanationsView,
+    ScheduledRefreshPlanRequest,
+    ScheduledRefreshPlanView,
+    ScheduledRefreshReceiptView,
 )
 
 router = APIRouter(prefix="/v1", tags=["mta"])
@@ -195,19 +213,21 @@ async def create_mta_run(
     body: CreateMTARunRequest,
     request: Request,
     tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
-    control_plane: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
 ) -> MTARunResponse:
     del body
-    require_tenant(tenant)
-    require_feature(control_plane, tenant.tenant_id, Feature.MTA)
-    service = _mta(request)
-    tracks = ensure_tracks_for_cycle(
-        control_plane, tenant_id=tenant.tenant_id, project_id=project_id, cycle_id=cycle_id
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    workspace = repo.get_workspace_for_tenant(
+        tenant_id=tenant.tenant_id, workspace_id=project_id
     )
+    if workspace is None:
+        raise resource_not_found()
+    tracks = ensure_tracks_for_cycle(repo, workspace=workspace, cycle_id=cycle_id)
     mta_track = next((t for t in tracks if t.track_type.value == "MTA"), None)
     if mta_track is None:
         raise resource_not_found()
-    run = service.start_run(
+    run = _mta(request).start_run(
         tenant_id=tenant.tenant_id,
         project_id=project_id,
         cycle_id=cycle_id,
@@ -232,10 +252,10 @@ async def list_mta_runs(
     cycle_id: str,
     request: Request,
     tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
-    control_plane: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
 ) -> list[MTARunResponse]:
-    require_tenant(tenant)
-    require_feature(control_plane, tenant.tenant_id, Feature.MTA)
+    require_tenant()
+    require_feature(repo, Feature.MTA)
     service = _mta(request)
     runs = [
         r
@@ -265,12 +285,11 @@ async def get_mta_run(
     run_id: str,
     request: Request,
     tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
-    control_plane: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
 ) -> MTARunResponse:
-    require_tenant(tenant)
-    require_feature(control_plane, tenant.tenant_id, Feature.MTA)
-    service = _mta(request)
-    run = service.repo.get_run(run_id)
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    run = _mta(request).repo.get_run(run_id)
     if (
         run is None
         or run.tenant_id != tenant.tenant_id
@@ -298,10 +317,10 @@ async def get_mta_run_receipt(
     run_id: str,
     request: Request,
     tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
-    control_plane: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
 ) -> MTARunReceiptResponse:
-    require_tenant(tenant)
-    require_feature(control_plane, tenant.tenant_id, Feature.MTA)
+    require_tenant()
+    require_feature(repo, Feature.MTA)
     service = _mta(request)
     run = service.repo.get_run(run_id)
     if (
@@ -323,4 +342,260 @@ async def get_mta_run_receipt(
         journey_count=receipt.journey_count,
         grouped_path_count=receipt.grouped_path_count,
         limitations=list(receipt.limitations),
+    )
+
+
+@router.get(
+    "/channels",
+    operation_id="listCanonicalChannels",
+    response_model=list[CanonicalChannelView],
+)
+async def list_canonical_channels(
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> list[CanonicalChannelView]:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+
+    registry = cached_channel_registry()
+    return [
+        CanonicalChannelView(
+            channel_id=c.channel_id,
+            display_name=c.display_name,
+            channel_family_id=c.channel_family_id,
+            mmm_allowed=c.mmm_allowed,
+            mta_default=c.mta_default,
+        )
+        for c in registry.channels
+    ]
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/provisioning-plan",
+    operation_id="getMtaProvisioningPlan",
+    response_model=MTAProvisioningPlanView,
+)
+async def get_mta_provisioning_plan(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> MTAProvisioningPlanView:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    workspace = repo.get_workspace_for_tenant(
+        tenant_id=tenant.tenant_id, workspace_id=project_id
+    )
+    if workspace is None:
+        raise resource_not_found()
+    tracks = ensure_tracks_for_cycle(repo, workspace=workspace, cycle_id=cycle_id)
+    mta_track = next((t for t in tracks if t.track_type.value == "MTA"), None)
+    if mta_track is None:
+        raise resource_not_found()
+
+    svc = MTAProvisioningService(live=False)
+    gcp = settings.project_id
+    plan = svc.compile_infrastructure_plan(
+        plan_id=f"mtap_{project_id}_{cycle_id}",
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=mta_track.track_id,
+        gcp_project_id=gcp,
+    )
+    _mta(request).repo.put_plan(plan)
+    ux = svc.render_ready_plan_view(
+        gcp_project_id=gcp,
+        ga4_dataset_id="analytics_music_center_synthetic",
+    )
+    return MTAProvisioningPlanView(
+        plan_id=plan.plan_id,
+        fingerprint=plan.fingerprint,
+        gcp_project_id=plan.gcp_project_id,
+        dataset_id=plan.dataset_id,
+        channel_grouping_routine=plan.channel_grouping_routine,
+        ux=ux,
+    )
+
+
+@router.post(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/provisioning-plan/approve",
+    operation_id="approveMtaProvisioningPlan",
+    response_model=MTAProvisioningReceiptView,
+)
+async def approve_mta_provisioning(
+    project_id: str,
+    cycle_id: str,
+    body: ApproveProvisionRequest,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> MTAProvisioningReceiptView:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    service = _mta(request)
+    plan = next(
+        (
+            p
+            for p in service.repo.plans.values()
+            if p.project_id == project_id and p.cycle_id == cycle_id
+        ),
+        None,
+    )
+    if plan is None:
+        raise resource_not_found()
+
+    receipt = MTAProvisioningService(live=False).provision_infrastructure(
+        plan, approved=body.approved
+    )
+    service.repo.put_provisioning_receipt(receipt)
+    return MTAProvisioningReceiptView(
+        receipt_id=receipt.receipt_id,
+        plan_id=receipt.plan_id,
+        plan_fingerprint=receipt.plan_fingerprint,
+        created=list(receipt.created),
+        reused=list(receipt.reused),
+        verified=receipt.verified,
+    )
+
+
+@router.post(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/scheduled-refresh/plan",
+    operation_id="createMtaScheduledRefreshPlan",
+    response_model=ScheduledRefreshPlanView,
+)
+async def create_scheduled_refresh_plan(
+    project_id: str,
+    cycle_id: str,
+    body: ScheduledRefreshPlanRequest,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> ScheduledRefreshPlanView:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+
+    plan = MTAProvisioningService(live=False).build_and_approve_schedule(
+        schedule_id=f"mts_{project_id}_{cycle_id}",
+        conversion_event=body.conversion_event,
+        lookback_window_days=body.lookback_window_days,
+        settlement_days=body.settlement_days,
+        source_overlap_days=body.source_overlap_days,
+        cadence=body.cadence,
+        timezone=body.timezone,
+    )
+    # Store awaiting→approved plan; API create also approves for server-bound demo path
+    # after explicit body — here build_and_approve already requires the approve step.
+    _mta(request).repo.scheduled_refresh[plan.schedule_id] = plan
+    return ScheduledRefreshPlanView(
+        schedule_id=plan.schedule_id,
+        fingerprint=plan.fingerprint,
+        approval_status=plan.approval_status.value,
+        lookback_window_days=plan.lookback_window_days,
+        cadence=plan.cadence,
+        timezone=plan.timezone,
+    )
+
+
+@router.post(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/scheduled-refresh/provision",
+    operation_id="provisionMtaScheduledRefresh",
+    response_model=ScheduledRefreshReceiptView,
+)
+async def provision_scheduled_refresh(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> ScheduledRefreshReceiptView:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+
+    service = _mta(request)
+    plan = next(
+        (
+            p
+            for p in service.repo.scheduled_refresh.values()
+            if p.schedule_id.endswith(f"{project_id}_{cycle_id}")
+            or f"{project_id}_{cycle_id}" in p.schedule_id
+        ),
+        None,
+    )
+    if plan is None:
+        raise resource_not_found()
+    entry = cached_sql_asset_manifest().get("daily_refresh_v1")
+    sql, _ = render_sql_asset(
+        entry,
+        params={
+            "settlement_days": plan.settlement_days,
+            "source_overlap_days": plan.source_overlap_days,
+            "lookback_window_days": plan.lookback_window_days,
+        },
+    )
+    prov = MTAProvisioningService(live=False)
+    receipt = prov.provision_schedule(
+        plan,
+        gcp_project_id=settings.project_id,
+        query_sql=sql,
+    )
+    return ScheduledRefreshReceiptView(
+        receipt_id=receipt.receipt_id,
+        schedule_id=receipt.schedule_id,
+        provisioned=receipt.provisioned,
+        verified=receipt.verified,
+        schedule_resource_id=receipt.schedule_resource_id,
+        status=receipt.status,
+        evidence_label=receipt.evidence_label,
+    )
+
+
+@router.post(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/scheduled-refresh/disable",
+    operation_id="disableMtaScheduledRefresh",
+    response_model=ScheduledRefreshReceiptView,
+)
+async def disable_scheduled_refresh(
+    project_id: str,
+    cycle_id: str,
+    body: DisableScheduleRequest,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> ScheduledRefreshReceiptView:
+    del project_id, cycle_id
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+
+    receipt = MTAProvisioningService(live=False).disable_schedule(
+        schedule_id="disabled",
+        resource_name=body.resource_name,
+        disabled_by=tenant.tenant_id,
+    )
+    return ScheduledRefreshReceiptView(
+        receipt_id=receipt.receipt_id,
+        schedule_id=receipt.schedule_id,
+        provisioned=receipt.provisioned,
+        verified=receipt.verified,
+        schedule_resource_id=receipt.schedule_resource_id,
+        status=receipt.status,
+        evidence_label=receipt.evidence_label,
+    )
+
+
+@router.get(
+    "/mta/parameter-explanations",
+    operation_id="getMtaParameterExplanations",
+    response_model=ParameterExplanationsView,
+)
+async def get_parameter_explanations(
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> ParameterExplanationsView:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    return ParameterExplanationsView(
+        explanations=parameter_explanations(),
+        models=list_model_explanations(),
     )

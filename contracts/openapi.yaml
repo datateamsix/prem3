@@ -37,6 +37,20 @@ components:
       - plan_id
       title: ApprovePlanRequest
       type: object
+    ApproveProvisionRequest:
+      additionalProperties: false
+      properties:
+        approved:
+          default: true
+          title: Approved
+          type: boolean
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+      title: ApproveProvisionRequest
+      type: object
     AttentionItem:
       additionalProperties: false
       properties:
@@ -485,6 +499,32 @@ components:
           title: Relationships
           type: array
       title: BusinessProfileRequest
+      type: object
+    CanonicalChannelView:
+      additionalProperties: false
+      properties:
+        channel_family_id:
+          title: Channel Family Id
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        display_name:
+          title: Display Name
+          type: string
+        mmm_allowed:
+          title: Mmm Allowed
+          type: boolean
+        mta_default:
+          title: Mta Default
+          type: boolean
+      required:
+      - channel_id
+      - display_name
+      - channel_family_id
+      - mmm_allowed
+      - mta_default
+      title: CanonicalChannelView
       type: object
     CheckoutSessionRequest:
       additionalProperties: false
@@ -1101,6 +1141,21 @@ components:
           - type: 'null'
           title: Reason
       title: DecisionActionRequest
+      type: object
+    DisableScheduleRequest:
+      additionalProperties: false
+      properties:
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+        resource_name:
+          title: Resource Name
+          type: string
+      required:
+      - resource_name
+      title: DisableScheduleRequest
       type: object
     DiscoveryHintsRequest:
       additionalProperties: false
@@ -2202,6 +2257,68 @@ components:
       - next_action
       title: MTAOverviewResponse
       type: object
+    MTAProvisioningPlanView:
+      additionalProperties: false
+      properties:
+        channel_grouping_routine:
+          title: Channel Grouping Routine
+          type: string
+        dataset_id:
+          title: Dataset Id
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        gcp_project_id:
+          title: Gcp Project Id
+          type: string
+        plan_id:
+          title: Plan Id
+          type: string
+        ux:
+          additionalProperties: true
+          title: Ux
+          type: object
+      required:
+      - plan_id
+      - fingerprint
+      - gcp_project_id
+      - dataset_id
+      - channel_grouping_routine
+      title: MTAProvisioningPlanView
+      type: object
+    MTAProvisioningReceiptView:
+      additionalProperties: false
+      properties:
+        created:
+          items:
+            type: string
+          title: Created
+          type: array
+        plan_fingerprint:
+          title: Plan Fingerprint
+          type: string
+        plan_id:
+          title: Plan Id
+          type: string
+        receipt_id:
+          title: Receipt Id
+          type: string
+        reused:
+          items:
+            type: string
+          title: Reused
+          type: array
+        verified:
+          default: false
+          title: Verified
+          type: boolean
+      required:
+      - receipt_id
+      - plan_id
+      - plan_fingerprint
+      title: MTAProvisioningReceiptView
+      type: object
     MTAReadinessResponse:
       additionalProperties: false
       properties:
@@ -2846,6 +2963,22 @@ components:
       - active_project_count
       - max_active_projects
       title: OrganizationReadModel
+      type: object
+    ParameterExplanationsView:
+      additionalProperties: false
+      properties:
+        explanations:
+          additionalProperties:
+            type: string
+          title: Explanations
+          type: object
+        models:
+          items:
+            additionalProperties: true
+            type: object
+          title: Models
+          type: array
+      title: ParameterExplanationsView
       type: object
     PatchMeasurementTrackRequest:
       additionalProperties: false
@@ -3779,6 +3912,102 @@ components:
           title: Target Window Start
       title: ReviseCycleRequest
       type: object
+    ScheduledRefreshPlanRequest:
+      additionalProperties: false
+      properties:
+        cadence:
+          default: every 24 hours
+          title: Cadence
+          type: string
+        conversion_event:
+          default: purchase
+          title: Conversion Event
+          type: string
+        lookback_window_days:
+          default: 30
+          title: Lookback Window Days
+          type: integer
+        settlement_days:
+          default: 3
+          title: Settlement Days
+          type: integer
+        source_overlap_days:
+          default: 3
+          title: Source Overlap Days
+          type: integer
+        timezone:
+          default: America/Los_Angeles
+          title: Timezone
+          type: string
+      title: ScheduledRefreshPlanRequest
+      type: object
+    ScheduledRefreshPlanView:
+      additionalProperties: false
+      properties:
+        approval_status:
+          title: Approval Status
+          type: string
+        cadence:
+          title: Cadence
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        lookback_window_days:
+          title: Lookback Window Days
+          type: integer
+        schedule_id:
+          title: Schedule Id
+          type: string
+        timezone:
+          title: Timezone
+          type: string
+      required:
+      - schedule_id
+      - fingerprint
+      - approval_status
+      - lookback_window_days
+      - cadence
+      - timezone
+      title: ScheduledRefreshPlanView
+      type: object
+    ScheduledRefreshReceiptView:
+      additionalProperties: false
+      properties:
+        evidence_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Evidence Label
+        provisioned:
+          title: Provisioned
+          type: boolean
+        receipt_id:
+          title: Receipt Id
+          type: string
+        schedule_id:
+          title: Schedule Id
+          type: string
+        schedule_resource_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Schedule Resource Id
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        verified:
+          title: Verified
+          type: boolean
+      required:
+      - receipt_id
+      - schedule_id
+      - provisioned
+      - verified
+      title: ScheduledRefreshReceiptView
+      type: object
     SourceMaterializationListResponse:
       additionalProperties: false
       properties:
@@ -4417,6 +4646,24 @@ paths:
       summary: Get Plan Catalog
       tags:
       - catalog
+  /v1/channels:
+    get:
+      operationId: listCanonicalChannels
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CanonicalChannelView'
+                title: Response Listcanonicalchannels
+                type: array
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Canonical Channels
+      tags:
+      - mta
   /v1/integrations/google/connections:
     get:
       operationId: listGoogleConnections
@@ -4514,6 +4761,21 @@ paths:
       summary: Get Me
       tags:
       - identity
+  /v1/mta/parameter-explanations:
+    get:
+      operationId: getMtaParameterExplanations
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParameterExplanationsView'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Get Parameter Explanations
+      tags:
+      - mta
   /v1/organization:
     get:
       operationId: getOrganization
@@ -4894,6 +5156,80 @@ paths:
       summary: Get Cycle Mta
       tags:
       - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/provisioning-plan:
+    get:
+      operationId: getMtaProvisioningPlan
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAProvisioningPlanView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Provisioning Plan
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/provisioning-plan/approve:
+    post:
+      operationId: approveMtaProvisioningPlan
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveProvisionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAProvisioningReceiptView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Approve Mta Provisioning
+      tags:
+      - mta
   /v1/projects/{project_id}/cycles/{cycle_id}/mta/readiness:
     post:
       operationId: evaluateProjectCycleMtaReadiness
@@ -5088,6 +5424,120 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Mta Run Receipt
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/scheduled-refresh/disable:
+    post:
+      operationId: disableMtaScheduledRefresh
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisableScheduleRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledRefreshReceiptView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Disable Scheduled Refresh
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/scheduled-refresh/plan:
+    post:
+      operationId: createMtaScheduledRefreshPlan
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduledRefreshPlanRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledRefreshPlanView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Scheduled Refresh Plan
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/scheduled-refresh/provision:
+    post:
+      operationId: provisionMtaScheduledRefresh
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledRefreshReceiptView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Provision Scheduled Refresh
       tags:
       - mta
   /v1/projects/{project_id}/cycles/{cycle_id}/tracks:

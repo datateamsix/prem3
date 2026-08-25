@@ -1,6 +1,7 @@
 -- PreM3 Channel Grouping V1
--- Immutable after first production run. Output values MUST be canonical channel IDs.
-CREATE FUNCTION `{{ project_id }}.{{ modeling_dataset }}.channel_grouping_v1`(
+-- Immutable after first production customer use. Output values MUST be canonical channel IDs.
+-- ai_search is evaluated before social_organic so chatgpt.com is not stolen by t.co substring match.
+CREATE OR REPLACE FUNCTION `{{ project_id }}.{{ modeling_dataset }}.channel_grouping_v1`(
   tsource STRING,
   medium STRING,
   campaign STRING
@@ -27,16 +28,20 @@ AS (
     WHEN REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*cp.*|ppc|paid.*)$') THEN 'other_paid'
     WHEN REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*shop.*)$') THEN 'shopping_organic'
 
-    WHEN REGEXP_CONTAINS(LOWER(COALESCE(tsource,'')), r'^.*(twitter|t\.co|facebook|instagram|linkedin|lnkd\.in|pinterest).*$')
-      OR REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(social|social_advertising|social-advertising|social_network|social-network|social_media|social-media|sm|social-unpaid|social_unpaid)$') THEN 'social_organic'
-
-    WHEN REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*video.*)$') THEN 'video_organic'
-
-    -- PreM3 extension: identifiable AI-native search/answer-engine referrals.
+    -- PreM3 extension: AI-native search/answer-engine referrals (before social_organic).
     WHEN REGEXP_CONTAINS(
       LOWER(TRIM(COALESCE(tsource,''))),
       r'^((.*\.)?chatgpt\.com|chatgpt|(.*\.)?perplexity\.ai|perplexity|(.*\.)?gemini\.google\.com|gemini|(.*\.)?copilot\.microsoft\.com|copilot|(.*\.)?claude\.ai|claude|(.*\.)?you\.com|you|(.*\.)?poe\.com|poe)$'
     ) THEN 'ai_search'
+
+    -- t.co uses delimiter-aware match so chatgpt.com is not a false positive.
+    WHEN REGEXP_CONTAINS(
+      LOWER(COALESCE(tsource,'')),
+      r'(^|[^a-z0-9])(twitter|t\.co|facebook|instagram|linkedin|lnkd\.in|pinterest)([^a-z0-9]|$)'
+    )
+      OR REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(social|social_advertising|social-advertising|social_network|social-network|social_media|social-media|sm|social-unpaid|social_unpaid)$') THEN 'social_organic'
+
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(medium,'')), r'^(.*video.*)$') THEN 'video_organic'
 
     WHEN REGEXP_CONTAINS(LOWER(COALESCE(tsource,'')), r'^(google|bing|yahoo|baidu|duckduckgo|yandex|ask)$')
       OR LOWER(TRIM(COALESCE(medium,''))) = 'organic' THEN 'search_organic'

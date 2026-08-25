@@ -69,6 +69,19 @@ REQUIRED_ASSET_IDS = (
     "validate_outputs_v1",
 )
 
+REQUIRED_ASSET_TYPE_CLASSES = {
+    "BIGQUERY_UDF",
+    "BIGQUERY_UDF_TEMPLATE",
+    "BIGQUERY_UDF_ALIAS_TEMPLATE",
+    "BIGQUERY_DDL",
+    "BIGQUERY_SOURCE_QUERY",
+    "BIGQUERY_SOURCE_COMPILE",
+    "BIGQUERY_DML",
+    "BIGQUERY_VALIDATION",
+    "BIGQUERY_SCHEDULED_QUERY",
+    "BIGQUERY_SCHEDULED_QUERY_TEMPLATE",
+}
+
 
 def manifest_path() -> Path:
     return repo_root() / "sql" / "mta" / "manifest.yaml"
@@ -78,6 +91,8 @@ def load_sql_asset_manifest(path: Path | None = None) -> SqlAssetManifest:
     data = yaml.safe_load((path or manifest_path()).read_text(encoding="utf-8"))
     assets = []
     for row in data.get("assets", []):
+        deps = row.get("dependencies") or []
+        validation = row.get("validation_assets") or []
         assets.append(
             SqlAssetEntry(
                 asset_id=str(row["id"]),
@@ -88,7 +103,10 @@ def load_sql_asset_manifest(path: Path | None = None) -> SqlAssetManifest:
                 unique_key=row.get("unique_key"),
                 immutable_after_first_run=bool(row.get("immutable_after_first_run", False)),
                 note=row.get("note"),
+                version=str(row.get("version", "1")),
                 approval_class=row.get("approval") or row.get("approval_class"),
+                dependencies=tuple(str(d) for d in deps),
+                validation_assets=tuple(str(v) for v in validation),
             )
         )
     return SqlAssetManifest(

@@ -28,17 +28,44 @@ class MTARefreshWindowPlanner:
         lookback_window_days: int,
         last_watermark_date: str | None = None,
     ) -> MTARefreshWindow:
-        end = date.fromisoformat(run_date) - timedelta(days=max(settlement_days, 0))
-        # Bound by lookback + overlap; optionally advance from watermark.
+        trace: list[str] = []
+        run = date.fromisoformat(run_date)
+        end = run - timedelta(days=max(settlement_days, 0))
+        trace.append(
+            "source_end_date = "
+            f"run_date({run_date}) - settlement_days({settlement_days}) "
+            f"= {end.isoformat()}"
+        )
+        # Source must cover lookback so conversions at end can see full journey.
         span_days = lookback_window_days + source_overlap_days
         start = end - timedelta(days=max(span_days, 0))
+        trace.append(
+            "source_start_date = source_end - "
+            f"(lookback({lookback_window_days}) + overlap({source_overlap_days})) "
+            f"= {start.isoformat()}"
+        )
         if last_watermark_date:
             watermark = date.fromisoformat(last_watermark_date)
-            # Re-open overlap behind watermark; never scan earlier than lookback bound.
             reopen = watermark - timedelta(days=max(source_overlap_days, 0))
             start = max(start, reopen)
-        affected_conversion_start = start.isoformat()
-        affected_conversion_end = end.isoformat()
+            trace.append(
+                f"watermark({last_watermark_date}) reopen = "
+                f"watermark - overlap = {reopen.isoformat()}; "
+                f"source_start clamped to max(lookback_bound, reopen) = "
+                f"{start.isoformat()}"
+            )
+        # Conversions whose lookback overlaps refreshed source dates.
+        # C in [source_start, source_end]: touchpoints refreshed are visible.
+        affected_conversion_start = start
+        affected_conversion_end = end
+        trace.append(
+            "affected_conversion_window = "
+            f"[{affected_conversion_start.isoformat()}, "
+            f"{affected_conversion_end.isoformat()}] "
+            "(settled conversions whose lookback intersects refreshed source; "
+            f"lookback={lookback_window_days}d expands source, "
+            "not unsettled future conversions)"
+        )
         payload = {
             "run_date": run_date,
             "settlement_days": settlement_days,
@@ -47,8 +74,9 @@ class MTARefreshWindowPlanner:
             "last_watermark_date": last_watermark_date,
             "source_start_date": start.isoformat(),
             "source_end_date": end.isoformat(),
-            "affected_conversion_start": affected_conversion_start,
-            "affected_conversion_end": affected_conversion_end,
+            "affected_conversion_start": affected_conversion_start.isoformat(),
+            "affected_conversion_end": affected_conversion_end.isoformat(),
+            "calculation_trace": trace,
         }
         return MTARefreshWindow(
             run_date=run_date,
@@ -57,9 +85,10 @@ class MTARefreshWindowPlanner:
             lookback_window_days=lookback_window_days,
             source_start_date=start.isoformat(),
             source_end_date=end.isoformat(),
-            affected_conversion_start=affected_conversion_start,
-            affected_conversion_end=affected_conversion_end,
+            affected_conversion_start=affected_conversion_start.isoformat(),
+            affected_conversion_end=affected_conversion_end.isoformat(),
             fingerprint=canonical_fingerprint(payload),
+            calculation_trace=tuple(trace),
         )
 
 

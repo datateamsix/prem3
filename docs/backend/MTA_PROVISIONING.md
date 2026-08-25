@@ -1,20 +1,29 @@
 # MTA Provisioning
 
-MTA BigQuery assets are provisioned via a fingerprinted `MTAProvisioningPlan`, approved, then executed — same approve→execute pattern as Data Foundation (separate plan type; do not overload `FoundationPlan`).
+`MTAProvisioningService` (`app/modeling/mta/provisioning_service.py`) owns:
 
-## Plan contents
+1. Render-ready infrastructure plan UX (frontend does not calculate)
+2. SQL asset resolve + target authority (`prem3_modeling` only)
+3. Approval gate
+4. UDF / DDL / scheduled-query provision
+5. Dry-run where useful, then live execute
+6. Read-back verify + receipts
+7. Schedule disable/update via governed fingerprints
 
-- Channel-grouping UDF DDL from `sql/mta/udf/`
-- Operational + run-output DDL from `sql/mta/ddl/`
-- Preview of MERGE/rebuild DML and scheduled-query templates
-- Fingerprints of rendered SQL
+## Idempotency
 
-## Approval
+| State | Action |
+|---|---|
+| Absent | create |
+| Present + matching fingerprint/schema | reuse/verify |
+| Present + conflicts immutable history | fail closed |
+| Mutable alias/schedule | update only through governed action |
 
-UDF versions and scheduled refresh require explicit approval. DDL inside the bound `prem3_modeling` dataset may auto-execute when marked safe in `sql/mta/manifest.yaml`.
+## APIs
 
-## Authority
+- `GET /v1/channels`
+- `GET .../mta/provisioning-plan` + `POST .../approve`
+- `POST .../mta/scheduled-refresh/plan|provision|disable`
+- `GET /v1/mta/parameter-explanations`
 
-Destination GCP project and dataset are server-owned. Agents receive plan IDs and SQL previews — not raw SQL execution authority.
-
-See also `MTA_BIGQUERY_ASSET_LIBRARY.md` and `MTA_MANAGED_REFRESH.md`.
+Caller cannot override GCP project/dataset — server resolves from binding/settings.

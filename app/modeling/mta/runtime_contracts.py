@@ -69,9 +69,13 @@ class MTAModelRequirement(StrEnum):
 
 class ScheduledRefreshApprovalStatus(StrEnum):
     DRAFT = "DRAFT"
+    PLAN_READY = "PLAN_READY"
     AWAITING_APPROVAL = "AWAITING_APPROVAL"
     APPROVED = "APPROVED"
+    PROVISIONING = "PROVISIONING"
+    VERIFYING = "VERIFYING"
     PROVISIONED = "PROVISIONED"
+    PROVISIONING_FAILED = "PROVISIONING_FAILED"
     DISABLED = "DISABLED"
 
 
@@ -104,6 +108,7 @@ class MTARefreshWindow(FrozenModel):
     affected_conversion_start: str
     affected_conversion_end: str
     fingerprint: str
+    calculation_trace: tuple[str, ...] = ()
 
 
 class MTAScheduledRefreshPlan(FrozenModel):
@@ -130,6 +135,26 @@ class MTAScheduledRefreshReceipt(FrozenModel):
     provisioned: bool
     verified: bool
     generated_at: datetime = Field(default_factory=utc_now)
+    schedule_resource_id: str | None = None
+    schedule_name: str | None = None
+    cadence: str | None = None
+    timezone: str | None = None
+    service_identity: str | None = None
+    sql_asset_id: str | None = None
+    sql_asset_version: str | None = None
+    rendered_sql_fingerprint: str | None = None
+    source_binding: str | None = None
+    destination_binding: str | None = None
+    channel_registry_version: int | None = None
+    channel_grouping_version: int | None = None
+    lookback_window_days: int | None = None
+    settlement_days: int | None = None
+    status: str | None = None
+    disabled_by: str | None = None
+    disabled_at: datetime | None = None
+    verified_at: datetime | None = None
+    evidence_label: str | None = None
+    fingerprint: str | None = None
 
 
 class ModelParameterSet(FrozenModel):

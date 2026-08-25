@@ -1,0 +1,171 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\zroda\Desktop\prem3-m5-01a
+configfile: pyproject.toml
+plugins: anyio-4.14.2, cov-7.1.0
+collected 8 items
+
+tests\integration\test_mta_m5_01a_live_bq.py F..FF.FF                    [100%]
+
+================================== FAILURES ===================================
+___________________ test_live_channel_grouping_udf_creates ____________________
+tests\integration\test_mta_m5_01a_live_bq.py:67: in test_live_channel_grouping_udf_creates
+    receipt = live_svc.provision_infrastructure(plan, approved=True, dry_run_first=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\modeling\mta\provisioning_service.py:292: in provision_infrastructure
+    execute_sql_script(client, ddl_sql, dry_run=False)
+app\modeling\mta\bq_executor.py:130: in execute_sql_script
+    results.append(run_query(client, stmt, dry_run=dry_run))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\modeling\mta\bq_executor.py:77: in run_query
+    result = job.result()
+             ^^^^^^^^^^^^
+.venv\Lib\site-packages\google\cloud\bigquery\job\query.py:1797: in result
+    while not is_job_done():
+              ^^^^^^^^^^^^^
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:295: in retry_wrapped_func
+    return retry_target(
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:157: in retry_target
+    next_sleep = _retry_error_helper(
+.venv\Lib\site-packages\google\api_core\retry\retry_base.py:215: in _retry_error_helper
+    raise final_exc from source_exc
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:148: in retry_target
+    result = target()
+             ^^^^^^^^
+.venv\Lib\site-packages\google\cloud\bigquery\job\query.py:1746: in is_job_done
+    raise job_failed_exception
+E   google.api_core.exceptions.BadRequest: 400 NOT NULL cannot be applied to ARRAY field 'touchpoint_timestamps'. NULL arrays are always stored as an empty array.; reason: invalidQuery, location: query, message: NOT NULL cannot be applied to ARRAY field 'touchpoint_timestamps'. NULL arrays are always stored as an empty array.
+E   
+E   Location: us-central1
+E   Job ID: e900da27-9b5b-4ace-8d3f-6f3cc158dbd7
+_________________________ test_live_ai_search_mapping _________________________
+tests\integration\test_mta_m5_01a_live_bq.py:122: in test_live_ai_search_mapping
+    assert all(r["channel_id"] == AI_SEARCH_CHANNEL_ID for r in rows)
+E   assert False
+E    +  where False = all(<generator object test_live_ai_search_mapping.<locals>.<genexpr> at 0x0000023CB73A7E00>)
+________________ test_live_udf_historical_version_not_replaced ________________
+tests\integration\test_mta_m5_01a_live_bq.py:137: in test_live_udf_historical_version_not_replaced
+    receipt = live_svc.provision_infrastructure(plan, approved=True, dry_run_first=False)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\modeling\mta\provisioning_service.py:292: in provision_infrastructure
+    execute_sql_script(client, ddl_sql, dry_run=False)
+app\modeling\mta\bq_executor.py:130: in execute_sql_script
+    results.append(run_query(client, stmt, dry_run=dry_run))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\modeling\mta\bq_executor.py:77: in run_query
+    result = job.result()
+             ^^^^^^^^^^^^
+.venv\Lib\site-packages\google\cloud\bigquery\job\query.py:1797: in result
+    while not is_job_done():
+              ^^^^^^^^^^^^^
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:295: in retry_wrapped_func
+    return retry_target(
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:157: in retry_target
+    next_sleep = _retry_error_helper(
+.venv\Lib\site-packages\google\api_core\retry\retry_base.py:215: in _retry_error_helper
+    raise final_exc from source_exc
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:148: in retry_target
+    result = target()
+             ^^^^^^^^
+.venv\Lib\site-packages\google\cloud\bigquery\job\query.py:1746: in is_job_done
+    raise job_failed_exception
+E   google.api_core.exceptions.BadRequest: 400 NOT NULL cannot be applied to ARRAY field 'touchpoint_timestamps'. NULL arrays are always stored as an empty array.; reason: invalidQuery, location: query, message: NOT NULL cannot be applied to ARRAY field 'touchpoint_timestamps'. NULL arrays are always stored as an empty array.
+E   
+E   Location: us-central1
+E   Job ID: 2ad766ad-379e-411e-9d9c-3df9c257feb1
+__________________ test_live_merge_idempotent_and_reconcile ___________________
+tests\integration\test_mta_m5_01a_live_bq.py:167: in test_live_merge_idempotent_and_reconcile
+    r1 = live_svc.execute_refresh(
+app\modeling\mta\provisioning_service.py:435: in execute_refresh
+    result = run_query(client, sql, params=date_params, dry_run=False)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\modeling\mta\bq_executor.py:77: in run_query
+    result = job.result()
+             ^^^^^^^^^^^^
+.venv\Lib\site-packages\google\cloud\bigquery\job\query.py:1797: in result
+    while not is_job_done():
+              ^^^^^^^^^^^^^
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:295: in retry_wrapped_func
+    return retry_target(
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:157: in retry_target
+    next_sleep = _retry_error_helper(
+.venv\Lib\site-packages\google\api_core\retry\retry_base.py:215: in _retry_error_helper
+    raise final_exc from source_exc
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:148: in retry_target
+    result = target()
+             ^^^^^^^^
+.venv\Lib\site-packages\google\cloud\bigquery\job\query.py:1766: in is_job_done
+    self._reload_query_results(retry=retry, **reload_query_results_kwargs)
+.venv\Lib\site-packages\google\cloud\bigquery\job\query.py:1558: in _reload_query_results
+    self._query_results = self._client._get_query_results(
+.venv\Lib\site-packages\google\cloud\bigquery\client.py:2157: in _get_query_results
+    resource = self._call_api(
+.venv\Lib\site-packages\google\cloud\bigquery\client.py:905: in _call_api
+    return call()
+           ^^^^^^
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:295: in retry_wrapped_func
+    return retry_target(
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:157: in retry_target
+    next_sleep = _retry_error_helper(
+.venv\Lib\site-packages\google\api_core\retry\retry_base.py:215: in _retry_error_helper
+    raise final_exc from source_exc
+.venv\Lib\site-packages\google\api_core\retry\retry_unary.py:148: in retry_target
+    result = target()
+             ^^^^^^^^
+.venv\Lib\site-packages\google\cloud\_http\__init__.py:509: in api_request
+    raise exceptions.from_http_response(response)
+E   google.api_core.exceptions.BadRequest: 400 GET https://bigquery.googleapis.com/bigquery/v2/projects/modelready-m3/queries/d097c570-bda4-470b-ace8-c7f1753c0dc3?maxResults=0&location=us-central1&prettyPrint=false: Not found: Table modelready-m3:prem3_modeling.mta_journeys was not found in location us-central1 at [2:1]
+E   
+E   Location: us-central1
+E   Job ID: d097c570-bda4-470b-ace8-c7f1753c0dc3
+____________ test_live_schedule_resource_created_readback_disable _____________
+.venv\Lib\site-packages\google\api_core\grpc_helpers.py:55: in error_remapped_callable
+    return callable_(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\grpc\_interceptor.py:276: in __call__
+    response, ignored_call = self._with_call(
+.venv\Lib\site-packages\grpc\_interceptor.py:331: in _with_call
+    return call.result(), call
+           ^^^^^^^^^^^^^
+.venv\Lib\site-packages\grpc\_channel.py:447: in result
+    raise self
+.venv\Lib\site-packages\grpc\_interceptor.py:314: in continuation
+    response, call = self._thunk(new_method).with_call(
+.venv\Lib\site-packages\grpc\_channel.py:1182: in with_call
+    return _end_unary_response_blocking(state, call, True, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\grpc\_channel.py:999: in _end_unary_response_blocking
+    raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
+E   	status = StatusCode.INVALID_ARGUMENT
+E   	details = "Cannot create a transfer in JURISDICTION_US when destination dataset is located in REGION_US_CENTRAL_1"
+E   	debug_error_string = "INVALID_ARGUMENT:Cannot create a transfer in JURISDICTION_US when destination dataset is located in REGION_US_CENTRAL_1"
+E   >
+
+The above exception was the direct cause of the following exception:
+tests\integration\test_mta_m5_01a_live_bq.py:254: in test_live_schedule_resource_created_readback_disable
+    receipt = live_svc.provision_schedule(
+app\modeling\mta\provisioning_service.py:626: in provision_schedule
+    resource = self.schedule_client.create(
+app\modeling\mta\scheduled_query.py:162: in create
+    created = self._client.create_transfer_config(request=request)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\google\cloud\bigquery_datatransfer_v1\services\data_transfer_service\client.py:1155: in create_transfer_config
+    response = rpc(
+.venv\Lib\site-packages\google\api_core\gapic_v1\method.py:189: in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\google\api_core\timeout.py:130: in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\google\api_core\grpc_helpers.py:57: in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+E   google.api_core.exceptions.InvalidArgument: 400 Cannot create a transfer in JURISDICTION_US when destination dataset is located in REGION_US_CENTRAL_1
+=========================== short test summary info ===========================
+FAILED tests/integration/test_mta_m5_01a_live_bq.py::test_live_channel_grouping_udf_creates
+FAILED tests/integration/test_mta_m5_01a_live_bq.py::test_live_ai_search_mapping
+FAILED tests/integration/test_mta_m5_01a_live_bq.py::test_live_udf_historical_version_not_replaced
+FAILED tests/integration/test_mta_m5_01a_live_bq.py::test_live_merge_idempotent_and_reconcile
+FAILED tests/integration/test_mta_m5_01a_live_bq.py::test_live_schedule_resource_created_readback_disable
+=================== 5 failed, 3 passed in 79.29s (0:01:19) ====================

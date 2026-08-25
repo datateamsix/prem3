@@ -1,19 +1,24 @@
 # MTA Managed Refresh
 
-Operational MTA tables are continuously refreshed under an approved `MTAScheduledRefreshPlan`.
+`MTARefreshWindowPlanner` produces deterministic windows with a calculation_trace:
 
-## Tables
+- Inputs: run_date, settlement_days, source_overlap_days, lookback_window_days, watermark
+- Outputs: source window, affected conversion window, fingerprint, trace steps
 
-- `mta_sessions`, `mta_conversions`, `mta_touchpoints` — bounded MERGE
-- `mta_journeys`, `mta_path_frequencies` — bounded deterministic rebuild
-- `mta_refresh_watermark` — progress cursor
+Lookback expands the **source** window so conversions at the settled horizon can see
+full journeys. Regression coverage: lookback 7 / 30 / 60 / 90.
 
-## Template
+## Semantics
 
-`sql/mta/scheduled/daily_refresh_v1.sql.j2` (approval required — recurring cost).
+- MERGE sessions/conversions/touchpoints by logical keys (idempotent)
+- Bounded rebuild for journeys + path frequencies
+- Watermark advances only after compile + MERGE/rebuild + validation + read-back
+- Failed refresh retains prior successful watermark
 
-## Parameters
+## Scheduled refresh vs MTA run
 
-Lookback, settlement days, source overlap, conversion event, channel registry/grouping versions, and server-owned destination dataset are pinned on the refresh plan fingerprint.
+| Scheduled refresh | MTA run |
+|---|---|
+| Maintains current governed journey evidence | Immutable attribution evidence for pinned cutoff/config |
 
-Implementation details land in `app/modeling/mta/refresh.py` (M5-01).
+Scheduled refresh must not overwrite accepted/published MTA result snapshots.

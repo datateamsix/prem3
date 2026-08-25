@@ -85,3 +85,72 @@ class CreateMTARunRequest(ApiModel):
     """Customer create-run body — no BQ/GCS/authority fields allowed."""
 
     note: str | None = None
+
+
+class CanonicalChannelView(ApiModel):
+    channel_id: str
+    display_name: str
+    channel_family_id: str
+    mmm_allowed: bool
+    mta_default: bool
+
+
+class MTAProvisioningPlanView(ApiModel):
+    plan_id: str
+    fingerprint: str
+    gcp_project_id: str
+    dataset_id: str
+    channel_grouping_routine: str
+    ux: dict = Field(default_factory=dict)
+
+
+class ApproveProvisionRequest(ApiModel):
+    approved: bool = True
+    note: str | None = None
+
+
+class MTAProvisioningReceiptView(ApiModel):
+    receipt_id: str
+    plan_id: str
+    plan_fingerprint: str
+    created: list[str] = Field(default_factory=list)
+    reused: list[str] = Field(default_factory=list)
+    verified: bool = False
+
+
+class ScheduledRefreshPlanRequest(ApiModel):
+    conversion_event: str = "purchase"
+    lookback_window_days: int = 30
+    settlement_days: int = 3
+    source_overlap_days: int = 3
+    cadence: str = "every 24 hours"
+    timezone: str = "America/Los_Angeles"
+
+
+class ScheduledRefreshPlanView(ApiModel):
+    schedule_id: str
+    fingerprint: str
+    approval_status: str
+    lookback_window_days: int
+    cadence: str
+    timezone: str
+
+
+class ScheduledRefreshReceiptView(ApiModel):
+    receipt_id: str
+    schedule_id: str
+    provisioned: bool
+    verified: bool
+    schedule_resource_id: str | None = None
+    status: str | None = None
+    evidence_label: str | None = None
+
+
+class DisableScheduleRequest(ApiModel):
+    resource_name: str
+    note: str | None = None
+
+
+class ParameterExplanationsView(ApiModel):
+    explanations: dict[str, str] = Field(default_factory=dict)
+    models: list[dict] = Field(default_factory=list)

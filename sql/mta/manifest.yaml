@@ -4,87 +4,152 @@ authority: PREM3_DETERMINISTIC_SQL
 canonical_channel_registry: assets/channels/channel_registry_v1.yaml
 channel_grouping_rules: assets/channels/channel_grouping_rules_v1.yaml
 model_registry: assets/mta/model_registry_v1.yaml
+fingerprint_policy: template_asset_version_plus_params_plus_rendered_sql_plus_target
 assets:
   - id: channel_grouping_v1
-    type: BIGQUERY_UDF_TEMPLATE
+    type: BIGQUERY_UDF
+    version: "1"
     path: sql/mta/udf/channel_grouping_v1.sql.j2
     approval: APPROVAL_REQUIRED
+    approval_class: APPROVAL_REQUIRED
     immutable_after_first_run: true
+    required_template_parameters: [project_id, modeling_dataset]
+    dependencies: []
+    validation_assets: [validate_channel_grouping_v1]
+    fingerprint_policy: rendered_sql_plus_registry_version
 
   - id: channel_grouping_current
-    type: BIGQUERY_UDF_ALIAS_TEMPLATE
+    type: BIGQUERY_UDF
+    version: "1"
     path: sql/mta/udf/channel_grouping_current.sql.j2
     approval: APPROVAL_REQUIRED
+    approval_class: APPROVAL_REQUIRED
     note: Convenience alias only; historical runs pin versioned routine.
+    required_template_parameters: [project_id, modeling_dataset, channel_grouping_version]
+    dependencies: [channel_grouping_v1]
 
   - id: create_operational_tables_v1
     type: BIGQUERY_DDL
+    version: "1"
     path: sql/mta/ddl/create_operational_tables_v1.sql.j2
     approval: AUTO_SAFE_IF_WITHIN_BOUND_MODELING_DATASET
+    approval_class: AUTO_SAFE_IF_WITHIN_BOUND_MODELING_DATASET
+    required_template_parameters: [project_id, modeling_dataset]
+    dependencies: []
 
   - id: create_run_output_tables_v1
     type: BIGQUERY_DDL
+    version: "1"
     path: sql/mta/ddl/create_run_output_tables_v1.sql.j2
     approval: AUTO_SAFE_IF_WITHIN_BOUND_MODELING_DATASET
+    approval_class: AUTO_SAFE_IF_WITHIN_BOUND_MODELING_DATASET
+    required_template_parameters: [project_id, modeling_dataset]
+    dependencies: [create_operational_tables_v1]
 
   - id: ga4_sessions_last_click_v1
-    type: BIGQUERY_SOURCE_COMPILE
+    type: BIGQUERY_SOURCE_QUERY
+    version: "1"
     path: sql/mta/source/ga4_sessions_last_click_v1.sql.j2
+    required_template_parameters: [ga4_project_id, ga4_dataset_id, identity_strategy]
+    dependencies: []
 
   - id: ga4_sessions_collected_fallback_v1
-    type: BIGQUERY_SOURCE_COMPILE
+    type: BIGQUERY_SOURCE_QUERY
+    version: "1"
     path: sql/mta/source/ga4_sessions_collected_fallback_v1.sql.j2
+    required_template_parameters: [ga4_project_id, ga4_dataset_id, identity_strategy]
+    dependencies: []
 
   - id: merge_sessions_v1
     type: BIGQUERY_DML
+    version: "1"
     path: sql/mta/dml/merge_sessions_v1.sql.j2
     write_mode: MERGE
     unique_key: session_id
+    rebuild_grain: source_date
+    required_template_parameters: [project_id, modeling_dataset, channel_grouping_version, traffic_source_policy, standardized_session_select]
+    dependencies: [create_operational_tables_v1, channel_grouping_v1]
 
   - id: merge_conversions_v1
     type: BIGQUERY_DML
+    version: "1"
     path: sql/mta/dml/merge_conversions_v1.sql.j2
     write_mode: MERGE
     unique_key: conversion_id
+    rebuild_grain: conversion_date
+    required_template_parameters: [project_id, modeling_dataset, ga4_project_id, ga4_dataset_id, identity_strategy, conversion_event]
+    dependencies: [create_operational_tables_v1]
 
   - id: merge_touchpoints_v1
     type: BIGQUERY_DML
+    version: "1"
     path: sql/mta/dml/merge_touchpoints_v1.sql.j2
     write_mode: MERGE
     unique_key: touchpoint_id
+    rebuild_grain: touchpoint_date
+    required_template_parameters: [project_id, modeling_dataset, channel_registry_version, channel_grouping_version]
+    dependencies: [merge_sessions_v1]
 
   - id: rebuild_journeys_v1
     type: BIGQUERY_DML
+    version: "1"
     path: sql/mta/dml/rebuild_journeys_v1.sql.j2
     write_mode: BOUNDED_PARTITION_REBUILD
+    rebuild_grain: conversion_date
+    required_template_parameters: [project_id, modeling_dataset, conversion_event, lookback_window_days, channel_registry_version, channel_grouping_version, input_config_fingerprint]
+    dependencies: [merge_conversions_v1, merge_touchpoints_v1]
 
   - id: rebuild_path_frequencies_v1
     type: BIGQUERY_DML
+    version: "1"
     path: sql/mta/dml/rebuild_path_frequencies_v1.sql.j2
     write_mode: BOUNDED_PARTITION_REBUILD
+    rebuild_grain: conversion_date
+    required_template_parameters: [project_id, modeling_dataset, conversion_event, lookback_window_days, channel_registry_version, channel_grouping_version, input_config_fingerprint]
+    dependencies: [rebuild_journeys_v1]
 
   - id: update_watermark_v1
     type: BIGQUERY_DML
+    version: "1"
     path: sql/mta/dml/update_watermark_v1.sql.j2
     write_mode: UPSERT
+    unique_key: pipeline_id
+    required_template_parameters: [project_id, modeling_dataset, pipeline_id, refresh_id, channel_registry_version, channel_grouping_version, input_config_fingerprint]
+    dependencies: [rebuild_path_frequencies_v1]
 
   - id: daily_refresh_v1
-    type: BIGQUERY_SCHEDULED_QUERY_TEMPLATE
+    type: BIGQUERY_SCHEDULED_QUERY
+    version: "1"
     path: sql/mta/scheduled/daily_refresh_v1.sql.j2
     approval: APPROVAL_REQUIRED
+    approval_class: APPROVAL_REQUIRED
+    required_template_parameters: [settlement_days, source_overlap_days, lookback_window_days]
+    dependencies: [merge_sessions_v1, merge_conversions_v1, merge_touchpoints_v1, rebuild_journeys_v1, rebuild_path_frequencies_v1, update_watermark_v1]
 
   - id: validate_channel_grouping_v1
     type: BIGQUERY_VALIDATION
+    version: "1"
     path: sql/mta/validation/channel_grouping_v1.sql.j2
+    required_template_parameters: [project_id, modeling_dataset]
+    dependencies: [channel_grouping_v1]
 
   - id: validate_uniqueness_v1
     type: BIGQUERY_VALIDATION
+    version: "1"
     path: sql/mta/validation/uniqueness_v1.sql.j2
+    required_template_parameters: [project_id, modeling_dataset]
+    dependencies: [create_operational_tables_v1]
 
   - id: validate_journey_ordering_v1
     type: BIGQUERY_VALIDATION
+    version: "1"
     path: sql/mta/validation/journey_ordering_v1.sql.j2
+    required_template_parameters: [project_id, modeling_dataset]
+    dependencies: [rebuild_journeys_v1]
 
   - id: validate_outputs_v1
     type: BIGQUERY_VALIDATION
+    version: "1"
     path: sql/mta/validation/outputs_v1.sql.j2
+    required_template_parameters: [project_id, modeling_dataset]
+    dependencies: [create_run_output_tables_v1]
