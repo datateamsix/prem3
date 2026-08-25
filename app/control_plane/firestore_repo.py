@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import unquote
 
 from google.cloud import firestore
 from google.cloud.firestore import transactional
@@ -98,6 +99,42 @@ COLLECTION_PUBLISH_EXECUTIONS = "publish_executions"
 COLLECTION_DISPATCHES = "dispatches"
 COLLECTION_EVALUATION_DISPATCHES = "evaluation_dispatches"
 COLLECTION_MEASUREMENT_TRACKS = "measurement_tracks"
+DEFAULT_FIRESTORE_DATABASE = "(default)"
+
+
+def normalize_firestore_database_id(database: str | None) -> str:
+    """Return the Native database id. Do not keep URL-encoded parentheses."""
+    value = unquote((database or "").strip().strip('"').strip("'"))
+    return value or DEFAULT_FIRESTORE_DATABASE
+
+
+def firestore_database_resource_name(project_id: str, database: str | None) -> str:
+    """Unencoded ``projects/{project}/databases/{database}`` resource name."""
+    return (
+        f"projects/{project_id}/databases/{normalize_firestore_database_id(database)}"
+    )
+
+
+def build_firestore_client(
+    *,
+    project_id: str,
+    database: str | None = DEFAULT_FIRESTORE_DATABASE,
+    credentials: Any | None = None,
+) -> firestore.Client:
+    """Construct a Client whose default database path is not percent-encoded.
+
+    Newer ``google.api_core.path_template.expand`` turns ``(default)`` into
+    ``%28default%29``, which Firestore rejects with HTTP 400.
+    """
+    resolved = normalize_firestore_database_id(database)
+    kwargs: dict[str, Any] = {"project": project_id, "database": resolved}
+    if credentials is not None:
+        kwargs["credentials"] = credentials
+    client = firestore.Client(**kwargs)
+    client._database_string_internal = firestore_database_resource_name(
+        client.project, client._database
+    )
+    return client
 
 
 class FirestoreControlPlaneRepository:
@@ -115,7 +152,7 @@ class FirestoreControlPlaneRepository:
         project_id: str,
         database: str = "(default)",
     ) -> FirestoreControlPlaneRepository:
-        return cls(firestore.Client(project=project_id, database=database))
+        return cls(build_firestore_client(project_id=project_id, database=database))
 
     # --- refs ---
 

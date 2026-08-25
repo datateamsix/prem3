@@ -17,9 +17,10 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from google.cloud import bigquery, firestore, storage
+from google.cloud import bigquery, storage
 
 from app.config import load_settings
+from app.control_plane.firestore_repo import build_firestore_client
 from app.core.contracts import utc_now
 from app.modeling.common.errors import ArtifactVerificationFailedError
 from app.modeling.common.fingerprints import canonical_fingerprint
@@ -129,7 +130,9 @@ def main(argv: list[str] | None = None) -> int:
         "cloud_tasks": {"status": "NOT_RUN"},
         "job_launch": {"status": "NOT_RUN"},
     }
-    fs_client = firestore.Client(project=PROJECT, database=settings.firestore_database)
+    fs_client = build_firestore_client(
+        project_id=PROJECT, database=settings.firestore_database
+    )
     repo = FirestoreModelingRepository(fs_client)
     try:
         evidence["firestore"] = _firestore_proof(
@@ -380,9 +383,9 @@ def _firestore_proof(
 
 def _reload_plan_fingerprint(*, tenant_id: str, project_id: str, model_version_id: str) -> str:
     script = (
-        "from google.cloud import firestore\n"
+        "from app.control_plane.firestore_repo import build_firestore_client\n"
         "from app.modeling.mmm.firestore import FirestoreModelingRepository\n"
-        f"client = firestore.Client(project={PROJECT!r}, database='(default)')\n"
+        f"client = build_firestore_client(project_id={PROJECT!r}, database='(default)')\n"
         "repo = FirestoreModelingRepository(client)\n"
         f"plan = repo.get_plan({model_version_id!r})\n"
         "print(plan.fingerprint if plan is not None else 'MISSING')\n"

@@ -28,3 +28,10 @@ def test_firestore_database_reads_explicit_override(monkeypatch) -> None:
     monkeypatch.setenv("FIRESTORE_DATABASE", "(default)")
     settings = load_settings()
     assert settings.firestore_database == "(default)"
+
+
+def test_firestore_database_strips_quoted_and_encoded_default(monkeypatch) -> None:
+    monkeypatch.setenv("FIRESTORE_DATABASE", '"(default)"')
+    assert load_settings().firestore_database == "(default)"
+    monkeypatch.setenv("FIRESTORE_DATABASE", "%28default%29")
+    assert load_settings().firestore_database == "(default)"

@@ -15,9 +15,10 @@ import sys
 import traceback
 from typing import Any
 
-from google.cloud import bigquery, firestore
+from google.cloud import bigquery
 
 from app.config import load_settings
+from app.control_plane.firestore_repo import build_firestore_client
 from app.modeling.common.errors import FitRuntimeError
 from app.modeling.mmm.contracts import (
     ComputeProfile,
@@ -185,8 +186,8 @@ def execute_fit_dispatch(
 
 def _production_service() -> tuple[FirestoreModelingRepository, MMMModelingService]:
     settings = load_settings()
-    client = firestore.Client(
-        project=settings.project_id,
+    client = build_firestore_client(
+        project_id=settings.project_id,
         database=settings.firestore_database,
     )
     repo = FirestoreModelingRepository(client)

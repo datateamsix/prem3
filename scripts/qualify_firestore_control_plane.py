@@ -23,7 +23,6 @@ from datetime import UTC, datetime, timedelta
 
 from google.auth import default as google_auth_default
 from google.auth import impersonated_credentials
-from google.cloud import firestore
 
 from app.config import load_settings
 from app.control_plane.entitlements import PlanId, entitlement_for_plan
@@ -31,6 +30,7 @@ from app.control_plane.firestore_repo import (
     COLLECTION_IDENTITY_MAPPINGS,
     COLLECTION_WEBHOOKS,
     FirestoreControlPlaneRepository,
+    build_firestore_client,
 )
 from app.control_plane.layout import identity_mapping_doc_id, webhook_event_doc_id
 from app.control_plane.models import (
@@ -89,8 +89,8 @@ def main(argv: list[str] | None = None) -> int:
                 target_principal=args.impersonate_service_account,
                 target_scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
-            client = firestore.Client(
-                project=settings.project_id,
+            client = build_firestore_client(
+                project_id=settings.project_id,
                 database=settings.firestore_database,
                 credentials=creds,
             )

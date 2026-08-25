@@ -16,11 +16,19 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import unquote
 
 
 def _csv_env(name: str) -> tuple[str, ...]:
     raw = os.getenv(name, "")
     return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _firestore_database_from_env() -> str:
+    value = unquote(
+        (os.getenv("FIRESTORE_DATABASE") or "(default)").strip().strip('"').strip("'")
+    )
+    return value or "(default)"
 
 
 def _optional_int_env(name: str) -> int | None:
@@ -165,7 +173,7 @@ def load_settings() -> Settings:
         eda_job_timeout_seconds=int(os.getenv("MODELREADY_EDA_JOB_TIMEOUT", "3300")),
         domain_view_registry_gs_uri=os.getenv("MODELREADY_DOMAIN_VIEW_REGISTRY_GS_URI")
         or None,
-        firestore_database=os.getenv("FIRESTORE_DATABASE", "(default)"),
+        firestore_database=_firestore_database_from_env(),
         clerk_secret_key=os.getenv("CLERK_SECRET_KEY") or None,
         clerk_publishable_key=os.getenv("CLERK_PUBLISHABLE_KEY") or None,
         clerk_webhook_signing_secret=os.getenv("CLERK_WEBHOOK_SIGNING_SECRET") or None,

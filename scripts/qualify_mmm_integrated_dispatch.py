@@ -17,9 +17,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from google.cloud import firestore
-
 from app.config import load_settings
+from app.control_plane.firestore_repo import build_firestore_client
 from app.core.contracts import utc_now
 from app.modeling.mmm.contracts import (
     ComputeProfile,
@@ -82,7 +81,9 @@ def main(argv: list[str] | None = None) -> int:
     suffix = uuid.uuid4().hex[:12]
     tenant_id = f"tenm3i{suffix}"
     project_id = f"prjm3i{suffix}"
-    fs_client = firestore.Client(project=PROJECT, database=settings.firestore_database)
+    fs_client = build_firestore_client(
+        project_id=PROJECT, database=settings.firestore_database
+    )
     repo = FirestoreModelingRepository(fs_client)
     evidence: dict[str, Any] = {
         "tenant_id": tenant_id,
