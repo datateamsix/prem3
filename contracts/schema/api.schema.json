@@ -2844,6 +2844,315 @@
       "title": "WorkspaceResponse",
       "type": "object"
     },
+    "app_service_mta_models__MTAOverviewNextActionView": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "title": "Action Type",
+          "type": "string"
+        },
+        "blocking": {
+          "default": false,
+          "title": "Blocking",
+          "type": "boolean"
+        },
+        "owner": {
+          "default": "server",
+          "title": "Owner",
+          "type": "string"
+        },
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_type",
+        "statement"
+      ],
+      "title": "MTAOverviewNextActionView",
+      "type": "object"
+    },
+    "app_service_mta_models__MTAOverviewResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptance_computed_by_server": {
+          "default": true,
+          "title": "Acceptance Computed By Server",
+          "type": "boolean"
+        },
+        "attention": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Attention",
+          "type": "array"
+        },
+        "attribution_models": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Attribution Models",
+          "type": "array"
+        },
+        "channel_grouping_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Channel Grouping Version"
+        },
+        "conversion_event": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversion Event"
+        },
+        "conversion_period_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversion Period End"
+        },
+        "conversion_period_start": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversion Period Start"
+        },
+        "cycle_id": {
+          "title": "Cycle Id",
+          "type": "string"
+        },
+        "domain_stage": {
+          "title": "Domain Stage",
+          "type": "string"
+        },
+        "epistemic_label": {
+          "default": "Observable journey attribution",
+          "title": "Epistemic Label",
+          "type": "string"
+        },
+        "foundation_ready": {
+          "title": "Foundation Ready",
+          "type": "boolean"
+        },
+        "ga4_dataset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ga4 Dataset Id"
+        },
+        "ga4_property_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ga4 Property Id"
+        },
+        "identity_strategy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Identity Strategy"
+        },
+        "latest_result_state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Result State"
+        },
+        "lookback_window_days": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lookback Window Days"
+        },
+        "next_action": {
+          "$ref": "#/$defs/app_service_mta_models__MTAOverviewNextActionView"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "readiness_state": {
+          "title": "Readiness State",
+          "type": "string"
+        },
+        "settlement_policy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Settlement Policy"
+        },
+        "track_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Track Id"
+        },
+        "user_id_coverage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "User Id Coverage"
+        },
+        "user_pseudo_id_coverage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "User Pseudo Id Coverage"
+        }
+      },
+      "required": [
+        "project_id",
+        "cycle_id",
+        "domain_stage",
+        "readiness_state",
+        "foundation_ready",
+        "next_action"
+      ],
+      "title": "MTAOverviewResponse",
+      "type": "object"
+    },
+    "app_service_mta_models__MTAReadinessResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "blocking_failures": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Blocking Failures",
+          "type": "array"
+        },
+        "conversion_event": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversion Event"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "ga4_dataset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ga4 Dataset Id"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "state",
+        "fingerprint"
+      ],
+      "title": "MTAReadinessResponse",
+      "type": "object"
+    },
     "app_service_project_models__AttentionItem": {
       "additionalProperties": false,
       "properties": {
@@ -4350,6 +4659,12 @@
     },
     {
       "$ref": "#/$defs/app_service_mmm_models__IdentifiabilityReviewResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTAOverviewResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTAReadinessResponse"
     }
   ],
   "title": "PreM3 prem3-api presentation contracts"

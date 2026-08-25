@@ -681,10 +681,13 @@ class ProjectHomeAssembler:
                 foundation_ready=foundation_ready,
                 ga4_dataset_id=track.config.get("ga4_dataset_id"),
                 key_event_name=track.config.get("key_event_name"),
+                channel_grouping_version=track.config.get("channel_grouping_version"),
+                mta_input_ready=str(track.input_readiness_state or "") == "MTA_INPUT_READY"
+                or str(track.config.get("domain_stage") or "") == "MTA_INPUT_READY",
             )
             engine = None
             run_id = None
-            domain_state = None
+            domain_state = track.config.get("domain_stage")
         else:
             configured = bool(
                 track.config.get("target_metric") or track.config.get("forecast_horizon")

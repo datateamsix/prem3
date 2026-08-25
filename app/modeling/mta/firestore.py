@@ -1,0 +1,148 @@
+"""Compact Firestore twin for MTA metadata. Never stores large journeys."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from app.control_plane.serialization import document_to_model, model_to_document
+from app.modeling.mta.contracts import (
+    MTAChannelGrouping,
+    MTAInputContract,
+    MTAProvisioningPlan,
+    MTAProvisioningReceipt,
+    MTAReadinessReceipt,
+    MTATrackConfig,
+)
+
+COL_TENANTS = "tenants"
+COL_WORKSPACES = "workspaces"
+COL_INDEX = "mta_modeling_index"
+
+
+class FirestoreMTARepository:
+    """Production metadata store for M5-00 contracts — compact documents only."""
+
+    def __init__(self, client: Any) -> None:
+        self._db = client
+
+    def _ws(self, tenant_id: str, workspace_id: str):
+        return (
+            self._db.collection(COL_TENANTS)
+            .document(tenant_id)
+            .collection(COL_WORKSPACES)
+            .document(workspace_id)
+        )
+
+    def _index(self, kind: str, key: str, tenant_id: str, workspace_id: str) -> None:
+        self._db.collection(COL_INDEX).document(f"{kind}__{key}").set(
+            {"tenant_id": tenant_id, "workspace_id": workspace_id, "kind": kind}
+        )
+
+    def _put(
+        self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model: Any
+    ) -> None:
+        self._ws(tenant_id, workspace_id).collection(collection).document(doc_id).set(
+            model_to_document(model)
+        )
+
+    def _get(
+        self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model_type: Any
+    ):
+        snap = (
+            self._ws(tenant_id, workspace_id).collection(collection).document(doc_id).get()
+        )
+        if not snap.exists:
+            return None
+        return document_to_model(model_type, snap.to_dict())
+
+    def put_config(
+        self, *, tenant_id: str, project_id: str, track_id: str, config: MTATrackConfig
+    ) -> MTATrackConfig:
+        self._put(tenant_id, project_id, "mta_track_configs", track_id, config)
+        self._index("mta_config", track_id, tenant_id, project_id)
+        return config
+
+    def get_config(
+        self, *, tenant_id: str, project_id: str, track_id: str
+    ) -> MTATrackConfig | None:
+        return self._get(tenant_id, project_id, "mta_track_configs", track_id, MTATrackConfig)
+
+    def put_contract(
+        self, *, tenant_id: str, project_id: str, contract: MTAInputContract
+    ) -> MTAInputContract:
+        self._put(
+            tenant_id,
+            project_id,
+            "mta_input_contracts",
+            contract.input_contract_id,
+            contract,
+        )
+        self._index(
+            "mta_input_contract",
+            contract.input_contract_id,
+            tenant_id,
+            project_id,
+        )
+        return contract
+
+    def get_contract(
+        self, *, tenant_id: str, project_id: str, input_contract_id: str
+    ) -> MTAInputContract | None:
+        return self._get(
+            tenant_id, project_id, "mta_input_contracts", input_contract_id, MTAInputContract
+        )
+
+    def put_readiness(
+        self, *, tenant_id: str, project_id: str, receipt: MTAReadinessReceipt
+    ) -> MTAReadinessReceipt:
+        self._put(tenant_id, project_id, "mta_readiness", receipt.track_id, receipt)
+        self._index("mta_readiness", receipt.track_id, tenant_id, project_id)
+        return receipt
+
+    def get_readiness(
+        self, *, tenant_id: str, project_id: str, track_id: str
+    ) -> MTAReadinessReceipt | None:
+        return self._get(
+            tenant_id, project_id, "mta_readiness", track_id, MTAReadinessReceipt
+        )
+
+    def put_grouping(
+        self, *, tenant_id: str, project_id: str, grouping: MTAChannelGrouping
+    ) -> MTAChannelGrouping:
+        existing = self.get_grouping(
+            tenant_id=tenant_id, project_id=project_id, version=grouping.version
+        )
+        if existing is not None and existing.fingerprint != grouping.fingerprint:
+            raise ValueError(
+                f"Cannot mutate channel grouping version {grouping.version}."
+            )
+        self._put(
+            tenant_id, project_id, "mta_channel_groupings", grouping.version, grouping
+        )
+        self._index("mta_channel_grouping", grouping.version, tenant_id, project_id)
+        return grouping
+
+    def get_grouping(
+        self, *, tenant_id: str, project_id: str, version: str
+    ) -> MTAChannelGrouping | None:
+        return self._get(
+            tenant_id, project_id, "mta_channel_groupings", version, MTAChannelGrouping
+        )
+
+    def put_plan(
+        self, *, tenant_id: str, project_id: str, plan: MTAProvisioningPlan
+    ) -> MTAProvisioningPlan:
+        self._put(tenant_id, project_id, "mta_provisioning_plans", plan.plan_id, plan)
+        self._index("mta_provisioning_plan", plan.plan_id, tenant_id, project_id)
+        return plan
+
+    def put_provisioning_receipt(
+        self, *, tenant_id: str, project_id: str, receipt: MTAProvisioningReceipt
+    ) -> MTAProvisioningReceipt:
+        self._put(
+            tenant_id, project_id, "mta_provisioning_receipts", receipt.receipt_id, receipt
+        )
+        self._index(
+            "mta_provisioning_receipt", receipt.receipt_id, tenant_id, project_id
+        )
+        return receipt

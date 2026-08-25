@@ -41,6 +41,7 @@ from app.materialization.service import MaterializationService
 from app.modeling.mmm.dispatch import CloudTasksFitDispatcher
 from app.modeling.mmm.firestore import FirestoreModelingRepository
 from app.modeling.mmm.service import MMMModelingService
+from app.modeling.mta.service import MTAService
 from app.publish_execution.model_ready import (
     ModelReadyEvidenceResolver,
     NullModelReadyEvidenceResolver,
@@ -104,6 +105,7 @@ from app.service.routers import (
     internal_dispatch,
     materializations,
     mmm,
+    mta,
     projects,
     publishes,
     runs,
@@ -283,6 +285,7 @@ def create_app(
     )
     app.state.mmm_modeling = modeling
     app.state.mmm_fit_launcher = fit_launcher
+    app.state.mta_service = MTAService()
     app.state.mmm_service_identity_verifier = _mmm_service_identity_verifier(cfg)
     if extended_eda is None:
         if uses_cloud_runtime():
@@ -315,6 +318,7 @@ def create_app(
     app.include_router(materializations.router)
     app.include_router(publishes.router)
     app.include_router(mmm.router)
+    app.include_router(mta.router)
     app.include_router(billing.router)
     app.include_router(identity_webhooks.router)
     app.include_router(internal_dispatch.router)

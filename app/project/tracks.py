@@ -260,6 +260,8 @@ def mta_availability(
     foundation_ready: bool,
     ga4_dataset_id: str | None,
     key_event_name: str | None,
+    mta_input_ready: bool = False,
+    channel_grouping_version: str | None = None,
 ) -> tuple[MeasurementTrackStatus, CapabilityAvailability, list[str], NextActionType]:
     context: list[str] = []
     if not entitled:
@@ -284,6 +286,18 @@ def mta_availability(
         context.append("Key event selected")
     else:
         context.append("Key event not selected")
+    if channel_grouping_version:
+        context.append(f"Channel grouping {channel_grouping_version}")
+    else:
+        context.append("Channel grouping not approved")
+    if mta_input_ready:
+        context.append("MTA_INPUT_READY")
+        return (
+            MeasurementTrackStatus.READY_TO_RUN,
+            CapabilityAvailability.IN_PROGRESS,
+            context,
+            NextActionType.OPEN_MTA,
+        )
     if not key_event_name:
         return (
             MeasurementTrackStatus.AVAILABLE_TO_CONFIGURE,
@@ -292,8 +306,8 @@ def mta_availability(
             NextActionType.SELECT_MTA_KEY_EVENT if ga4_dataset_id else NextActionType.SETUP_MTA,
         )
     return (
-        MeasurementTrackStatus.READY_TO_RUN,
-        CapabilityAvailability.IN_PROGRESS,
+        MeasurementTrackStatus.AVAILABLE_TO_CONFIGURE,
+        CapabilityAvailability.AVAILABLE_TO_CONFIGURE,
         context,
         NextActionType.OPEN_MTA,
     )

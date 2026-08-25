@@ -1254,6 +1254,48 @@ components:
       - blocking
       title: EdaNextActionView
       type: object
+    EvaluateMTAReadinessRequest:
+      additionalProperties: false
+      properties:
+        channel_grouping_approved:
+          default: false
+          title: Channel Grouping Approved
+          type: boolean
+        conversion_volume_ok:
+          default: false
+          title: Conversion Volume Ok
+          type: boolean
+        daily_shards_continuous:
+          default: true
+          title: Daily Shards Continuous
+          type: boolean
+        ga4_dataset_exists:
+          default: false
+          title: Ga4 Dataset Exists
+          type: boolean
+        key_event_present:
+          default: false
+          title: Key Event Present
+          type: boolean
+        lookback_covered:
+          default: false
+          title: Lookback Covered
+          type: boolean
+        unmapped_share_ok:
+          default: true
+          title: Unmapped Share Ok
+          type: boolean
+        user_pseudo_id_coverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: User Pseudo Id Coverage
+        uses_intraday_for_canonical:
+          default: false
+          title: Uses Intraday For Canonical
+          type: boolean
+      title: EvaluateMTAReadinessRequest
+      type: object
     EvaluationExecutionView:
       additionalProperties: false
       properties:
@@ -2014,6 +2056,178 @@ components:
       - project_id
       - cycle_id
       title: MMMSummaryResponse
+      type: object
+    MTAOverviewNextActionView:
+      additionalProperties: false
+      properties:
+        action_type:
+          title: Action Type
+          type: string
+        blocking:
+          default: false
+          title: Blocking
+          type: boolean
+        owner:
+          default: server
+          title: Owner
+          type: string
+        statement:
+          title: Statement
+          type: string
+      required:
+      - action_type
+      - statement
+      title: MTAOverviewNextActionView
+      type: object
+    MTAOverviewResponse:
+      additionalProperties: false
+      properties:
+        acceptance_computed_by_server:
+          default: true
+          title: Acceptance Computed By Server
+          type: boolean
+        attention:
+          items:
+            type: string
+          title: Attention
+          type: array
+        attribution_models:
+          items:
+            type: string
+          title: Attribution Models
+          type: array
+        channel_grouping_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Grouping Version
+        conversion_event:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Conversion Event
+        conversion_period_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Conversion Period End
+        conversion_period_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Conversion Period Start
+        cycle_id:
+          title: Cycle Id
+          type: string
+        domain_stage:
+          title: Domain Stage
+          type: string
+        epistemic_label:
+          default: Observable journey attribution
+          title: Epistemic Label
+          type: string
+        foundation_ready:
+          title: Foundation Ready
+          type: boolean
+        ga4_dataset_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ga4 Dataset Id
+        ga4_property_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ga4 Property Id
+        identity_strategy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Identity Strategy
+        latest_result_state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Result State
+        lookback_window_days:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Lookback Window Days
+        next_action:
+          $ref: '#/components/schemas/MTAOverviewNextActionView'
+        project_id:
+          title: Project Id
+          type: string
+        readiness_state:
+          title: Readiness State
+          type: string
+        settlement_policy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Settlement Policy
+        track_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Track Id
+        user_id_coverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: User Id Coverage
+        user_pseudo_id_coverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: User Pseudo Id Coverage
+      required:
+      - project_id
+      - cycle_id
+      - domain_stage
+      - readiness_state
+      - foundation_ready
+      - next_action
+      title: MTAOverviewResponse
+      type: object
+    MTAReadinessResponse:
+      additionalProperties: false
+      properties:
+        blocking_failures:
+          items:
+            type: string
+          title: Blocking Failures
+          type: array
+        conversion_event:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Conversion Event
+        fingerprint:
+          title: Fingerprint
+          type: string
+        ga4_dataset_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ga4 Dataset Id
+        receipt_id:
+          title: Receipt Id
+          type: string
+        state:
+          title: State
+          type: string
+        warnings:
+          items:
+            type: string
+          title: Warnings
+          type: array
+      required:
+      - receipt_id
+      - state
+      - fingerprint
+      title: MTAReadinessResponse
       type: object
     MaterializeDatasetSourceRequest:
       additionalProperties: false
@@ -4569,6 +4783,80 @@ paths:
       summary: Create Model Design
       tags:
       - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta:
+    get:
+      operationId: getProjectCycleMta
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAOverviewResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mta
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/readiness:
+    post:
+      operationId: evaluateProjectCycleMtaReadiness
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateMTAReadinessRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAReadinessResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Evaluate Cycle Mta Readiness
+      tags:
+      - mta
   /v1/projects/{project_id}/cycles/{cycle_id}/tracks:
     get:
       operationId: listProjectTracks
