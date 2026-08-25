@@ -82,6 +82,21 @@ from app.modeling.mmm.design import (
     proposed_model_plan,
 )
 from app.modeling.mmm.ledger import InMemoryModelLedger, ModelLedger, publish_fit_ledger
+from app.modeling.mmm.results.contracts import (
+    MMMDecisionIntelligenceBrief,
+    MMMResultsSnapshot,
+    MMMResultsUnavailable,
+    RawMeridianResultsEvidence,
+    ResultProvenance,
+    UnavailableReason,
+)
+from app.modeling.mmm.results.store import (
+    FIT_COMPLETE_STATUSES,
+    ResultStore,
+    extract_and_persist,
+    select_snapshot_for_read,
+    unavailable_for_cycle,
+)
 from app.modeling.mmm.meridian.reviewer import interpret_reviewer_results
 from app.modeling.mmm.meridian.runner import (
     FakeMeridianRuntime,
@@ -127,6 +142,7 @@ class MMMModelingService:
         source_commit_sha: str | None = None,
         worker_build_id: str | None = None,
         source_history: SourceHistory | None = None,
+        result_store: ResultStore | None = None,
     ) -> None:
         self.repo = repo or InMemoryModelingRepository()
         self.runtime = runtime or FakeMeridianRuntime()
@@ -138,6 +154,10 @@ class MMMModelingService:
         self.source_commit_sha = source_commit_sha
         self.worker_build_id = worker_build_id
         self.source_history = source_history
+        self.result_store = result_store or ResultStore(
+            object_store=object_store,
+            artifact_bucket=artifact_bucket,
+        )
         self._lock = Lock()
 
     def start_design(
@@ -1024,3 +1044,123 @@ class MMMModelingService:
                     "Predecessor artifact mutated during iteration."
                 )
         return stored
+
+    def get_results_for_cycle(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        cycle_id: str,
+        prefer_accepted: bool = False,
+    ) -> MMMResultsSnapshot | MMMResultsUnavailable:
+        current = self.current_for_cycle(
+            tenant_id=tenant_id, project_id=project_id, cycle_id=cycle_id
+        )
+        snapshot = select_snapshot_for_read(
+            self.result_store,
+            tenant_id=tenant_id,
+            project_id=project_id,
+            cycle_id=cycle_id,
+            prefer_accepted=prefer_accepted,
+        )
+        if snapshot is not None:
+            return snapshot
+        if current is None:
+            return unavailable_for_cycle(
+                project_id=project_id,
+                cycle_id=cycle_id,
+                reason=UnavailableReason.FIT_NOT_COMPLETE,
+                detail="No model version exists for this cycle.",
+            )
+        runs = self.repo.list_fit_runs(current.model_version_id)
+        complete = [run for run in runs if run.status in FIT_COMPLETE_STATUSES]
+        if not complete:
+            return unavailable_for_cycle(
+                project_id=project_id,
+                cycle_id=cycle_id,
+                reason=UnavailableReason.FIT_NOT_COMPLETE,
+                model_version_id=current.model_version_id,
+                detail="Fit is not complete; no result snapshot is available.",
+            )
+        return unavailable_for_cycle(
+            project_id=project_id,
+            cycle_id=cycle_id,
+            reason=UnavailableReason.EXTRACTION_PENDING,
+            model_version_id=current.model_version_id,
+            fit_run_id=complete[-1].fit_run_id,
+            detail="Fit completed but result extraction has not produced a snapshot yet.",
+        )
+
+    def get_decision_brief_for_cycle(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        cycle_id: str,
+    ) -> MMMDecisionIntelligenceBrief | MMMResultsUnavailable:
+        result = self.get_results_for_cycle(
+            tenant_id=tenant_id, project_id=project_id, cycle_id=cycle_id
+        )
+        if isinstance(result, MMMResultsUnavailable):
+            return result
+        brief = self.result_store.get_brief_for_snapshot(result.result_snapshot_id)
+        if brief is None:
+            from app.modeling.mmm.results.intelligence import compile_decision_intelligence_brief
+
+            brief = compile_decision_intelligence_brief(snapshot=result)
+            self.result_store.briefs[brief.brief_id] = brief
+        return brief
+
+    def ingest_result_evidence(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        cycle_id: str,
+        model_version_id: str,
+        fit_run_id: str,
+        model_artifact_sha256: str,
+        raw: RawMeridianResultsEvidence,
+        provenance: ResultProvenance,
+        model_accepted: bool = False,
+        review_pending: bool = True,
+        model_plan_fingerprint: str | None = None,
+        fit_plan_fingerprint: str | None = None,
+        review_pack_fingerprint: str | None = None,
+        model_window_start: str | None = None,
+        model_window_end: str | None = None,
+        outcome_name: str | None = None,
+        review_items: tuple[str, ...] = (),
+        business_iq_notes: tuple[str, ...] = (),
+        source_runtime: str = "OFFICIAL_MERIDIAN",
+        synthetic_label: str | None = None,
+    ) -> MMMResultsSnapshot:
+        version = self.get_version(
+            tenant_id=tenant_id, project_id=project_id, model_version_id=model_version_id
+        )
+        if version.project_id != project_id or version.cycle_id != cycle_id:
+            raise InputContractMismatchError("Result extraction project/cycle mismatch.")
+        return extract_and_persist(
+            self.result_store,
+            tenant_id=tenant_id,
+            project_id=project_id,
+            cycle_id=cycle_id,
+            model_version_id=model_version_id,
+            fit_run_id=fit_run_id,
+            model_artifact_sha256=model_artifact_sha256,
+            raw=raw,
+            provenance=provenance,
+            fit_complete=True,
+            model_accepted=model_accepted or version.accepted,
+            review_pending=review_pending,
+            model_plan_fingerprint=model_plan_fingerprint or version.model_plan_fingerprint,
+            fit_plan_fingerprint=fit_plan_fingerprint,
+            review_pack_fingerprint=review_pack_fingerprint,
+            model_window_start=model_window_start or version.model_window_start,
+            model_window_end=model_window_end or version.model_window_end,
+            outcome_name=outcome_name,
+            review_items=review_items,
+            business_iq_notes=business_iq_notes,
+            source_runtime=source_runtime,
+            synthetic_label=synthetic_label,
+        )

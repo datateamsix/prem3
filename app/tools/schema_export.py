@@ -45,6 +45,11 @@ from app.service.mmm_models import (
     MMMSummaryResponse,
     ModelVersionResponse,
 )
+from app.modeling.mmm.results.read_models import (
+    DecisionBriefResponse,
+    MmmResponseCurvesResponse,
+    MmmResultsReadModelResponse,
+)
 from app.service.models import (
     BigQueryBindingResponse,
     BillingSessionResponse,
@@ -235,6 +240,9 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             CreateModelDesignRequest,
             ModelVersionResponse,
             FitRunResponse,
+            MmmResultsReadModelResponse,
+            MmmResponseCurvesResponse,
+            DecisionBriefResponse,
         ),
         composition="catalog",
     ),

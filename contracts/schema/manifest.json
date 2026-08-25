@@ -123,7 +123,10 @@
         "MMMSummaryResponse",
         "CreateModelDesignRequest",
         "ModelVersionResponse",
-        "FitRunResponse"
+        "FitRunResponse",
+        "MmmResultsReadModelResponse",
+        "MmmResponseCurvesResponse",
+        "DecisionBriefResponse"
       ],
       "python_module": "app.service.models",
       "python_qualnames": [
@@ -162,9 +165,12 @@
         "app.service.mmm_models.MMMSummaryResponse",
         "app.service.mmm_models.CreateModelDesignRequest",
         "app.service.mmm_models.ModelVersionResponse",
-        "app.service.mmm_models.FitRunResponse"
+        "app.service.mmm_models.FitRunResponse",
+        "app.modeling.mmm.results.read_models.MmmResultsReadModelResponse",
+        "app.modeling.mmm.results.read_models.MmmResponseCurvesResponse",
+        "app.modeling.mmm.results.read_models.DecisionBriefResponse"
       ],
-      "sha256": "bb9e9431fc7e33ab86b2dddf904d59953a4ee29916f11d3966783850cbcf4e5f"
+      "sha256": "d5604c52e0b99cb6f102377bb940eafb165ae33bef59283476557dfccd7dc39c"
     }
   ],
   "hash_algorithm": "sha256",

@@ -486,6 +486,44 @@ components:
           type: array
       title: BusinessProfileRequest
       type: object
+    ChannelResultView:
+      additionalProperties: false
+      properties:
+        availability:
+          title: Availability
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        channel_name:
+          title: Channel Name
+          type: string
+        contribution:
+          $ref: '#/components/schemas/MetricValueView'
+        incremental_outcome:
+          $ref: '#/components/schemas/MetricValueView'
+        marginal_roi:
+          $ref: '#/components/schemas/MetricValueView'
+        response_curve_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Response Curve Ref
+        roi:
+          $ref: '#/components/schemas/MetricValueView'
+        spend:
+          $ref: '#/components/schemas/MetricValueView'
+      required:
+      - channel_id
+      - channel_name
+      - spend
+      - incremental_outcome
+      - contribution
+      - roi
+      - marginal_roi
+      - availability
+      title: ChannelResultView
+      type: object
     CheckoutSessionRequest:
       additionalProperties: false
       properties:
@@ -1091,6 +1129,86 @@ components:
           title: Reason
       title: DecisionActionRequest
       type: object
+    DecisionBriefResponse:
+      additionalProperties: false
+      properties:
+        acceptance_computed_by_server:
+          default: true
+          title: Acceptance Computed By Server
+          type: boolean
+        brief_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Brief Id
+        counter_evidence:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Counter Evidence
+          type: array
+        decision_requirements:
+          default: []
+          items:
+            $ref: '#/components/schemas/NextActionView'
+          title: Decision Requirements
+          type: array
+        eligibility:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Eligibility
+        executive_summary:
+          title: Executive Summary
+          type: string
+        interpretations:
+          default: []
+          items:
+            $ref: '#/components/schemas/FindingView'
+          title: Interpretations
+          type: array
+        investment_recommendations_allowed:
+          default: false
+          title: Investment Recommendations Allowed
+          type: boolean
+        recommendations:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Recommendations
+          type: array
+        result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Snapshot Id
+        result_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Status
+        status:
+          title: Status
+          type: string
+        uncertainties:
+          default: []
+          items:
+            $ref: '#/components/schemas/FindingView'
+          title: Uncertainties
+          type: array
+        verified_findings:
+          default: []
+          items:
+            $ref: '#/components/schemas/FindingView'
+          title: Verified Findings
+          type: array
+      required:
+      - status
+      - executive_summary
+      title: DecisionBriefResponse
+      type: object
     DiscoveryHintsRequest:
       additionalProperties: false
       properties:
@@ -1424,6 +1542,34 @@ components:
       - attention
       title: ExtendedEdaReadModelResponse
       type: object
+    FindingView:
+      additionalProperties: false
+      properties:
+        affected_channels:
+          default: []
+          items:
+            type: string
+          title: Affected Channels
+          type: array
+        authority:
+          title: Authority
+          type: string
+        finding_id:
+          title: Finding Id
+          type: string
+        statement:
+          title: Statement
+          type: string
+        title:
+          title: Title
+          type: string
+      required:
+      - finding_id
+      - authority
+      - title
+      - statement
+      title: FindingView
+      type: object
     FitRunResponse:
       additionalProperties: false
       properties:
@@ -1614,6 +1760,38 @@ components:
       - status
       title: HealthResponse
       type: object
+    HealthSummaryView:
+      additionalProperties: false
+      properties:
+        acknowledgments:
+          items:
+            type: string
+          title: Acknowledgments
+          type: array
+        blocking_failures:
+          items:
+            type: string
+          title: Blocking Failures
+          type: array
+        model_accepted:
+          title: Model Accepted
+          type: boolean
+        review_items:
+          items:
+            type: string
+          title: Review Items
+          type: array
+        review_source:
+          title: Review Source
+          type: string
+      required:
+      - review_source
+      - model_accepted
+      - blocking_failures
+      - review_items
+      - acknowledgments
+      title: HealthSummaryView
+      type: object
     ImportReadinessReceiptResponse:
       additionalProperties: false
       properties:
@@ -1741,6 +1919,32 @@ components:
       required:
       - reason
       title: IterateModelRequest
+      type: object
+    LimitationView:
+      additionalProperties: false
+      properties:
+        category:
+          title: Category
+          type: string
+        description:
+          title: Description
+          type: string
+        limitation_id:
+          title: Limitation Id
+          type: string
+        severity:
+          title: Severity
+          type: string
+        title:
+          title: Title
+          type: string
+      required:
+      - limitation_id
+      - category
+      - severity
+      - title
+      - description
+      title: LimitationView
       type: object
     LoadSnapshotRequest:
       additionalProperties: false
@@ -2160,6 +2364,130 @@ components:
       - updated_at
       title: MeasurementTrackSummary
       type: object
+    MetricValueView:
+      additionalProperties: false
+      properties:
+        availability:
+          title: Availability
+          type: string
+        interval_lower:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Interval Lower
+        interval_upper:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Interval Upper
+        unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit
+        value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Value
+      required:
+      - availability
+      title: MetricValueView
+      type: object
+    MmmResponseCurvesResponse:
+      additionalProperties: false
+      properties:
+        curves:
+          default: []
+          items:
+            $ref: '#/components/schemas/ResponseCurveView'
+          title: Curves
+          type: array
+        result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Snapshot Id
+        status:
+          title: Status
+          type: string
+      required:
+      - status
+      title: MmmResponseCurvesResponse
+      type: object
+    MmmResultsReadModelResponse:
+      additionalProperties: false
+      properties:
+        acceptance_computed_by_server:
+          default: true
+          title: Acceptance Computed By Server
+          type: boolean
+        accepted_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Accepted Result Snapshot Id
+        channel_results:
+          default: []
+          items:
+            $ref: '#/components/schemas/ChannelResultView'
+          title: Channel Results
+          type: array
+        health_summary:
+          anyOf:
+          - $ref: '#/components/schemas/HealthSummaryView'
+          - type: 'null'
+        key_findings:
+          default: []
+          items:
+            $ref: '#/components/schemas/FindingView'
+          title: Key Findings
+          type: array
+        known_limitations:
+          default: []
+          items:
+            $ref: '#/components/schemas/LimitationView'
+          title: Known Limitations
+          type: array
+        latest_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Result Snapshot Id
+        model_context:
+          anyOf:
+          - $ref: '#/components/schemas/ModelContextView'
+          - type: 'null'
+        next_actions:
+          default: []
+          items:
+            $ref: '#/components/schemas/NextActionView'
+          title: Next Actions
+          type: array
+        portfolio_summary:
+          anyOf:
+          - $ref: '#/components/schemas/PortfolioSummaryView'
+          - type: 'null'
+        provenance_summary:
+          anyOf:
+          - $ref: '#/components/schemas/ProvenanceSummaryView'
+          - type: 'null'
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+        recommendation_eligibility_computed_by_server:
+          default: true
+          title: Recommendation Eligibility Computed By Server
+          type: boolean
+        status:
+          title: Status
+          type: string
+      required:
+      - status
+      title: MmmResultsReadModelResponse
+      type: object
     MmmTrackWindowView:
       additionalProperties: false
       properties:
@@ -2174,6 +2502,46 @@ components:
           - type: 'null'
           title: Model Window Start
       title: MmmTrackWindowView
+      type: object
+    ModelContextView:
+      additionalProperties: false
+      properties:
+        adapter_version:
+          title: Adapter Version
+          type: string
+        eligibility:
+          title: Eligibility
+          type: string
+        fit_run_id:
+          title: Fit Run Id
+          type: string
+        meridian_version:
+          title: Meridian Version
+          type: string
+        model_accepted:
+          title: Model Accepted
+          type: boolean
+        model_version_id:
+          title: Model Version Id
+          type: string
+        model_window_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window End
+        model_window_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window Start
+      required:
+      - model_version_id
+      - fit_run_id
+      - meridian_version
+      - adapter_version
+      - model_accepted
+      - eligibility
+      title: ModelContextView
       type: object
     ModelVersionResponse:
       additionalProperties: false
@@ -2269,6 +2637,28 @@ components:
       - label
       - capability
       title: NextAction
+      type: object
+    NextActionView:
+      additionalProperties: false
+      properties:
+        action_id:
+          title: Action Id
+          type: string
+        authority:
+          title: Authority
+          type: string
+        statement:
+          title: Statement
+          type: string
+        title:
+          title: Title
+          type: string
+      required:
+      - action_id
+      - title
+      - statement
+      - authority
+      title: NextActionView
       type: object
     OfficialEdaReportView:
       additionalProperties: false
@@ -2514,6 +2904,21 @@ components:
           - type: 'null'
           title: Return Path
       title: PortalSessionRequest
+      type: object
+    PortfolioSummaryView:
+      additionalProperties: false
+      properties:
+        modeled_incremental_outcome:
+          $ref: '#/components/schemas/MetricValueView'
+        portfolio_roi:
+          $ref: '#/components/schemas/MetricValueView'
+        total_spend:
+          $ref: '#/components/schemas/MetricValueView'
+      required:
+      - total_spend
+      - modeled_incremental_outcome
+      - portfolio_roi
+      title: PortfolioSummaryView
       type: object
     ProblemDetail:
       $defs:
@@ -2855,6 +3260,47 @@ components:
       required:
       - accept
       title: ProposalDecideRequest
+      type: object
+    ProvenanceSummaryView:
+      additionalProperties: false
+      properties:
+        fit_plan_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Fit Plan Fingerprint
+        fit_run_id:
+          title: Fit Run Id
+          type: string
+        model_artifact_sha256:
+          title: Model Artifact Sha256
+          type: string
+        model_plan_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Plan Fingerprint
+        result_fingerprint:
+          title: Result Fingerprint
+          type: string
+        result_snapshot_id:
+          title: Result Snapshot Id
+          type: string
+        synthetic:
+          default: false
+          title: Synthetic
+          type: boolean
+        synthetic_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Synthetic Label
+      required:
+      - result_snapshot_id
+      - result_fingerprint
+      - model_artifact_sha256
+      - fit_run_id
+      title: ProvenanceSummaryView
       type: object
     PublishDestinationResultResponse:
       additionalProperties: false
@@ -3231,6 +3677,79 @@ components:
       - kind
       - value
       title: ResolveDecisionRequest
+      type: object
+    ResponseCurvePointView:
+      additionalProperties: false
+      properties:
+        expected_outcome:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Expected Outcome
+        outcome_lower:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Outcome Lower
+        outcome_upper:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Outcome Upper
+        spend_level:
+          title: Spend Level
+          type: number
+      required:
+      - spend_level
+      title: ResponseCurvePointView
+      type: object
+    ResponseCurveView:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        current_marginal_roi:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Current Marginal Roi
+        current_spend:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Current Spend
+        observed_spend_max:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Observed Spend Max
+        observed_spend_min:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Observed Spend Min
+        points:
+          items:
+            $ref: '#/components/schemas/ResponseCurvePointView'
+          title: Points
+          type: array
+        response_curve_id:
+          title: Response Curve Id
+          type: string
+        source_method:
+          title: Source Method
+          type: string
+        uncertainty_available:
+          title: Uncertainty Available
+          type: boolean
+      required:
+      - response_curve_id
+      - channel_id
+      - points
+      - uncertainty_available
+      - source_method
+      title: ResponseCurveView
       type: object
     ReviseCycleRequest:
       additionalProperties: false
@@ -4239,6 +4758,40 @@ paths:
       summary: Get Cycle Mmm
       tags:
       - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/decision-brief:
+    get:
+      operationId: getProjectCycleMmmDecisionBrief
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionBriefResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm Decision Brief
+      tags:
+      - mmm-modeling
   /v1/projects/{project_id}/cycles/{cycle_id}/mmm/eda:
     get:
       operationId: getProjectCycleMmmEda
@@ -4346,6 +4899,148 @@ paths:
       security:
       - HTTPBearer: []
       summary: Create Model Design
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/results:
+    get:
+      operationId: getProjectCycleMmmResults
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MmmResultsReadModelResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm Results
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/results/channels:
+    get:
+      operationId: getProjectCycleMmmResultChannels
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MmmResultsReadModelResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm Result Channels
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/results/channels/{channel_id}:
+    get:
+      operationId: getProjectCycleMmmResultChannel
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: channel_id
+        required: true
+        schema:
+          title: Channel Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MmmResultsReadModelResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm Result Channel
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/results/response-curves:
+    get:
+      operationId: getProjectCycleMmmResponseCurves
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MmmResponseCurvesResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm Response Curves
       tags:
       - mmm-modeling
   /v1/projects/{project_id}/cycles/{cycle_id}/tracks:

@@ -23,6 +23,16 @@ from app.service.dependencies import (
 )
 from app.service.entitlements import require_feature
 from app.service.errors import APIError, artifact_not_trusted, resource_not_found
+from app.modeling.mmm.results.contracts import MMMResultsUnavailable
+from app.modeling.mmm.results.read_models import (
+    DecisionBriefResponse,
+    MmmResponseCurvesResponse,
+    MmmResultsReadModelResponse,
+    render_decision_brief,
+    render_response_curves,
+    render_results,
+    render_unavailable,
+)
 from app.service.mmm_models import (
     AcceptModelRequest,
     AcknowledgeReviewRequest,
@@ -548,6 +558,140 @@ async def accept_model(
     except ModelingError as exc:
         _raise_modeling(exc)
     return approval.model_dump(mode="json")
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mmm/results",
+    operation_id="getProjectCycleMmmResults",
+    response_model=MmmResultsReadModelResponse,
+)
+async def get_cycle_mmm_results(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> MmmResultsReadModelResponse:
+    require_tenant()
+    require_feature(repo, Feature.MMM)
+    workspace = repo.get_workspace_for_tenant(
+        tenant_id=tenant.tenant_id, workspace_id=project_id
+    )
+    if workspace is None:
+        raise resource_not_found()
+    modeling = _modeling(request)
+    result = modeling.get_results_for_cycle(
+        tenant_id=tenant.tenant_id, project_id=project_id, cycle_id=cycle_id
+    )
+    if isinstance(result, MMMResultsUnavailable):
+        return render_unavailable(result)
+    pointer = modeling.result_store.get_pointer(
+        tenant_id=tenant.tenant_id, project_id=project_id, cycle_id=cycle_id
+    )
+    brief = modeling.result_store.get_brief_for_snapshot(result.result_snapshot_id)
+    return render_results(
+        result,
+        brief=brief,
+        latest_result_snapshot_id=None if pointer is None else pointer.latest_result_snapshot_id,
+        accepted_result_snapshot_id=(
+            None if pointer is None else pointer.accepted_result_snapshot_id
+        ),
+    )
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mmm/results/channels",
+    operation_id="getProjectCycleMmmResultChannels",
+    response_model=MmmResultsReadModelResponse,
+)
+async def get_cycle_mmm_result_channels(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> MmmResultsReadModelResponse:
+    return await get_cycle_mmm_results(project_id, cycle_id, request, tenant, repo)
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mmm/results/channels/{channel_id}",
+    operation_id="getProjectCycleMmmResultChannel",
+    response_model=MmmResultsReadModelResponse,
+)
+async def get_cycle_mmm_result_channel(
+    project_id: str,
+    cycle_id: str,
+    channel_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> MmmResultsReadModelResponse:
+    payload = await get_cycle_mmm_results(project_id, cycle_id, request, tenant, repo)
+    if payload.status == "NOT_AVAILABLE":
+        return payload
+    filtered = [item for item in payload.channel_results if item.channel_id == channel_id]
+    if not filtered:
+        raise resource_not_found()
+    return payload.model_copy(update={"channel_results": filtered})
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mmm/results/response-curves",
+    operation_id="getProjectCycleMmmResponseCurves",
+    response_model=MmmResponseCurvesResponse,
+)
+async def get_cycle_mmm_response_curves(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> MmmResponseCurvesResponse:
+    require_tenant()
+    require_feature(repo, Feature.MMM)
+    workspace = repo.get_workspace_for_tenant(
+        tenant_id=tenant.tenant_id, workspace_id=project_id
+    )
+    if workspace is None:
+        raise resource_not_found()
+    result = _modeling(request).get_results_for_cycle(
+        tenant_id=tenant.tenant_id, project_id=project_id, cycle_id=cycle_id
+    )
+    if isinstance(result, MMMResultsUnavailable):
+        return MmmResponseCurvesResponse(status=result.status.value, curves=[])
+    return render_response_curves(result)
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mmm/decision-brief",
+    operation_id="getProjectCycleMmmDecisionBrief",
+    response_model=DecisionBriefResponse,
+)
+async def get_cycle_mmm_decision_brief(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> DecisionBriefResponse:
+    require_tenant()
+    require_feature(repo, Feature.MMM)
+    workspace = repo.get_workspace_for_tenant(
+        tenant_id=tenant.tenant_id, workspace_id=project_id
+    )
+    if workspace is None:
+        raise resource_not_found()
+    result = _modeling(request).get_decision_brief_for_cycle(
+        tenant_id=tenant.tenant_id, project_id=project_id, cycle_id=cycle_id
+    )
+    if isinstance(result, MMMResultsUnavailable):
+        return DecisionBriefResponse(
+            status=result.status.value,
+            executive_summary="Results are not available; no decision brief is issued.",
+            investment_recommendations_allowed=False,
+        )
+    return render_decision_brief(result)
 
 
 @router.post(
