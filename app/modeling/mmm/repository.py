@@ -14,7 +14,9 @@ from app.modeling.mmm.contracts import (
     MeridianFitPlan,
     MeridianModelArtifactManifest,
     MeridianModelHealthReceipt,
+    MeridianPreFitValidationReceipt,
     MeridianPriorValidationReceipt,
+    MMMIdentifiabilityDecisionPackage,
     MMMModelDesignBrief,
     MMMModelReviewPack,
     MMMModelVersion,
@@ -86,6 +88,21 @@ class ModelingRepository(Protocol):
     def get_reproducibility(
         self, model_version_id: str
     ) -> MMMReproducibilityManifest | None: ...
+    def put_identifiability_package(
+        self, package: MMMIdentifiabilityDecisionPackage
+    ) -> MMMIdentifiabilityDecisionPackage: ...
+    def get_identifiability_package(
+        self, package_id: str
+    ) -> MMMIdentifiabilityDecisionPackage | None: ...
+    def get_identifiability_package_for_version(
+        self, model_version_id: str
+    ) -> MMMIdentifiabilityDecisionPackage | None: ...
+    def put_prefit_receipt(
+        self, receipt: MeridianPreFitValidationReceipt
+    ) -> MeridianPreFitValidationReceipt: ...
+    def get_prefit_receipt(
+        self, model_version_id: str
+    ) -> MeridianPreFitValidationReceipt | None: ...
 
 
 class InMemoryModelingRepository:
@@ -107,6 +124,9 @@ class InMemoryModelingRepository:
         self.dispatches: dict[str, MeridianFitDispatch] = {}
         self.canonical_dispatches: dict[str, str] = {}
         self.reproducibility: dict[str, MMMReproducibilityManifest] = {}
+        self.identifiability_packages: dict[str, MMMIdentifiabilityDecisionPackage] = {}
+        self.identifiability_by_version: dict[str, str] = {}
+        self.prefit_receipts: dict[str, MeridianPreFitValidationReceipt] = {}
 
     def put_version(self, version: MMMModelVersion) -> MMMModelVersion:
         with self._lock:
@@ -313,3 +333,34 @@ class InMemoryModelingRepository:
         if version is None or version.model_plan_fingerprint is None:
             return None
         return self.reproducibility.get(version.model_plan_fingerprint)
+
+    def put_identifiability_package(
+        self, package: MMMIdentifiabilityDecisionPackage
+    ) -> MMMIdentifiabilityDecisionPackage:
+        self.identifiability_packages[package.package_id] = package
+        self.identifiability_by_version[package.failed_model_version_id] = package.package_id
+        return package
+
+    def get_identifiability_package(
+        self, package_id: str
+    ) -> MMMIdentifiabilityDecisionPackage | None:
+        return self.identifiability_packages.get(package_id)
+
+    def get_identifiability_package_for_version(
+        self, model_version_id: str
+    ) -> MMMIdentifiabilityDecisionPackage | None:
+        package_id = self.identifiability_by_version.get(model_version_id)
+        if package_id is None:
+            return None
+        return self.identifiability_packages.get(package_id)
+
+    def put_prefit_receipt(
+        self, receipt: MeridianPreFitValidationReceipt
+    ) -> MeridianPreFitValidationReceipt:
+        self.prefit_receipts[receipt.model_version_id] = receipt
+        return receipt
+
+    def get_prefit_receipt(
+        self, model_version_id: str
+    ) -> MeridianPreFitValidationReceipt | None:
+        return self.prefit_receipts.get(model_version_id)

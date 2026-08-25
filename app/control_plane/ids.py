@@ -107,3 +107,11 @@ def new_fit_dispatch_id() -> str:
 
 def new_eda_report_id() -> str:
     return _opaque("edarep")
+
+
+def new_identifiability_package_id() -> str:
+    return _opaque("midp")
+
+
+def new_prefit_receipt_id() -> str:
+    return _opaque("mpfv")

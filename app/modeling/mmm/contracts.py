@@ -265,6 +265,7 @@ class ModelPlan(FrozenModel):
     compute_profile: ComputeProfile = ComputeProfile.GPU_STANDARD
     rf_channels: tuple[str, ...] = ()
     media_channels: tuple[str, ...] = ()
+    non_media_treatments: tuple[str, ...] | None = None
     fingerprint: str
 
 
@@ -323,6 +324,8 @@ class MMMModelVersion(FrozenModel):
     iteration_reason: str | None = None
     triggering_review_refs: tuple[str, ...] = ()
     changed_decision_ids: tuple[str, ...] = ()
+    source_fit_run_id: str | None = None
+    source_model_decision_id: str | None = None
     state: MMMModelingStage = MMMModelingStage.DESIGNING_MODEL
     created_at: datetime = Field(default_factory=utc_now)
     created_by: str
@@ -402,6 +405,7 @@ class MeridianFitPlan(FrozenModel):
     artifact_destinations: dict[str, str] = Field(default_factory=dict)
     input_artifact_ref: str | None = None
     input_fingerprint: str
+    pre_fit_receipt_fingerprint: str | None = None
     created_at: datetime = Field(default_factory=utc_now)
     fingerprint: str
 
@@ -413,6 +417,8 @@ class FitApproval(FrozenModel):
     project_id: str
     fit_plan_fingerprint: str
     model_plan_fingerprint: str
+    prior_validation_fingerprint: str | None = None
+    pre_fit_receipt_fingerprint: str | None = None
     approved_by: str
     approved_at: datetime
     superseded: bool = False
@@ -620,3 +626,158 @@ class MMMDecisionIntelligenceBrief(FrozenModel):
     model_health_receipt_ref: str | None = None
     review_pack_ref: str | None = None
     generated_at: datetime = Field(default_factory=utc_now)
+
+
+class PromotionMateriality(StrEnum):
+    MATERIAL = "MATERIAL"
+    CONTEXTUAL = "CONTEXTUAL"
+    UNKNOWN = "UNKNOWN"
+
+
+class GeoPromotionEvidenceStatus(StrEnum):
+    GEO_PROMOTION_EVIDENCE_AVAILABLE = "GEO_PROMOTION_EVIDENCE_AVAILABLE"
+    GEO_PROMOTION_EVIDENCE_PARTIAL = "GEO_PROMOTION_EVIDENCE_PARTIAL"
+    GEO_PROMOTION_EVIDENCE_NOT_FOUND = "GEO_PROMOTION_EVIDENCE_NOT_FOUND"
+    GEO_PROMOTION_EVIDENCE_UNKNOWN = "GEO_PROMOTION_EVIDENCE_UNKNOWN"
+
+
+class IdentifiabilityAlternativeId(StrEnum):
+    A = "A"
+    B = "B"
+    C = "C"
+
+
+class IdentifiabilityPackageStatus(StrEnum):
+    PENDING_HUMAN_DECISION = "PENDING_HUMAN_DECISION"
+    DECIDED = "DECIDED"
+
+
+class PreFitCheckStatus(StrEnum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+
+
+class IdentifiabilityOfficialFailure(FrozenModel):
+    failure_class: FitFailureClass
+    failure_stage: FitFailureStage
+    official_message: str
+    library: str
+    library_version: str
+    exception_type: str | None = None
+
+
+class PromotionProvenance(FrozenModel):
+    variable: str
+    semantic_role: str
+    source_dataset: str | None = None
+    source_file: str | None = None
+    source_field: str | None = None
+    coverage: str | None = None
+    time_variation: bool | None = None
+    geo_variation: bool | None = None
+    transform_history: tuple[str, ...] = ()
+    model_ready_fingerprint: str | None = None
+
+
+class IdentifiabilityAlternative(FrozenModel):
+    alternative_id: IdentifiabilityAlternativeId
+    summary: str
+    keep_promotion: bool
+    knot_strategy: str
+    available: bool
+    unavailable_reason: str | None = None
+    potential_benefit: str
+    primary_risk: str
+    requires_new_model_ready: bool = False
+    data_foundation_work_required: bool = False
+
+
+class KnotCandidate(FrozenModel):
+    n_knots: int
+    selection_basis: str
+    relative_time_flexibility: str
+    official_pre_fit_compatibility: str
+    is_statistically_ranked: bool = False
+
+
+class KnotStrategyProposal(FrozenModel):
+    current_n_time: int
+    current_n_knots: int | None = None
+    candidate_n_knots: tuple[KnotCandidate, ...] = ()
+    selection_basis: str
+    relative_time_flexibility: str
+    official_pre_fit_compatibility: str
+    tradeoffs: tuple[str, ...] = ()
+    prem3_recommendation: int | None = None
+    approved_n_knots: int | None = None
+
+
+class IdentifiabilityRecommendation(FrozenModel):
+    kind: str = "PREM3_RECOMMENDATION"
+    alternative_id: IdentifiabilityAlternativeId | None = None
+    statement: str
+    rationale: str
+    evidence_refs: tuple[str, ...] = ()
+    approved_model_change: bool = False
+
+
+class DataFoundationWorkRequest(FrozenModel):
+    reason: str
+    required_evidence: tuple[str, ...] = ()
+    blocks_successor_fit: bool = True
+
+
+class MMMIdentifiabilityDecisionPackage(FrozenModel):
+    package_id: str
+    project_id: str
+    cycle_id: str
+    failed_model_version_id: str
+    failed_fit_run_id: str
+    failure_ref: str
+    official_failure: IdentifiabilityOfficialFailure
+    decision_type: DecisionType = DecisionType.KNOT_STRATEGY
+    linked_decision_types: tuple[str, ...] = ()
+    affected_variables: tuple[str, ...] = ()
+    business_context: dict[str, Any] = Field(default_factory=dict)
+    data_evidence: dict[str, Any] = Field(default_factory=dict)
+    eda_evidence: dict[str, Any] = Field(default_factory=dict)
+    model_evidence: dict[str, Any] = Field(default_factory=dict)
+    alternatives: tuple[IdentifiabilityAlternative, ...] = ()
+    prem3_recommendation: IdentifiabilityRecommendation | None = None
+    recommendation_rationale: str | None = None
+    counter_evidence: tuple[str, ...] = ()
+    uncertainties: tuple[str, ...] = ()
+    decision_status: IdentifiabilityPackageStatus = (
+        IdentifiabilityPackageStatus.PENDING_HUMAN_DECISION
+    )
+    selected_alternative: IdentifiabilityAlternativeId | None = None
+    knot_strategy_proposal: KnotStrategyProposal | None = None
+    policy_version: str
+    knowledge_version: str
+    generated_at: datetime = Field(default_factory=utc_now)
+    fingerprint: str
+
+
+class MeridianPreFitCheck(FrozenModel):
+    check_name: str
+    status: PreFitCheckStatus
+    official: bool
+    detail: str | None = None
+
+
+class MeridianPreFitValidationReceipt(FrozenModel):
+    receipt_id: str
+    model_version_id: str
+    model_plan_fingerprint: str
+    model_ready_fingerprint: str
+    runtime_mode: MeridianRuntimeMode
+    meridian_version: str
+    python_version: str | None = None
+    tensorflow_version: str | None = None
+    checks: tuple[MeridianPreFitCheck, ...] = ()
+    status: PreFitCheckStatus
+    failure_class: FitFailureClass | None = None
+    failure_stage: FitFailureStage | None = None
+    official_message: str | None = None
+    generated_at: datetime = Field(default_factory=utc_now)
+    fingerprint: str

@@ -91,7 +91,11 @@ def music_center_dataset_a_mapping(plan: ModelPlan) -> dict[str, Any]:
             "consumer_sentiment_index",
             "competitor_discount_index",
         ),
-        "non_media_treatments": ("music_center_promo",),
+        "non_media_treatments": (
+            ("music_center_promo",)
+            if plan.non_media_treatments is None
+            else tuple(plan.non_media_treatments)
+        ),
         "n_times": n_times,
         "n_geos": len(geos),
         "source": str(DATASET_A_CSV_RELATIVE).replace("\\", "/"),

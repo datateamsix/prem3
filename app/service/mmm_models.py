@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import Field
 
+from app.modeling.mmm.identifiability import prem3_identifiability_summary
+from app.modeling.mmm.identifiability_package import human_decision_payload
 from app.service.models import ApiModel
 
 
@@ -226,3 +228,55 @@ class ExtendedEdaReadModelResponse(ApiModel):
     latest_run: EdaLatestRunView
     attention: EdaAttentionView
     next_actions: list[EdaNextActionView] = Field(default_factory=list)
+
+
+class IdentifiabilityDecisionRequest(ApiModel):
+    selected_alternative: str
+    selected_configuration: dict[str, Any] = Field(default_factory=dict)
+    rationale: str
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class IdentifiabilityReviewResponse(ApiModel):
+    title: str = "IDENTIFIABILITY REVIEW"
+    package_id: str
+    official_constraint: str
+    prem3_interpretation: str
+    business_context: dict[str, Any]
+    data_evidence: dict[str, Any]
+    eda_evidence: dict[str, Any]
+    alternatives: list[dict[str, Any]] = Field(default_factory=list)
+    recommendation: dict[str, Any] | None = None
+    counter_evidence: list[str] = Field(default_factory=list)
+    decision_required: bool = True
+    next_actions: list[str] = Field(default_factory=list)
+    fingerprint: str
+    selected_alternative: str | None = None
+    human_decision: dict[str, Any] | None = None
+
+
+def to_identifiability_review(package) -> IdentifiabilityReviewResponse:
+    rec = package.prem3_recommendation
+    return IdentifiabilityReviewResponse(
+        package_id=package.package_id,
+        official_constraint=package.official_failure.official_message,
+        prem3_interpretation=prem3_identifiability_summary(
+            package.official_failure.official_message
+        ),
+        business_context=package.business_context,
+        data_evidence=package.data_evidence,
+        eda_evidence=package.eda_evidence,
+        alternatives=[item.model_dump(mode="json") for item in package.alternatives],
+        recommendation=None if rec is None else rec.model_dump(mode="json"),
+        counter_evidence=list(package.counter_evidence),
+        decision_required=package.selected_alternative is None,
+        next_actions=[
+            "HUMAN_DECISION_REQUIRED",
+            "Do not create a successor ModelVersion until A, B, or C is selected.",
+        ],
+        fingerprint=package.fingerprint,
+        selected_alternative=(
+            None if package.selected_alternative is None else package.selected_alternative.value
+        ),
+        human_decision=human_decision_payload(package),
+    )

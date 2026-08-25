@@ -57,6 +57,12 @@ FORBIDDEN_REQUEST_KEYS = frozenset(
         "memory",
         "region",
         "image_digest",
+        "knots",
+        "n_knots",
+        "non_media_treatments",
+        "music_center_promo",
+        "geo_variation",
+        "synthetic_geo_weights",
     }
 )
 

@@ -24,12 +24,14 @@ from app.modeling.common.errors import (
     FitApprovalRequiredError,
     GcsPersistenceError,
     HumanApprovalRequiredError,
+    IdentifiabilityDecisionRequiredError,
     InputContractMismatchError,
     LedgerPublicationError,
     ModelReviewFailedError,
     ModelSpecInvalidError,
     ModelVersionImmutableError,
     ModelVersionNotFoundError,
+    PrefitValidationFailedError,
     QualificationAcceptanceError,
     ResourceExhaustedError,
     StaleApprovalError,
@@ -51,33 +53,42 @@ from app.modeling.mmm.contracts import (
     PRODUCTION_OFFICIAL_RUNTIME_MODES,
     AcceptanceDecision,
     ComputeProfile,
+    DataFoundationWorkRequest,
     DecisionStatus,
     DecisionType,
     FitApproval,
     FitDispatchOutcome,
     FitDispatchStatus,
     FitFailureClass,
+    FitFailureStage,
     FitPurpose,
     FitRun,
     FitRunStatus,
+    IdentifiabilityAlternativeId,
+    IdentifiabilityPackageStatus,
     LedgerPublicationStatus,
     MeridianFitDispatch,
     MeridianFitPlan,
     MeridianModelArtifactManifest,
     MeridianPriorValidationReceipt,
     MeridianRuntimeMode,
+    MMMIdentifiabilityDecisionPackage,
     MMMModelVersion,
     ModelAcceptanceApproval,
+    ModelDecision,
     ModelReadyCoverage,
     OfficialHealthStatus,
+    PreFitCheckStatus,
     PriorValidationStatus,
     ReviewSource,
 )
 from app.modeling.mmm.coverage import (
+    MUSIC_CENTER_MODEL_READY_COVERAGE,
     assert_cycle_does_not_define_window,
     assert_model_window_inside_coverage,
     assert_window_change_invalidates_approval,
 )
+from app.modeling.mmm.dataset_a import MUSIC_CENTER_FINAL_FINGERPRINTS
 from app.modeling.mmm.design import (
     REQUIRED_DECISION_TYPES,
     build_design_brief,
@@ -89,7 +100,19 @@ from app.modeling.mmm.failures import (
     TERMINAL_FIT_STATUSES,
     classify_fit_failure,
 )
+from app.modeling.mmm.geo_promotion import refuse_fabricated_geo_variation
 from app.modeling.mmm.identifiability import identifiability_decision
+from app.modeling.mmm.identifiability_package import (
+    build_identifiability_package,
+    build_music_center_v1_package,
+    package_is_advisory,
+)
+from app.modeling.mmm.iteration import (
+    ITERATION_REASON_IDENTIFIABILITY,
+    PROMOTION_NOT_EXPLICITLY_MODELED,
+    compile_successor_model_plan,
+    selected_alternative,
+)
 from app.modeling.mmm.ledger import InMemoryModelLedger, ModelLedger, publish_fit_ledger
 from app.modeling.mmm.meridian.reviewer import interpret_reviewer_results
 from app.modeling.mmm.meridian.runner import (
@@ -100,6 +123,7 @@ from app.modeling.mmm.meridian.runner import (
     runtime_mode_for_profile,
 )
 from app.modeling.mmm.meridian.summarizer import structured_results
+from app.modeling.mmm.prefit import execute_prefit_validation, prefit_blocks_final_model
 from app.modeling.mmm.provenance import (
     SourceHistory,
     assert_final_model_provenance,
@@ -454,6 +478,10 @@ class MMMModelingService:
             source_commit_sha=source_sha,
             worker_build_id=build_id,
         )
+        prefit = self.repo.get_prefit_receipt(version.model_version_id)
+        prefit_fp = None if prefit is None else prefit.fingerprint
+        if prefit_fp is not None:
+            payload["pre_fit_receipt_fingerprint"] = prefit_fp
         schedule = payload.get("n_chains_schedule")
         fit_plan = MeridianFitPlan(
             model_version_id=version.model_version_id,
@@ -471,6 +499,7 @@ class MMMModelingService:
             compute_profile=plan.compute_profile,
             fit_purpose=purpose,
             input_fingerprint=plan.model_ready_manifest_fingerprint,
+            pre_fit_receipt_fingerprint=prefit_fp,
             fingerprint=canonical_fingerprint(payload),
         )
         return self.repo.put_fit_plan(fit_plan)
@@ -491,15 +520,39 @@ class MMMModelingService:
         prior = self.repo.get_prior_receipt(model_version_id)
         if prior is None or prior.status is not PriorValidationStatus.PASS:
             raise FitApprovalRequiredError("Final prior validation must pass before fit approval.")
-        existing = self.repo.get_fit_approval(model_version_id)
-        fit_plan = self.compile_fit_plan(version, fit_purpose=fit_purpose)
         plan = self.repo.get_plan(model_version_id)
-        assert plan is not None
+        if plan is None:
+            raise ModelVersionNotFoundError("Model plan was not found.")
+        purpose = fit_purpose or (
+            FitPurpose.RUNTIME_QUALIFICATION
+            if plan.compute_profile is ComputeProfile.CPU_TEST
+            else FitPurpose.MODEL_ITERATION
+        )
+        prefit = self.repo.get_prefit_receipt(model_version_id)
+        if purpose is FitPurpose.FINAL_MODEL:
+            if prefit_blocks_final_model(prefit):
+                raise FitApprovalRequiredError(
+                    "Official pre-fit validation must PASS before FINAL_MODEL."
+                )
+            assert prefit is not None
+            if prefit.model_plan_fingerprint != plan.fingerprint:
+                raise StaleApprovalError("Changed ModelPlan invalidates pre-fit validation.")
+        existing = self.repo.get_fit_approval(model_version_id)
+        fit_plan = self.compile_fit_plan(version, fit_purpose=purpose)
+        prior_fp = canonical_fingerprint(
+            {
+                "model_plan_fingerprint": prior.model_plan_fingerprint,
+                "prior_config_fingerprint": prior.prior_config_fingerprint,
+                "status": prior.status.value,
+            }
+        )
+        prefit_fp = None if prefit is None else prefit.fingerprint
         if (
             existing is not None
             and not existing.superseded
             and existing.fit_plan_fingerprint == fit_plan.fingerprint
             and existing.model_plan_fingerprint == plan.fingerprint
+            and existing.pre_fit_receipt_fingerprint == prefit_fp
         ):
             return existing
         approval = FitApproval(
@@ -509,6 +562,8 @@ class MMMModelingService:
             project_id=project_id,
             fit_plan_fingerprint=fit_plan.fingerprint,
             model_plan_fingerprint=plan.fingerprint,
+            prior_validation_fingerprint=prior_fp,
+            pre_fit_receipt_fingerprint=prefit_fp,
             approved_by=actor_id,
             approved_at=utc_now(),
         )
@@ -560,6 +615,22 @@ class MMMModelingService:
                 raise StaleApprovalError("Stale fit approval cannot run.")
             if approval.model_plan_fingerprint != plan.fingerprint:
                 raise StaleApprovalError("Changed ModelPlan invalidates fit approval.")
+            if fit_plan.fit_purpose is FitPurpose.FINAL_MODEL:
+                prefit = self.repo.get_prefit_receipt(model_version_id)
+                if prefit_blocks_final_model(prefit):
+                    raise FitApprovalRequiredError(
+                        "Official pre-fit validation must PASS before FINAL_MODEL."
+                    )
+                assert prefit is not None
+                if prefit.model_plan_fingerprint != plan.fingerprint:
+                    raise StaleApprovalError("Changed ModelPlan invalidates pre-fit validation.")
+                if (
+                    approval.pre_fit_receipt_fingerprint
+                    and approval.pre_fit_receipt_fingerprint != prefit.fingerprint
+                ):
+                    raise StaleApprovalError(
+                        "Fit approval is not bound to the current pre-fit receipt."
+                    )
             assert_window_change_invalidates_approval(plan=plan, approval=approval)
             if approval.tenant_id != tenant_id or approval.project_id != project_id:
                 raise StaleApprovalError("Cross-project fit approval rejected.")
@@ -901,6 +972,14 @@ class MMMModelingService:
                     evidence_refs=(failed.fit_run_id, current.model_version_id),
                 )
             )
+            try:
+                self.identifiability_package(
+                    tenant_id=current.tenant_id,
+                    project_id=current.project_id,
+                    model_version_id=current.model_version_id,
+                )
+            except (KeyError, OSError, ValueError, TypeError):
+                pass
             if current.state in {
                 MMMModelingStage.AWAITING_FIT_APPROVAL,
                 MMMModelingStage.FITTING_MODEL,
@@ -1133,6 +1212,202 @@ class MMMModelingService:
         except FileExistsError as exc:
             raise GcsPersistenceError("Model-version artifact path already exists.") from exc
 
+    def _identifiability_decision(self, model_version_id: str) -> ModelDecision | None:
+        for item in self.repo.list_decisions(model_version_id):
+            if isinstance(item.proposal, dict) and item.proposal.get("kind") == "IDENTIFIABILITY":
+                return item
+        return None
+
+    def identifiability_package(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        model_version_id: str,
+    ) -> MMMIdentifiabilityDecisionPackage:
+        version = self.get_version(
+            tenant_id=tenant_id, project_id=project_id, model_version_id=model_version_id
+        )
+        existing = self.repo.get_identifiability_package_for_version(model_version_id)
+        if existing is not None:
+            return existing
+        plan = self.repo.get_plan(model_version_id)
+        runs = self.repo.list_fit_runs(model_version_id)
+        run = next(
+            (
+                item
+                for item in reversed(runs)
+                if item.failure_class is FitFailureClass.MODEL_SPEC_IDENTIFIABILITY_ERROR
+            ),
+            runs[-1] if runs else None,
+        )
+        if run is None or not run.official_message:
+            raise IdentifiabilityDecisionRequiredError(
+                "Identifiability package requires an official pre-fit failure."
+            )
+        approval = self.repo.get_fit_approval(model_version_id)
+        fit_plan = self.repo.get_fit_plan(model_version_id)
+        model_evidence = {
+            "failed_model_plan_fingerprint": None if plan is None else plan.fingerprint,
+            "failed_fit_plan_fingerprint": None if fit_plan is None else fit_plan.fingerprint,
+            "failed_fit_approval_id": None if approval is None else approval.approval_id,
+            "failed_fit_run_id": run.fit_run_id,
+            "model_window": [
+                None if plan is None else plan.model_window_start,
+                None if plan is None else plan.model_window_end,
+            ],
+            "knots": None if plan is None else plan.spec.knots,
+            "enable_aks": None if plan is None else plan.spec.enable_aks,
+            "non_media_treatments": None if plan is None else plan.non_media_treatments,
+            "fit_purpose": None if fit_plan is None else fit_plan.fit_purpose.value,
+            "mcmc": None if fit_plan is None else {
+                "n_chains": fit_plan.n_chains,
+                "n_adapt": fit_plan.n_adapt,
+                "n_burnin": fit_plan.n_burnin,
+                "n_keep": fit_plan.n_keep,
+            },
+            "model_ready_fingerprint": version.model_ready_manifest_fingerprint,
+            "business_profile_snapshot_id": version.business_profile_snapshot_id,
+            "design_brief": None
+            if self.repo.get_brief(model_version_id) is None
+            else self.repo.get_brief(model_version_id).model_dump(mode="json"),
+        }
+        fingerprint = version.model_ready_manifest_fingerprint
+        if fingerprint in MUSIC_CENTER_FINAL_FINGERPRINTS:
+            package = build_music_center_v1_package(
+                project_id=version.project_id,
+                failed_model_version_id=version.model_version_id,
+                failed_fit_run_id=run.fit_run_id,
+                official_message=run.official_message,
+                model_evidence=model_evidence,
+            )
+        else:
+            package = build_identifiability_package(
+                project_id=version.project_id,
+                cycle_id=version.cycle_id,
+                failed_model_version_id=version.model_version_id,
+                failed_fit_run_id=run.fit_run_id,
+                official_message=run.official_message,
+                failure_class=run.failure_class or FitFailureClass.MODEL_SPEC_IDENTIFIABILITY_ERROR,
+                failure_stage=run.failure_stage or FitFailureStage.MODEL_INITIALIZATION,
+                library=run.library or "google-meridian",
+                library_version=run.library_version or PINNED_RUNTIME_VERSION,
+                exception_type=run.exception_type,
+                model_evidence=model_evidence,
+            )
+        assert package_is_advisory(package)
+        return self.repo.put_identifiability_package(package)
+
+    def record_identifiability_decision(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        model_version_id: str,
+        actor_id: str,
+        selected_alternative_id: str,
+        selected_configuration: dict[str, Any],
+        rationale: str,
+        evidence_refs: tuple[str, ...] = (),
+    ) -> ModelDecision:
+        if _is_service_account_actor(actor_id):
+            raise HumanApprovalRequiredError(
+                "A service account cannot approve an identifiability ModelDecision."
+            )
+        refuse_fabricated_geo_variation(selected_configuration)
+        version = self.get_version(
+            tenant_id=tenant_id, project_id=project_id, model_version_id=model_version_id
+        )
+        if version.state is not MMMModelingStage.ITERATION_REQUIRED:
+            raise IdentifiabilityDecisionRequiredError(
+                "Identifiability decisions are recorded on ITERATION_REQUIRED versions."
+            )
+        decision = self._identifiability_decision(model_version_id)
+        if decision is None:
+            raise IdentifiabilityDecisionRequiredError(
+                "No pending identifiability decision exists."
+            )
+        alternative = IdentifiabilityAlternativeId(selected_alternative_id)
+        package = self.identifiability_package(
+            tenant_id=tenant_id, project_id=project_id, model_version_id=model_version_id
+        )
+        alt = next(
+            item for item in package.alternatives if item.alternative_id is alternative
+        )
+        if not alt.available:
+            raise IdentifiabilityDecisionRequiredError(
+                f"Alternative {alternative.value} is not eligible: {alt.unavailable_reason}"
+            )
+        chosen = {
+            "selected_alternative": alternative.value,
+            "selected_configuration": selected_configuration,
+            "rationale": rationale,
+            "evidence_refs": list(evidence_refs) or [
+                package.package_id,
+                version.model_version_id,
+            ],
+        }
+        fingerprint = canonical_fingerprint(
+            {
+                "package_id": package.package_id,
+                "chosen": chosen,
+                "approved_by": actor_id,
+            }
+        )
+        chosen["decision_fingerprint"] = fingerprint
+        updated = decision.model_copy(
+            update={
+                "status": DecisionStatus.APPROVED,
+                "chosen_value": chosen,
+                "approved_by": actor_id,
+                "approved_at": utc_now(),
+                "reason": rationale,
+            }
+        )
+        stored = self.repo.put_decision(updated)
+        self.repo.put_identifiability_package(
+            package.model_copy(
+                update={
+                    "decision_status": IdentifiabilityPackageStatus.DECIDED,
+                    "selected_alternative": alternative,
+                }
+            )
+        )
+        predecessor = self.get_version(
+            tenant_id=tenant_id, project_id=project_id, model_version_id=model_version_id
+        )
+        assert predecessor.state is MMMModelingStage.ITERATION_REQUIRED
+        return stored
+
+    def validate_prefit(
+        self, *, tenant_id: str, project_id: str, model_version_id: str
+    ):
+        version = self.get_version(
+            tenant_id=tenant_id, project_id=project_id, model_version_id=model_version_id
+        )
+        self._require_mutable(version)
+        plan = self.repo.get_plan(model_version_id)
+        if plan is None:
+            raise ModelVersionNotFoundError("Model plan was not found.")
+        geo_invariant = plan.model_ready_manifest_fingerprint in MUSIC_CENTER_FINAL_FINGERPRINTS
+        treatments = plan.non_media_treatments
+        if treatments is not None and "music_center_promo" not in treatments:
+            geo_invariant = False
+        n_time = MUSIC_CENTER_MODEL_READY_COVERAGE.n_times if geo_invariant else None
+        receipt = execute_prefit_validation(
+            self.runtime,
+            plan,
+            model_version_id=model_version_id,
+            geo_invariant_non_media=geo_invariant,
+            n_time=n_time,
+        )
+        stored = self.repo.put_prefit_receipt(receipt)
+        if stored.status is not PreFitCheckStatus.PASS:
+            raise PrefitValidationFailedError(
+                stored.official_message or "Official pre-fit validation failed."
+            )
+        return stored
+
     def iterate(
         self,
         *,
@@ -1147,6 +1422,16 @@ class MMMModelingService:
         )
         if version.accepted:
             raise ModelVersionImmutableError("Accepted model versions cannot iterate in place.")
+        ident = self._identifiability_decision(model_version_id)
+        if version.state is MMMModelingStage.ITERATION_REQUIRED:
+            if ident is None or ident.status is not DecisionStatus.APPROVED:
+                raise IdentifiabilityDecisionRequiredError(
+                    "A human identifiability ModelDecision is required before a successor model."
+                )
+            if ident.chosen_value is None:
+                raise IdentifiabilityDecisionRequiredError(
+                    "A human identifiability ModelDecision is required before a successor model."
+                )
         if version.state is MMMModelingStage.AWAITING_MODEL_REVIEW:
             version = self._transition(version, MMMModelingStage.ITERATING_MODEL)
         plan = self.repo.get_plan(model_version_id)
@@ -1168,15 +1453,59 @@ class MMMModelingService:
             scope=plan.scope,
             media_channels=plan.media_channels,
             rf_channels=plan.rf_channels,
+            compute_profile=plan.compute_profile,
         )
-        successor = successor.model_copy(
-            update={
-                "supersedes_model_version_id": version.model_version_id,
-                "iteration_reason": reason,
-                "version": version.version + 1,
-            }
-        )
+        update: dict[str, Any] = {
+            "supersedes_model_version_id": version.model_version_id,
+            "iteration_reason": reason,
+            "version": version.version + 1,
+        }
+        if ident is not None and ident.status is DecisionStatus.APPROVED:
+            update["iteration_reason"] = ITERATION_REASON_IDENTIFIABILITY
+            update["source_model_decision_id"] = ident.decision_id
+            failed_run = next(
+                (
+                    item
+                    for item in self.repo.list_fit_runs(model_version_id)
+                    if item.failure_class is FitFailureClass.MODEL_SPEC_IDENTIFIABILITY_ERROR
+                ),
+                None,
+            )
+            if failed_run is not None:
+                update["source_fit_run_id"] = failed_run.fit_run_id
+            package = self.repo.get_identifiability_package_for_version(model_version_id)
+            compiled = compile_successor_model_plan(
+                predecessor=plan,
+                successor_model_version_id=successor.model_version_id,
+                decision=ident,
+                knot_proposal=None if package is None else package.knot_strategy_proposal,
+            )
+            if isinstance(compiled, DataFoundationWorkRequest):
+                raise IdentifiabilityDecisionRequiredError(compiled.reason)
+            if compiled.fingerprint == plan.fingerprint:
+                raise ModelSpecInvalidError("Successor ModelPlan must have a new fingerprint.")
+            self.repo.put_plan(compiled)
+            update["model_plan_id"] = compiled.model_plan_id
+            update["model_plan_fingerprint"] = compiled.fingerprint
+            if selected_alternative(ident) is IdentifiabilityAlternativeId.B:
+                brief = self.repo.get_brief(successor.model_version_id)
+                if brief is not None:
+                    self.repo.put_brief(
+                        brief.model_copy(
+                            update={
+                                "known_limitations": brief.known_limitations
+                                + (PROMOTION_NOT_EXPLICITLY_MODELED,),
+                                "non_media_treatments": compiled.non_media_treatments or (),
+                            }
+                        )
+                    )
+        successor = successor.model_copy(update=update)
         stored = self.repo.put_version(successor)
+        predecessor = self.get_version(
+            tenant_id=tenant_id, project_id=project_id, model_version_id=model_version_id
+        )
+        if predecessor.state is not MMMModelingStage.ITERATION_REQUIRED and ident is not None:
+            raise ModelVersionImmutableError("Failed predecessor must remain ITERATION_REQUIRED.")
         if old_artifact is not None:
             still = self.repo.get_artifact(model_version_id)
             if still is None or still.binary_sha256 != old_artifact.binary_sha256:

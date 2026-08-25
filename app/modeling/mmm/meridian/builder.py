@@ -67,6 +67,8 @@ def compile_input_mapping(
             raise InputContractMismatchError("INPUT_CONTRACT_MISMATCH")
     if plan.scope == "GEO" and not compiled.get("geo") and compiled.get("frame") is not None:
         raise InputContractMismatchError("INPUT_CONTRACT_MISMATCH")
+    if plan.non_media_treatments is not None:
+        compiled["non_media_treatments"] = tuple(plan.non_media_treatments)
     return compiled
 
 

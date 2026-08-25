@@ -42,6 +42,7 @@ from app.service.errors import ProblemDetail
 from app.service.mmm_models import (
     CreateModelDesignRequest,
     FitRunResponse,
+    IdentifiabilityReviewResponse,
     MMMSummaryResponse,
     ModelVersionResponse,
 )
@@ -235,6 +236,7 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             CreateModelDesignRequest,
             ModelVersionResponse,
             FitRunResponse,
+            IdentifiabilityReviewResponse,
         ),
         composition="catalog",
     ),

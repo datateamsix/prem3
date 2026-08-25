@@ -48,6 +48,18 @@ class ExactRetryNotAllowedError(ModelingError):
     code = "EXACT_RETRY_NOT_ALLOWED"
 
 
+class IdentifiabilityDecisionRequiredError(ModelingError):
+    code = "IDENTIFIABILITY_DECISION_REQUIRED"
+
+
+class PrefitValidationFailedError(ModelingError):
+    code = "PREFIT_VALIDATION_FAILED"
+
+
+class FabricatedGeoVariationError(ModelingError):
+    code = "FABRICATED_GEO_VARIATION"
+
+
 class PriorValidationFailedError(ModelingError):
     code = "PRIOR_VALIDATION_FAILED"
 

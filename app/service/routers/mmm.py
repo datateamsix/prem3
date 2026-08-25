@@ -33,6 +33,8 @@ from app.service.mmm_models import (
     EdaNextActionView,
     ExtendedEdaReadModelResponse,
     FitRunResponse,
+    IdentifiabilityDecisionRequest,
+    IdentifiabilityReviewResponse,
     IterateModelRequest,
     MeasurementCycleView,
     MMMSummaryResponse,
@@ -40,6 +42,7 @@ from app.service.mmm_models import (
     ModelVersionResponse,
     OfficialEdaReportView,
     to_fit_run_response,
+    to_identifiability_review,
 )
 
 router = APIRouter(prefix="/v1", tags=["mmm-modeling"])
@@ -68,6 +71,10 @@ def _raise_modeling(exc: ModelingError) -> None:
         "STALE_APPROVAL",
         "FAKE_RUNTIME_INELIGIBLE",
         "EXACT_RETRY_NOT_ALLOWED",
+        "IDENTIFIABILITY_DECISION_REQUIRED",
+        "PREFIT_VALIDATION_FAILED",
+        "HUMAN_APPROVAL_REQUIRED",
+        "FABRICATED_GEO_VARIATION",
     }:
         status = 409
     if exc.code == "LEDGER_PUBLICATION_FAILED":
@@ -315,6 +322,60 @@ async def get_model_design(
             for item in _modeling(request).repo.list_decisions(model_version_id)
         ],
     }
+
+
+@router.get(
+    "/projects/{project_id}/mmm/model-versions/{model_version_id}/identifiability",
+    operation_id="getMmmIdentifiabilityReview",
+)
+async def get_identifiability_review(
+    project_id: str,
+    model_version_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> IdentifiabilityReviewResponse:
+    require_tenant()
+    require_feature(repo, Feature.MMM)
+    try:
+        package = _modeling(request).identifiability_package(
+            tenant_id=tenant.tenant_id,
+            project_id=project_id,
+            model_version_id=model_version_id,
+        )
+    except ModelingError as exc:
+        _raise_modeling(exc)
+    return to_identifiability_review(package)
+
+
+@router.post(
+    "/projects/{project_id}/mmm/model-versions/{model_version_id}/identifiability/decide",
+    operation_id="recordMmmIdentifiabilityDecision",
+)
+async def record_identifiability_decision(
+    project_id: str,
+    model_version_id: str,
+    body: IdentifiabilityDecisionRequest,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> dict[str, Any]:
+    require_tenant()
+    require_feature(repo, Feature.MMM)
+    try:
+        decision = _modeling(request).record_identifiability_decision(
+            tenant_id=tenant.tenant_id,
+            project_id=project_id,
+            model_version_id=model_version_id,
+            actor_id=tenant.user_id or "authenticated-user",
+            selected_alternative_id=body.selected_alternative,
+            selected_configuration=body.selected_configuration,
+            rationale=body.rationale,
+            evidence_refs=tuple(body.evidence_refs),
+        )
+    except ModelingError as exc:
+        _raise_modeling(exc)
+    return decision.model_dump(mode="json")
 
 
 @router.post(

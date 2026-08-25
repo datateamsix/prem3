@@ -7,6 +7,7 @@ import pytest
 from app.modeling.common.errors import (
     ExactRetryNotAllowedError,
     FitApprovalRequiredError,
+    IdentifiabilityDecisionRequiredError,
     ModelSpecIdentifiabilityError,
     SerdeError,
 )
@@ -75,6 +76,11 @@ def _approved_version(service: MMMModelingService, *, fit_purpose: FitPurpose):
         project_id=version.project_id,
         model_version_id=version.model_version_id,
         n_draws=8,
+    )
+    service.validate_prefit(
+        tenant_id=version.tenant_id,
+        project_id=version.project_id,
+        model_version_id=version.model_version_id,
     )
     service.approve_fit(
         tenant_id=version.tenant_id,
@@ -204,6 +210,23 @@ def test_changed_fit_plan_requires_new_approval() -> None:
     still = service.repo.get_fit_approval(version.model_version_id)
     assert still is not None
     assert still.approval_id == approval.approval_id
+    with pytest.raises(IdentifiabilityDecisionRequiredError):
+        service.iterate(
+            tenant_id=version.tenant_id,
+            project_id=version.project_id,
+            model_version_id=version.model_version_id,
+            actor_id="user_a",
+            reason="Resolve identifiability via a new Model Design decision.",
+        )
+    service.record_identifiability_decision(
+        tenant_id=version.tenant_id,
+        project_id=version.project_id,
+        model_version_id=version.model_version_id,
+        actor_id="user_a",
+        selected_alternative_id="A",
+        selected_configuration={"n_knots": 130},
+        rationale="Retain promotion; reduce knots below n_time.",
+    )
     successor = service.iterate(
         tenant_id=version.tenant_id,
         project_id=version.project_id,

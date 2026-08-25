@@ -14,7 +14,9 @@ from app.modeling.mmm.contracts import (
     MeridianFitPlan,
     MeridianModelArtifactManifest,
     MeridianModelHealthReceipt,
+    MeridianPreFitValidationReceipt,
     MeridianPriorValidationReceipt,
+    MMMIdentifiabilityDecisionPackage,
     MMMModelDesignBrief,
     MMMModelReviewPack,
     MMMModelVersion,
@@ -414,3 +416,83 @@ class FirestoreModelingRepository:
         if not snap.exists:
             return None
         return document_to_model(MMMReproducibilityManifest, snap.to_dict())
+
+    def put_identifiability_package(
+        self, package: MMMIdentifiabilityDecisionPackage
+    ) -> MMMIdentifiabilityDecisionPackage:
+        loc = self._owner(package.failed_model_version_id)
+        if loc is None:
+            raise ModelVersionImmutableError(
+                "Model version is required before identifiability package."
+            )
+        self._put(
+            loc[0],
+            loc[1],
+            "mmm_identifiability_packages",
+            package.package_id,
+            package,
+        )
+        self._index("identifiability_package", package.package_id, loc[0], loc[1])
+        self._index(
+            "identifiability_version",
+            package.failed_model_version_id,
+            loc[0],
+            loc[1],
+        )
+        self._ws(loc[0], loc[1]).collection("mmm_identifiability_index").document(
+            package.failed_model_version_id
+        ).set({"package_id": package.package_id})
+        return package
+
+    def get_identifiability_package(
+        self, package_id: str
+    ) -> MMMIdentifiabilityDecisionPackage | None:
+        loc = self._lookup("identifiability_package", package_id)
+        if loc is None:
+            return None
+        return self._get(
+            loc[0],
+            loc[1],
+            "mmm_identifiability_packages",
+            package_id,
+            MMMIdentifiabilityDecisionPackage,
+        )
+
+    def get_identifiability_package_for_version(
+        self, model_version_id: str
+    ) -> MMMIdentifiabilityDecisionPackage | None:
+        loc = self._owner(model_version_id)
+        if loc is None:
+            return None
+        snap = (
+            self._ws(loc[0], loc[1])
+            .collection("mmm_identifiability_index")
+            .document(model_version_id)
+            .get()
+        )
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        package_id = str(data.get("package_id") or "")
+        if not package_id:
+            return None
+        return self.get_identifiability_package(package_id)
+
+    def put_prefit_receipt(
+        self, receipt: MeridianPreFitValidationReceipt
+    ) -> MeridianPreFitValidationReceipt:
+        loc = self._owner(receipt.model_version_id)
+        if loc is None:
+            raise ModelVersionImmutableError("Model version is required before pre-fit receipt.")
+        self._put(loc[0], loc[1], "mmm_prefit_receipts", receipt.model_version_id, receipt)
+        return receipt
+
+    def get_prefit_receipt(
+        self, model_version_id: str
+    ) -> MeridianPreFitValidationReceipt | None:
+        loc = self._owner(model_version_id)
+        if loc is None:
+            return None
+        return self._get(
+            loc[0], loc[1], "mmm_prefit_receipts", model_version_id, MeridianPreFitValidationReceipt
+        )

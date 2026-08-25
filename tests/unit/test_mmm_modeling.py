@@ -200,6 +200,12 @@ def _fit_ready(service: MMMModelingService, version, *, fit_purpose=None):
         model_version_id=version.model_version_id,
         n_draws=8,
     )
+    if fit_purpose is FitPurpose.FINAL_MODEL:
+        service.validate_prefit(
+            tenant_id=version.tenant_id,
+            project_id=version.project_id,
+            model_version_id=version.model_version_id,
+        )
     service.approve_fit(
         tenant_id=version.tenant_id,
         project_id=version.project_id,
