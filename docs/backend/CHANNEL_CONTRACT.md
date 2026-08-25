@@ -1,48 +1,40 @@
-# PreM3 Canonical Channel Contract V1
+# Channel Contract (V1)
 
-## Purpose
+PreM3 uses one versioned **Canonical Channel Registry** as platform authority across
+Business IQ, Data Foundation, MMM, MTA, Planning, and Decision Intelligence.
 
-Canonical channel identity is shared across:
-`Business IQ → Data Foundation → MMM → MTA → Planning → Decision Intelligence`.
+## Identity hierarchy
 
-## Levels
-
-```text
-channel_family_id
-  ↓
-channel_id
-  ↓
-provider / platform / campaign
+```
+channel_family_id → channel_id → provider / platform / campaign
 ```
 
-A provider is not a channel.
+Provider is not channel. Example: `provider_id=google_ads` may map traffic into
+`channel_id=search_paid`.
 
-## Stable identity
+## V1 stable channel IDs
 
-`channel_id` is an immutable semantic identifier once used in production. Display names can evolve; IDs do not silently change.
+Do not rename for aesthetics. Display names may change independently.
 
-## Cross-method rule
+From `assets/channels/channel_registry_v1.yaml`:
 
-- Business IQ records canonical `channel_id`.
-- Data Foundation maps provider/source evidence to canonical `channel_id`.
-- MMM model inputs bind media variables to canonical `channel_id`.
-- MTA UDF returns canonical `channel_id`.
-- Portfolio/Decision Intelligence joins methods on canonical `channel_id`, plus period/market/KPI context.
+`direct`, `search_paid`, `search_organic`, `ai_search`, `social_paid`, `social_organic`,
+`video_paid`, `video_organic`, `ctv_streaming`, `tv_linear`, `display`, `shopping_paid`,
+`shopping_organic`, `retail_media`, `email`, `sms`, `mobile_push`, `crm_owned`, `audio`,
+`podcast`, `radio`, `affiliate`, `referral`, `influencer`, `partnership`, `ooh`, `print`,
+`direct_mail`, `other_paid`, `other`
 
-## Customer customization
+## ai_search
 
-Customers can customize **mapping rules** from raw traffic values to existing canonical channels.
+`channel_id=ai_search` is a true platform channel (`mmm_allowed=true`, MTA default).
+It is not MTA-only UDF trivia — BIQ/MMM/Planning/DF may bind it.
 
-If a genuinely new channel is needed, create a governed Channel Registry version so it becomes available simultaneously to Business IQ, MMM, MTA, and Planning.
+## Versioning
 
-Do not create MTA-only custom channel IDs.
+Registry v1 is immutable. Adding channels requires registry v2. Mapping UDFs pin a
+compatible registry version. Outputs not in the pinned registry fail closed.
 
-## Version pinning
+## Customer mappings
 
-Every MTA run records:
-- `channel_registry_version`
-- `channel_grouping_ruleset_version`
-- `channel_grouping_udf_version`
-- `channel_grouping_udf_fingerprint`
-
-Historical runs never use a mutable `current` alias during replay.
+Repo owns registry + default rules + SQL compiler. Customer control plane owns approved
+`ChannelGroupingRuleSet` versions. Customer-specific mappings are not committed to git.
