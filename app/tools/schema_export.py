@@ -46,7 +46,12 @@ from app.service.mmm_models import (
     MMMSummaryResponse,
     ModelVersionResponse,
 )
-from app.service.mta_models import MTAOverviewResponse, MTAReadinessResponse
+from app.service.mta_models import (
+    MTAOverviewResponse,
+    MTAReadinessResponse,
+    MTARunReceiptResponse,
+    MTARunResponse,
+)
 from app.service.models import (
     BigQueryBindingResponse,
     BillingSessionResponse,
@@ -240,6 +245,8 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             IdentifiabilityReviewResponse,
             MTAOverviewResponse,
             MTAReadinessResponse,
+            MTARunResponse,
+            MTARunReceiptResponse,
         ),
         composition="catalog",
     ),

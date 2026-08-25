@@ -15,10 +15,13 @@ from app.service.dependencies import authenticated_tenant, get_control_plane
 from app.service.entitlements import require_feature
 from app.service.errors import resource_not_found
 from app.service.mta_models import (
+    CreateMTARunRequest,
     EvaluateMTAReadinessRequest,
     MTAOverviewNextActionView,
     MTAOverviewResponse,
     MTAReadinessResponse,
+    MTARunReceiptResponse,
+    MTARunResponse,
 )
 
 router = APIRouter(prefix="/v1", tags=["mta"])
@@ -178,4 +181,146 @@ async def evaluate_cycle_mta_readiness(
         fingerprint=receipt.fingerprint,
         ga4_dataset_id=receipt.ga4_dataset_id,
         conversion_event=receipt.conversion_event,
+    )
+
+
+@router.post(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/runs",
+    operation_id="createProjectCycleMtaRun",
+    response_model=MTARunResponse,
+)
+async def create_mta_run(
+    project_id: str,
+    cycle_id: str,
+    body: CreateMTARunRequest,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    control_plane: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> MTARunResponse:
+    del body
+    require_tenant(tenant)
+    require_feature(control_plane, tenant.tenant_id, Feature.MTA)
+    service = _mta(request)
+    tracks = ensure_tracks_for_cycle(
+        control_plane, tenant_id=tenant.tenant_id, project_id=project_id, cycle_id=cycle_id
+    )
+    mta_track = next((t for t in tracks if t.track_type.value == "MTA"), None)
+    if mta_track is None:
+        raise resource_not_found()
+    run = service.start_run(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=mta_track.track_id,
+    )
+    return MTARunResponse(
+        run_id=run.run_id,
+        status=run.status.value,
+        execution_plan_id=run.execution_plan_id,
+        dispatch_id=run.dispatch_id,
+        proof_label=run.proof_label,
+    )
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/runs",
+    operation_id="listProjectCycleMtaRuns",
+    response_model=list[MTARunResponse],
+)
+async def list_mta_runs(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    control_plane: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> list[MTARunResponse]:
+    require_tenant(tenant)
+    require_feature(control_plane, tenant.tenant_id, Feature.MTA)
+    service = _mta(request)
+    runs = [
+        r
+        for r in service.repo.list_runs(project_id=project_id, cycle_id=cycle_id)
+        if r.tenant_id == tenant.tenant_id
+    ]
+    return [
+        MTARunResponse(
+            run_id=r.run_id,
+            status=r.status.value,
+            execution_plan_id=r.execution_plan_id,
+            dispatch_id=r.dispatch_id,
+            proof_label=r.proof_label,
+        )
+        for r in runs
+    ]
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/runs/{run_id}",
+    operation_id="getProjectCycleMtaRun",
+    response_model=MTARunResponse,
+)
+async def get_mta_run(
+    project_id: str,
+    cycle_id: str,
+    run_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    control_plane: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> MTARunResponse:
+    require_tenant(tenant)
+    require_feature(control_plane, tenant.tenant_id, Feature.MTA)
+    service = _mta(request)
+    run = service.repo.get_run(run_id)
+    if (
+        run is None
+        or run.tenant_id != tenant.tenant_id
+        or run.project_id != project_id
+        or run.cycle_id != cycle_id
+    ):
+        raise resource_not_found()
+    return MTARunResponse(
+        run_id=run.run_id,
+        status=run.status.value,
+        execution_plan_id=run.execution_plan_id,
+        dispatch_id=run.dispatch_id,
+        proof_label=run.proof_label,
+    )
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/runs/{run_id}/receipt",
+    operation_id="getProjectCycleMtaRunReceipt",
+    response_model=MTARunReceiptResponse,
+)
+async def get_mta_run_receipt(
+    project_id: str,
+    cycle_id: str,
+    run_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    control_plane: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+) -> MTARunReceiptResponse:
+    require_tenant(tenant)
+    require_feature(control_plane, tenant.tenant_id, Feature.MTA)
+    service = _mta(request)
+    run = service.repo.get_run(run_id)
+    if (
+        run is None
+        or run.tenant_id != tenant.tenant_id
+        or run.project_id != project_id
+        or run.cycle_id != cycle_id
+    ):
+        raise resource_not_found()
+    receipt = service.repo.get_run_receipt_for_run(run_id)
+    if receipt is None:
+        raise resource_not_found()
+    return MTARunReceiptResponse(
+        receipt_id=receipt.receipt_id,
+        run_id=receipt.run_id,
+        status=receipt.status.value,
+        fingerprint=receipt.fingerprint,
+        readback_status=receipt.readback_status,
+        journey_count=receipt.journey_count,
+        grouped_path_count=receipt.grouped_path_count,
+        limitations=list(receipt.limitations),
     )

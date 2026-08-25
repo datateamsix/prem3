@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Protocol
+from typing import Protocol
 
 from app.modeling.common.fingerprints import canonical_fingerprint
 from app.modeling.mta.contracts import GA4DiscoveryResult, GA4SourceBinding
 from app.modeling.mta.policies import (
-    settled_through_date,
     select_traffic_source_policy,
+    settled_through_date,
 )
 
 _ANALYTICS_DATASET = re.compile(r"^analytics_(\d+)$")

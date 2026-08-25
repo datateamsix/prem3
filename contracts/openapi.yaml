@@ -719,6 +719,17 @@ components:
       - upload_id
       title: CreateEvaluationRequest
       type: object
+    CreateMTARunRequest:
+      additionalProperties: false
+      description: Customer create-run body — no BQ/GCS/authority fields allowed.
+      properties:
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+      title: CreateMTARunRequest
+      type: object
     CreateModelDesignRequest:
       additionalProperties: false
       properties:
@@ -2228,6 +2239,72 @@ components:
       - state
       - fingerprint
       title: MTAReadinessResponse
+      type: object
+    MTARunReceiptResponse:
+      additionalProperties: false
+      properties:
+        fingerprint:
+          title: Fingerprint
+          type: string
+        grouped_path_count:
+          default: 0
+          title: Grouped Path Count
+          type: integer
+        journey_count:
+          default: 0
+          title: Journey Count
+          type: integer
+        limitations:
+          items:
+            type: string
+          title: Limitations
+          type: array
+        readback_status:
+          title: Readback Status
+          type: string
+        receipt_id:
+          title: Receipt Id
+          type: string
+        run_id:
+          title: Run Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - receipt_id
+      - run_id
+      - status
+      - fingerprint
+      - readback_status
+      title: MTARunReceiptResponse
+      type: object
+    MTARunResponse:
+      additionalProperties: false
+      properties:
+        dispatch_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dispatch Id
+        execution_plan_id:
+          title: Execution Plan Id
+          type: string
+        proof_label:
+          default: SYNTHETIC
+          title: Proof Label
+          type: string
+        run_id:
+          title: Run Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - run_id
+      - status
+      - execution_plan_id
+      title: MTARunResponse
       type: object
     MaterializeDatasetSourceRequest:
       additionalProperties: false
@@ -4855,6 +4932,162 @@ paths:
       security:
       - HTTPBearer: []
       summary: Evaluate Cycle Mta Readiness
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/runs:
+    get:
+      operationId: listProjectCycleMtaRuns
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MTARunResponse'
+                title: Response Listprojectcyclemtaruns
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Mta Runs
+      tags:
+      - mta
+    post:
+      operationId: createProjectCycleMtaRun
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMTARunRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTARunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Mta Run
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/runs/{run_id}:
+    get:
+      operationId: getProjectCycleMtaRun
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTARunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Run
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/runs/{run_id}/receipt:
+    get:
+      operationId: getProjectCycleMtaRunReceipt
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTARunReceiptResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Run Receipt
       tags:
       - mta
   /v1/projects/{project_id}/cycles/{cycle_id}/tracks:

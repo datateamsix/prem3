@@ -10,7 +10,6 @@ from app.modeling.mta.contracts import (
     SessionTrafficSourcePolicy,
 )
 
-
 # GA4 daily export tables may receive late events for up to ~3 days.
 DEFAULT_SETTLEMENT_LAG_DAYS = 3
 

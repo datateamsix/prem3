@@ -107,3 +107,31 @@ async def launch_mmm_fit_dispatch(
         security_log("mmm.fit_launch_http_failed", dispatch_id=dispatch_id)
         raise evaluation_dispatch_unavailable() from None
     return LaunchAck(dispatch_id=updated.dispatch_id, status=updated.status.value)
+
+
+@router.post(
+    "/mta-dispatches/{dispatch_id}/launch",
+    response_model=LaunchAck,
+    include_in_schema=False,
+)
+async def launch_mta_dispatch(
+    dispatch_id: str,
+    request: Request,
+    verifier: Annotated[
+        ServiceIdentityVerifier | None, Depends(get_mmm_service_identity_verifier)
+    ],
+    _control_plane: Annotated[object, Depends(get_control_plane)],
+    x_cloudtasks_taskname: Annotated[str | None, Header(alias="X-CloudTasks-TaskName")] = None,
+) -> LaunchAck:
+    del x_cloudtasks_taskname
+    if verifier is None:
+        raise service_identity_required()
+    verifier.verify(request.headers.get("authorization") or request.headers.get("Authorization"))
+    mta = getattr(request.app.state, "mta_service", None)
+    if mta is None:
+        raise evaluation_dispatch_unavailable()
+    try:
+        updated = mta.launch_dispatch(dispatch_id=dispatch_id)
+    except KeyError as exc:
+        raise resource_not_found() from exc
+    return LaunchAck(dispatch_id=updated.dispatch_id, status=updated.status.value)

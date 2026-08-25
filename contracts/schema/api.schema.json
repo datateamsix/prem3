@@ -3153,6 +3153,98 @@
       "title": "MTAReadinessResponse",
       "type": "object"
     },
+    "app_service_mta_models__MTARunReceiptResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "grouped_path_count": {
+          "default": 0,
+          "title": "Grouped Path Count",
+          "type": "integer"
+        },
+        "journey_count": {
+          "default": 0,
+          "title": "Journey Count",
+          "type": "integer"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "readback_status": {
+          "title": "Readback Status",
+          "type": "string"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "run_id",
+        "status",
+        "fingerprint",
+        "readback_status"
+      ],
+      "title": "MTARunReceiptResponse",
+      "type": "object"
+    },
+    "app_service_mta_models__MTARunResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "dispatch_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dispatch Id"
+        },
+        "execution_plan_id": {
+          "title": "Execution Plan Id",
+          "type": "string"
+        },
+        "proof_label": {
+          "default": "SYNTHETIC",
+          "title": "Proof Label",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "status",
+        "execution_plan_id"
+      ],
+      "title": "MTARunResponse",
+      "type": "object"
+    },
     "app_service_project_models__AttentionItem": {
       "additionalProperties": false,
       "properties": {
@@ -4665,6 +4757,12 @@
     },
     {
       "$ref": "#/$defs/app_service_mta_models__MTAReadinessResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTARunResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTARunReceiptResponse"
     }
   ],
   "title": "PreM3 prem3-api presentation contracts"

@@ -60,3 +60,28 @@ class EvaluateMTAReadinessRequest(ApiModel):
     uses_intraday_for_canonical: bool = False
     lookback_covered: bool = False
     user_pseudo_id_coverage: float | None = None
+
+
+class MTARunResponse(ApiModel):
+    run_id: str
+    status: str
+    execution_plan_id: str
+    dispatch_id: str | None = None
+    proof_label: str = "SYNTHETIC"
+
+
+class MTARunReceiptResponse(ApiModel):
+    receipt_id: str
+    run_id: str
+    status: str
+    fingerprint: str
+    readback_status: str
+    journey_count: int = 0
+    grouped_path_count: int = 0
+    limitations: list[str] = Field(default_factory=list)
+
+
+class CreateMTARunRequest(ApiModel):
+    """Customer create-run body — no BQ/GCS/authority fields allowed."""
+
+    note: str | None = None
