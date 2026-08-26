@@ -79,6 +79,7 @@ def default_enabled_models() -> tuple[AttributionModelId, ...]:
     return (
         AttributionModelId.FIRST_TOUCH,
         AttributionModelId.LAST_TOUCH,
+        AttributionModelId.LAST_NON_DIRECT,
         AttributionModelId.LINEAR,
         AttributionModelId.TIME_DECAY,
         AttributionModelId.POSITION_BASED,

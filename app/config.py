@@ -131,6 +131,10 @@ class Settings:
     evaluation_dispatcher_sa: str | None
     evaluation_launch_url: str | None
     evaluation_launch_audience: str | None
+    mta_dispatch_queue: str | None
+    mta_worker_job: str | None
+    mta_launch_url: str | None
+    mta_launch_audience: str | None
     meridian_fit_dispatch_queue: str | None
     meridian_model_worker_job: str | None
     meridian_fit_dispatcher_sa: str | None
@@ -220,6 +224,10 @@ def load_settings() -> Settings:
         evaluation_dispatcher_sa=os.getenv("EVALUATION_DISPATCHER_SA") or None,
         evaluation_launch_url=os.getenv("EVALUATION_LAUNCH_URL") or None,
         evaluation_launch_audience=os.getenv("EVALUATION_LAUNCH_AUDIENCE") or None,
+        mta_dispatch_queue=os.getenv("MTA_DISPATCH_QUEUE") or None,
+        mta_worker_job=os.getenv("MTA_WORKER_JOB") or None,
+        mta_launch_url=os.getenv("MTA_LAUNCH_URL") or None,
+        mta_launch_audience=os.getenv("MTA_LAUNCH_AUDIENCE") or None,
         meridian_fit_dispatch_queue=os.getenv("MERIDIAN_FIT_DISPATCH_QUEUE") or None,
         meridian_model_worker_job=os.getenv("MERIDIAN_MODEL_WORKER_JOB") or None,
         meridian_fit_dispatcher_sa=os.getenv("MERIDIAN_FIT_DISPATCHER_SA") or None,

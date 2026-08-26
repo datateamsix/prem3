@@ -43,6 +43,12 @@ dev = [
 meridian = [
   "google-meridian==1.8.0",
 ]
+dp6 = [
+  "marketing-attribution-models @ https://github.com/DP6/Marketing-Attribution-Models/archive/refs/tags/v1.0.11.tar.gz",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
@@ -62,6 +68,8 @@ markers = [
   "gcp: live Google Cloud tests skipped when ADC is unavailable",
   "meridian_eda: tests that import and execute official google-meridian",
   "live_bq: forced live BigQuery Music Center SYNTHETIC_DEMO proofs (ADC + IAM required)",
+  "real_dp6: exact marketing_attribution_models==1.0.11 runtime (no fake adapter)",
+  "cloud_e2e: Cloud Tasks + prem3-mta-worker + real DP6 (ADC + IAM required)",
 ]
 
 [tool.ruff]

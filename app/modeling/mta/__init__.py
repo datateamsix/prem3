@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from app.modeling.mta.states import MTATrackStage
 
-ADAPTER_VERSION = "m5-01.1"
+ADAPTER_VERSION = "m5-02a.1"
 DP6_MAM_PINNED_VERSION = "1.0.11"
 
 # Forbidden substrings in MTA user-facing copy (epistemic boundary).

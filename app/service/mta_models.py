@@ -86,6 +86,7 @@ class MTARunReceiptResponse(ApiModel):
     journey_count: int = 0
     grouped_path_count: int = 0
     limitations: list[str] = Field(default_factory=list)
+    computation_authority: str | None = None
 
 
 class CreateMTARunRequest(ApiModel):
@@ -168,6 +169,7 @@ class MTAResultsSnapshotView(ApiModel):
     run_id: str
     result_status: str
     evidence_authority: str
+    computation_authority: str | None = None
     fingerprint: str
     models_requested: list[str] = Field(default_factory=list)
     models_completed: list[str] = Field(default_factory=list)

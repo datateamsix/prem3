@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from app.modeling.common.fingerprints import canonical_fingerprint
 from app.modeling.mta.runtime_contracts import (
+    MTAComputationAuthority,
     MTAModelExecutionEvidence,
     MTARun,
     MTARunReceipt,
@@ -22,6 +23,7 @@ def build_run_receipt(
     output_refs: tuple[str, ...] | list[str],
     readback_status: str,
     limitations: tuple[str, ...] | list[str] = (),
+    computation_authority: MTAComputationAuthority = MTAComputationAuthority.TEST_FAKE_RUNTIME,
 ) -> MTARunReceipt:
     payload = {
         "run_id": run.run_id,
@@ -38,6 +40,7 @@ def build_run_receipt(
         "limitations": list(limitations),
         "source_commit_sha": run.source_commit_sha,
         "worker_image_digest": run.worker_image_digest,
+        "computation_authority": computation_authority.value,
     }
     return MTARunReceipt(
         receipt_id=f"mrcpt_{canonical_fingerprint(payload)[:20]}",
@@ -57,6 +60,7 @@ def build_run_receipt(
         completed_at=run.completed_at,
         source_commit_sha=run.source_commit_sha,
         worker_image_digest=run.worker_image_digest,
+        computation_authority=computation_authority,
         fingerprint=canonical_fingerprint(payload),
     )
 

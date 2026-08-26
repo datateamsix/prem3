@@ -497,7 +497,7 @@ def test_path_frequency_reduction_is_deterministic():
 
 def test_dp6_version_is_pinned():
     assert assert_pinned_dp6_version() == DP6_MAM_PINNED_VERSION
-    assert ADAPTER_VERSION.startswith("m5-01")
+    assert ADAPTER_VERSION.startswith("m5-")
 
 
 @pytest.mark.parametrize(

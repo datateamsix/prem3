@@ -176,7 +176,7 @@
         "app.service.mta_models.MTARunReceiptResponse",
         "app.service.mta_models.MTAResultsSnapshotView"
       ],
-      "sha256": "b0b95890bc11ab1f84395101e0affecbbaaf6399f0faaefc2f166acabd9f5263"
+      "sha256": "77ca325652424da36d219ee5845f0ef0306fb8fba5588917d100d6b564fbb948"
     }
   ],
   "hash_algorithm": "sha256",

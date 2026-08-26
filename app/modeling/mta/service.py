@@ -6,7 +6,10 @@ from typing import Any
 from uuid import uuid4
 
 from app.core.contracts import utc_now
-from app.modeling.mta.adapters.dp6_mam_v1_0_11 import DP6MAMAdapter
+from app.modeling.mta.adapters.dp6_mam_v1_0_11 import (
+    DP6MAMAdapter,
+    assert_real_runtime_allowed,
+)
 from app.modeling.mta.channel_grouping import build_channel_grouping
 from app.modeling.mta.contracts import (
     AttributionModelId,
@@ -25,6 +28,7 @@ from app.modeling.mta.dispatch import FakeMTADispatcher, MTADispatcher
 from app.modeling.mta.execution import build_analysis_config, compile_execution_plan
 from app.modeling.mta.ga4_discovery import TableLister, discover_ga4_exports
 from app.modeling.mta.input_contract import build_input_contract
+from app.modeling.mta.jobs import FakeMTAJobLauncher, MTAJobLauncher
 from app.modeling.mta.journeys import (
     assert_touchpoint_order,
     deterministic_journey_id,
@@ -46,10 +50,18 @@ from app.modeling.mta.results_contracts import (
     MTAChannelDetail,
     MTAEvidenceAuthority,
 )
+from app.modeling.mta.runtime_bundle import (
+    hydrate_runtime_bundle,
+    persist_runtime_bundle,
+    persist_runtime_receipt,
+)
 from app.modeling.mta.runtime_contracts import (
+    MTAComputationAuthority,
     MTADispatchStatus,
     MTAExecutionDispatch,
+    MTAFailureClass,
     MTAModelExecutionEvidence,
+    MTAModelRequirement,
     MTARun,
     MTARunReceipt,
     MTARunStatus,
@@ -66,11 +78,15 @@ class MTAService:
         dispatcher: MTADispatcher | None = None,
         result_store: InMemoryResultStore | None = None,
         dp6: DP6MAMAdapter | None = None,
+        job_launcher: MTAJobLauncher | None = None,
+        firestore_client: Any | None = None,
     ) -> None:
         self.repo = repo or InMemoryMTARepository()
         self.dispatcher = dispatcher or FakeMTADispatcher()
         self.result_store = result_store or InMemoryResultStore()
         self.dp6 = dp6 or DP6MAMAdapter(fake=True)
+        self.job_launcher = job_launcher or FakeMTAJobLauncher()
+        self.firestore_client = firestore_client
         self.results_compiler = MTAResultsCompiler(self.repo, self.result_store)
         self.di_compiler = MTADecisionIntelligenceCompiler()
 
@@ -218,6 +234,8 @@ class MTAService:
         journeys: list[dict[str, Any]] | None = None,
         worker_image_digest: str | None = None,
         source_commit_sha: str | None = None,
+        proof_label: str = "SYNTHETIC",
+        runtime_mode: str = "FAKE_TEST",
         # Authority reject surface — must be None from callers
         gcp_project_override: str | None = None,
         bq_destination_override: str | None = None,
@@ -253,9 +271,17 @@ class MTAService:
         )
         preflight = None
         if AttributionModelId.SHAPLEY in analysis.models:
+            distinct = {
+                str(channel)
+                for row in (journeys or [])
+                for channel in (row.get("channels") or [])
+            }
             preflight = run_shapley_preflight(
-                distinct_channel_count=8,
-                max_path_length=6,
+                distinct_channel_count=len(distinct) or 1,
+                max_path_length=max(
+                    (len(row.get("channels") or []) for row in (journeys or [])),
+                    default=1,
+                ),
                 configured_size=4,
                 order_aware=True,
             )
@@ -291,6 +317,7 @@ class MTAService:
             shapley_preflight=preflight,
             worker_image_digest=worker_image_digest,
             source_commit_sha=source_commit_sha,
+            runtime_mode=runtime_mode,
         )
         self.repo.put_execution_plan(plan)
 
@@ -305,6 +332,7 @@ class MTAService:
             status=MTARunStatus.QUEUED,
             worker_image_digest=worker_image_digest,
             source_commit_sha=source_commit_sha,
+            proof_label=proof_label,
             started_at=utc_now(),
         )
         self.repo.put_run(run)
@@ -334,17 +362,31 @@ class MTAService:
         self.repo.put_dispatch(dispatch)
         run = run.model_copy(update={"dispatch_id": dispatch.dispatch_id})
         self.repo.put_run(run)
-        # Stash journeys on run for fake worker via result store side channel
         self.result_store.write(f"_journeys_{run.run_id}", journey_rows)
+        if self.firestore_client is not None:
+            persist_runtime_bundle(
+                self.firestore_client,
+                dispatch_id=dispatch.dispatch_id,
+                plan=plan,
+                run=run,
+                dispatch=dispatch,
+                contract=contract,
+                journeys=journey_rows,
+            )
         return run
 
     def launch_dispatch(self, *, dispatch_id: str) -> MTAExecutionDispatch:
         dispatch = self.repo.get_dispatch(dispatch_id)
+        if dispatch is None and self.firestore_client is not None:
+            hydrate_runtime_bundle(
+                self.firestore_client, dispatch_id=dispatch_id, repo=self.repo
+            )
+            dispatch = self.repo.get_dispatch(dispatch_id)
         if dispatch is None:
             raise KeyError(f"Unknown dispatch {dispatch_id}")
         if dispatch.cloud_run_execution_name:
             return dispatch
-        execution_name = f"prem3-mta-worker/{dispatch_id}"
+        execution_name = self.job_launcher.launch(dispatch_id)
         updated = dispatch.model_copy(
             update={
                 "status": MTADispatchStatus.LAUNCHED,
@@ -374,6 +416,11 @@ class MTAService:
 
         run = run.model_copy(update={"status": MTARunStatus.RUNNING})
         self.repo.put_run(run)
+        assert_real_runtime_allowed(
+            runtime_mode=plan.runtime_mode,
+            proof_label=run.proof_label,
+            fake=self.dp6.is_fake,
+        )
 
         journeys = self.result_store.read_back(f"_journeys_{run.run_id}")
         paths = [list(j.get("channels", [])) for j in journeys if j.get("converted", True)]
@@ -403,15 +450,60 @@ class MTAService:
 
         evidence: list[MTAModelExecutionEvidence] = []
         channel_rows: list[dict[str, Any]] = []
+        computation = (
+            MTAComputationAuthority.TEST_FAKE_RUNTIME
+            if self.dp6.is_fake
+            else MTAComputationAuthority.REAL_PINNED_RUNTIME
+        )
         for param_set in plan.model_parameters:
             started = utc_now()
-            result = self.dp6.run_model(
-                param_set.model_id,
-                paths=paths,
-                conversions=conversions[: len(paths)],
-                parameters=param_set.parameters,
-                input_mode=plan.input_mode,
-            )
+            try:
+                result = self.dp6.run_model(
+                    param_set.model_id,
+                    paths=paths,
+                    conversions=conversions[: len(paths)],
+                    parameters=param_set.parameters,
+                    input_mode=plan.input_mode,
+                )
+            except Exception as exc:
+                failure = getattr(
+                    exc, "failure_class", MTAFailureClass.MTA_RUNTIME_MODEL_ERROR
+                )
+                if not isinstance(failure, MTAFailureClass):
+                    failure = MTAFailureClass.MTA_RUNTIME_MODEL_ERROR
+                evidence.append(
+                    MTAModelExecutionEvidence(
+                        model_type=param_set.model_id,
+                        status="FAILED",
+                        parameters=param_set.parameters,
+                        input_mode=plan.input_mode,
+                        started_at=started,
+                        completed_at=utc_now(),
+                        runtime=self.dp6.version,
+                        warnings=(str(exc),),
+                    )
+                )
+                if param_set.requirement is MTAModelRequirement.OPTIONAL:
+                    continue
+                run = run.model_copy(
+                    update={
+                        "status": MTARunStatus.FAILED,
+                        "failure_class": failure,
+                        "model_evidence": tuple(evidence),
+                        "completed_at": utc_now(),
+                    }
+                )
+                self.repo.put_run(run)
+                self.repo.put_dispatch(
+                    dispatch.model_copy(
+                        update={
+                            "status": MTADispatchStatus.FAILED,
+                            "updated_at": utc_now(),
+                        }
+                    )
+                )
+                raise
+            finished = utc_now()
             for credit in result.credits:
                 channel_rows.append(
                     {
@@ -423,6 +515,7 @@ class MTAService:
                         "attribution_share": credit.attribution_share,
                     }
                 )
+            duration_ms = int((finished - started).total_seconds() * 1000)
             evidence.append(
                 MTAModelExecutionEvidence(
                     model_type=param_set.model_id,
@@ -430,10 +523,15 @@ class MTAService:
                     parameters=param_set.parameters,
                     input_mode=plan.input_mode,
                     started_at=started,
-                    completed_at=utc_now(),
+                    completed_at=finished,
+                    runtime=result.runtime,
                     runtime_version=self.dp6.version,
                     row_count=len(result.credits),
                     path_count=len(paths),
+                    input_row_count=len(paths),
+                    input_path_count=len(paths),
+                    output_row_count=len(result.credits),
+                    duration_ms=duration_ms,
                     limitations=tuple(result.limitations),
                 )
             )
@@ -530,6 +628,7 @@ class MTAService:
             grouped_path_count=len(freqs),
             output_refs=required,
             readback_status="VERIFIED",
+            computation_authority=computation,
         )
         self.repo.put_run_receipt(receipt)
         self.repo.put_dispatch(
@@ -537,6 +636,13 @@ class MTAService:
                 update={"status": MTADispatchStatus.COMPLETE, "updated_at": utc_now()}
             )
         )
+        if self.firestore_client is not None:
+            persist_runtime_receipt(
+                self.firestore_client,
+                dispatch_id=dispatch.dispatch_id,
+                receipt=receipt,
+                run=run,
+            )
         try:
             self.compile_results(
                 run_id=run.run_id,

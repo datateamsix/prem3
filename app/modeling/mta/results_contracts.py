@@ -13,7 +13,7 @@ from pydantic import Field
 
 from app.core.contracts import utc_now
 from app.modeling.mta.contracts import FrozenModel
-from app.modeling.mta.runtime_contracts import MTAInputMode
+from app.modeling.mta.runtime_contracts import MTAComputationAuthority, MTAInputMode
 
 RESULTS_COMPILER_VERSION = "mta_results_compiler_v1"
 SENSITIVITY_POLICY_VERSION = "mta_sensitivity_policy_v1"
@@ -496,6 +496,7 @@ class MTAResultsSnapshot(FrozenModel):
     run_receipt_id: str
     result_status: MTAResultStatus
     evidence_authority: MTAEvidenceAuthority
+    computation_authority: MTAComputationAuthority = MTAComputationAuthority.TEST_FAKE_RUNTIME
     conversion_event: str
     conversion_period_start: str
     conversion_period_end: str

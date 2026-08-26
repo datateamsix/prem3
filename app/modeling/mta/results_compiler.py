@@ -528,6 +528,7 @@ class MTAResultsCompiler:
             run_receipt_id=receipt.receipt_id,
             result_status=status,
             evidence_authority=evidence_authority,
+            computation_authority=receipt.computation_authority,
             conversion_event=contract.conversion_event if contract else "",
             conversion_period_start=contract.conversion_period_start if contract else "",
             conversion_period_end=contract.conversion_period_end if contract else "",

@@ -134,4 +134,7 @@ async def launch_mta_dispatch(
         updated = mta.launch_dispatch(dispatch_id=dispatch_id)
     except KeyError as exc:
         raise resource_not_found() from exc
+    except JobLaunchError:
+        security_log("mta.launch_http_failed", dispatch_id=dispatch_id)
+        raise evaluation_dispatch_unavailable() from None
     return LaunchAck(dispatch_id=updated.dispatch_id, status=updated.status.value)

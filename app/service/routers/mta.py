@@ -139,6 +139,7 @@ def _snapshot_view(service: MTAService, snapshot, track_id: str) -> MTAResultsSn
         run_id=snapshot.run_id,
         result_status=snapshot.result_status.value,
         evidence_authority=snapshot.evidence_authority.value,
+        computation_authority=snapshot.computation_authority.value,
         fingerprint=snapshot.fingerprint,
         models_requested=list(snapshot.models_requested),
         models_completed=list(snapshot.models_completed),
@@ -406,6 +407,7 @@ async def get_mta_run_receipt(
         journey_count=receipt.journey_count,
         grouped_path_count=receipt.grouped_path_count,
         limitations=list(receipt.limitations),
+        computation_authority=receipt.computation_authority.value,
     )
 
 

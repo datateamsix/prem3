@@ -3245,6 +3245,18 @@
           "title": "Channel Registry Version",
           "type": "integer"
         },
+        "computation_authority": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Computation Authority"
+        },
         "conversion_event": {
           "title": "Conversion Event",
           "type": "string"
@@ -3369,6 +3381,18 @@
     "app_service_mta_models__MTARunReceiptResponse": {
       "additionalProperties": false,
       "properties": {
+        "computation_authority": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Computation Authority"
+        },
         "fingerprint": {
           "title": "Fingerprint",
           "type": "string"

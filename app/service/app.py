@@ -41,6 +41,8 @@ from app.materialization.service import MaterializationService
 from app.modeling.mmm.dispatch import CloudTasksFitDispatcher
 from app.modeling.mmm.firestore import FirestoreModelingRepository
 from app.modeling.mmm.service import MMMModelingService
+from app.modeling.mta.dispatch import CloudTasksMTADispatcher, FakeMTADispatcher
+from app.modeling.mta.jobs import CloudRunMTAJobLauncher
 from app.modeling.mta.service import MTAService
 from app.publish_execution.model_ready import (
     ModelReadyEvidenceResolver,
@@ -285,7 +287,7 @@ def create_app(
     )
     app.state.mmm_modeling = modeling
     app.state.mmm_fit_launcher = fit_launcher
-    app.state.mta_service = MTAService()
+    app.state.mta_service = _default_mta_stack(cfg, repo)
     app.state.mmm_service_identity_verifier = _mmm_service_identity_verifier(cfg)
     if extended_eda is None:
         if uses_cloud_runtime():
@@ -650,6 +652,36 @@ def _default_mmm_stack(
         location=settings.cloud_region,
         job_name=job_name,
         dispatch_env_var="PREM3_MMM_FIT_DISPATCH_ID",
+    )
+
+
+def _default_mta_stack(settings: Settings, control_plane: ControlPlaneRepository) -> MTAService:
+    if not uses_cloud_runtime():
+        return MTAService()
+    queue = settings.mta_dispatch_queue or settings.evaluation_dispatch_queue
+    launch_url = settings.mta_launch_url
+    audience = settings.mta_launch_audience or settings.evaluation_launch_audience
+    dispatcher_sa = settings.evaluation_dispatcher_sa
+    configured = bool(queue and dispatcher_sa and launch_url and audience)
+    dispatcher = FakeMTADispatcher()
+    if configured:
+        dispatcher = CloudTasksMTADispatcher(
+            project_id=settings.project_id,
+            location=settings.cloud_region,
+            queue=queue or "prem3-evaluation-dispatch",
+            launch_url=launch_url or "",
+            service_account_email=dispatcher_sa or "",
+            audience=audience or "",
+        )
+    launcher = CloudRunMTAJobLauncher(
+        project_id=settings.project_id,
+        location=settings.cloud_region,
+        job_name=settings.mta_worker_job or "prem3-mta-worker",
+    )
+    return MTAService(
+        dispatcher=dispatcher,
+        job_launcher=launcher,
+        firestore_client=getattr(control_plane, "client", None),
     )
 
 

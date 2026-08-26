@@ -21,6 +21,11 @@ from app.modeling.mta.contracts import (
 )
 
 
+class MTAComputationAuthority(StrEnum):
+    REAL_PINNED_RUNTIME = "REAL_PINNED_RUNTIME"
+    TEST_FAKE_RUNTIME = "TEST_FAKE_RUNTIME"
+
+
 class MTAInputMode(StrEnum):
     RAW_JOURNEYS = "RAW_JOURNEYS"
     GROUPED_PATH_FREQUENCY = "GROUPED_PATH_FREQUENCY"
@@ -59,6 +64,14 @@ class MTAFailureClass(StrEnum):
     TIMEOUT = "TIMEOUT"
     INFRASTRUCTURE_ERROR = "INFRASTRUCTURE_ERROR"
     AUTHORIZATION_ERROR = "AUTHORIZATION_ERROR"
+    MTA_RUNTIME_INPUT_ERROR = "MTA_RUNTIME_INPUT_ERROR"
+    MTA_RUNTIME_DP6_API_ERROR = "MTA_RUNTIME_DP6_API_ERROR"
+    MTA_RUNTIME_MODEL_ERROR = "MTA_RUNTIME_MODEL_ERROR"
+    MTA_RUNTIME_INVALID_OUTPUT = "MTA_RUNTIME_INVALID_OUTPUT"
+    MTA_RUNTIME_SHAPLEY_PREFLIGHT_BLOCKED = "MTA_RUNTIME_SHAPLEY_PREFLIGHT_BLOCKED"
+    MTA_RUNTIME_BIGQUERY_WRITE_ERROR = "MTA_RUNTIME_BIGQUERY_WRITE_ERROR"
+    MTA_RUNTIME_READBACK_ERROR = "MTA_RUNTIME_READBACK_ERROR"
+    MTA_FAKE_RUNTIME_NOT_ALLOWED = "MTA_FAKE_RUNTIME_NOT_ALLOWED"
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
 
 
@@ -215,12 +228,18 @@ class MTAModelExecutionEvidence(FrozenModel):
     input_fingerprint: str | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
+    runtime: str | None = None
     runtime_version: str | None = None
     row_count: int | None = None
     path_count: int | None = None
+    input_row_count: int | None = None
+    input_path_count: int | None = None
+    output_row_count: int | None = None
     output_refs: tuple[str, ...] = ()
     output_fingerprint: str | None = None
+    duration_ms: int | None = None
     limitations: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
 
 
 class MTARun(FrozenModel):
@@ -261,6 +280,7 @@ class MTARunReceipt(FrozenModel):
     completed_at: datetime | None = None
     source_commit_sha: str | None = None
     worker_image_digest: str | None = None
+    computation_authority: MTAComputationAuthority = MTAComputationAuthority.TEST_FAKE_RUNTIME
     fingerprint: str
     generated_at: datetime = Field(default_factory=utc_now)
 

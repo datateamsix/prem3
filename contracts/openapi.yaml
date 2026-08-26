@@ -3315,6 +3315,11 @@ components:
         channel_registry_version:
           title: Channel Registry Version
           type: integer
+        computation_authority:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Computation Authority
         conversion_event:
           title: Conversion Event
           type: string
@@ -3394,6 +3399,11 @@ components:
     MTARunReceiptResponse:
       additionalProperties: false
       properties:
+        computation_authority:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Computation Authority
         fingerprint:
           title: Fingerprint
           type: string
