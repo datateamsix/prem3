@@ -1,0 +1,84 @@
+{
+  "class": "LIVE_BQ",
+  "evidence_authority": "SYNTHETIC_DEMO",
+  "computation_authority": "REAL_PINNED_RUNTIME",
+  "result_snapshot_id": "mrs_7cf40a6ab65a458a",
+  "historical_fake_snapshot_id": "mrs_11ec341be2c8486a",
+  "run_id": "mtrun_a0e776bb3efa44f4",
+  "receipt_id": "mrcpt_76097436e7de0c7a08e2",
+  "fingerprint": "e31a30e081ab06e0773add31dc955b70241e499bde369ca6fb6d34c6682886bf",
+  "models_completed": [
+    "FIRST_TOUCH",
+    "LAST_TOUCH",
+    "LAST_NON_DIRECT",
+    "LINEAR",
+    "TIME_DECAY",
+    "POSITION_BASED",
+    "MARKOV",
+    "SHAPLEY"
+  ],
+  "shapley_availability": "AVAILABLE",
+  "shapley_reason": null,
+  "channel_ids": [
+    "ai_search",
+    "direct",
+    "display",
+    "email",
+    "search_organic",
+    "search_paid",
+    "sms",
+    "social_paid"
+  ],
+  "roles": {
+    "ai_search": [
+      "MODEL_SENSITIVE"
+    ],
+    "direct": [
+      "MULTI_ROLE",
+      "MODEL_SENSITIVE"
+    ],
+    "display": [
+      "MODEL_SENSITIVE"
+    ],
+    "email": [],
+    "search_organic": [
+      "MODEL_SENSITIVE"
+    ],
+    "search_paid": [
+      "ASSISTER",
+      "CONVERTER",
+      "MULTI_ROLE",
+      "MODEL_SENSITIVE"
+    ],
+    "sms": [
+      "LOW_OBSERVABILITY"
+    ],
+    "social_paid": [
+      "MODEL_SENSITIVE"
+    ]
+  },
+  "ai_search_present": true,
+  "visualization_kinds": [
+    "ATTRIBUTION_BY_CHANNEL_MODEL",
+    "MODEL_COMPARISON_HEATMAP",
+    "CHANNEL_ROLE_POSITION",
+    "MARKOV_TRANSITION_MATRIX",
+    "MARKOV_REMOVAL_EFFECT",
+    "SHAPLEY_CONTRIBUTION",
+    "TOP_CONVERSION_PATHS",
+    "PATH_LENGTH_DISTRIBUTION",
+    "TIME_TO_CONVERSION_DISTRIBUTION",
+    "MODEL_SENSITIVITY_RANGE"
+  ],
+  "brief_id": "mdib_448b9ff30a58b3262dc7",
+  "journey_count": 88,
+  "source": "modelready-m3.analytics_music_center_synthetic",
+  "date_range": [
+    "2024-09-01",
+    "2024-09-30"
+  ],
+  "fixture_fingerprint": "dc0da8dd92f97a87601b3c0c43099a7b9c95c3169503e65320c97d5a7c6af290",
+  "dp6_version": "1.0.11",
+  "adapter_is_fake": false,
+  "channel_registry_fingerprint": "e117fb47a89eba9ae7915b4f7e062b7e59fd01672046066cef2d125e0475aa2b"
+}
