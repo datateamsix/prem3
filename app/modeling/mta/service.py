@@ -20,6 +20,7 @@ from app.modeling.mta.contracts import (
     MTAReadinessState,
     MTATrackConfig,
 )
+from app.modeling.mta.decision_intelligence import MTADecisionIntelligenceCompiler
 from app.modeling.mta.dispatch import FakeMTADispatcher, MTADispatcher
 from app.modeling.mta.execution import build_analysis_config, compile_execution_plan
 from app.modeling.mta.ga4_discovery import TableLister, discover_ga4_exports
@@ -39,6 +40,12 @@ from app.modeling.mta.readback import InMemoryResultStore
 from app.modeling.mta.readiness import evaluate_mta_readiness
 from app.modeling.mta.receipt import build_run_receipt
 from app.modeling.mta.repository import InMemoryMTARepository
+from app.modeling.mta.results_compiler import MTAResultsCompiler, filter_model_comparison
+from app.modeling.mta.results_contracts import (
+    DECISION_INTELLIGENCE_POLICY_VERSION,
+    MTAChannelDetail,
+    MTAEvidenceAuthority,
+)
 from app.modeling.mta.runtime_contracts import (
     MTADispatchStatus,
     MTAExecutionDispatch,
@@ -64,6 +71,8 @@ class MTAService:
         self.dispatcher = dispatcher or FakeMTADispatcher()
         self.result_store = result_store or InMemoryResultStore()
         self.dp6 = dp6 or DP6MAMAdapter(fake=True)
+        self.results_compiler = MTAResultsCompiler(self.repo, self.result_store)
+        self.di_compiler = MTADecisionIntelligenceCompiler()
 
     def upsert_config(self, *, track_id: str, config: MTATrackConfig) -> MTATrackConfig:
         return self.repo.put_config(track_id=track_id, config=config)
@@ -164,6 +173,18 @@ class MTAService:
                 if item.fingerprint == readiness.input_contract_fingerprint:
                     contract = item
                     break
+        snapshot = None
+        pointers = None
+        compiled = None
+        brief = None
+        if tid:
+            pointers = self.repo.get_result_pointers(tid)
+            snapshot = self.repo.resolve_snapshot(
+                project_id=project_id, cycle_id=cycle_id, track_id=tid
+            )
+            if snapshot is not None:
+                compiled = self.repo.get_compiled_results(snapshot.result_snapshot_id)
+                brief = self.repo.get_brief_for_snapshot(snapshot.result_snapshot_id)
         model = assemble_mta_overview(
             project_id=project_id,
             cycle_id=cycle_id,
@@ -172,24 +193,16 @@ class MTAService:
             config=config,
             readiness=readiness,
             contract=contract,
+            snapshot=snapshot,
+            pointers=pointers,
+            compiled=compiled,
+            brief=brief,
         )
-        latest = self.repo.latest_successful_run.get(tid)
-        if latest:
-            run = self.repo.get_run(latest)
-            if run and run.status is MTARunStatus.SUCCEEDED:
-                model = model.model_copy(
-                    update={
-                        "latest_result_state": "RESULTS_READY",
-                        "attribution_models": tuple(m.value for m in run.model_evidence),
-                    }
-                )
         return model
 
     def mark_configuring(self, track_id: str) -> MTATrackConfig:
         config = self.repo.get_config(track_id) or MTATrackConfig()
-        updated = config.model_copy(
-            update={"domain_stage": MTATrackStage.CONFIGURING}
-        )
+        updated = config.model_copy(update={"domain_stage": MTATrackStage.CONFIGURING})
         return self.repo.put_config(track_id=track_id, config=updated)
 
     def start_run(
@@ -371,8 +384,7 @@ class MTAService:
             [
                 {
                     **j,
-                    "path_string": j.get("path_string")
-                    or path_string(j.get("channels", [])),
+                    "path_string": j.get("path_string") or path_string(j.get("channels", [])),
                     "converted": bool(j.get("converted", True)),
                 }
                 for j in (
@@ -461,12 +473,8 @@ class MTAService:
                     ],
                 )
 
-        self.result_store.write(
-            f"mta_attribution_channel_results_{run.run_id}", channel_rows
-        )
-        self.result_store.write(
-            f"mta_path_frequencies_{run.run_id}", freqs
-        )
+        self.result_store.write(f"mta_attribution_channel_results_{run.run_id}", channel_rows)
+        self.result_store.write(f"mta_path_frequencies_{run.run_id}", freqs)
         self.result_store.write(
             f"mta_run_manifest_{run.run_id}",
             [
@@ -529,4 +537,133 @@ class MTAService:
                 update={"status": MTADispatchStatus.COMPLETE, "updated_at": utc_now()}
             )
         )
+        try:
+            self.compile_results(
+                run_id=run.run_id,
+                evidence_authority=MTAEvidenceAuthority.TEST
+                if run.proof_label != "SYNTHETIC_DEMO"
+                else MTAEvidenceAuthority.SYNTHETIC_DEMO,
+            )
+        except Exception:
+            # Result serving failure must not rewrite MTARun status.
+            pass
         return receipt
+
+    def compile_results(
+        self,
+        *,
+        run_id: str,
+        evidence_authority: MTAEvidenceAuthority = MTAEvidenceAuthority.TEST,
+        di_policy_version: str | None = None,
+    ):
+        compiled = self.results_compiler.compile(run_id, evidence_authority=evidence_authority)
+        brief = self.di_compiler.compile(
+            snapshot=compiled.snapshot,
+            channel_results=compiled.channel_results,
+            roles=compiled.roles,
+            sensitivity=compiled.sensitivity,
+            journeys=compiled.journeys,
+            shapley=compiled.shapley,
+            observability=compiled.snapshot.observability_summary,
+            policy_version=di_policy_version or DECISION_INTELLIGENCE_POLICY_VERSION,
+        )
+        self.repo.put_brief(brief)
+        return compiled, brief
+
+    def get_results(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        cycle_id: str,
+        track_id: str,
+        snapshot_id: str | None = None,
+        run_id: str | None = None,
+        models: tuple[str, ...] | None = None,
+    ):
+        snapshot = self.repo.resolve_snapshot(
+            project_id=project_id,
+            cycle_id=cycle_id,
+            track_id=track_id,
+            snapshot_id=snapshot_id,
+            run_id=run_id,
+        )
+        if snapshot is None:
+            return None
+        run = self.repo.get_run(snapshot.run_id)
+        if run is not None and run.tenant_id != tenant_id:
+            return None
+        compiled = self.repo.get_compiled_results(snapshot.result_snapshot_id)
+        if compiled is None:
+            return None
+        comparison = compiled.comparison
+        if models:
+            comparison = filter_model_comparison(comparison, models)
+        return compiled, comparison
+
+    def get_channel_detail(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        cycle_id: str,
+        track_id: str,
+        channel_id: str,
+        snapshot_id: str | None = None,
+    ) -> MTAChannelDetail | None:
+        packed = self.get_results(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            cycle_id=cycle_id,
+            track_id=track_id,
+            snapshot_id=snapshot_id,
+        )
+        if packed is None:
+            return None
+        compiled, _comparison = packed
+        result = next(
+            (c for c in compiled.channel_results if c.channel_id == channel_id),
+            None,
+        )
+        if result is None:
+            return None
+        pos = next(
+            (p for p in compiled.journeys.position_evidence if p.channel_id == channel_id),
+            None,
+        )
+        sens = next(
+            (s for s in compiled.sensitivity if s.channel_id == channel_id),
+            None,
+        )
+        role = next((r for r in compiled.roles if r.channel_id == channel_id), None)
+        paths = tuple(p for p in compiled.journeys.top_paths if channel_id in p.channels)
+        brief = self.repo.get_brief_for_snapshot(compiled.snapshot.result_snapshot_id)
+        interpretation = None
+        actions: tuple[str, ...] = ()
+        if brief is not None:
+            match = next(
+                (f for f in brief.interpretations if channel_id in f.affected_channels),
+                None,
+            )
+            if match:
+                interpretation = match.statement
+            actions = tuple(
+                r.recommended_action or r.statement
+                for r in brief.recommendations
+                if channel_id in "".join(r.evidence_refs) or channel_id in r.statement
+            )
+        return MTAChannelDetail(
+            channel_id=channel_id,
+            channel_display_name=result.channel_display_name,
+            observed_role=tuple(lab.value for lab in role.labels) if role else (),
+            position=pos,
+            channel_result=result,
+            sensitivity=sens,
+            markov_removal_effect=result.markov_removal_effect,
+            shapley_share=result.shapley_share,
+            top_paths_containing_channel=paths,
+            limitations=result.limitations,
+            interpretation=interpretation,
+            recommended_next_actions=actions,
+            evidence_refs=result.evidence_refs,
+        )

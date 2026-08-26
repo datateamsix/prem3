@@ -54,6 +54,7 @@ REQUIRED_ASSET_IDS = (
     "channel_grouping_current",
     "create_operational_tables_v1",
     "create_run_output_tables_v1",
+    "create_result_summary_tables_v1",
     "ga4_sessions_last_click_v1",
     "ga4_sessions_collected_fallback_v1",
     "merge_sessions_v1",

@@ -46,6 +46,15 @@ assets:
     required_template_parameters: [project_id, modeling_dataset]
     dependencies: [create_operational_tables_v1]
 
+  - id: create_result_summary_tables_v1
+    type: BIGQUERY_DDL
+    version: "1"
+    path: sql/mta/ddl/create_result_summary_tables_v1.sql.j2
+    approval: AUTO_SAFE_IF_WITHIN_BOUND_MODELING_DATASET
+    approval_class: AUTO_SAFE_IF_WITHIN_BOUND_MODELING_DATASET
+    required_template_parameters: [project_id, modeling_dataset]
+    dependencies: [create_run_output_tables_v1]
+
   - id: ga4_sessions_last_click_v1
     type: BIGQUERY_SOURCE_QUERY
     version: "1"

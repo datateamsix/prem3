@@ -15,7 +15,8 @@ class ChannelValidationError(ValueError):
 def assert_channel_id_in_registry(channel_id: str, registry: ChannelRegistry) -> None:
     if channel_id not in registry.channel_ids():
         raise ChannelValidationError(
-            f"Unknown channel_id {channel_id!r} is not in registry v{registry.channel_registry_version}."
+            f"Unknown channel_id {channel_id!r} is not in "
+            f"registry v{registry.channel_registry_version}."
         )
 
 

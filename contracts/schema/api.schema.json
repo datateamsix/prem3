@@ -2907,6 +2907,13 @@
           "default": null,
           "title": "Channel Grouping Version"
         },
+        "channels_needing_review": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Channels Needing Review",
+          "type": "array"
+        },
         "conversion_event": {
           "anyOf": [
             {
@@ -2942,6 +2949,18 @@
           ],
           "default": null,
           "title": "Conversion Period Start"
+        },
+        "current_result_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Result Snapshot Id"
         },
         "cycle_id": {
           "title": "Cycle Id",
@@ -2996,6 +3015,18 @@
           "default": null,
           "title": "Identity Strategy"
         },
+        "latest_result_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Result Snapshot Id"
+        },
         "latest_result_state": {
           "anyOf": [
             {
@@ -3020,8 +3051,39 @@
           "default": null,
           "title": "Lookback Window Days"
         },
+        "model_sensitivity_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Sensitivity Summary"
+        },
+        "models_available": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Models Available",
+          "type": "array"
+        },
         "next_action": {
           "$ref": "#/$defs/app_service_mta_models__MTAOverviewNextActionView"
+        },
+        "observability_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observability Status"
         },
         "project_id": {
           "title": "Project Id",
@@ -3042,6 +3104,13 @@
           ],
           "default": null,
           "title": "Settlement Policy"
+        },
+        "top_verified_findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Top Verified Findings",
+          "type": "array"
         },
         "track_id": {
           "anyOf": [
@@ -3151,6 +3220,150 @@
         "fingerprint"
       ],
       "title": "MTAReadinessResponse",
+      "type": "object"
+    },
+    "app_service_mta_models__MTAResultsSnapshotView": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_version": {
+          "title": "Adapter Version",
+          "type": "string"
+        },
+        "channel_grouping_fingerprint": {
+          "title": "Channel Grouping Fingerprint",
+          "type": "string"
+        },
+        "channel_grouping_version": {
+          "title": "Channel Grouping Version",
+          "type": "string"
+        },
+        "channel_registry_fingerprint": {
+          "title": "Channel Registry Fingerprint",
+          "type": "string"
+        },
+        "channel_registry_version": {
+          "title": "Channel Registry Version",
+          "type": "integer"
+        },
+        "conversion_event": {
+          "title": "Conversion Event",
+          "type": "string"
+        },
+        "conversion_period_end": {
+          "title": "Conversion Period End",
+          "type": "string"
+        },
+        "conversion_period_start": {
+          "title": "Conversion Period Start",
+          "type": "string"
+        },
+        "current_result_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Result Snapshot Id"
+        },
+        "evidence_authority": {
+          "title": "Evidence Authority",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "latest_result_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Result Snapshot Id"
+        },
+        "limitations": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "models_completed": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Models Completed",
+          "type": "array"
+        },
+        "models_requested": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Models Requested",
+          "type": "array"
+        },
+        "observability_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observability Status"
+        },
+        "result_snapshot_id": {
+          "title": "Result Snapshot Id",
+          "type": "string"
+        },
+        "result_status": {
+          "title": "Result Status",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_cutoff": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Cutoff"
+        }
+      },
+      "required": [
+        "result_snapshot_id",
+        "run_id",
+        "result_status",
+        "evidence_authority",
+        "fingerprint",
+        "conversion_event",
+        "conversion_period_start",
+        "conversion_period_end",
+        "channel_registry_version",
+        "channel_registry_fingerprint",
+        "channel_grouping_version",
+        "channel_grouping_fingerprint",
+        "adapter_version"
+      ],
+      "title": "MTAResultsSnapshotView",
       "type": "object"
     },
     "app_service_mta_models__MTARunReceiptResponse": {
@@ -4763,6 +4976,9 @@
     },
     {
       "$ref": "#/$defs/app_service_mta_models__MTARunReceiptResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTAResultsSnapshotView"
     }
   ],
   "title": "PreM3 prem3-api presentation contracts"

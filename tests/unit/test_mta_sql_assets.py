@@ -23,6 +23,7 @@ def test_required_sql_templates_exist() -> None:
         "sql/mta/udf/channel_grouping_current.sql.j2",
         "sql/mta/ddl/create_operational_tables_v1.sql.j2",
         "sql/mta/ddl/create_run_output_tables_v1.sql.j2",
+        "sql/mta/ddl/create_result_summary_tables_v1.sql.j2",
         "sql/mta/source/ga4_sessions_last_click_v1.sql.j2",
         "sql/mta/source/ga4_sessions_collected_fallback_v1.sql.j2",
         "sql/mta/dml/merge_sessions_v1.sql.j2",

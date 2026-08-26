@@ -46,12 +46,6 @@ from app.service.mmm_models import (
     MMMSummaryResponse,
     ModelVersionResponse,
 )
-from app.service.mta_models import (
-    MTAOverviewResponse,
-    MTAReadinessResponse,
-    MTARunReceiptResponse,
-    MTARunResponse,
-)
 from app.service.models import (
     BigQueryBindingResponse,
     BillingSessionResponse,
@@ -78,6 +72,13 @@ from app.service.models import (
     WebhookAckResponse,
     WorkspaceListResponse,
     WorkspaceResponse,
+)
+from app.service.mta_models import (
+    MTAOverviewResponse,
+    MTAReadinessResponse,
+    MTAResultsSnapshotView,
+    MTARunReceiptResponse,
+    MTARunResponse,
 )
 from app.service.project_models import (
     BusinessIqOverviewReadModel,
@@ -247,6 +248,7 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             MTAReadinessResponse,
             MTARunResponse,
             MTARunReceiptResponse,
+            MTAResultsSnapshotView,
         ),
         composition="catalog",
     ),

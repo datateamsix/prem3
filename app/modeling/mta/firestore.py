@@ -13,6 +13,11 @@ from app.modeling.mta.contracts import (
     MTAReadinessReceipt,
     MTATrackConfig,
 )
+from app.modeling.mta.results_contracts import (
+    MTADecisionIntelligenceBrief,
+    MTAResultPointers,
+    MTAResultSnapshotMetadata,
+)
 
 COL_TENANTS = "tenants"
 COL_WORKSPACES = "workspaces"
@@ -48,9 +53,7 @@ class FirestoreMTARepository:
     def _get(
         self, tenant_id: str, workspace_id: str, collection: str, doc_id: str, model_type: Any
     ):
-        snap = (
-            self._ws(tenant_id, workspace_id).collection(collection).document(doc_id).get()
-        )
+        snap = self._ws(tenant_id, workspace_id).collection(collection).document(doc_id).get()
         if not snap.exists:
             return None
         return document_to_model(model_type, snap.to_dict())
@@ -102,9 +105,7 @@ class FirestoreMTARepository:
     def get_readiness(
         self, *, tenant_id: str, project_id: str, track_id: str
     ) -> MTAReadinessReceipt | None:
-        return self._get(
-            tenant_id, project_id, "mta_readiness", track_id, MTAReadinessReceipt
-        )
+        return self._get(tenant_id, project_id, "mta_readiness", track_id, MTAReadinessReceipt)
 
     def put_grouping(
         self, *, tenant_id: str, project_id: str, grouping: MTAChannelGrouping
@@ -113,12 +114,8 @@ class FirestoreMTARepository:
             tenant_id=tenant_id, project_id=project_id, version=grouping.version
         )
         if existing is not None and existing.fingerprint != grouping.fingerprint:
-            raise ValueError(
-                f"Cannot mutate channel grouping version {grouping.version}."
-            )
-        self._put(
-            tenant_id, project_id, "mta_channel_groupings", grouping.version, grouping
-        )
+            raise ValueError(f"Cannot mutate channel grouping version {grouping.version}.")
+        self._put(tenant_id, project_id, "mta_channel_groupings", grouping.version, grouping)
         self._index("mta_channel_grouping", grouping.version, tenant_id, project_id)
         return grouping
 
@@ -139,10 +136,78 @@ class FirestoreMTARepository:
     def put_provisioning_receipt(
         self, *, tenant_id: str, project_id: str, receipt: MTAProvisioningReceipt
     ) -> MTAProvisioningReceipt:
-        self._put(
-            tenant_id, project_id, "mta_provisioning_receipts", receipt.receipt_id, receipt
-        )
-        self._index(
-            "mta_provisioning_receipt", receipt.receipt_id, tenant_id, project_id
-        )
+        self._put(tenant_id, project_id, "mta_provisioning_receipts", receipt.receipt_id, receipt)
+        self._index("mta_provisioning_receipt", receipt.receipt_id, tenant_id, project_id)
         return receipt
+
+    def put_result_snapshot_metadata(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        metadata: MTAResultSnapshotMetadata,
+    ) -> MTAResultSnapshotMetadata:
+        payload = model_to_document(metadata)
+        if any(
+            key in payload
+            for key in (
+                "channel_results",
+                "rows",
+                "visualizations",
+                "journeys",
+                "transitions",
+            )
+        ):
+            raise ValueError("Firestore MTA result metadata must stay compact.")
+        self._put(
+            tenant_id,
+            project_id,
+            "mta_result_snapshots",
+            metadata.result_snapshot_id,
+            metadata,
+        )
+        self._index("mta_result_snapshot", metadata.result_snapshot_id, tenant_id, project_id)
+        return metadata
+
+    def get_result_snapshot_metadata(
+        self, *, tenant_id: str, project_id: str, result_snapshot_id: str
+    ) -> MTAResultSnapshotMetadata | None:
+        return self._get(
+            tenant_id,
+            project_id,
+            "mta_result_snapshots",
+            result_snapshot_id,
+            MTAResultSnapshotMetadata,
+        )
+
+    def put_result_pointers(
+        self, *, tenant_id: str, project_id: str, pointers: MTAResultPointers
+    ) -> MTAResultPointers:
+        self._put(tenant_id, project_id, "mta_result_pointers", pointers.track_id, pointers)
+        self._index("mta_result_pointers", pointers.track_id, tenant_id, project_id)
+        return pointers
+
+    def get_result_pointers(
+        self, *, tenant_id: str, project_id: str, track_id: str
+    ) -> MTAResultPointers | None:
+        return self._get(tenant_id, project_id, "mta_result_pointers", track_id, MTAResultPointers)
+
+    def put_brief_metadata(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        brief: MTADecisionIntelligenceBrief,
+    ) -> dict[str, Any]:
+        compact = {
+            "brief_id": brief.brief_id,
+            "result_snapshot_id": brief.result_snapshot_id,
+            "policy_version": brief.policy_version,
+            "fingerprint": brief.fingerprint,
+            "generated_at": brief.generated_at.isoformat(),
+        }
+        self._ws(tenant_id, project_id).collection("mta_decision_briefs").document(
+            brief.brief_id
+        ).set(compact)
+        self._index("mta_decision_brief", brief.brief_id, tenant_id, project_id)
+        return compact

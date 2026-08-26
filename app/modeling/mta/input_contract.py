@@ -33,7 +33,9 @@ def build_input_contract(
     lookback_window_days: int = 30,
     identity_strategy: IdentityStrategy = IdentityStrategy.PSEUDO_ID_ONLY,
     sessionization_policy: SessionizationPolicy = SessionizationPolicy.GA4_SESSION_ID_V1,
-    traffic_source_policy: SessionTrafficSourcePolicy = SessionTrafficSourcePolicy.GA4_SESSION_LAST_CLICK_V1,
+    traffic_source_policy: SessionTrafficSourcePolicy = (
+        SessionTrafficSourcePolicy.GA4_SESSION_LAST_CLICK_V1
+    ),
     settlement_policy: GA4SettlementPolicy = GA4SettlementPolicy.DAILY_SETTLED,
     direct_treatment_policy: DirectTreatmentPolicy = DirectTreatmentPolicy.KEEP_DIRECT,
     conversion_value_strategy: ConversionValueStrategy = ConversionValueStrategy.NONE,

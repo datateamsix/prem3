@@ -112,7 +112,9 @@ class ShapleyPreflightState(StrEnum):
 class JourneyDefinition(FrozenModel):
     conversion_closes_journey: bool = True
     inactivity_break_hours: int | None = None
-    multiple_conversions_policy: MultipleConversionsPolicy = MultipleConversionsPolicy.ALLOW_REPEATED
+    multiple_conversions_policy: MultipleConversionsPolicy = (
+        MultipleConversionsPolicy.ALLOW_REPEATED
+    )
     include_nonconverting_paths: bool = False
     lookback_window_days: int = 30
     maximum_touchpoints: int | None = None
@@ -334,6 +336,13 @@ class MTAOverviewReadModel(FrozenModel):
     channel_grouping_version: str | None = None
     attribution_models: tuple[str, ...] = ()
     latest_result_state: str | None = None
+    latest_result_snapshot_id: str | None = None
+    current_result_snapshot_id: str | None = None
+    models_available: tuple[str, ...] = ()
+    top_verified_findings: tuple[str, ...] = ()
+    channels_needing_review: tuple[str, ...] = ()
+    model_sensitivity_summary: str | None = None
+    observability_status: str | None = None
     settlement_policy: GA4SettlementPolicy | None = None
     epistemic_label: str = "Observable journey attribution"
     next_action: MTAOverviewNextAction

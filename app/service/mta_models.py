@@ -33,6 +33,13 @@ class MTAOverviewResponse(ApiModel):
     channel_grouping_version: str | None = None
     attribution_models: list[str] = Field(default_factory=list)
     latest_result_state: str | None = None
+    latest_result_snapshot_id: str | None = None
+    current_result_snapshot_id: str | None = None
+    models_available: list[str] = Field(default_factory=list)
+    top_verified_findings: list[str] = Field(default_factory=list)
+    channels_needing_review: list[str] = Field(default_factory=list)
+    model_sensitivity_summary: str | None = None
+    observability_status: str | None = None
     settlement_policy: str | None = None
     epistemic_label: str = "Observable journey attribution"
     next_action: MTAOverviewNextActionView
@@ -154,3 +161,31 @@ class DisableScheduleRequest(ApiModel):
 class ParameterExplanationsView(ApiModel):
     explanations: dict[str, str] = Field(default_factory=dict)
     models: list[dict] = Field(default_factory=list)
+
+
+class MTAResultsSnapshotView(ApiModel):
+    result_snapshot_id: str
+    run_id: str
+    result_status: str
+    evidence_authority: str
+    fingerprint: str
+    models_requested: list[str] = Field(default_factory=list)
+    models_completed: list[str] = Field(default_factory=list)
+    conversion_event: str
+    conversion_period_start: str
+    conversion_period_end: str
+    channel_registry_version: int
+    channel_registry_fingerprint: str
+    channel_grouping_version: str
+    channel_grouping_fingerprint: str
+    observability_status: str | None = None
+    latest_result_snapshot_id: str | None = None
+    current_result_snapshot_id: str | None = None
+    source_cutoff: str | None = None
+    adapter_version: str
+    limitations: list[dict] = Field(default_factory=list)
+
+
+class MTAResultsNotAvailableView(ApiModel):
+    result_status: str = "NOT_AVAILABLE"
+    detail: str = "No verified MTA result snapshot is available."

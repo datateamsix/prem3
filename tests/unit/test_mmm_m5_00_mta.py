@@ -7,9 +7,10 @@ from datetime import date
 import pytest
 from fastapi.testclient import TestClient
 
+from app.control_plane.models import MeasurementTrackStatus
 from app.modeling.mta.channel_grouping import (
-    ChannelGroupingValidationError,
     DEFAULT_MUSIC_CENTER_RULES,
+    ChannelGroupingValidationError,
     assert_grouping_version_immutable,
     build_channel_grouping,
     compile_channel_grouping_sql,
@@ -27,8 +28,8 @@ from app.modeling.mta.input_contract import build_input_contract
 from app.modeling.mta.language import CausalLanguageError, assert_no_causal_mta_language
 from app.modeling.mta.models_registry import all_model_specs, get_model_spec
 from app.modeling.mta.policies import (
-    settled_through_date,
     select_traffic_source_policy,
+    settled_through_date,
 )
 from app.modeling.mta.provisioning import (
     compile_mta_provisioning_plan,
@@ -38,9 +39,8 @@ from app.modeling.mta.readiness import evaluate_mta_readiness
 from app.modeling.mta.service import MTAService
 from app.modeling.mta.shapley_preflight import run_shapley_preflight
 from app.modeling.mta.states import MTATrackStage
-from app.project.tracks import mta_availability
-from app.control_plane.models import MeasurementTrackStatus
 from app.project.enums import CapabilityAvailability, NextActionType
+from app.project.tracks import mta_availability
 
 
 def test_settlement_excludes_recent_days():

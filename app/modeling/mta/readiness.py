@@ -170,7 +170,8 @@ def evaluate_mta_readiness(
         if not blocking and contract is not None
         else MTAReadinessState.NOT_READY
     )
-    receipt_id = f"mta_ready_{canonical_fingerprint({'track': track_id, 'state': state.value})[:20]}"
+    receipt_fp = canonical_fingerprint({"track": track_id, "state": state.value})
+    receipt_id = f"mta_ready_{receipt_fp[:20]}"
     payload = {
         "state": state.value,
         "blocking": blocking,

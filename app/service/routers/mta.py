@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.config import settings
 from app.control_plane.models import Feature
@@ -16,6 +16,16 @@ from app.modeling.mta.parameter_explanations import (
     parameter_explanations,
 )
 from app.modeling.mta.provisioning_service import MTAProvisioningService
+from app.modeling.mta.results_contracts import (
+    MarkovAttributionEvidence,
+    MTAChannelDetail,
+    MTAChannelResult,
+    MTADecisionIntelligenceBrief,
+    MTAJourneySummary,
+    MTAModelComparison,
+    MTAVisualization,
+    ShapleyAttributionEvidence,
+)
 from app.modeling.mta.service import MTAService
 from app.modeling.mta.sql.registry import cached_sql_asset_manifest
 from app.modeling.mta.sql.renderer import render_sql_asset
@@ -34,6 +44,8 @@ from app.service.mta_models import (
     MTAProvisioningPlanView,
     MTAProvisioningReceiptView,
     MTAReadinessResponse,
+    MTAResultsNotAvailableView,
+    MTAResultsSnapshotView,
     MTARunReceiptResponse,
     MTARunResponse,
     ParameterExplanationsView,
@@ -75,6 +87,13 @@ def _overview_response(model) -> MTAOverviewResponse:
         channel_grouping_version=model.channel_grouping_version,
         attribution_models=list(model.attribution_models),
         latest_result_state=model.latest_result_state,
+        latest_result_snapshot_id=model.latest_result_snapshot_id,
+        current_result_snapshot_id=model.current_result_snapshot_id,
+        models_available=list(model.models_available),
+        top_verified_findings=list(model.top_verified_findings),
+        channels_needing_review=list(model.channels_needing_review),
+        model_sensitivity_summary=model.model_sensitivity_summary,
+        observability_status=model.observability_status,
         settlement_policy=None
         if model.settlement_policy is None
         else model.settlement_policy.value,
@@ -87,6 +106,57 @@ def _overview_response(model) -> MTAOverviewResponse:
         ),
         attention=list(model.attention),
         acceptance_computed_by_server=model.acceptance_computed_by_server,
+    )
+
+
+def _parse_models(raw: str | None) -> tuple[str, ...] | None:
+    if not raw:
+        return None
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _require_mta_track(
+    *,
+    tenant: TenantContext,
+    repo: ControlPlaneRepository,
+    project_id: str,
+    cycle_id: str,
+):
+    workspace = repo.get_workspace_for_tenant(tenant_id=tenant.tenant_id, workspace_id=project_id)
+    if workspace is None:
+        raise resource_not_found()
+    tracks = ensure_tracks_for_cycle(repo, workspace=workspace, cycle_id=cycle_id)
+    mta_track = next((t for t in tracks if t.track_type.value == "MTA"), None)
+    if mta_track is None:
+        raise resource_not_found()
+    return mta_track
+
+
+def _snapshot_view(service: MTAService, snapshot, track_id: str) -> MTAResultsSnapshotView:
+    pointers = service.repo.get_result_pointers(track_id)
+    return MTAResultsSnapshotView(
+        result_snapshot_id=snapshot.result_snapshot_id,
+        run_id=snapshot.run_id,
+        result_status=snapshot.result_status.value,
+        evidence_authority=snapshot.evidence_authority.value,
+        fingerprint=snapshot.fingerprint,
+        models_requested=list(snapshot.models_requested),
+        models_completed=list(snapshot.models_completed),
+        conversion_event=snapshot.conversion_event,
+        conversion_period_start=snapshot.conversion_period_start,
+        conversion_period_end=snapshot.conversion_period_end,
+        channel_registry_version=snapshot.channel_registry_version,
+        channel_registry_fingerprint=snapshot.channel_registry_fingerprint,
+        channel_grouping_version=snapshot.channel_grouping_version,
+        channel_grouping_fingerprint=snapshot.channel_grouping_fingerprint,
+        observability_status=snapshot.observability_summary.status.value,
+        latest_result_snapshot_id=None if pointers is None else pointers.latest_result_snapshot_id,
+        current_result_snapshot_id=None
+        if pointers is None
+        else pointers.current_result_snapshot_id,
+        source_cutoff=snapshot.source_cutoff,
+        adapter_version=snapshot.adapter_version,
+        limitations=[lim.model_dump(mode="json") for lim in snapshot.limitations],
     )
 
 
@@ -104,16 +174,16 @@ async def get_cycle_mta(
 ) -> MTAOverviewResponse:
     require_tenant()
     require_feature(repo, Feature.MTA)
-    workspace = repo.get_workspace_for_tenant(
-        tenant_id=tenant.tenant_id, workspace_id=project_id
-    )
+    workspace = repo.get_workspace_for_tenant(tenant_id=tenant.tenant_id, workspace_id=project_id)
     if workspace is None:
         raise resource_not_found()
     tracks = ensure_tracks_for_cycle(repo, workspace=workspace, cycle_id=cycle_id)
     mta_track = next((t for t in tracks if t.track_type.value == "MTA"), None)
-    foundation = repo.get_data_foundation_receipt(
-        tenant_id=tenant.tenant_id, workspace_id=project_id
-    ) if hasattr(repo, "get_data_foundation_receipt") else None
+    foundation = (
+        repo.get_data_foundation_receipt(tenant_id=tenant.tenant_id, workspace_id=project_id)
+        if hasattr(repo, "get_data_foundation_receipt")
+        else None
+    )
     # Fall back: treat missing receipt helper as not ready unless home path provides it.
     foundation_ready = False
     if foundation is not None:
@@ -124,9 +194,7 @@ async def get_cycle_mta(
     df_service = getattr(request.app.state, "data_foundation", None)
     if df_service is not None:
         try:
-            env = df_service.get_environment(
-                tenant_id=tenant.tenant_id, workspace_id=project_id
-            )
+            env = df_service.get_environment(tenant_id=tenant.tenant_id, workspace_id=project_id)
             readiness = getattr(env, "readiness", None) if env is not None else None
             foundation_ready = str(readiness) == "DATA_FOUNDATION_READY"
         except Exception:
@@ -157,9 +225,7 @@ async def evaluate_cycle_mta_readiness(
 ) -> MTAReadinessResponse:
     require_tenant()
     require_feature(repo, Feature.MTA)
-    workspace = repo.get_workspace_for_tenant(
-        tenant_id=tenant.tenant_id, workspace_id=project_id
-    )
+    workspace = repo.get_workspace_for_tenant(tenant_id=tenant.tenant_id, workspace_id=project_id)
     if workspace is None:
         raise resource_not_found()
     tracks = ensure_tracks_for_cycle(repo, workspace=workspace, cycle_id=cycle_id)
@@ -218,9 +284,7 @@ async def create_mta_run(
     del body
     require_tenant()
     require_feature(repo, Feature.MTA)
-    workspace = repo.get_workspace_for_tenant(
-        tenant_id=tenant.tenant_id, workspace_id=project_id
-    )
+    workspace = repo.get_workspace_for_tenant(tenant_id=tenant.tenant_id, workspace_id=project_id)
     if workspace is None:
         raise resource_not_found()
     tracks = ensure_tracks_for_cycle(repo, workspace=workspace, cycle_id=cycle_id)
@@ -384,9 +448,7 @@ async def get_mta_provisioning_plan(
 ) -> MTAProvisioningPlanView:
     require_tenant()
     require_feature(repo, Feature.MTA)
-    workspace = repo.get_workspace_for_tenant(
-        tenant_id=tenant.tenant_id, workspace_id=project_id
-    )
+    workspace = repo.get_workspace_for_tenant(tenant_id=tenant.tenant_id, workspace_id=project_id)
     if workspace is None:
         raise resource_not_found()
     tracks = ensure_tracks_for_cycle(repo, workspace=workspace, cycle_id=cycle_id)
@@ -599,3 +661,271 @@ async def get_parameter_explanations(
         explanations=parameter_explanations(),
         models=list_model_explanations(),
     )
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/results",
+    operation_id="getProjectCycleMtaResults",
+    response_model=MTAResultsSnapshotView | MTAResultsNotAvailableView,
+)
+async def get_mta_results(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    snapshot_id: Annotated[str | None, Query()] = None,
+    run_id: Annotated[str | None, Query()] = None,
+    models: Annotated[str | None, Query()] = None,
+) -> MTAResultsSnapshotView | MTAResultsNotAvailableView:
+    del models
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    track = _require_mta_track(tenant=tenant, repo=repo, project_id=project_id, cycle_id=cycle_id)
+    packed = _mta(request).get_results(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=track.track_id,
+        snapshot_id=snapshot_id,
+        run_id=run_id,
+    )
+    if packed is None:
+        return MTAResultsNotAvailableView()
+    compiled, _comparison = packed
+    return _snapshot_view(_mta(request), compiled.snapshot, track.track_id)
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/results/channels",
+    operation_id="getProjectCycleMtaResultChannels",
+    response_model=list[MTAChannelResult],
+)
+async def get_mta_result_channels(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    snapshot_id: Annotated[str | None, Query()] = None,
+    models: Annotated[str | None, Query()] = None,
+) -> list[MTAChannelResult]:
+    del models
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    track = _require_mta_track(tenant=tenant, repo=repo, project_id=project_id, cycle_id=cycle_id)
+    packed = _mta(request).get_results(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=track.track_id,
+        snapshot_id=snapshot_id,
+    )
+    if packed is None:
+        raise resource_not_found()
+    compiled, _ = packed
+    return list(compiled.channel_results)
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/results/channels/{channel_id}",
+    operation_id="getProjectCycleMtaResultChannelDetail",
+    response_model=MTAChannelDetail,
+)
+async def get_mta_result_channel_detail(
+    project_id: str,
+    cycle_id: str,
+    channel_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    snapshot_id: Annotated[str | None, Query()] = None,
+) -> MTAChannelDetail:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    track = _require_mta_track(tenant=tenant, repo=repo, project_id=project_id, cycle_id=cycle_id)
+    detail = _mta(request).get_channel_detail(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=track.track_id,
+        channel_id=channel_id,
+        snapshot_id=snapshot_id,
+    )
+    if detail is None:
+        raise resource_not_found()
+    return detail
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/results/model-comparison",
+    operation_id="getProjectCycleMtaModelComparison",
+    response_model=MTAModelComparison,
+)
+async def get_mta_model_comparison(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    models: Annotated[str | None, Query()] = None,
+    snapshot_id: Annotated[str | None, Query()] = None,
+) -> MTAModelComparison:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    track = _require_mta_track(tenant=tenant, repo=repo, project_id=project_id, cycle_id=cycle_id)
+    packed = _mta(request).get_results(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=track.track_id,
+        snapshot_id=snapshot_id,
+        models=_parse_models(models),
+    )
+    if packed is None:
+        raise resource_not_found()
+    _compiled, comparison = packed
+    return comparison
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/results/markov",
+    operation_id="getProjectCycleMtaMarkovResults",
+    response_model=MarkovAttributionEvidence,
+)
+async def get_mta_markov_results(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    snapshot_id: Annotated[str | None, Query()] = None,
+) -> MarkovAttributionEvidence:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    track = _require_mta_track(tenant=tenant, repo=repo, project_id=project_id, cycle_id=cycle_id)
+    packed = _mta(request).get_results(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=track.track_id,
+        snapshot_id=snapshot_id,
+    )
+    if packed is None or packed[0].markov is None:
+        raise resource_not_found()
+    return packed[0].markov
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/results/shapley",
+    operation_id="getProjectCycleMtaShapleyResults",
+    response_model=ShapleyAttributionEvidence,
+)
+async def get_mta_shapley_results(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    snapshot_id: Annotated[str | None, Query()] = None,
+) -> ShapleyAttributionEvidence:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    track = _require_mta_track(tenant=tenant, repo=repo, project_id=project_id, cycle_id=cycle_id)
+    packed = _mta(request).get_results(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=track.track_id,
+        snapshot_id=snapshot_id,
+    )
+    if packed is None:
+        raise resource_not_found()
+    return packed[0].shapley
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/results/journeys",
+    operation_id="getProjectCycleMtaJourneySummary",
+    response_model=MTAJourneySummary,
+)
+async def get_mta_journey_summary(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    snapshot_id: Annotated[str | None, Query()] = None,
+) -> MTAJourneySummary:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    track = _require_mta_track(tenant=tenant, repo=repo, project_id=project_id, cycle_id=cycle_id)
+    packed = _mta(request).get_results(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=track.track_id,
+        snapshot_id=snapshot_id,
+    )
+    if packed is None:
+        raise resource_not_found()
+    return packed[0].journeys
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/results/visualizations",
+    operation_id="getProjectCycleMtaVisualizations",
+    response_model=list[MTAVisualization],
+)
+async def get_mta_visualizations(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    snapshot_id: Annotated[str | None, Query()] = None,
+) -> list[MTAVisualization]:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    track = _require_mta_track(tenant=tenant, repo=repo, project_id=project_id, cycle_id=cycle_id)
+    packed = _mta(request).get_results(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=track.track_id,
+        snapshot_id=snapshot_id,
+    )
+    if packed is None:
+        raise resource_not_found()
+    return list(packed[0].visualizations)
+
+
+@router.get(
+    "/projects/{project_id}/cycles/{cycle_id}/mta/decision-brief",
+    operation_id="getProjectCycleMtaDecisionBrief",
+    response_model=MTADecisionIntelligenceBrief,
+)
+async def get_mta_decision_brief(
+    project_id: str,
+    cycle_id: str,
+    request: Request,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    snapshot_id: Annotated[str | None, Query()] = None,
+) -> MTADecisionIntelligenceBrief:
+    require_tenant()
+    require_feature(repo, Feature.MTA)
+    track = _require_mta_track(tenant=tenant, repo=repo, project_id=project_id, cycle_id=cycle_id)
+    packed = _mta(request).get_results(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        cycle_id=cycle_id,
+        track_id=track.track_id,
+        snapshot_id=snapshot_id,
+    )
+    if packed is None:
+        raise resource_not_found()
+    brief = _mta(request).repo.get_brief_for_snapshot(packed[0].snapshot.result_snapshot_id)
+    if brief is None:
+        raise resource_not_found()
+    return brief

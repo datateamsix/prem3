@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
 
 from app.domain.channels import (
     AI_SEARCH_CHANNEL_ID,
@@ -539,7 +538,6 @@ def test_dp6_adapter_models(model_id: AttributionModelId):
 
 
 def test_dp6_nan_inf_rejected():
-    adapter = DP6MAMAdapter(fake=True)
     # Force finite check via helper
     with pytest.raises(DP6FiniteValueError):
         from app.modeling.mta.adapters.dp6_mam_v1_0_11 import _reject_non_finite

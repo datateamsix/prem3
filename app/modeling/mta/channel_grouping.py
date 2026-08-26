@@ -35,7 +35,10 @@ def compile_channel_grouping_sql(grouping: MTAChannelGrouping) -> str:
         lines.append(
             f"  WHEN {' AND '.join(preds)} THEN '{rule.canonical_channel_id}'"
         )
-    lines.append(f"  WHEN LOWER(medium) = '(none)' OR LOWER(source) = '(direct)' THEN '{grouping.direct_channel_id}'")
+    lines.append(
+        "  WHEN LOWER(medium) = '(none)' OR LOWER(source) = '(direct)' "
+        f"THEN '{grouping.direct_channel_id}'"
+    )
     lines.append(f"  ELSE '{grouping.fallback_channel_id}'")
     lines.append("END")
     return "\n".join(lines)

@@ -128,7 +128,8 @@
         "MTAOverviewResponse",
         "MTAReadinessResponse",
         "MTARunResponse",
-        "MTARunReceiptResponse"
+        "MTARunReceiptResponse",
+        "MTAResultsSnapshotView"
       ],
       "python_module": "app.service.models",
       "python_qualnames": [
@@ -172,9 +173,10 @@
         "app.service.mta_models.MTAOverviewResponse",
         "app.service.mta_models.MTAReadinessResponse",
         "app.service.mta_models.MTARunResponse",
-        "app.service.mta_models.MTARunReceiptResponse"
+        "app.service.mta_models.MTARunReceiptResponse",
+        "app.service.mta_models.MTAResultsSnapshotView"
       ],
-      "sha256": "dc2b63f2dd6742d474b66aca43e7f36af07adbf08c96354f1bfb1339c6ea847d"
+      "sha256": "b0b95890bc11ab1f84395101e0affecbbaaf6399f0faaefc2f166acabd9f5263"
     }
   ],
   "hash_algorithm": "sha256",

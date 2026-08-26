@@ -576,6 +576,12 @@ components:
       - question
       title: ClarificationCreateRequest
       type: object
+    ComparisonMetric:
+      enum:
+      - ATTRIBUTION_SHARE
+      - ATTRIBUTED_CREDIT
+      title: ComparisonMetric
+      type: string
     CompileFoundationPlanRequest:
       additionalProperties: false
       properties:
@@ -1141,6 +1147,119 @@ components:
           - type: 'null'
           title: Reason
       title: DecisionActionRequest
+      type: object
+    DecisionIntelligenceFinding:
+      additionalProperties: false
+      properties:
+        affected_channels:
+          default: []
+          items:
+            type: string
+          title: Affected Channels
+          type: array
+        authority:
+          $ref: '#/components/schemas/MTAFindingAuthority'
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        finding_id:
+          title: Finding Id
+          type: string
+        limitations:
+          default: []
+          items:
+            type: string
+          title: Limitations
+          type: array
+        materiality:
+          default: CONTEXTUAL
+          title: Materiality
+          type: string
+        statement:
+          title: Statement
+          type: string
+        title:
+          title: Title
+          type: string
+      required:
+      - finding_id
+      - authority
+      - title
+      - statement
+      title: DecisionIntelligenceFinding
+      type: object
+    DecisionIntelligenceRecommendation:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/MTAFindingAuthority'
+          default: RECOMMENDATION
+        counterevidence_refs:
+          default: []
+          items:
+            type: string
+          title: Counterevidence Refs
+          type: array
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        recommendation_id:
+          title: Recommendation Id
+          type: string
+        recommended_action:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Recommended Action
+        requires_human_decision:
+          default: true
+          title: Requires Human Decision
+          type: boolean
+        statement:
+          title: Statement
+          type: string
+        uncertainty:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Uncertainty
+      required:
+      - recommendation_id
+      - statement
+      title: DecisionIntelligenceRecommendation
+      type: object
+    DecisionRequirement:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/MTAFindingAuthority'
+          default: DECISION_REQUIRED
+        decision_type:
+          title: Decision Type
+          type: string
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        requirement_id:
+          title: Requirement Id
+          type: string
+        statement:
+          title: Statement
+          type: string
+      required:
+      - requirement_id
+      - decision_type
+      - statement
+      title: DecisionRequirement
       type: object
     DisableScheduleRequest:
       additionalProperties: false
@@ -2071,6 +2190,13 @@ components:
       - reason
       title: IterateModelRequest
       type: object
+    LimitationSeverity:
+      enum:
+      - INFO
+      - ATTENTION
+      - BLOCKING
+      title: LimitationSeverity
+      type: string
     LoadSnapshotRequest:
       additionalProperties: false
       properties:
@@ -2123,6 +2249,772 @@ components:
       - cycle_id
       title: MMMSummaryResponse
       type: object
+    MTAChannelDetail:
+      additionalProperties: false
+      properties:
+        channel_display_name:
+          title: Channel Display Name
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        channel_result:
+          $ref: '#/components/schemas/MTAChannelResult'
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        interpretation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Interpretation
+        limitations:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTALimitation'
+          title: Limitations
+          type: array
+        markov_removal_effect:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Markov Removal Effect
+        observed_role:
+          default: []
+          items:
+            type: string
+          title: Observed Role
+          type: array
+        position:
+          anyOf:
+          - $ref: '#/components/schemas/MTAChannelPositionEvidence'
+          - type: 'null'
+        recommended_next_actions:
+          default: []
+          items:
+            type: string
+          title: Recommended Next Actions
+          type: array
+        sensitivity:
+          anyOf:
+          - $ref: '#/components/schemas/MTAModelSensitivityEvidence'
+          - type: 'null'
+        shapley_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Shapley Share
+        top_paths_containing_channel:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTAJourneyPathEvidence'
+          title: Top Paths Containing Channel
+          type: array
+      required:
+      - channel_id
+      - channel_display_name
+      - channel_result
+      title: MTAChannelDetail
+      type: object
+    MTAChannelPositionEvidence:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        denominator:
+          default: converted_journey_count
+          title: Denominator
+          type: string
+        first_position_count:
+          title: First Position Count
+          type: integer
+        first_position_share:
+          title: First Position Share
+          type: number
+        journey_presence_count:
+          title: Journey Presence Count
+          type: integer
+        journey_presence_rate:
+          title: Journey Presence Rate
+          type: number
+        last_position_count:
+          title: Last Position Count
+          type: integer
+        last_position_share:
+          title: Last Position Share
+          type: number
+        middle_position_count:
+          title: Middle Position Count
+          type: integer
+        middle_position_share:
+          title: Middle Position Share
+          type: number
+        policy_version:
+          default: position_policy_v1
+          title: Policy Version
+          type: string
+        single_touch_policy:
+          default: FIRST_AND_LAST
+          title: Single Touch Policy
+          type: string
+      required:
+      - channel_id
+      - first_position_count
+      - middle_position_count
+      - last_position_count
+      - first_position_share
+      - middle_position_share
+      - last_position_share
+      - journey_presence_count
+      - journey_presence_rate
+      title: MTAChannelPositionEvidence
+      type: object
+    MTAChannelResult:
+      additionalProperties: false
+      properties:
+        alignment_key:
+          anyOf:
+          - $ref: '#/components/schemas/MeasurementEvidenceAlignmentKey'
+          - type: 'null'
+        channel_display_name:
+          title: Channel Display Name
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        first_position_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: First Position Share
+        first_touch_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: First Touch Credit
+        first_touch_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: First Touch Share
+        journey_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Journey Count
+        journey_presence_rate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Journey Presence Rate
+        last_non_direct_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Non Direct Credit
+        last_non_direct_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Non Direct Share
+        last_position_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Position Share
+        last_touch_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Touch Credit
+        last_touch_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Touch Share
+        limitations:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTALimitation'
+          title: Limitations
+          type: array
+        linear_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Linear Credit
+        linear_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Linear Share
+        markov_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Markov Credit
+        markov_removal_effect:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Markov Removal Effect
+        markov_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Markov Share
+        metric_availability:
+          default: []
+          items:
+            $ref: '#/components/schemas/MetricAvailabilityItem'
+          title: Metric Availability
+          type: array
+        middle_position_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Middle Position Share
+        model_credit_dispersion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Model Credit Dispersion
+        model_credit_max:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Model Credit Max
+        model_credit_min:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Model Credit Min
+        model_credit_range:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Model Credit Range
+        model_sensitivity_label:
+          anyOf:
+          - $ref: '#/components/schemas/SensitivityLabel'
+          - type: 'null'
+        position_based_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Position Based Credit
+        position_based_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Position Based Share
+        role_profile:
+          default: []
+          items:
+            type: string
+          title: Role Profile
+          type: array
+        shapley_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Shapley Credit
+        shapley_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Shapley Share
+        time_decay_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Time Decay Credit
+        time_decay_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Time Decay Share
+        touchpoint_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Touchpoint Count
+      required:
+      - channel_id
+      - channel_display_name
+      title: MTAChannelResult
+      type: object
+    MTADecisionIntelligenceBrief:
+      additionalProperties: false
+      properties:
+        brief_id:
+          title: Brief Id
+          type: string
+        counter_evidence:
+          default: []
+          items:
+            type: string
+          title: Counter Evidence
+          type: array
+        cycle_id:
+          title: Cycle Id
+          type: string
+        decision_requirements:
+          default: []
+          items:
+            $ref: '#/components/schemas/DecisionRequirement'
+          title: Decision Requirements
+          type: array
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        executive_summary:
+          title: Executive Summary
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        interpretations:
+          default: []
+          items:
+            $ref: '#/components/schemas/DecisionIntelligenceFinding'
+          title: Interpretations
+          type: array
+        knowledge_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Knowledge Version
+        limitations:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTALimitation'
+          title: Limitations
+          type: array
+        policy_version:
+          default: mta_decision_intelligence_policy_v1
+          title: Policy Version
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        recommendations:
+          default: []
+          items:
+            $ref: '#/components/schemas/DecisionIntelligenceRecommendation'
+          title: Recommendations
+          type: array
+        result_snapshot_id:
+          title: Result Snapshot Id
+          type: string
+        track_id:
+          title: Track Id
+          type: string
+        uncertainties:
+          default: []
+          items:
+            type: string
+          title: Uncertainties
+          type: array
+        verified_findings:
+          default: []
+          items:
+            $ref: '#/components/schemas/DecisionIntelligenceFinding'
+          title: Verified Findings
+          type: array
+      required:
+      - brief_id
+      - project_id
+      - cycle_id
+      - track_id
+      - result_snapshot_id
+      - executive_summary
+      - fingerprint
+      title: MTADecisionIntelligenceBrief
+      type: object
+    MTAFindingAuthority:
+      enum:
+      - VERIFIED
+      - INTERPRETATION
+      - RECOMMENDATION
+      - DECISION_REQUIRED
+      title: MTAFindingAuthority
+      type: string
+    MTAInputMode:
+      enum:
+      - RAW_JOURNEYS
+      - GROUPED_PATH_FREQUENCY
+      title: MTAInputMode
+      type: string
+    MTAJourneyPathEvidence:
+      additionalProperties: false
+      properties:
+        channels:
+          items:
+            type: string
+          title: Channels
+          type: array
+        conversion_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Conversion Count
+        conversion_value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Conversion Value
+        occurrences:
+          title: Occurrences
+          type: integer
+        path_rank:
+          title: Path Rank
+          type: integer
+        path_string:
+          title: Path String
+          type: string
+        share_of_all_paths:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Share Of All Paths
+        share_of_converting_paths:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Share Of Converting Paths
+      required:
+      - path_rank
+      - path_string
+      - channels
+      - occurrences
+      title: MTAJourneyPathEvidence
+      type: object
+    MTAJourneySummary:
+      additionalProperties: false
+      properties:
+        avg_time_to_conversion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avg Time To Conversion
+        avg_touchpoints:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avg Touchpoints
+        converted_journey_count:
+          title: Converted Journey Count
+          type: integer
+        direct_presence_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Direct Presence Share
+        identity_coverage_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Identity Coverage Summary
+        journey_count:
+          title: Journey Count
+          type: integer
+        max_touchpoints:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max Touchpoints
+        median_time_to_conversion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Median Time To Conversion
+        median_touchpoints:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Median Touchpoints
+        multi_touch_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Multi Touch Share
+        nonconverting_journey_count:
+          default: 0
+          title: Nonconverting Journey Count
+          type: integer
+        observability_status:
+          anyOf:
+          - $ref: '#/components/schemas/ObservabilityStatus'
+          - type: 'null'
+        p90_time_to_conversion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: P90 Time To Conversion
+        p90_touchpoints:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: P90 Touchpoints
+        path_length_distribution:
+          default: []
+          items:
+            $ref: '#/components/schemas/PathLengthBin'
+          title: Path Length Distribution
+          type: array
+        position_evidence:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTAChannelPositionEvidence'
+          title: Position Evidence
+          type: array
+        position_policy_version:
+          default: position_policy_v1
+          title: Position Policy Version
+          type: string
+        single_touch_policy:
+          default: FIRST_AND_LAST
+          title: Single Touch Policy
+          type: string
+        single_touch_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Single Touch Share
+        source_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Cutoff
+        time_to_conversion_distribution:
+          default: []
+          items:
+            $ref: '#/components/schemas/TimeToConversionBin'
+          title: Time To Conversion Distribution
+          type: array
+        top_paths:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTAJourneyPathEvidence'
+          title: Top Paths
+          type: array
+        unique_path_count:
+          default: 0
+          title: Unique Path Count
+          type: integer
+        unique_subject_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unique Subject Count
+      required:
+      - journey_count
+      - converted_journey_count
+      title: MTAJourneySummary
+      type: object
+    MTALimitation:
+      additionalProperties: false
+      properties:
+        affected_channels:
+          default: []
+          items:
+            type: string
+          title: Affected Channels
+          type: array
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        limitation_type:
+          $ref: '#/components/schemas/MTALimitationType'
+        severity:
+          $ref: '#/components/schemas/LimitationSeverity'
+          default: ATTENTION
+        statement:
+          title: Statement
+          type: string
+      required:
+      - limitation_type
+      - statement
+      title: MTALimitation
+      type: object
+    MTALimitationType:
+      enum:
+      - IDENTITY_FRAGMENTATION
+      - CONSENT_OBSERVABILITY
+      - UNMAPPED_TRAFFIC
+      - HIGH_DIRECT_SHARE
+      - LOW_CONVERSION_VOLUME
+      - LOW_CHANNEL_VOLUME
+      - SHAPLEY_PATH_LIMIT
+      - MODEL_SENSITIVITY
+      - MISSING_CONVERSION_VALUE
+      - TRAFFIC_SOURCE_POLICY_FALLBACK
+      - OTHER
+      title: MTALimitationType
+      type: string
+    MTAModelComparison:
+      additionalProperties: false
+      properties:
+        channels:
+          items:
+            type: string
+          title: Channels
+          type: array
+        comparison_id:
+          title: Comparison Id
+          type: string
+        comparison_metric:
+          $ref: '#/components/schemas/ComparisonMetric'
+          default: ATTRIBUTION_SHARE
+        dispersion_policy_version:
+          default: mta_sensitivity_policy_v1
+          title: Dispersion Policy Version
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        model_parameters:
+          additionalProperties:
+            additionalProperties: true
+            type: object
+          title: Model Parameters
+          type: object
+        models:
+          items:
+            type: string
+          title: Models
+          type: array
+        rows:
+          items:
+            $ref: '#/components/schemas/MTAModelComparisonCell'
+          title: Rows
+          type: array
+        run_id:
+          title: Run Id
+          type: string
+      required:
+      - comparison_id
+      - run_id
+      - models
+      - channels
+      - rows
+      - fingerprint
+      title: MTAModelComparison
+      type: object
+    MTAModelComparisonCell:
+      additionalProperties: false
+      properties:
+        attributed_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Attributed Credit
+        attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Attribution Share
+        availability:
+          $ref: '#/components/schemas/MetricAvailability'
+          default: AVAILABLE
+        channel_id:
+          title: Channel Id
+          type: string
+        model_type:
+          title: Model Type
+          type: string
+      required:
+      - channel_id
+      - model_type
+      title: MTAModelComparisonCell
+      type: object
+    MTAModelSensitivityEvidence:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        dispersion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Dispersion
+        is_confidence_interval:
+          default: false
+          title: Is Confidence Interval
+          type: boolean
+        max_attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Max Attribution Share
+        mean_attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Mean Attribution Share
+        median_attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Median Attribution Share
+        min_attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Min Attribution Share
+        model_count:
+          title: Model Count
+          type: integer
+        models_included:
+          default: []
+          items:
+            type: string
+          title: Models Included
+          type: array
+        policy_version:
+          default: mta_sensitivity_policy_v1
+          title: Policy Version
+          type: string
+        range:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Range
+        sensitivity_label:
+          anyOf:
+          - $ref: '#/components/schemas/SensitivityLabel'
+          - type: 'null'
+      required:
+      - channel_id
+      - model_count
+      title: MTAModelSensitivityEvidence
+      type: object
     MTAOverviewNextActionView:
       additionalProperties: false
       properties:
@@ -2167,6 +3059,11 @@ components:
           - type: string
           - type: 'null'
           title: Channel Grouping Version
+        channels_needing_review:
+          items:
+            type: string
+          title: Channels Needing Review
+          type: array
         conversion_event:
           anyOf:
           - type: string
@@ -2182,6 +3079,11 @@ components:
           - type: string
           - type: 'null'
           title: Conversion Period Start
+        current_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Result Snapshot Id
         cycle_id:
           title: Cycle Id
           type: string
@@ -2210,6 +3112,11 @@ components:
           - type: string
           - type: 'null'
           title: Identity Strategy
+        latest_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Result Snapshot Id
         latest_result_state:
           anyOf:
           - type: string
@@ -2220,8 +3127,23 @@ components:
           - type: integer
           - type: 'null'
           title: Lookback Window Days
+        model_sensitivity_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Sensitivity Summary
+        models_available:
+          items:
+            type: string
+          title: Models Available
+          type: array
         next_action:
           $ref: '#/components/schemas/MTAOverviewNextActionView'
+        observability_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observability Status
         project_id:
           title: Project Id
           type: string
@@ -2233,6 +3155,11 @@ components:
           - type: string
           - type: 'null'
           title: Settlement Policy
+        top_verified_findings:
+          items:
+            type: string
+          title: Top Verified Findings
+          type: array
         track_id:
           anyOf:
           - type: string
@@ -2357,6 +3284,113 @@ components:
       - fingerprint
       title: MTAReadinessResponse
       type: object
+    MTAResultsNotAvailableView:
+      additionalProperties: false
+      properties:
+        detail:
+          default: No verified MTA result snapshot is available.
+          title: Detail
+          type: string
+        result_status:
+          default: NOT_AVAILABLE
+          title: Result Status
+          type: string
+      title: MTAResultsNotAvailableView
+      type: object
+    MTAResultsSnapshotView:
+      additionalProperties: false
+      properties:
+        adapter_version:
+          title: Adapter Version
+          type: string
+        channel_grouping_fingerprint:
+          title: Channel Grouping Fingerprint
+          type: string
+        channel_grouping_version:
+          title: Channel Grouping Version
+          type: string
+        channel_registry_fingerprint:
+          title: Channel Registry Fingerprint
+          type: string
+        channel_registry_version:
+          title: Channel Registry Version
+          type: integer
+        conversion_event:
+          title: Conversion Event
+          type: string
+        conversion_period_end:
+          title: Conversion Period End
+          type: string
+        conversion_period_start:
+          title: Conversion Period Start
+          type: string
+        current_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Result Snapshot Id
+        evidence_authority:
+          title: Evidence Authority
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        latest_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Result Snapshot Id
+        limitations:
+          items:
+            additionalProperties: true
+            type: object
+          title: Limitations
+          type: array
+        models_completed:
+          items:
+            type: string
+          title: Models Completed
+          type: array
+        models_requested:
+          items:
+            type: string
+          title: Models Requested
+          type: array
+        observability_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observability Status
+        result_snapshot_id:
+          title: Result Snapshot Id
+          type: string
+        result_status:
+          title: Result Status
+          type: string
+        run_id:
+          title: Run Id
+          type: string
+        source_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Cutoff
+      required:
+      - result_snapshot_id
+      - run_id
+      - result_status
+      - evidence_authority
+      - fingerprint
+      - conversion_event
+      - conversion_period_start
+      - conversion_period_end
+      - channel_registry_version
+      - channel_registry_fingerprint
+      - channel_grouping_version
+      - channel_grouping_fingerprint
+      - adapter_version
+      title: MTAResultsSnapshotView
+      type: object
     MTARunReceiptResponse:
       additionalProperties: false
       properties:
@@ -2422,6 +3456,210 @@ components:
       - status
       - execution_plan_id
       title: MTARunResponse
+      type: object
+    MTAVisualization:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/MTAFindingAuthority'
+          default: VERIFIED
+        available:
+          default: true
+          title: Available
+          type: boolean
+        data:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Data
+          type: array
+        default_view:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Default View
+        description:
+          title: Description
+          type: string
+        filters:
+          additionalProperties: true
+          title: Filters
+          type: object
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        kind:
+          $ref: '#/components/schemas/MTAVisualizationKind'
+        source_evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Source Evidence Refs
+          type: array
+        source_model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Model
+        source_result_snapshot_id:
+          title: Source Result Snapshot Id
+          type: string
+        source_run_id:
+          title: Source Run Id
+          type: string
+        title:
+          title: Title
+          type: string
+        unavailable_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unavailable Reason
+        visualization_id:
+          title: Visualization Id
+          type: string
+      required:
+      - visualization_id
+      - kind
+      - title
+      - description
+      - source_run_id
+      - source_result_snapshot_id
+      - fingerprint
+      title: MTAVisualization
+      type: object
+    MTAVisualizationKind:
+      enum:
+      - ATTRIBUTION_BY_CHANNEL_MODEL
+      - MODEL_COMPARISON_HEATMAP
+      - CHANNEL_ROLE_POSITION
+      - MARKOV_TRANSITION_MATRIX
+      - MARKOV_REMOVAL_EFFECT
+      - SHAPLEY_CONTRIBUTION
+      - TOP_CONVERSION_PATHS
+      - PATH_LENGTH_DISTRIBUTION
+      - TIME_TO_CONVERSION_DISTRIBUTION
+      - MODEL_SENSITIVITY_RANGE
+      title: MTAVisualizationKind
+      type: string
+    MarkovAttributionEvidence:
+      additionalProperties: false
+      properties:
+        availability:
+          $ref: '#/components/schemas/MetricAvailability'
+          default: AVAILABLE
+        channel_credit:
+          default: []
+          items:
+            $ref: '#/components/schemas/MarkovChannelCredit'
+          title: Channel Credit
+          type: array
+        conversion_value_as_frequency:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Conversion Value As Frequency
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        input_mode:
+          anyOf:
+          - $ref: '#/components/schemas/MTAInputMode'
+          - type: 'null'
+        removal_effect_explanation:
+          default: The modeled conversion-probability sensitivity when that channel is removed from the observed Markov journey
+            structure.
+          title: Removal Effect Explanation
+          type: string
+        removal_effects:
+          default: []
+          items:
+            maxItems: 2
+            minItems: 2
+            prefixItems:
+            - type: string
+            - type: number
+            type: array
+          title: Removal Effects
+          type: array
+        run_id:
+          title: Run Id
+          type: string
+        transition_matrix_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Transition Matrix Ref
+        transition_to_same_state:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Transition To Same State
+        transitions:
+          default: []
+          items:
+            $ref: '#/components/schemas/MarkovTransitionRow'
+          title: Transitions
+          type: array
+        unavailable_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unavailable Reason
+      required:
+      - run_id
+      - fingerprint
+      title: MarkovAttributionEvidence
+      type: object
+    MarkovChannelCredit:
+      additionalProperties: false
+      properties:
+        attributed_credit:
+          title: Attributed Credit
+          type: number
+        attribution_share:
+          title: Attribution Share
+          type: number
+        channel_id:
+          title: Channel Id
+          type: string
+        removal_effect:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Removal Effect
+      required:
+      - channel_id
+      - attributed_credit
+      - attribution_share
+      title: MarkovChannelCredit
+      type: object
+    MarkovTransitionRow:
+      additionalProperties: false
+      properties:
+        from_channel_id:
+          title: From Channel Id
+          type: string
+        to_channel_id:
+          title: To Channel Id
+          type: string
+        transition_probability:
+          title: Transition Probability
+          type: number
+      required:
+      - from_channel_id
+      - to_channel_id
+      - transition_probability
+      title: MarkovTransitionRow
       type: object
     MaterializeDatasetSourceRequest:
       additionalProperties: false
@@ -2664,6 +3902,47 @@ components:
       - cycle_id
       title: MeasurementCycleView
       type: object
+    MeasurementEvidenceAlignmentKey:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        conversion_event:
+          title: Conversion Event
+          type: string
+        market:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market
+        method:
+          $ref: '#/components/schemas/MeasurementMethod'
+          default: MTA
+        period_end:
+          title: Period End
+          type: string
+        period_start:
+          title: Period Start
+          type: string
+        result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Snapshot Id
+      required:
+      - channel_id
+      - conversion_event
+      - period_start
+      - period_end
+      title: MeasurementEvidenceAlignmentKey
+      type: object
+    MeasurementMethod:
+      enum:
+      - MTA
+      - MMM
+      title: MeasurementMethod
+      type: string
     MeasurementTrackListResponse:
       additionalProperties: false
       properties:
@@ -2789,6 +4068,34 @@ components:
       - updated_at
       title: MeasurementTrackSummary
       type: object
+    MetricAvailability:
+      enum:
+      - AVAILABLE
+      - NOT_RUN
+      - NOT_APPLICABLE
+      - BLOCKED_BY_PREFLIGHT
+      - UNAVAILABLE_SOURCE
+      - INVALID
+      title: MetricAvailability
+      type: string
+    MetricAvailabilityItem:
+      additionalProperties: false
+      properties:
+        metric_name:
+          title: Metric Name
+          type: string
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+        status:
+          $ref: '#/components/schemas/MetricAvailability'
+      required:
+      - metric_name
+      - status
+      title: MetricAvailabilityItem
+      type: object
     MmmTrackWindowView:
       additionalProperties: false
       properties:
@@ -2899,6 +4206,13 @@ components:
       - capability
       title: NextAction
       type: object
+    ObservabilityStatus:
+      enum:
+      - GOOD
+      - REVIEW
+      - LIMITED
+      title: ObservabilityStatus
+      type: string
     OfficialEdaReportView:
       additionalProperties: false
       properties:
@@ -3054,6 +4368,24 @@ components:
           - type: 'null'
           title: Status
       title: PatchProjectRequest
+      type: object
+    PathLengthBin:
+      additionalProperties: false
+      properties:
+        journey_count:
+          title: Journey Count
+          type: integer
+        share:
+          title: Share
+          type: number
+        touchpoint_count:
+          title: Touchpoint Count
+          type: integer
+      required:
+      - touchpoint_count
+      - journey_count
+      - share
+      title: PathLengthBin
       type: object
     PlanCatalogEntry:
       additionalProperties: false
@@ -4008,6 +5340,98 @@ components:
       - verified
       title: ScheduledRefreshReceiptView
       type: object
+    SensitivityLabel:
+      enum:
+      - LOW
+      - MODERATE
+      - HIGH
+      - VERY_HIGH
+      title: SensitivityLabel
+      type: string
+    ShapleyAttributionEvidence:
+      additionalProperties: false
+      properties:
+        availability:
+          $ref: '#/components/schemas/MetricAvailability'
+          default: NOT_RUN
+        channel_credit:
+          default: []
+          items:
+            $ref: '#/components/schemas/ShapleyChannelCredit'
+          title: Channel Credit
+          type: array
+        distinct_channel_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Distinct Channel Count
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        input_path_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Input Path Count
+        order:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Order
+        path_limit_applied:
+          default: false
+          title: Path Limit Applied
+          type: boolean
+        preflight_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Preflight Status
+        run_id:
+          title: Run Id
+          type: string
+        size:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Size
+        unavailable_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unavailable Reason
+        values_col:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Values Col
+      required:
+      - run_id
+      - fingerprint
+      title: ShapleyAttributionEvidence
+      type: object
+    ShapleyChannelCredit:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        shapley_credit:
+          title: Shapley Credit
+          type: number
+        shapley_share:
+          title: Shapley Share
+          type: number
+      required:
+      - channel_id
+      - shapley_credit
+      - shapley_share
+      title: ShapleyChannelCredit
+      type: object
     SourceMaterializationListResponse:
       additionalProperties: false
       properties:
@@ -4226,6 +5650,34 @@ components:
       - version_identity
       - object_type
       title: SourceObjectLineageResponse
+      type: object
+    TimeToConversionBin:
+      additionalProperties: false
+      properties:
+        bucket_end:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Bucket End
+        bucket_start:
+          title: Bucket Start
+          type: number
+        journey_count:
+          title: Journey Count
+          type: integer
+        share:
+          title: Share
+          type: number
+        unit:
+          default: days
+          title: Unit
+          type: string
+      required:
+      - bucket_start
+      - bucket_end
+      - journey_count
+      - share
+      title: TimeToConversionBin
       type: object
     TransitionRequest:
       additionalProperties: false
@@ -5156,6 +6608,48 @@ paths:
       summary: Get Cycle Mta
       tags:
       - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/decision-brief:
+    get:
+      operationId: getProjectCycleMtaDecisionBrief
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTADecisionIntelligenceBrief'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Decision Brief
+      tags:
+      - mta
   /v1/projects/{project_id}/cycles/{cycle_id}/mta/provisioning-plan:
     get:
       operationId: getMtaProvisioningPlan
@@ -5268,6 +6762,389 @@ paths:
       security:
       - HTTPBearer: []
       summary: Evaluate Cycle Mta Readiness
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results:
+    get:
+      operationId: getProjectCycleMtaResults
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      - in: query
+        name: run_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Run Id
+      - in: query
+        name: models
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Models
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/MTAResultsSnapshotView'
+                - $ref: '#/components/schemas/MTAResultsNotAvailableView'
+                title: Response Getprojectcyclemtaresults
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Results
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/channels:
+    get:
+      operationId: getProjectCycleMtaResultChannels
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      - in: query
+        name: models
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Models
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MTAChannelResult'
+                title: Response Getprojectcyclemtaresultchannels
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Result Channels
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/channels/{channel_id}:
+    get:
+      operationId: getProjectCycleMtaResultChannelDetail
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: channel_id
+        required: true
+        schema:
+          title: Channel Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAChannelDetail'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Result Channel Detail
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/journeys:
+    get:
+      operationId: getProjectCycleMtaJourneySummary
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAJourneySummary'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Journey Summary
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/markov:
+    get:
+      operationId: getProjectCycleMtaMarkovResults
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkovAttributionEvidence'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Markov Results
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/model-comparison:
+    get:
+      operationId: getProjectCycleMtaModelComparison
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: models
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Models
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAModelComparison'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Model Comparison
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/shapley:
+    get:
+      operationId: getProjectCycleMtaShapleyResults
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShapleyAttributionEvidence'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Shapley Results
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/visualizations:
+    get:
+      operationId: getProjectCycleMtaVisualizations
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MTAVisualization'
+                title: Response Getprojectcyclemtavisualizations
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Visualizations
       tags:
       - mta
   /v1/projects/{project_id}/cycles/{cycle_id}/mta/runs:
