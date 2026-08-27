@@ -42,7 +42,7 @@ flowchart TD
 
 `Project × fiscal year × quarter × market_id × channel_id`
 
-`channel_id` is the Channel Registry ID. `market_id` is the required Planning join key; it is not derived from BIQ display names. Durable market identity is a Foundation / Marketing Identity Graph dependency (IG-00 / IG-01). Unresolved market identity fails closed.
+`channel_id` is the Channel Registry ID. `market_id` is the required Planning join key. Market display strings are non-authoritative. Planning does not own market identity and does not resolve markets by name, fuzzy match, or ISO code. Durable market identity is an external IG-01 dependency. Unresolved market identity fails closed. Full `INVESTMENT_PLAN_READY` is withheld from market-bearing plans until that contract is integrated.
 
 ## Optional Investment Plan
 

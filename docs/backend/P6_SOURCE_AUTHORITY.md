@@ -40,7 +40,7 @@ At `9ece5ac`, `PlanningChannelAllocation.amount: float | None` exists on the sha
 
 ### Market identity
 
-Planning requires `market_id`. P6-00 does not invent a Planning market registry and does not derive IDs from BIQ display strings (`"United States"`). Unresolved identity fails closed. Durable canonical market identity is a Foundation / Marketing Identity Graph dependency; IG-00 / IG-01 is expected to close the current BIQ weakness (`Market.market_id` is client-supplied; `MarketingChannel.markets` is untyped strings). See `BUSINESS_IQ_INTEGRATION_REQUEST` below.
+Planning requires `market_id`. Display strings are non-authoritative. P6 does not own market identity and does not derive IDs from names, fuzzy labels, or ISO 3166 codes (`"United States"`, `"US"`, `"USA"`). Unresolved identity fails closed. Durable canonical market identity is a Foundation / Marketing Identity Graph dependency. Until IG-01 is integrated, a market-bearing plan cannot receive full `INVESTMENT_PLAN_READY`. See `BUSINESS_IQ_INTEGRATION_REQUEST` below.
 
 ### Channel identity
 
@@ -62,4 +62,4 @@ Requested from Business IQ / Identity Graph, not implemented in P6-00:
 2. Typed channel↔market references (`MarketingChannel.markets` is untyped strings today).
 3. Fail-closed resolution policy owned by IG-00/IG-01, consumed by Planning.
 
-Until then Planning fail-closes unknown or non-identifier market values.
+Until then Planning fail-closes unknown or non-identifier market values and refuses full `INVESTMENT_PLAN_READY` for market-bearing plans. When IG-01 completes, flip `CANONICAL_MARKET_CONTRACT_INTEGRATED` in a focused integration pass rather than reopening P6-00 architecture.

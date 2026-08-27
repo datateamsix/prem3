@@ -24,6 +24,10 @@ class UnresolvedMarketIdentityError(PlanningError):
     code = "UNRESOLVED_MARKET_IDENTITY"
 
 
+class CanonicalMarketContractPendingError(PlanningError):
+    code = "CANONICAL_MARKET_CONTRACT_PENDING"
+
+
 class UnresolvedChannelIdentityError(PlanningError):
     code = "UNRESOLVED_CHANNEL_IDENTITY"
 
