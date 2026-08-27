@@ -149,7 +149,7 @@ Frozen for Campaign Ledger: `CanonicalCampaign`, default `utm_id` binding, exter
 
 ## Q. Blockers
 
-**BUSINESS_IQ_MARKET_IDENTITY_REQUEST:** BIQ `Market.market_id` is still client-supplied on the profile (no `new_market_id()`, no global index). IG-00 reuses those strings and fails closed when a profile is missing or the ID is unknown. A later BIQ mission should mint durable server-owned market IDs without mutating historical snapshots.
+**BUSINESS_IQ_MARKET_IDENTITY_REQUEST (recorded here, resolved by IG-01):** BIQ `Market.market_id` is still client-supplied on the profile. IG-00 reused those strings. IG-01 mints server-owned `CanonicalMarket` IDs and additive bindings without mutating historical snapshots. Do not delete this historical record.
 
 No `PROVIDER_REGISTRY_INTEGRATION_REQUEST` — exact `provider_id` lookup works.
 

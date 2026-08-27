@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.identity_graph.enums import GA4TopologyKind, SourceOverlapPolicy, TopologyStatus
-from tests.unit.identity_graph.conftest import PROJECT_ID, TENANT_ID
+from tests.unit.identity_graph.conftest import PROJECT_ID, TENANT_ID, make_canonical_market
 
 
 def test_single_master_property_topology(graph) -> None:
@@ -27,6 +27,7 @@ def test_single_master_property_topology(graph) -> None:
 
 
 def test_property_per_market_topology(graph) -> None:
+    market = make_canonical_market(graph)
     us = graph.upsert_ga4_source(
         tenant_id=TENANT_ID,
         project_id=PROJECT_ID,
@@ -34,7 +35,7 @@ def test_property_per_market_topology(graph) -> None:
         bq_project_id="modelready-m3",
         bq_dataset_id="analytics_us",
         bq_location="US",
-        declared_market_ids=("mkt_us",),
+        declared_market_ids=(market.market_id,),
         overlap_policy=SourceOverlapPolicy.PARTITIONED_BY_MARKET,
     )
     ca = graph.upsert_ga4_source(

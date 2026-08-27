@@ -811,6 +811,102 @@ components:
       - name
       title: CreateIdentityGraphCampaignRequest
       type: object
+    CreateIdentityGraphMarketRequest:
+      additionalProperties: false
+      properties:
+        country_codes:
+          default: []
+          items:
+            type: string
+          title: Country Codes
+          type: array
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        market_kind:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Kind
+        name:
+          title: Name
+          type: string
+        region_codes:
+          default: []
+          items:
+            type: string
+          title: Region Codes
+          type: array
+      required:
+      - name
+      title: CreateIdentityGraphMarketRequest
+      type: object
+    CreateIdentityGraphSourceRequest:
+      additionalProperties: false
+      properties:
+        bq_dataset_id:
+          title: Bq Dataset Id
+          type: string
+        bq_location:
+          default: ''
+          title: Bq Location
+          type: string
+        bq_project_id:
+          title: Bq Project Id
+          type: string
+        coverage_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Coverage End
+        coverage_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Coverage Start
+        declared_market_ids:
+          default: []
+          items:
+            type: string
+          title: Declared Market Ids
+          type: array
+        freshness_state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Freshness State
+        ga4_property_id:
+          title: Ga4 Property Id
+          type: string
+        overlap_policy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Overlap Policy
+        stream_ids:
+          default: []
+          items:
+            type: string
+          title: Stream Ids
+          type: array
+        topology_kind:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Topology Kind
+        traffic_source_capability:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Traffic Source Capability
+      required:
+      - ga4_property_id
+      - bq_project_id
+      - bq_dataset_id
+      title: CreateIdentityGraphSourceRequest
+      type: object
     CreateMTARunRequest:
       additionalProperties: false
       description: Customer create-run body — no BQ/GCS/authority fields allowed.
@@ -1208,6 +1304,61 @@ components:
       required:
       - resource_name
       title: DisableScheduleRequest
+      type: object
+    DiscoverGa4SourceTable:
+      additionalProperties: false
+      properties:
+        bq_dataset_id:
+          title: Bq Dataset Id
+          type: string
+        bq_location:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bq Location
+        bq_project_id:
+          title: Bq Project Id
+          type: string
+        coverage_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Coverage End
+        coverage_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Coverage Start
+        freshness_state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Freshness State
+        ga4_property_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ga4 Property Id
+        traffic_source_capability:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Traffic Source Capability
+      required:
+      - bq_project_id
+      - bq_dataset_id
+      title: DiscoverGa4SourceTable
+      type: object
+    DiscoverIdentityGraphSourcesRequest:
+      additionalProperties: false
+      properties:
+        tables:
+          default: []
+          items:
+            $ref: '#/components/schemas/DiscoverGa4SourceTable'
+          title: Tables
+          type: array
+      title: DiscoverIdentityGraphSourcesRequest
       type: object
     DiscoveryHintsRequest:
       additionalProperties: false
@@ -5784,6 +5935,66 @@ paths:
       summary: Create Campaign
       tags:
       - identity-graph
+  /v1/projects/{project_id}/identity-graph/ga4-topology:
+    get:
+      operationId: getIdentityGraphGa4Topology
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphga4Topology
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Ga4 Topology
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/ga4-topology/validate:
+    post:
+      operationId: validateIdentityGraphGa4Topology
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Validateidentitygraphga4Topology
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Validate Ga4 Topology
+      tags:
+      - identity-graph
   /v1/projects/{project_id}/identity-graph/mappings:
     get:
       operationId: listIdentityGraphMappings
@@ -5844,6 +6055,41 @@ paths:
       summary: List Markets
       tags:
       - identity-graph
+    post:
+      operationId: createIdentityGraphMarket
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentityGraphMarketRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createidentitygraphmarket
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Market
+      tags:
+      - identity-graph
   /v1/projects/{project_id}/identity-graph/sources:
     get:
       operationId: listIdentityGraphSources
@@ -5872,6 +6118,79 @@ paths:
       security:
       - HTTPBearer: []
       summary: List Sources
+      tags:
+      - identity-graph
+    post:
+      operationId: createIdentityGraphSource
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentityGraphSourceRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createidentitygraphsource
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Source
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/sources/discover:
+    post:
+      operationId: discoverIdentityGraphSources
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+              - $ref: '#/components/schemas/DiscoverIdentityGraphSourcesRequest'
+              - type: 'null'
+              title: Body
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Discoveridentitygraphsources
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Discover Sources
       tags:
       - identity-graph
   /v1/projects/{project_id}/measurement-home:

@@ -4,19 +4,20 @@ import pytest
 
 from app.identity_graph.contracts import ObservedCampaignSignals
 from app.identity_graph.errors import IdentityGraphError
-from tests.unit.identity_graph.conftest import PROJECT_ID, TENANT_ID
+from tests.unit.identity_graph.conftest import PROJECT_ID, TENANT_ID, make_canonical_market
 
 
 def test_campaign_market_refs_use_canonical_market_ids(graph) -> None:
+    market = make_canonical_market(graph)
     created = graph.create_campaign(
         tenant_id=TENANT_ID,
         project_id=PROJECT_ID,
         name="US Search",
         actor_id="user-a",
-        market_ids=("mkt_us",),
+        market_ids=(market.market_id,),
         channel_ids=("search_paid",),
     )
-    assert created.campaign.market_ids == ("mkt_us",)
+    assert created.campaign.market_ids == (market.market_id,)
 
 
 def test_campaign_channel_refs_use_channel_registry_ids(graph) -> None:

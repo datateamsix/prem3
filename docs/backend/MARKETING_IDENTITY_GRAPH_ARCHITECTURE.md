@@ -1,6 +1,6 @@
 # Marketing Identity Graph architecture
 
-**Mission:** IG-00 architecture freeze  
+**Mission:** IG-00 architecture freeze + IG-01 canonical market identity and GA4 topology  
 **Domain:** `app/identity_graph/`
 
 ```text
@@ -28,6 +28,14 @@ The PreM3 Identity Graph models marketing execution identities and business mark
 `PERSONA` and `AUDIENCE` node types (and related edges) are reserved. IG-00 does not persist, CRUD, activate, or discover them. A later IG-02A may own Audience/Persona ledgers.
 
 This graph is a Project-scoped Foundation capability. MTA, Planning, experiments, and Decision Intelligence consume its IDs. They do not mint parallel campaign, market, or channel identities.
+
+```text
+Business IQ semantics
+        ↓
+CanonicalMarket
+        ↓
+GA4 source coverage / campaign / audience / planning / measurement
+```
 
 ```mermaid
 flowchart TD
@@ -96,7 +104,7 @@ Keep budget, spend, impressions, conversions, attribution, ROAS, and person-leve
 | Concern | Canonical owner | Identity Graph rule |
 |---|---|---|
 | Channel | Channel Registry `channel_id` | Fail-closed; display names never join |
-| Market | Business IQ `Market.market_id` | Reference only; see `BUSINESS_IQ_MARKET_IDENTITY_REQUEST` |
+| Market | Identity Graph `CanonicalMarket.market_id` | BIQ defines meaning; historical snapshots stay immutable; see [CANONICAL_MARKET_IDENTITY.md](CANONICAL_MARKET_IDENTITY.md) |
 | Provider | `app/registry` `provider_id` | Exact registry match; mapping ≠ executable trust |
 | Project | Control-plane workspace | `project_id` aliases `workspace_id` |
 
@@ -124,7 +132,7 @@ Do not create a second channel taxonomy. Unknown `channel_id` fails closed.
 
 ### IG-ADR-004 — canonical market identity is reused / additively strengthened
 
-Campaign `market_ids` reference BIQ `Market.market_id`. BIQ still does not mint server-owned market IDs; IG-00 records `BUSINESS_IQ_MARKET_IDENTITY_REQUEST` rather than forking a market namespace.
+IG-00 recorded `BUSINESS_IQ_MARKET_IDENTITY_REQUEST` rather than forking a market namespace. IG-01 resolves that blocker with server-owned `CanonicalMarket` IDs and additive `BusinessMarketBinding`. Historical BIQ snapshots are not rewritten.
 
 ### IG-ADR-005 — PreM3 campaign ID is immutable cross-system identity
 
@@ -157,3 +165,43 @@ A unified analytical view is a governed topology, not one raw dataset.
 ### IG-ADR-012 — MTA consumes Identity Graph; it does not own it
 
 IG-00 does not change `MTA_INPUT_READY`, `MTARun`, snapshots, DP6, or Cloud workers. M5-03 consumes `MTAIdentityTouchpointRefs`.
+
+### IG-ADR-013 — Identity Graph owns canonical cross-method market ID
+
+`market_id` is a Foundation Identity Graph identifier. Planning/MTA/Data Foundation consume it. They do not invent parallel market IDs.
+
+### IG-ADR-014 — Business IQ defines market semantics but historical snapshots are immutable
+
+Bindings are additive. `business_market_ref` preserves the original BIQ string.
+
+### IG-ADR-015 — business markets are not limited to ISO countries
+
+`MarketKind` includes regions, multi-country regions, subnational, global, and custom.
+
+### IG-ADR-016 — GA4 property topology is explicit and multi-source
+
+Topology kind is declared. Dataset names are not identity.
+
+### IG-ADR-017 — `geo.country` is not implicit business-market authority
+
+`GEO_MAPPING` requires an explicit policy allow-list.
+
+### IG-ADR-018 — master/regional property overlap requires governed policy
+
+No silent UNION. Ungoverned overlap is `REVIEW_REQUIRED`.
+
+### IG-ADR-019 — BQ location is part of source readiness
+
+`SAME_LOCATION` / `CROSS_LOCATION` / `UNKNOWN_LOCATION`. Cross-location is not `direct_union_ready`.
+
+### IG-ADR-020 — one governed analytical view does not require one raw GA4 dataset
+
+Customers may have one property, many regional properties, or overlapping master/regional properties.
+
+### IG-ADR-021 — IG-01 discovers/configures; IG-04 materializes unified GA4 plane
+
+No `ga4_sessions_unified` in IG-01. No cross-region replication.
+
+### IG-ADR-022 — Audience/Persona remain metadata identities, never person membership
+
+Reserved node types only. No audience members, hashed PII, or CRM person IDs.

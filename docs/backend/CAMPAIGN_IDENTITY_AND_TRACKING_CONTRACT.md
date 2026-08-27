@@ -13,7 +13,7 @@ Metadata only. No budget, attribution, or platform metrics.
 | `parent_campaign_id` | Optional; same project; no self-parent; no cycles |
 | `name` / `campaign_name_raw` | Display / source context, not join keys |
 | `status` | `PLANNED` · `ACTIVE` · `PAUSED` · `COMPLETE` · `ARCHIVED` |
-| `market_ids[]` | BIQ `market_id` refs in IG-00; IG-01 replaces these with canonical Identity Graph IDs |
+| `market_ids[]` | Canonical Identity Graph `market_id` (`mkt_<opaque>`); unknown IDs fail closed |
 | `channel_ids[]` | Channel Registry IDs; unknown IDs fail closed |
 | `persona_ids[]` / `audience_ids[]` | Reserved empty scope refs; not members; no CRUD in IG-00 |
 

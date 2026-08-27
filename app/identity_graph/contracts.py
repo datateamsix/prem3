@@ -10,14 +10,20 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.core.contracts import utc_now
 from app.identity_graph.enums import (
     BindingStatus,
+    BqLocationClass,
     CampaignIdentitySource,
     CampaignStatus,
     GA4TopologyKind,
+    GA4TopologyReadinessState,
     IdentityGraphCapabilityState,
     IdentityGraphComponentState,
     IdentitySourceAuthority,
     MappingMethod,
+    MarketCoverageStatus,
+    MarketKind,
+    MarketMappingMethod,
     MarketResolutionMethod,
+    MarketStatus,
     ResolutionAuthority,
     SourceOverlapPolicy,
     TopologyStatus,
@@ -35,6 +41,37 @@ class IdentityGraphModel(BaseModel):
     def _reject_prohibited(cls, data: Any) -> Any:
         reject_identity_graph_payload(data)
         return data
+
+
+class CanonicalMarket(IdentityGraphModel):
+    market_id: str
+    tenant_id: str
+    project_id: str
+    name: str
+    description: str | None = None
+    market_kind: MarketKind = MarketKind.CUSTOM
+    status: MarketStatus = MarketStatus.ACTIVE
+    country_codes: tuple[str, ...] = ()
+    region_codes: tuple[str, ...] = ()
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+    created_by: str = ""
+
+
+class BusinessMarketBinding(IdentityGraphModel):
+    binding_id: str
+    tenant_id: str
+    project_id: str
+    business_profile_snapshot_id: str
+    business_market_ref: str
+    market_id: str
+    mapping_method: MarketMappingMethod
+    status: BindingStatus = BindingStatus.CONFIRMED
+    confirmed_by: str | None = None
+    confirmed_at: datetime | None = None
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
 
 
 class CanonicalCampaign(IdentityGraphModel):
@@ -126,6 +163,8 @@ class GA4PropertySourceBinding(IdentityGraphModel):
     declared_market_ids: tuple[str, ...] = ()
     coverage_start: str | None = None
     coverage_end: str | None = None
+    traffic_source_capability: bool | None = None
+    freshness_state: str | None = None
     source_authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_DECLARED
     overlap_policy: SourceOverlapPolicy | None = None
     fingerprint: str = ""
@@ -144,6 +183,30 @@ class GA4SourceTopology(IdentityGraphModel):
     status: TopologyStatus = TopologyStatus.PARTIAL
     issues: tuple[str, ...] = ()
     direct_union_ready: bool = False
+    location_class: BqLocationClass = BqLocationClass.UNKNOWN_LOCATION
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class GA4MarketCoverage(IdentityGraphModel):
+    market_id: str
+    source_binding_ids: tuple[str, ...] = ()
+    coverage_status: MarketCoverageStatus
+    date_start: str | None = None
+    date_end: str | None = None
+    freshness_state: str | None = None
+    resolution_method: MarketResolutionMethod | None = None
+    issues: tuple[str, ...] = ()
+
+
+class GA4TopologyReadinessReceipt(IdentityGraphModel):
+    tenant_id: str
+    project_id: str
+    topology_id: str | None
+    state: GA4TopologyReadinessState
+    location_class: BqLocationClass = BqLocationClass.UNKNOWN_LOCATION
+    coverage: tuple[GA4MarketCoverage, ...] = ()
+    issues: tuple[str, ...] = ()
     fingerprint: str = ""
     created_at: datetime = Field(default_factory=utc_now)
 
@@ -167,13 +230,16 @@ class MarketResolutionEvidence(IdentityGraphModel):
 
 
 class GA4TopologyDiscoveryResult(IdentityGraphModel):
-    """IG-01 / Data Foundation seam. Identity Graph does not discover GA4 itself."""
+    """Data Foundation discovery consumed by Identity Graph. No invented READY state."""
 
     project_id: str
+    tenant_id: str
     discovered_source_binding_ids: tuple[str, ...] = ()
     topology_kind: GA4TopologyKind | None = None
     bq_locations: tuple[str, ...] = ()
+    location_class: BqLocationClass = BqLocationClass.UNKNOWN_LOCATION
     coverage_notes: tuple[str, ...] = ()
+    issues: tuple[str, ...] = ()
 
 
 class MTAIdentityTouchpointRefs(IdentityGraphModel):

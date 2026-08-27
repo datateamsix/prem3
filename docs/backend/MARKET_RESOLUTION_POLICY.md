@@ -22,7 +22,7 @@ A missing policy does not imply geo mapping. That path records `GEO_MAPPING_NOT_
 
 `MarketResolutionEvidence` records:
 
-- `market_id` (BIQ market identity, or null)
+- `market_id` (canonical Identity Graph ID, or null)
 - `method` (provenance — not optional)
 - `source_ref` / `rule_ref`
 - `authority`: `RESOLVED` · `REVIEW_REQUIRED` · `UNRESOLVED`
@@ -36,4 +36,8 @@ Campaign `market_ids[]` are semantic declarations. They do not prove observed GA
 
 ## BUSINESS_IQ_MARKET_IDENTITY_REQUEST
 
-BIQ `Market.market_id` is currently client-supplied on the Business Profile and is not a globally indexed server-owned ID. IG-00 **reuses** those strings and fails closed when they are absent or unknown. A later BIQ mission should mint durable `mkt_…` IDs and an index without mutating historical snapshots.
+**Recorded by IG-00. Resolved by IG-01.**
+
+IG-00 reused client-supplied BIQ `Market.market_id` strings and failed closed when a profile was missing. That historical request remains in this document.
+
+IG-01 mints server-owned `CanonicalMarket.market_id` values (`mkt_<opaque>`) and additive `BusinessMarketBinding` rows. Historical snapshots are not mutated. See [BUSINESS_IQ_MARKET_BINDING.md](BUSINESS_IQ_MARKET_BINDING.md).

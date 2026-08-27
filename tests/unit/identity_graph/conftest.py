@@ -5,6 +5,7 @@ import pytest
 from app.business_iq.service import BusinessIqService
 from app.business_iq.store import InMemoryBusinessIqStore
 from app.core.tenancy import AuthState, TenantContext, bind_tenant
+from app.identity_graph.enums import MarketKind
 from app.identity_graph.service import CampaignIdentityService
 from app.identity_graph.store import InMemoryIdentityGraphStore
 from tests.unit.business_iq.conftest import ready_payload
@@ -45,4 +46,26 @@ def graph(tenant_ctx, biq_store) -> CampaignIdentityService:
     return CampaignIdentityService(
         store=InMemoryIdentityGraphStore(),
         business_iq_store=biq_store,
+    )
+
+
+def make_canonical_market(
+    graph: CampaignIdentityService,
+    *,
+    name: str = "United States",
+    market_kind: MarketKind = MarketKind.COUNTRY,
+    project_id: str = PROJECT_ID,
+    description: str | None = None,
+    country_codes: tuple[str, ...] = (),
+    region_codes: tuple[str, ...] = (),
+):
+    return graph.create_market(
+        tenant_id=TENANT_ID,
+        project_id=project_id,
+        name=name,
+        actor_id="user-a",
+        description=description,
+        market_kind=market_kind,
+        country_codes=country_codes,
+        region_codes=region_codes,
     )
