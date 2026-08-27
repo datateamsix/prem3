@@ -24,7 +24,6 @@ from app.data_foundation.service import DataFoundationService
 from app.data_foundation.warehouse import FoundationWarehouse
 from app.eda.repository import FirestoreExtendedEDARepository, InMemoryExtendedEDARepository
 from app.eda.service import ExtendedEDAService
-from app.identity_graph.store import InMemoryIdentityGraphStore
 from app.integrations.google.adapters import (
     FakeBigQueryClient,
     FakeDriveClient,
@@ -95,7 +94,7 @@ from app.service.import_governance import ImportGovernanceService
 from app.service.middleware import RequestIdMiddleware, current_request_id
 from app.service.models import PlanCatalogResponse
 from app.service.object_store import FakeObjectStore, GcsObjectStore, ObjectStore
-from app.service.product_stores import build_product_stores
+from app.service.product_stores import build_identity_graph_store, build_product_stores
 from app.service.publish_governance import PublishGovernanceService
 from app.service.routers import (
     billing,
@@ -264,7 +263,7 @@ def create_app(
         bigquery_client=google_services["bq_client"],
         drive_client=google_services["drive_client"],
     )
-    identity_graph_store = InMemoryIdentityGraphStore()
+    identity_graph_store = build_identity_graph_store(repo)
     if isinstance(repo, FirestoreControlPlaneRepository):
         planning_store = FirestoreInvestmentPlanningStore(repo.client)
     else:

@@ -22,7 +22,8 @@ from app.data_foundation.enums import (
     TargetWindowStatus,
 )
 from app.data_foundation.firestore_store import FirestoreDataFoundationStore
-from app.service.product_stores import build_product_stores
+from app.identity_graph.firestore import FirestoreIdentityGraphStore
+from app.service.product_stores import build_identity_graph_store, build_product_stores
 from tests.unit.business_iq.conftest import ready_payload
 from tests.unit.support.fake_firestore import FakeFirestore
 
@@ -38,6 +39,17 @@ def test_inmemory_control_plane_keeps_inmemory_product_stores() -> None:
     biq, foundation = build_product_stores(InMemoryControlPlaneRepository())
     assert type(biq).__name__ == "InMemoryBusinessIqStore"
     assert type(foundation).__name__ == "InMemoryDataFoundationStore"
+
+
+def test_cloud_control_plane_selects_firestore_identity_graph_store() -> None:
+    repo = FirestoreControlPlaneRepository(FakeFirestore())
+    store = build_identity_graph_store(repo)
+    assert isinstance(store, FirestoreIdentityGraphStore)
+
+
+def test_inmemory_control_plane_keeps_inmemory_identity_graph_store() -> None:
+    store = build_identity_graph_store(InMemoryControlPlaneRepository())
+    assert type(store).__name__ == "InMemoryIdentityGraphStore"
 
 
 def test_firestore_business_iq_store_round_trips_profile(tenant_ctx) -> None:

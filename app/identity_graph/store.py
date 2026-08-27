@@ -1,4 +1,4 @@
-"""Identity Graph persistence port. In-memory for IG-00; Firestore paths reserved."""
+"""Identity Graph persistence port. In-memory for tests/dev; Firestore in production."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ FIRESTORE_GRAPH_COLLECTION = "identity_graph"
 
 
 def firestore_graph_path(*, tenant_id: str, workspace_id: str) -> str:
-    """Reserved control-plane path. IG-00 does not write Firestore documents."""
+    """Workspace Identity Graph collection. Production writes via FirestoreIdentityGraphStore."""
     return f"tenants/{tenant_id}/workspaces/{workspace_id}/{FIRESTORE_GRAPH_COLLECTION}"
 
 
@@ -115,7 +115,7 @@ class IdentityGraphStore(Protocol):
 
 
 class InMemoryIdentityGraphStore:
-    """Test/local store. Cloud persistence is IG-02."""
+    """Test/local store. Production uses FirestoreIdentityGraphStore when the control plane is Firestore."""
 
     def __init__(self) -> None:
         self._issued_campaign_ids: set[str] = set()
