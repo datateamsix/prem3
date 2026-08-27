@@ -10,11 +10,13 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.investment_optimization.enums import (
     BudgetResolutionPath,
+    DecisionRecordType,
     MappingAuthority,
     MappingCardinalityPolicy,
     MappingEntryStatus,
     MappingKind,
     MarketModelCompatibility,
+    MaterialChangeFlag,
     ModelGeoSemantics,
     ModelVariableOptimizationEligibility,
     ModelVariableRole,
@@ -25,6 +27,7 @@ from app.investment_optimization.enums import (
     OptimizationInputStatus,
     OptimizationIssueCode,
     OptimizationObjectiveKind,
+    OptimizationProposalLifecycleStatus,
     OptimizationProposalStatus,
     OptimizationReadinessCheckCode,
     OptimizationReadinessStatus,
@@ -34,6 +37,13 @@ from app.investment_optimization.enums import (
     OptimizationSolverKind,
     OptimizerConstraintStatus,
     PortfolioModelMappingStatus,
+    ProposalApprovalRole,
+    ProposalDecision,
+    ProposalLimitationCode,
+    ProposalReadinessCheckCode,
+    ProposalReadinessStatus,
+    ScenarioStatus,
+    ScenarioType,
     SpendSemantics,
     UnmappedVariableTreatment,
 )
@@ -540,6 +550,204 @@ class NativeOptimizerRawResult(FrozenModel):
     channels: tuple[NativeOptimizerChannelResult, ...] = ()
 
 
+class ScenarioArtifact(FrozenModel):
+    """Durable scenario metadata. Allocation rows live on the GCS object."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    scenario_id: str
+    tenant_id: str
+    project_id: str
+    scenario_type: ScenarioType = ScenarioType.OPTIMIZER_RECOMMENDATION
+    status: ScenarioStatus = ScenarioStatus.AVAILABLE
+    source_plan_id: str
+    source_plan_revision: int
+    source_plan_fingerprint: str
+    optimization_run_id: str
+    optimization_result_ref: str
+    baseline_fingerprint: str
+    recommendation_fingerprint: str
+    period: str
+    currency: str
+    amount_kind: OptimizationAmountKind = OptimizationAmountKind.MODEL_RECOMMENDED
+    artifact_bucket: str
+    artifact_object_name: str
+    artifact_generation: str | None = None
+    artifact_fingerprint: str
+    created_at: datetime
+    created_by: str
+    fingerprint: str
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> ScenarioArtifact:
+        _reject_amount_keys(self.model_dump(), owner="ScenarioArtifact")
+        return self
+
+
+class OptimizationProposal(FrozenModel):
+    """Committee proposal. Distinct from unused P6-00 OptimizationProposalRef."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    proposal_id: str
+    tenant_id: str
+    project_id: str
+    scenario_id: str
+    source_plan_id: str
+    source_plan_revision: int
+    source_plan_fingerprint: str
+    optimization_run_id: str
+    optimization_readiness_receipt_id: str
+    model_version_id: str
+    status: OptimizationProposalLifecycleStatus
+    title: str | None = None
+    summary: str | None = None
+    decision_deadline: datetime | None = None
+    decision_owner_user_id: str | None = None
+    policy_version: str
+    supersedes_proposal_id: str | None = None
+    readiness_receipt_id: str | None = None
+    decision_receipt_id: str | None = None
+    plan_revision_plan_id: str | None = None
+    submitted_at: datetime | None = None
+    decided_at: datetime | None = None
+    created_at: datetime
+    created_by: str
+    fingerprint: str
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> OptimizationProposal:
+        _reject_amount_keys(self.model_dump(), owner="OptimizationProposal")
+        return self
+
+
+class ProposalReadinessCheck(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    code: ProposalReadinessCheckCode
+    passed: bool
+
+
+class ProposalReadinessReceipt(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    receipt_id: str
+    proposal_id: str
+    tenant_id: str
+    project_id: str
+    status: ProposalReadinessStatus
+    checks: tuple[ProposalReadinessCheck, ...] = ()
+    limitation_codes: tuple[ProposalLimitationCode, ...] = ()
+    created_at: datetime
+    fingerprint: str
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> ProposalReadinessReceipt:
+        _reject_amount_keys(self.model_dump(), owner="ProposalReadinessReceipt")
+        return self
+
+
+class ProposalDecisionReceipt(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    decision_receipt_id: str
+    proposal_id: str
+    tenant_id: str
+    project_id: str
+    decision: ProposalDecision
+    decided_by_user_id: str
+    decided_at: datetime
+    proposal_fingerprint: str
+    scenario_fingerprint: str
+    source_plan_fingerprint: str
+    optimization_result_fingerprint: str
+    comment: str | None = None
+    reason_code: str | None = None
+    created_at: datetime
+    fingerprint: str
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> ProposalDecisionReceipt:
+        _reject_amount_keys(self.model_dump(), owner="ProposalDecisionReceipt")
+        return self
+
+
+class ProposalApprovalPolicy(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    policy_version: str
+    required_role: ProposalApprovalRole
+    requires_distinct_plan_approval: bool
+    requires_comment_on_rejection: bool
+    requires_comment_on_large_change: bool = False
+    approval_expiry: str | None = None
+
+
+class PlanningDecisionRecord(FrozenModel):
+    """Thin Decision Ledger seam. Refs only; no amounts."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    decision_id: str
+    decision_type: DecisionRecordType = DecisionRecordType.OPTIMIZATION_PROPOSAL
+    proposal_id: str
+    tenant_id: str
+    project_id: str
+    decision: ProposalDecision
+    owner: str
+    evidence_refs: tuple[str, ...] = ()
+    counter_evidence_refs: tuple[str, ...] = ()
+    decided_at: datetime
+    fingerprint: str
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> PlanningDecisionRecord:
+        _reject_amount_keys(self.model_dump(), owner="PlanningDecisionRecord")
+        return self
+
+
+class ScenarioComparisonRow(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    market_id: str
+    channel_id: str
+    model_variable_id: str
+    baseline_amount: Decimal
+    recommended_amount: Decimal
+    delta: Decimal
+    share_change: Decimal | None = None
+    percent_change: Decimal | None = None
+    percent_change_unavailable: bool = False
+    amount_kind: OptimizationAmountKind = OptimizationAmountKind.MODEL_RECOMMENDED
+    model_estimate_delta: str | None = None
+
+
+class ScenarioComparison(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    scenario_id: str
+    currency: str
+    amount_kind: OptimizationAmountKind = OptimizationAmountKind.MODEL_RECOMMENDED
+    rows: tuple[ScenarioComparisonRow, ...] = ()
+    fingerprint: str
+
+
+class ProposalChangeSummary(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    proposal_id: str
+    total_budget: Decimal
+    changed_cell_count: int
+    increase_count: int
+    decrease_count: int
+    unchanged_count: int
+    largest_increases: tuple[ScenarioComparisonRow, ...] = ()
+    largest_decreases: tuple[ScenarioComparisonRow, ...] = ()
+    material_change_flags: tuple[MaterialChangeFlag, ...] = ()
+    limitation_codes: tuple[ProposalLimitationCode, ...] = ()
+    fingerprint: str
+
+
+DEFAULT_PROPOSAL_APPROVAL_POLICY = ProposalApprovalPolicy(
+    policy_version="p6-06/v1",
+    required_role=ProposalApprovalRole.AUTHENTICATED_HUMAN_MEMBER,
+    requires_distinct_plan_approval=True,
+    requires_comment_on_rejection=True,
+    requires_comment_on_large_change=False,
+    approval_expiry=None,
+)
+
+
 OPTIMIZATION_METADATA_MODELS: tuple[type[FrozenModel], ...] = (
     OptimizationProposalRef,
     OptimizationExecutionPlan,
@@ -560,6 +768,13 @@ OPTIMIZATION_METADATA_MODELS: tuple[type[FrozenModel], ...] = (
     OptimizationReadinessReceipt,
     OptimizationRun,
     OptimizationResultRef,
+    ScenarioArtifact,
+    OptimizationProposal,
+    ProposalReadinessCheck,
+    ProposalReadinessReceipt,
+    ProposalDecisionReceipt,
+    ProposalApprovalPolicy,
+    PlanningDecisionRecord,
 )
 
 OPTIMIZATION_AMOUNT_BEARING_MODELS: tuple[type[FrozenModel], ...] = (
@@ -573,6 +788,9 @@ OPTIMIZATION_AMOUNT_BEARING_MODELS: tuple[type[FrozenModel], ...] = (
     OptimizationResultPayload,
     NativeOptimizerChannelResult,
     NativeOptimizerRawResult,
+    ScenarioComparisonRow,
+    ScenarioComparison,
+    ProposalChangeSummary,
 )
 
 

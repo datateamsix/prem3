@@ -68,6 +68,9 @@ class InvestmentPlan(FrozenModel):
     created_by: str
     approved_at: datetime | None = None
     approved_by: str | None = None
+    source_proposal_id: str | None = None
+    source_decision_receipt_id: str | None = None
+    source_scenario_id: str | None = None
 
     @model_validator(mode="after")
     def _project_is_workspace_alias(self) -> InvestmentPlan:

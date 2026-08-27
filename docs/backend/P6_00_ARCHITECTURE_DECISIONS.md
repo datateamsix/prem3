@@ -194,6 +194,54 @@ Create requires `Feature.BUDGET_OPTIMIZATION` and `OPTIMIZATION_READY`. `require
 
 Create/list/get run and get result are registered under `/v1/projects/{project_id}/investment-portfolio/optimizations`. The unused P6-00 `/investment-optimizations` namespace stays unregistered. Result responses are `Cache-Control: private, no-store`.
 
+## ADR-P6-049 — Optimizer output is proposal evidence, never an approved Investment Plan
+
+`OptimizationRun` COMPLETE and `MODEL_RECOMMENDED` results are evidence. They never become `APPROVED_PLAN`.
+
+## ADR-P6-050 — ScenarioArtifact is immutable and binds exact source plan + optimizer result
+
+A scenario pins the source plan revision/fingerprint and the completed optimization result. Changing run, baseline, model, or period creates a new `scenario_id`. Historical bytes are not mutated.
+
+## ADR-P6-051 — OptimizationProposal is separate from OptimizationRun
+
+The P6-06 committee `OptimizationProposal` (`oprop_`) is not `OptimizationRun` and is not the unused P6-00 `OptimizationProposalRef`. A proposal references one scenario.
+
+## ADR-P6-052 — Explicit authenticated human approval is required for proposal adoption
+
+Only `require_human_approver` may `APPROVE`. Service accounts, workers, and the optimizer cannot fabricate the decision.
+
+## ADR-P6-053 — Proposal decision is recorded in an immutable ProposalDecisionReceipt
+
+Each decision writes `ProposalDecisionReceipt` plus a thin `PlanningDecisionRecord`. Receipts cannot be overwritten.
+
+## ADR-P6-054 — Proposal approval does not mutate optimizer, result, or scenario evidence
+
+Approval changes proposal governance state only.
+
+## ADR-P6-055 — Approved proposal creates a new Investment Plan revision; prior versions remain immutable
+
+`revise_plan` mints a new `plan_id` with `predecessor_plan_id`. Predecessor Drive bytes are not rewritten.
+
+## ADR-P6-056 — Proposal approval and plan approval are separate governance acts
+
+Proposal `APPROVED` authorizes `create-plan-revision` (draft). New `APPROVED_PLAN` still requires P6-01 validate / save-version / approve.
+
+## ADR-P6-057 — Stale proposals cannot be approved or applied
+
+Source-plan, result, or model-acceptance mismatch marks the proposal `STALE`. Stale proposals cannot be approved.
+
+## ADR-P6-058 — Source-plan changes require new or rebased governance
+
+An old proposal is never silently applied to a newer approved plan (`PROPOSAL_SOURCE_PLAN_STALE`).
+
+## ADR-P6-059 — Amount-bearing proposal and scenario data stays out of Firestore and logs
+
+Comparison and change-summary payloads are transient and `Cache-Control: private, no-store`.
+
+## ADR-P6-060 — P6-06 creates decision lineage suitable for a future Decision Ledger
+
+`PlanningDecisionRecord` stores decision type, owner, evidence refs, and fingerprints without amounts.
+
 ## Additional freeze notes
 
 - `PlanningChannelAllocation.amount` is pre-P6 compatibility, not value authority (see source-authority doc).

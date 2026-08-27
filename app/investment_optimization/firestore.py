@@ -16,10 +16,15 @@ from app.investment_optimization.contracts import (
     ModelConsumptionContract,
     OptimizationEvidenceCoverage,
     OptimizationInputContract,
+    OptimizationProposal,
     OptimizationReadinessReceipt,
     OptimizationResultRef,
     OptimizationRun,
+    PlanningDecisionRecord,
     PortfolioModelMapping,
+    ProposalDecisionReceipt,
+    ProposalReadinessReceipt,
+    ScenarioArtifact,
 )
 from app.investment_optimization.store import (
     OptimizationMetadata,
@@ -36,6 +41,11 @@ COL_COVERAGE = "optimization_evidence_coverage"
 COL_CONTRACTS = "model_consumption_contracts"
 COL_RUNS = "optimization_runs"
 COL_RESULTS = "optimization_result_refs"
+COL_SCENARIOS = "scenario_artifacts"
+COL_PROPOSALS = "optimization_proposals"
+COL_PROPOSAL_READY = "proposal_readiness_receipts"
+COL_DECISIONS = "proposal_decision_receipts"
+COL_DECISION_RECORDS = "planning_decision_records"
 COL_INDEX = "investment_optimization_index"
 
 
@@ -181,9 +191,75 @@ class FirestoreOptimizationMetadataStore:
                 tenant_id=safe.tenant_id,
                 workspace_id=safe.project_id,
             )
+        elif isinstance(safe, ScenarioArtifact):
+            existing = self.get_scenario(safe.scenario_id)
+            if existing is not None:
+                raise PersistenceBarrierError(
+                    "ScenarioArtifact is immutable after publish.",
+                    code="SCENARIO_IMMUTABLE",
+                )
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_SCENARIOS).document(
+                safe.scenario_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="scenario",
+                resource_id=safe.scenario_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, OptimizationProposal):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_PROPOSALS).document(
+                safe.proposal_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="proposal",
+                resource_id=safe.proposal_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, ProposalReadinessReceipt):
+            self._workspace(safe.tenant_id, safe.project_id).collection(
+                COL_PROPOSAL_READY
+            ).document(safe.receipt_id).set(_to_document(safe))
+            self._put_index(
+                kind="proposal_readiness",
+                resource_id=safe.receipt_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, ProposalDecisionReceipt):
+            if self.get_decision_receipt(safe.decision_receipt_id) is not None:
+                raise PersistenceBarrierError(
+                    "ProposalDecisionReceipt is immutable.",
+                    code="DECISION_RECEIPT_IMMUTABLE",
+                )
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_DECISIONS).document(
+                safe.decision_receipt_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="decision",
+                resource_id=safe.decision_receipt_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, PlanningDecisionRecord):
+            if self.get_decision_record(safe.decision_id) is not None:
+                raise PersistenceBarrierError(
+                    "PlanningDecisionRecord is immutable.",
+                    code="DECISION_RECEIPT_IMMUTABLE",
+                )
+            self._workspace(safe.tenant_id, safe.project_id).collection(
+                COL_DECISION_RECORDS
+            ).document(safe.decision_id).set(_to_document(safe))
+            self._put_index(
+                kind="decision_record",
+                resource_id=safe.decision_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
         else:
             raise PersistenceBarrierError(
-                f"{type(safe).__name__} is not a P6-04 persistence contract.",
+                f"{type(safe).__name__} is not a P6-04/P6-06 persistence contract.",
                 code="PLANNING_PERSISTENCE_BARRIER",
             )
         return safe
@@ -317,3 +393,99 @@ class FirestoreOptimizationMetadataStore:
         if not pool:
             return None
         return max(pool, key=lambda item: item.created_at)
+
+    def get_scenario(self, scenario_id: str) -> ScenarioArtifact | None:
+        return self._load(
+            ScenarioArtifact,
+            kind="scenario",
+            resource_id=scenario_id,
+            collection=COL_SCENARIOS,
+        )
+
+    def list_scenarios(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[ScenarioArtifact, ...]:
+        docs = self._workspace(tenant_id, project_id).collection(COL_SCENARIOS).stream()
+        matches = [_from_document(ScenarioArtifact, doc.to_dict()) for doc in docs]
+        return tuple(sorted(matches, key=lambda item: item.created_at, reverse=True))
+
+    def get_proposal(self, proposal_id: str) -> OptimizationProposal | None:
+        return self._load(
+            OptimizationProposal,
+            kind="proposal",
+            resource_id=proposal_id,
+            collection=COL_PROPOSALS,
+        )
+
+    def list_proposals(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[OptimizationProposal, ...]:
+        docs = self._workspace(tenant_id, project_id).collection(COL_PROPOSALS).stream()
+        matches = [_from_document(OptimizationProposal, doc.to_dict()) for doc in docs]
+        return tuple(sorted(matches, key=lambda item: item.created_at, reverse=True))
+
+    def get_proposal_readiness(self, receipt_id: str) -> ProposalReadinessReceipt | None:
+        return self._load(
+            ProposalReadinessReceipt,
+            kind="proposal_readiness",
+            resource_id=receipt_id,
+            collection=COL_PROPOSAL_READY,
+        )
+
+    def get_proposal_readiness_for_proposal(
+        self, proposal_id: str
+    ) -> ProposalReadinessReceipt | None:
+        proposal = self.get_proposal(proposal_id)
+        if proposal is None:
+            return None
+        docs = (
+            self._workspace(proposal.tenant_id, proposal.project_id)
+            .collection(COL_PROPOSAL_READY)
+            .stream()
+        )
+        matches = [
+            _from_document(ProposalReadinessReceipt, doc.to_dict())
+            for doc in docs
+            if (doc.to_dict() or {}).get("proposal_id") == proposal_id
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def get_decision_receipt(
+        self, decision_receipt_id: str
+    ) -> ProposalDecisionReceipt | None:
+        return self._load(
+            ProposalDecisionReceipt,
+            kind="decision",
+            resource_id=decision_receipt_id,
+            collection=COL_DECISIONS,
+        )
+
+    def get_decision_receipt_for_proposal(
+        self, proposal_id: str
+    ) -> ProposalDecisionReceipt | None:
+        proposal = self.get_proposal(proposal_id)
+        if proposal is None:
+            return None
+        docs = (
+            self._workspace(proposal.tenant_id, proposal.project_id)
+            .collection(COL_DECISIONS)
+            .stream()
+        )
+        matches = [
+            _from_document(ProposalDecisionReceipt, doc.to_dict())
+            for doc in docs
+            if (doc.to_dict() or {}).get("proposal_id") == proposal_id
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def get_decision_record(self, decision_id: str) -> PlanningDecisionRecord | None:
+        return self._load(
+            PlanningDecisionRecord,
+            kind="decision_record",
+            resource_id=decision_id,
+            collection=COL_DECISION_RECORDS,
+        )

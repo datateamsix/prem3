@@ -357,3 +357,102 @@ class OptimizationResultResponse(ApiModel):
     rows: tuple[OptimizationResultRowResponse, ...] = ()
     fingerprint: str
     schema_version: str
+
+
+class CreateScenarioRequest(ApiModel):
+    optimization_run_id: str
+
+
+class ScenarioResponse(ApiModel):
+    scenario_id: str
+    project_id: str
+    scenario_type: str
+    status: str
+    source_plan_id: str
+    source_plan_revision: int
+    optimization_run_id: str
+    optimization_result_ref: str
+    amount_kind: str
+    currency: str
+    period: str
+    fingerprint: str
+    created_at: datetime
+
+
+class ScenarioListResponse(ApiModel):
+    items: tuple[ScenarioResponse, ...]
+
+
+class ScenarioComparisonRowResponse(ApiModel):
+    market_id: str
+    channel_id: str
+    model_variable_id: str
+    baseline_amount: str
+    recommended_amount: str
+    delta: str
+    share_change: str | None = None
+    percent_change: str | None = None
+    percent_change_unavailable: bool = False
+    amount_kind: str
+
+
+class ScenarioComparisonResponse(ApiModel):
+    scenario_id: str
+    currency: str
+    amount_kind: str
+    rows: tuple[ScenarioComparisonRowResponse, ...] = ()
+    fingerprint: str
+
+
+class CreateProposalRequest(ApiModel):
+    scenario_id: str
+    title: str | None = None
+    summary: str | None = None
+    decision_owner_user_id: str | None = None
+    supersedes_proposal_id: str | None = None
+
+
+class ProposalResponse(ApiModel):
+    proposal_id: str
+    project_id: str
+    scenario_id: str
+    source_plan_id: str
+    source_plan_revision: int
+    optimization_run_id: str
+    optimization_readiness_receipt_id: str
+    model_version_id: str
+    status: str
+    title: str | None = None
+    decision_receipt_id: str | None = None
+    plan_revision_plan_id: str | None = None
+    fingerprint: str
+    created_at: datetime
+    submitted_at: datetime | None = None
+    decided_at: datetime | None = None
+
+
+class ProposalListResponse(ApiModel):
+    items: tuple[ProposalResponse, ...]
+
+
+class ProposalDecisionRequest(ApiModel):
+    action: str
+    comment: str | None = None
+
+
+class ProposalDecisionResponse(ApiModel):
+    proposal: ProposalResponse
+    decision_receipt_id: str
+    decision: str
+    decided_by_user_id: str
+    decided_at: datetime
+
+
+class PlanRevisionFromProposalResponse(ApiModel):
+    plan_id: str
+    predecessor_plan_id: str | None = None
+    revision: int
+    status: str
+    source_proposal_id: str | None = None
+    source_decision_receipt_id: str | None = None
+    source_scenario_id: str | None = None

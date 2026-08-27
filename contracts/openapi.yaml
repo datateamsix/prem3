@@ -1088,6 +1088,46 @@ components:
       - name
       title: CreateProjectRequest
       type: object
+    CreateProposalRequest:
+      additionalProperties: false
+      properties:
+        decision_owner_user_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Decision Owner User Id
+        scenario_id:
+          title: Scenario Id
+          type: string
+        summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Summary
+        supersedes_proposal_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Supersedes Proposal Id
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+      required:
+      - scenario_id
+      title: CreateProposalRequest
+      type: object
+    CreateScenarioRequest:
+      additionalProperties: false
+      properties:
+        optimization_run_id:
+          title: Optimization Run Id
+          type: string
+      required:
+      - optimization_run_id
+      title: CreateScenarioRequest
+      type: object
     CreateUploadRequest:
       additionalProperties: false
       properties:
@@ -3945,6 +3985,44 @@ components:
       - plans
       title: PlanCatalogResponse
       type: object
+    PlanRevisionFromProposalResponse:
+      additionalProperties: false
+      properties:
+        plan_id:
+          title: Plan Id
+          type: string
+        predecessor_plan_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Predecessor Plan Id
+        revision:
+          title: Revision
+          type: integer
+        source_decision_receipt_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Decision Receipt Id
+        source_proposal_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Proposal Id
+        source_scenario_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Scenario Id
+        status:
+          title: Status
+          type: string
+      required:
+      - plan_id
+      - revision
+      - status
+      title: PlanRevisionFromProposalResponse
+      type: object
     PlanningCapabilitySummary:
       additionalProperties: false
       properties:
@@ -4691,6 +4769,137 @@ components:
       - accept
       title: ProposalDecideRequest
       type: object
+    ProposalDecisionRequest:
+      additionalProperties: false
+      properties:
+        action:
+          title: Action
+          type: string
+        comment:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Comment
+      required:
+      - action
+      title: ProposalDecisionRequest
+      type: object
+    ProposalDecisionResponse:
+      additionalProperties: false
+      properties:
+        decided_at:
+          format: date-time
+          title: Decided At
+          type: string
+        decided_by_user_id:
+          title: Decided By User Id
+          type: string
+        decision:
+          title: Decision
+          type: string
+        decision_receipt_id:
+          title: Decision Receipt Id
+          type: string
+        proposal:
+          $ref: '#/components/schemas/ProposalResponse'
+      required:
+      - proposal
+      - decision_receipt_id
+      - decision
+      - decided_by_user_id
+      - decided_at
+      title: ProposalDecisionResponse
+      type: object
+    ProposalListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProposalResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: ProposalListResponse
+      type: object
+    ProposalResponse:
+      additionalProperties: false
+      properties:
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        decided_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Decided At
+        decision_receipt_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Decision Receipt Id
+        fingerprint:
+          title: Fingerprint
+          type: string
+        model_version_id:
+          title: Model Version Id
+          type: string
+        optimization_readiness_receipt_id:
+          title: Optimization Readiness Receipt Id
+          type: string
+        optimization_run_id:
+          title: Optimization Run Id
+          type: string
+        plan_revision_plan_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Plan Revision Plan Id
+        project_id:
+          title: Project Id
+          type: string
+        proposal_id:
+          title: Proposal Id
+          type: string
+        scenario_id:
+          title: Scenario Id
+          type: string
+        source_plan_id:
+          title: Source Plan Id
+          type: string
+        source_plan_revision:
+          title: Source Plan Revision
+          type: integer
+        status:
+          title: Status
+          type: string
+        submitted_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Submitted At
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+      required:
+      - proposal_id
+      - project_id
+      - scenario_id
+      - source_plan_id
+      - source_plan_revision
+      - optimization_run_id
+      - optimization_readiness_receipt_id
+      - model_version_id
+      - status
+      - fingerprint
+      - created_at
+      title: ProposalResponse
+      type: object
     PublishDestinationResultResponse:
       additionalProperties: false
       properties:
@@ -5117,6 +5326,153 @@ components:
           - type: 'null'
           title: Target Window Start
       title: ReviseCycleRequest
+      type: object
+    ScenarioComparisonResponse:
+      additionalProperties: false
+      properties:
+        amount_kind:
+          title: Amount Kind
+          type: string
+        currency:
+          title: Currency
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        rows:
+          default: []
+          items:
+            $ref: '#/components/schemas/ScenarioComparisonRowResponse'
+          title: Rows
+          type: array
+        scenario_id:
+          title: Scenario Id
+          type: string
+      required:
+      - scenario_id
+      - currency
+      - amount_kind
+      - fingerprint
+      title: ScenarioComparisonResponse
+      type: object
+    ScenarioComparisonRowResponse:
+      additionalProperties: false
+      properties:
+        amount_kind:
+          title: Amount Kind
+          type: string
+        baseline_amount:
+          title: Baseline Amount
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        delta:
+          title: Delta
+          type: string
+        market_id:
+          title: Market Id
+          type: string
+        model_variable_id:
+          title: Model Variable Id
+          type: string
+        percent_change:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Percent Change
+        percent_change_unavailable:
+          default: false
+          title: Percent Change Unavailable
+          type: boolean
+        recommended_amount:
+          title: Recommended Amount
+          type: string
+        share_change:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Share Change
+      required:
+      - market_id
+      - channel_id
+      - model_variable_id
+      - baseline_amount
+      - recommended_amount
+      - delta
+      - amount_kind
+      title: ScenarioComparisonRowResponse
+      type: object
+    ScenarioListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ScenarioResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: ScenarioListResponse
+      type: object
+    ScenarioResponse:
+      additionalProperties: false
+      properties:
+        amount_kind:
+          title: Amount Kind
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        currency:
+          title: Currency
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        optimization_result_ref:
+          title: Optimization Result Ref
+          type: string
+        optimization_run_id:
+          title: Optimization Run Id
+          type: string
+        period:
+          title: Period
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        scenario_id:
+          title: Scenario Id
+          type: string
+        scenario_type:
+          title: Scenario Type
+          type: string
+        source_plan_id:
+          title: Source Plan Id
+          type: string
+        source_plan_revision:
+          title: Source Plan Revision
+          type: integer
+        status:
+          title: Status
+          type: string
+      required:
+      - scenario_id
+      - project_id
+      - scenario_type
+      - status
+      - source_plan_id
+      - source_plan_revision
+      - optimization_run_id
+      - optimization_result_ref
+      - amount_kind
+      - currency
+      - period
+      - fingerprint
+      - created_at
+      title: ScenarioResponse
       type: object
     SourceMaterializationListResponse:
       additionalProperties: false
@@ -7093,6 +7449,290 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Optimization Result
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/proposals:
+    get:
+      operationId: listOptimizationProposals
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalListResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Proposals
+      tags:
+      - investment-portfolio
+    post:
+      operationId: createOptimizationProposal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProposalRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Proposal
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}:
+    get:
+      operationId: getOptimizationProposal
+      parameters:
+      - in: path
+        name: proposal_id
+        required: true
+        schema:
+          title: Proposal Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Proposal
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}/create-plan-revision:
+    post:
+      operationId: createPlanRevisionFromProposal
+      parameters:
+      - in: path
+        name: proposal_id
+        required: true
+        schema:
+          title: Proposal Id
+          type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanRevisionFromProposalResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Plan Revision From Proposal
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}/decision:
+    post:
+      operationId: decideOptimizationProposal
+      parameters:
+      - in: path
+        name: proposal_id
+        required: true
+        schema:
+          title: Proposal Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProposalDecisionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalDecisionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Decide Proposal
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}/review:
+    post:
+      operationId: reviewOptimizationProposal
+      parameters:
+      - in: path
+        name: proposal_id
+        required: true
+        schema:
+          title: Proposal Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Review Proposal
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}/submit:
+    post:
+      operationId: submitOptimizationProposal
+      parameters:
+      - in: path
+        name: proposal_id
+        required: true
+        schema:
+          title: Proposal Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposalResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Submit Proposal
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/scenarios:
+    get:
+      operationId: listOptimizationScenarios
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioListResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Scenarios
+      tags:
+      - investment-portfolio
+    post:
+      operationId: createOptimizationScenario
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScenarioRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Scenario
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/scenarios/{scenario_id}:
+    get:
+      operationId: getOptimizationScenario
+      parameters:
+      - in: path
+        name: scenario_id
+        required: true
+        schema:
+          title: Scenario Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Scenario
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/scenarios/{scenario_id}/comparison:
+    get:
+      operationId: getOptimizationScenarioComparison
+      parameters:
+      - in: path
+        name: scenario_id
+        required: true
+        schema:
+          title: Scenario Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioComparisonResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Scenario Comparison
       tags:
       - investment-portfolio
   /v1/projects/{project_id}/measurement-home:

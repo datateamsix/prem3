@@ -4,7 +4,7 @@ Accepted MMM is the primary causal response engine for optimization.
 
 MTA is supporting attribution/tactical evidence. MTA weights must not be substituted for MMM response curves.
 
-Optimization creates an immutable `OptimizationProposalRef`. It does not mutate the active Investment Plan. Human approval of `RECOMMENDED` authorizes a **new** governed Drive plan version (P6-06). It does not overwrite the baseline in place.
+Optimization creates an immutable `ScenarioArtifact` and a committee `OptimizationProposal`. It does not mutate the active Investment Plan. Human approval of a P6-06 `APPROVED` proposal authorizes a **new** governed Drive plan **draft** via P6-01 `revise` + ingest. Plan approval remains a separate act. It does not overwrite the baseline in place.
 
 Solver kinds:
 

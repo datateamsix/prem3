@@ -7,6 +7,13 @@
       "title": "BudgetResolutionPath",
       "type": "string"
     },
+    "app_investment_optimization_contracts__DecisionRecordType": {
+      "enum": [
+        "OPTIMIZATION_PROPOSAL"
+      ],
+      "title": "DecisionRecordType",
+      "type": "string"
+    },
     "app_investment_optimization_contracts__MappingAuthority": {
       "enum": [
         "MODEL_CONTRACT_EXACT",
@@ -83,6 +90,14 @@
         "REVIEW_REQUIRED"
       ],
       "title": "MarketModelCompatibility",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationAmountKind": {
+      "enum": [
+        "MODEL_RECOMMENDED",
+        "MODEL_ESTIMATE"
+      ],
+      "title": "OptimizationAmountKind",
       "type": "string"
     },
     "app_investment_optimization_contracts__OptimizationExecutionPhase": {
@@ -406,6 +421,228 @@
         "PREM3_CVAR"
       ],
       "title": "OptimizationObjectiveKind",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationProposal": {
+      "additionalProperties": false,
+      "description": "Committee proposal. Distinct from unused P6-00 OptimizationProposalRef.",
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "title": "Created By",
+          "type": "string"
+        },
+        "decided_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decided At"
+        },
+        "decision_deadline": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Deadline"
+        },
+        "decision_owner_user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Owner User Id"
+        },
+        "decision_receipt_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Receipt Id"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "model_version_id": {
+          "title": "Model Version Id",
+          "type": "string"
+        },
+        "optimization_readiness_receipt_id": {
+          "title": "Optimization Readiness Receipt Id",
+          "type": "string"
+        },
+        "optimization_run_id": {
+          "title": "Optimization Run Id",
+          "type": "string"
+        },
+        "plan_revision_plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Revision Plan Id"
+        },
+        "policy_version": {
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "proposal_id": {
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "readiness_receipt_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Readiness Receipt Id"
+        },
+        "scenario_id": {
+          "title": "Scenario Id",
+          "type": "string"
+        },
+        "source_plan_fingerprint": {
+          "title": "Source Plan Fingerprint",
+          "type": "string"
+        },
+        "source_plan_id": {
+          "title": "Source Plan Id",
+          "type": "string"
+        },
+        "source_plan_revision": {
+          "title": "Source Plan Revision",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationProposalLifecycleStatus"
+        },
+        "submitted_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Submitted At"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        },
+        "supersedes_proposal_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supersedes Proposal Id"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "tenant_id",
+        "project_id",
+        "scenario_id",
+        "source_plan_id",
+        "source_plan_revision",
+        "source_plan_fingerprint",
+        "optimization_run_id",
+        "optimization_readiness_receipt_id",
+        "model_version_id",
+        "status",
+        "policy_version",
+        "created_at",
+        "created_by",
+        "fingerprint"
+      ],
+      "title": "OptimizationProposal",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__OptimizationProposalLifecycleStatus": {
+      "enum": [
+        "DRAFT",
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "APPROVED",
+        "REJECTED",
+        "REVISION_REQUESTED",
+        "WITHDRAWN",
+        "STALE"
+      ],
+      "title": "OptimizationProposalLifecycleStatus",
       "type": "string"
     },
     "app_investment_optimization_contracts__OptimizationProposalRef": {
@@ -1206,6 +1443,76 @@
       "title": "OptimizationSolverKind",
       "type": "string"
     },
+    "app_investment_optimization_contracts__PlanningDecisionRecord": {
+      "additionalProperties": false,
+      "description": "Thin Decision Ledger seam. Refs only; no amounts.",
+      "properties": {
+        "counter_evidence_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Counter Evidence Refs",
+          "type": "array"
+        },
+        "decided_at": {
+          "format": "date-time",
+          "title": "Decided At",
+          "type": "string"
+        },
+        "decision": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__ProposalDecision"
+        },
+        "decision_id": {
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "decision_type": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__DecisionRecordType",
+          "default": "OPTIMIZATION_PROPOSAL"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "owner": {
+          "title": "Owner",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "proposal_id": {
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision_id",
+        "proposal_id",
+        "tenant_id",
+        "project_id",
+        "decision",
+        "owner",
+        "decided_at",
+        "fingerprint"
+      ],
+      "title": "PlanningDecisionRecord",
+      "type": "object"
+    },
     "app_investment_optimization_contracts__PortfolioBaselineKind": {
       "enum": [
         "APPROVED_PLAN",
@@ -1469,6 +1776,370 @@
         "CONFLICT"
       ],
       "title": "PortfolioModelMappingStatus",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__ProposalDecision": {
+      "enum": [
+        "APPROVE",
+        "REJECT",
+        "REQUEST_REVISION",
+        "WITHDRAW"
+      ],
+      "title": "ProposalDecision",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__ProposalDecisionReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "comment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comment"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decided_at": {
+          "format": "date-time",
+          "title": "Decided At",
+          "type": "string"
+        },
+        "decided_by_user_id": {
+          "title": "Decided By User Id",
+          "type": "string"
+        },
+        "decision": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__ProposalDecision"
+        },
+        "decision_receipt_id": {
+          "title": "Decision Receipt Id",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "optimization_result_fingerprint": {
+          "title": "Optimization Result Fingerprint",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "proposal_fingerprint": {
+          "title": "Proposal Fingerprint",
+          "type": "string"
+        },
+        "proposal_id": {
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason Code"
+        },
+        "scenario_fingerprint": {
+          "title": "Scenario Fingerprint",
+          "type": "string"
+        },
+        "source_plan_fingerprint": {
+          "title": "Source Plan Fingerprint",
+          "type": "string"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision_receipt_id",
+        "proposal_id",
+        "tenant_id",
+        "project_id",
+        "decision",
+        "decided_by_user_id",
+        "decided_at",
+        "proposal_fingerprint",
+        "scenario_fingerprint",
+        "source_plan_fingerprint",
+        "optimization_result_fingerprint",
+        "created_at",
+        "fingerprint"
+      ],
+      "title": "ProposalDecisionReceipt",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__ProposalLimitationCode": {
+      "enum": [
+        "MODEL_ESTIMATE_NOT_GUARANTEE",
+        "FIXED_BUDGET_ONLY",
+        "POSTERIOR_DEPENDENT",
+        "SPEND_CONSTRAINT_APPLIED",
+        "MODEL_SCOPE_LIMITED",
+        "UNMODELED_BUDGET_FIXED"
+      ],
+      "title": "ProposalLimitationCode",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__ProposalReadinessCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__ProposalReadinessCheckCode"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "passed"
+      ],
+      "title": "ProposalReadinessCheck",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__ProposalReadinessCheckCode": {
+      "enum": [
+        "SCENARIO_AVAILABLE",
+        "SOURCE_PLAN_MATCH",
+        "OPTIMIZATION_RESULT_COMPLETE",
+        "MODEL_ACCEPTED",
+        "RESULT_ARTIFACT_READBACK_VALID",
+        "PROPOSAL_POLICY_VALID",
+        "NO_STALE_AUTHORITY"
+      ],
+      "title": "ProposalReadinessCheckCode",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__ProposalReadinessReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__ProposalReadinessCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "limitation_codes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__ProposalLimitationCode"
+          },
+          "title": "Limitation Codes",
+          "type": "array"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "proposal_id": {
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__ProposalReadinessStatus"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "proposal_id",
+        "tenant_id",
+        "project_id",
+        "status",
+        "created_at",
+        "fingerprint"
+      ],
+      "title": "ProposalReadinessReceipt",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__ProposalReadinessStatus": {
+      "enum": [
+        "PROPOSAL_READY",
+        "REVIEW_REQUIRED",
+        "NOT_READY",
+        "STALE"
+      ],
+      "title": "ProposalReadinessStatus",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__ScenarioArtifact": {
+      "additionalProperties": false,
+      "description": "Durable scenario metadata. Allocation rows live on the GCS object.",
+      "properties": {
+        "amount_kind": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationAmountKind",
+          "default": "MODEL_RECOMMENDED"
+        },
+        "artifact_bucket": {
+          "title": "Artifact Bucket",
+          "type": "string"
+        },
+        "artifact_fingerprint": {
+          "title": "Artifact Fingerprint",
+          "type": "string"
+        },
+        "artifact_generation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Generation"
+        },
+        "artifact_object_name": {
+          "title": "Artifact Object Name",
+          "type": "string"
+        },
+        "baseline_fingerprint": {
+          "title": "Baseline Fingerprint",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "title": "Created By",
+          "type": "string"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "optimization_result_ref": {
+          "title": "Optimization Result Ref",
+          "type": "string"
+        },
+        "optimization_run_id": {
+          "title": "Optimization Run Id",
+          "type": "string"
+        },
+        "period": {
+          "title": "Period",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "recommendation_fingerprint": {
+          "title": "Recommendation Fingerprint",
+          "type": "string"
+        },
+        "scenario_id": {
+          "title": "Scenario Id",
+          "type": "string"
+        },
+        "scenario_type": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__ScenarioType",
+          "default": "OPTIMIZER_RECOMMENDATION"
+        },
+        "source_plan_fingerprint": {
+          "title": "Source Plan Fingerprint",
+          "type": "string"
+        },
+        "source_plan_id": {
+          "title": "Source Plan Id",
+          "type": "string"
+        },
+        "source_plan_revision": {
+          "title": "Source Plan Revision",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__ScenarioStatus",
+          "default": "AVAILABLE"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scenario_id",
+        "tenant_id",
+        "project_id",
+        "source_plan_id",
+        "source_plan_revision",
+        "source_plan_fingerprint",
+        "optimization_run_id",
+        "optimization_result_ref",
+        "baseline_fingerprint",
+        "recommendation_fingerprint",
+        "period",
+        "currency",
+        "artifact_bucket",
+        "artifact_object_name",
+        "artifact_fingerprint",
+        "created_at",
+        "created_by",
+        "fingerprint"
+      ],
+      "title": "ScenarioArtifact",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__ScenarioStatus": {
+      "enum": [
+        "AVAILABLE",
+        "PROPOSED",
+        "SUPERSEDED",
+        "ARCHIVED"
+      ],
+      "title": "ScenarioStatus",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__ScenarioType": {
+      "enum": [
+        "OPTIMIZER_RECOMMENDATION"
+      ],
+      "title": "ScenarioType",
       "type": "string"
     },
     "app_investment_optimization_contracts__UnmappedModelVariable": {
@@ -2110,6 +2781,42 @@
         "revision": {
           "title": "Revision",
           "type": "integer"
+        },
+        "source_decision_receipt_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Decision Receipt Id"
+        },
+        "source_proposal_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Proposal Id"
+        },
+        "source_scenario_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Scenario Id"
         },
         "status": {
           "$ref": "#/$defs/app_investment_planning_contracts__InvestmentPlanStatus"
@@ -2981,6 +3688,21 @@
     },
     {
       "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationResultRef"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__ScenarioArtifact"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationProposal"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__ProposalReadinessReceipt"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__ProposalDecisionReceipt"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__PlanningDecisionRecord"
     }
   ],
   "title": "PreM3 investment planning and portfolio contracts"

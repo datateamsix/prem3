@@ -13,11 +13,16 @@ from app.investment_optimization.contracts import (
     OptimizationEvidenceCoverage,
     OptimizationExecutionPlan,
     OptimizationInputContract,
+    OptimizationProposal,
     OptimizationProposalRef,
     OptimizationReadinessReceipt,
     OptimizationResultRef,
     OptimizationRun,
+    PlanningDecisionRecord,
     PortfolioModelMapping,
+    ProposalDecisionReceipt,
+    ProposalReadinessReceipt,
+    ScenarioArtifact,
     ScenarioAssumptionSetRef,
 )
 from app.investment_planning.errors import PersistenceBarrierError
@@ -34,6 +39,11 @@ OptimizationMetadata = (
     | OptimizationReadinessReceipt
     | OptimizationRun
     | OptimizationResultRef
+    | ScenarioArtifact
+    | OptimizationProposal
+    | ProposalReadinessReceipt
+    | ProposalDecisionReceipt
+    | PlanningDecisionRecord
 )
 
 FORBIDDEN_AMOUNT_KEYS = frozenset(
@@ -51,6 +61,10 @@ FORBIDDEN_AMOUNT_KEYS = frozenset(
         "recommended_amount",
         "pct_of_spend",
         "fixed_budget",
+        "delta",
+        "share_change",
+        "largest_increases",
+        "largest_decreases",
     }
 )
 
@@ -139,6 +153,36 @@ class OptimizationMetadataStore(Protocol):
         self, *, tenant_id: str, project_id: str
     ) -> OptimizationResultRef | None: ...
 
+    def get_scenario(self, scenario_id: str) -> ScenarioArtifact | None: ...
+
+    def list_scenarios(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[ScenarioArtifact, ...]: ...
+
+    def get_proposal(self, proposal_id: str) -> OptimizationProposal | None: ...
+
+    def list_proposals(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[OptimizationProposal, ...]: ...
+
+    def get_proposal_readiness(
+        self, receipt_id: str
+    ) -> ProposalReadinessReceipt | None: ...
+
+    def get_proposal_readiness_for_proposal(
+        self, proposal_id: str
+    ) -> ProposalReadinessReceipt | None: ...
+
+    def get_decision_receipt(
+        self, decision_receipt_id: str
+    ) -> ProposalDecisionReceipt | None: ...
+
+    def get_decision_receipt_for_proposal(
+        self, proposal_id: str
+    ) -> ProposalDecisionReceipt | None: ...
+
+    def get_decision_record(self, decision_id: str) -> PlanningDecisionRecord | None: ...
+
 
 class InMemoryOptimizationMetadataStore:
     def __init__(self) -> None:
@@ -150,6 +194,11 @@ class InMemoryOptimizationMetadataStore:
         self._contracts: dict[str, ModelConsumptionContract] = {}
         self._runs: dict[str, OptimizationRun] = {}
         self._results: dict[str, OptimizationResultRef] = {}
+        self._scenarios: dict[str, ScenarioArtifact] = {}
+        self._proposals: dict[str, OptimizationProposal] = {}
+        self._proposal_readiness: dict[str, ProposalReadinessReceipt] = {}
+        self._decisions: dict[str, ProposalDecisionReceipt] = {}
+        self._decision_records: dict[str, PlanningDecisionRecord] = {}
 
     def put(self, value: OptimizationMetadata) -> OptimizationMetadata:
         safe = assert_optimization_metadata_only(value)
@@ -176,6 +225,34 @@ class InMemoryOptimizationMetadataStore:
                     ):
                         self._results[result_id] = existing.model_copy(update={"is_current": False})
             self._results[safe.result_id] = safe
+        elif isinstance(safe, ScenarioArtifact):
+            existing_scenario = self._scenarios.get(safe.scenario_id)
+            if existing_scenario is not None:
+                raise PersistenceBarrierError(
+                    "ScenarioArtifact is immutable after publish.",
+                    code="SCENARIO_IMMUTABLE",
+                )
+            self._scenarios[safe.scenario_id] = safe
+        elif isinstance(safe, OptimizationProposal):
+            self._proposals[safe.proposal_id] = safe
+        elif isinstance(safe, ProposalReadinessReceipt):
+            self._proposal_readiness[safe.receipt_id] = safe
+        elif isinstance(safe, ProposalDecisionReceipt):
+            existing_decision = self._decisions.get(safe.decision_receipt_id)
+            if existing_decision is not None:
+                raise PersistenceBarrierError(
+                    "ProposalDecisionReceipt is immutable.",
+                    code="DECISION_RECEIPT_IMMUTABLE",
+                )
+            self._decisions[safe.decision_receipt_id] = safe
+        elif isinstance(safe, PlanningDecisionRecord):
+            existing_record = self._decision_records.get(safe.decision_id)
+            if existing_record is not None:
+                raise PersistenceBarrierError(
+                    "PlanningDecisionRecord is immutable.",
+                    code="DECISION_RECEIPT_IMMUTABLE",
+                )
+            self._decision_records[safe.decision_id] = safe
         return safe
 
     def get_mapping(self, mapping_id: str) -> PortfolioModelMapping | None:
@@ -295,6 +372,65 @@ class InMemoryOptimizationMetadataStore:
         if not matches:
             return None
         return max(matches, key=lambda item: item.created_at)
+
+    def get_scenario(self, scenario_id: str) -> ScenarioArtifact | None:
+        return self._scenarios.get(scenario_id)
+
+    def list_scenarios(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[ScenarioArtifact, ...]:
+        matches = [
+            item
+            for item in self._scenarios.values()
+            if item.tenant_id == tenant_id and item.project_id == project_id
+        ]
+        return tuple(sorted(matches, key=lambda item: item.created_at, reverse=True))
+
+    def get_proposal(self, proposal_id: str) -> OptimizationProposal | None:
+        return self._proposals.get(proposal_id)
+
+    def list_proposals(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[OptimizationProposal, ...]:
+        matches = [
+            item
+            for item in self._proposals.values()
+            if item.tenant_id == tenant_id and item.project_id == project_id
+        ]
+        return tuple(sorted(matches, key=lambda item: item.created_at, reverse=True))
+
+    def get_proposal_readiness(self, receipt_id: str) -> ProposalReadinessReceipt | None:
+        return self._proposal_readiness.get(receipt_id)
+
+    def get_proposal_readiness_for_proposal(
+        self, proposal_id: str
+    ) -> ProposalReadinessReceipt | None:
+        matches = [
+            item
+            for item in self._proposal_readiness.values()
+            if item.proposal_id == proposal_id
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def get_decision_receipt(
+        self, decision_receipt_id: str
+    ) -> ProposalDecisionReceipt | None:
+        return self._decisions.get(decision_receipt_id)
+
+    def get_decision_receipt_for_proposal(
+        self, proposal_id: str
+    ) -> ProposalDecisionReceipt | None:
+        matches = [
+            item for item in self._decisions.values() if item.proposal_id == proposal_id
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def get_decision_record(self, decision_id: str) -> PlanningDecisionRecord | None:
+        return self._decision_records.get(decision_id)
 
     def stored_types(self) -> tuple[str, ...]:
         return tuple(type(row).__name__ for row in self._rows)

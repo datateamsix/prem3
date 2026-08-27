@@ -350,7 +350,9 @@ class InvestmentPlanService:
         self._store.put(mark_validated(plan, receipt))
         return receipt
 
-    def save_version(self, *, plan_id: str, project_id: str, actor_id: str) -> BudgetDriveSourceVersion:
+    def save_version(
+        self, *, plan_id: str, project_id: str, actor_id: str
+    ) -> BudgetDriveSourceVersion:
         require_feature(self._repo, Feature.PLANNING_RUN)
         require_human_approver(actor_id)
         plan = self._require_plan(plan_id, project_id=project_id)
@@ -656,10 +658,25 @@ class InvestmentPlanService:
                 )
         return stored
 
-    def revise(self, *, plan_id: str, project_id: str, actor_id: str) -> InvestmentPlan:
+    def revise(
+        self,
+        *,
+        plan_id: str,
+        project_id: str,
+        actor_id: str,
+        source_proposal_id: str | None = None,
+        source_decision_receipt_id: str | None = None,
+        source_scenario_id: str | None = None,
+    ) -> InvestmentPlan:
         require_feature(self._repo, Feature.PLANNING_RUN)
         plan = self._require_plan(plan_id, project_id=project_id)
-        draft = revise_plan(plan=plan, actor_id=actor_id)
+        draft = revise_plan(
+            plan=plan,
+            actor_id=actor_id,
+            source_proposal_id=source_proposal_id,
+            source_decision_receipt_id=source_decision_receipt_id,
+            source_scenario_id=source_scenario_id,
+        )
         stored = self._store.put(draft)
         assert isinstance(stored, InvestmentPlan)
         return stored

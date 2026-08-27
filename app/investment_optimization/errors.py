@@ -91,3 +91,55 @@ class CrossTenantRunAccessError(OptimizationError):
 
 class OptimizationRunNotFoundError(OptimizationError):
     code = "OPTIMIZATION_RUN_NOT_FOUND"
+
+
+class ScenarioRequiresCompletedOptimizationError(OptimizationError):
+    code = "SCENARIO_REQUIRES_COMPLETED_OPTIMIZATION"
+
+
+class ScenarioNotFoundError(OptimizationError):
+    code = "SCENARIO_NOT_FOUND"
+
+
+class ScenarioImmutableError(OptimizationError):
+    code = "SCENARIO_IMMUTABLE"
+
+
+class ProposalNotFoundError(OptimizationError):
+    code = "PROPOSAL_NOT_FOUND"
+
+
+class ProposalNotReadyError(OptimizationError):
+    code = "PROPOSAL_NOT_READY"
+
+
+class ProposalStaleError(OptimizationError):
+    code = "PROPOSAL_STALE"
+
+
+class ProposalSourcePlanStaleError(OptimizationError):
+    code = "PROPOSAL_SOURCE_PLAN_STALE"
+
+
+class SubmittedProposalImmutableError(OptimizationError):
+    code = "SUBMITTED_PROPOSAL_IMMUTABLE"
+
+
+class InvalidProposalTransitionError(OptimizationError):
+    code = "INVALID_PROPOSAL_TRANSITION"
+
+
+class ProposalNotApprovedError(OptimizationError):
+    code = "PROPOSAL_NOT_APPROVED"
+
+
+class DecisionReceiptImmutableError(OptimizationError):
+    code = "DECISION_RECEIPT_IMMUTABLE"
+
+
+class CrossProjectProposalAccessError(OptimizationError):
+    code = "CROSS_PROJECT_PROPOSAL_ACCESS"
+
+
+class CrossTenantProposalAccessError(OptimizationError):
+    code = "CROSS_TENANT_PROPOSAL_ACCESS"

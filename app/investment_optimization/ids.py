@@ -57,3 +57,19 @@ def new_optimization_run_id() -> str:
 
 def new_optimization_result_id() -> str:
     return _opaque("ores")
+
+
+def new_scenario_id() -> str:
+    return _opaque("oscn")
+
+
+def new_proposal_decision_receipt_id() -> str:
+    return _opaque("odrc")
+
+
+def new_proposal_readiness_receipt_id() -> str:
+    return _opaque("opready")
+
+
+def new_planning_decision_id() -> str:
+    return _opaque("odec")

@@ -67,3 +67,7 @@ Governed mapping from portfolio cells to accepted MMM variables, plus a fingerpr
 A non-stale `OPTIMIZATION_READY` receipt may dispatch `OptimizationRun` (`orun_`). Native Meridian `BudgetOptimizer` (fixed budget) writes an immutable GCS result labeled `MODEL_RECOMMENDED`. See [NATIVE_MERIDIAN_FIXED_BUDGET_OPTIMIZATION.md](NATIVE_MERIDIAN_FIXED_BUDGET_OPTIMIZATION.md), [OPTIMIZATION_RUN_LIFECYCLE.md](OPTIMIZATION_RUN_LIFECYCLE.md), [OPTIMIZATION_RESULT_CONTRACT.md](OPTIMIZATION_RESULT_CONTRACT.md), and [OPTIMIZATION_EXECUTION_AUTHORITY.md](OPTIMIZATION_EXECUTION_AUTHORITY.md).
 
 Drive plans are not mutated. Proposal approval is P6-06.
+
+## Scenario artifacts and proposal governance (P6-06)
+
+A completed run may publish an immutable `ScenarioArtifact`. A committee `OptimizationProposal` requires explicit human `ProposalDecisionReceipt`. Approved proposals create a **new** P6-01 plan draft; they do not overwrite the prior approved plan. See [OPTIMIZATION_SCENARIO_ARTIFACT.md](OPTIMIZATION_SCENARIO_ARTIFACT.md), [OPTIMIZATION_PROPOSAL_GOVERNANCE.md](OPTIMIZATION_PROPOSAL_GOVERNANCE.md), [PROPOSAL_DECISION_RECEIPT.md](PROPOSAL_DECISION_RECEIPT.md), [INVESTMENT_PLAN_REVISION_FROM_PROPOSAL.md](INVESTMENT_PLAN_REVISION_FROM_PROPOSAL.md), and [PLANNING_DECISION_LINEAGE.md](PLANNING_DECISION_LINEAGE.md).

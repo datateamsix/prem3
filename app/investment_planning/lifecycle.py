@@ -12,8 +12,8 @@ from app.investment_planning.errors import (
     PlanningAuthorityError,
     UnresolvedMarketIdentityError,
 )
-from app.investment_planning.identity import CANONICAL_MARKET_CONTRACT_INTEGRATED
 from app.investment_planning.fingerprint import investment_plan_fingerprint
+from app.investment_planning.identity import CANONICAL_MARKET_CONTRACT_INTEGRATED
 from app.investment_planning.ids import new_plan_id
 
 
@@ -33,7 +33,9 @@ def capability_ready_status(
     return InvestmentPlanReadyStatus.PENDING
 
 
-def mark_validated(plan: InvestmentPlan, receipt: InvestmentPlanValidationReceipt) -> InvestmentPlan:
+def mark_validated(
+    plan: InvestmentPlan, receipt: InvestmentPlanValidationReceipt
+) -> InvestmentPlan:
     if receipt.plan_id != plan.plan_id:
         raise PlanningAuthorityError("Validation receipt does not belong to this plan.")
     return plan.model_copy(
@@ -85,7 +87,14 @@ def approve_plan(
     return approved
 
 
-def revise_plan(*, plan: InvestmentPlan, actor_id: str) -> InvestmentPlan:
+def revise_plan(
+    *,
+    plan: InvestmentPlan,
+    actor_id: str,
+    source_proposal_id: str | None = None,
+    source_decision_receipt_id: str | None = None,
+    source_scenario_id: str | None = None,
+) -> InvestmentPlan:
     require_human_approver(actor_id)
     if plan.status is not InvestmentPlanStatus.APPROVED:
         raise PlanningAuthorityError("Only an approved plan can be revised.")
@@ -110,4 +119,7 @@ def revise_plan(*, plan: InvestmentPlan, actor_id: str) -> InvestmentPlan:
         created_at=now,
         updated_at=now,
         created_by=actor_id,
+        source_proposal_id=source_proposal_id,
+        source_decision_receipt_id=source_decision_receipt_id,
+        source_scenario_id=source_scenario_id,
     )

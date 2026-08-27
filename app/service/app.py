@@ -40,6 +40,7 @@ from app.investment_optimization.accepted_model import ModelingRepositoryDirecto
 from app.investment_optimization.adapter import NativeMeridianFixedBudgetAdapter
 from app.investment_optimization.consumption import MemoryModelConsumptionSource
 from app.investment_optimization.firestore import FirestoreOptimizationMetadataStore
+from app.investment_optimization.proposal import ProposalGovernanceService
 from app.investment_optimization.run_service import OptimizationRunService
 from app.investment_optimization.service import OptimizationReadinessService
 from app.investment_optimization.store import InMemoryOptimizationMetadataStore
@@ -343,6 +344,15 @@ def create_app(
         artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
         optimizer=NativeMeridianFixedBudgetAdapter(),
         execute_inline=not uses_cloud_runtime(),
+    )
+    app.state.proposal_governance = ProposalGovernanceService(
+        repo=repo,
+        store=optimization_store,
+        runs=app.state.optimization_runs,
+        object_store=upload_store or FakeObjectStore(),
+        artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
+        planning=app.state.investment_planning,
+        models=ModelingRepositoryDirectory(modeling.repo),
     )
     app.state.mta_service = MTAService()
     app.state.mmm_service_identity_verifier = _mmm_service_identity_verifier(cfg)

@@ -12,13 +12,16 @@ from app.investment_optimization.contracts import (
     MappingOverride,
     OptimizationReadinessReceipt,
     PortfolioModelMapping,
+    ScenarioArtifact,
 )
 from app.investment_optimization.enums import (
     MappingAuthority,
     MappingCardinalityPolicy,
+    ProposalDecision,
     UnmappedVariableTreatment,
 )
 from app.investment_optimization.mapping import reject_forbidden_authority
+from app.investment_optimization.proposal import ProposalGovernanceService
 from app.investment_optimization.run_service import OptimizationRunService
 from app.investment_optimization.service import OptimizationReadinessService
 from app.investment_planning.contracts import (
@@ -41,6 +44,8 @@ from app.service.errors import planning_error
 from app.service.investment_planning_models import (
     CreateOptimizationRunRequest,
     CreatePortfolioModelMappingRequest,
+    CreateProposalRequest,
+    CreateScenarioRequest,
     EvaluateOptimizationReadinessRequest,
     InvestmentPortfolioResponse,
     MappingOverrideRequest,
@@ -53,6 +58,7 @@ from app.service.investment_planning_models import (
     OptimizationResultRowResponse,
     OptimizationRunListResponse,
     OptimizationRunResponse,
+    PlanRevisionFromProposalResponse,
     PortfolioAllocationResponse,
     PortfolioDimensionTotalResponse,
     PortfolioEvidenceCoverageItemResponse,
@@ -63,7 +69,15 @@ from app.service.investment_planning_models import (
     PortfolioModelMappingResponse,
     PortfolioObservationResponse,
     PortfolioVarianceResponse,
+    ProposalDecisionRequest,
+    ProposalDecisionResponse,
+    ProposalListResponse,
+    ProposalResponse,
     QuarterlyPortfolioResponse,
+    ScenarioComparisonResponse,
+    ScenarioComparisonRowResponse,
+    ScenarioListResponse,
+    ScenarioResponse,
 )
 from app.service.routers.investment_planning import (
     authorized_planning_scope,
@@ -299,6 +313,13 @@ def get_optimization_run_service(request: Request) -> OptimizationRunService:
     service = getattr(request.app.state, "optimization_runs", None)
     if service is None:
         raise RuntimeError("Optimization execution service is not configured.")
+    return service
+
+
+def get_proposal_governance(request: Request) -> ProposalGovernanceService:
+    service = getattr(request.app.state, "proposal_governance", None)
+    if service is None:
+        raise RuntimeError("Proposal governance service is not configured.")
     return service
 
 
@@ -587,6 +608,244 @@ async def get_optimization_result(
     return _result_response(payload)
 
 
+def _scenario_response(item: ScenarioArtifact) -> ScenarioResponse:
+    return ScenarioResponse(
+        scenario_id=item.scenario_id,
+        project_id=item.project_id,
+        scenario_type=item.scenario_type.value,
+        status=item.status.value,
+        source_plan_id=item.source_plan_id,
+        source_plan_revision=item.source_plan_revision,
+        optimization_run_id=item.optimization_run_id,
+        optimization_result_ref=item.optimization_result_ref,
+        amount_kind=item.amount_kind.value,
+        currency=item.currency,
+        period=item.period,
+        fingerprint=item.fingerprint,
+        created_at=item.created_at,
+    )
+
+
+def _proposal_response(item) -> ProposalResponse:
+    return ProposalResponse(
+        proposal_id=item.proposal_id,
+        project_id=item.project_id,
+        scenario_id=item.scenario_id,
+        source_plan_id=item.source_plan_id,
+        source_plan_revision=item.source_plan_revision,
+        optimization_run_id=item.optimization_run_id,
+        optimization_readiness_receipt_id=item.optimization_readiness_receipt_id,
+        model_version_id=item.model_version_id,
+        status=item.status.value,
+        title=item.title,
+        decision_receipt_id=item.decision_receipt_id,
+        plan_revision_plan_id=item.plan_revision_plan_id,
+        fingerprint=item.fingerprint,
+        created_at=item.created_at,
+        submitted_at=item.submitted_at,
+        decided_at=item.decided_at,
+    )
+
+
+async def create_scenario(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+    body: CreateScenarioRequest,
+) -> ScenarioResponse:
+    try:
+        item = service.create_scenario(
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+            optimization_run_id=body.optimization_run_id,
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _scenario_response(item)
+
+
+async def list_scenarios(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+) -> ScenarioListResponse:
+    try:
+        items = service.list_scenarios(project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return ScenarioListResponse(items=tuple(_scenario_response(item) for item in items))
+
+
+async def get_scenario(
+    scenario_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+) -> ScenarioResponse:
+    try:
+        item = service.get_scenario(scenario_id=scenario_id, project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _scenario_response(item)
+
+
+async def get_scenario_comparison(
+    scenario_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+) -> ScenarioComparisonResponse:
+    try:
+        comparison = service.get_comparison(
+            scenario_id=scenario_id, project_id=workspace.workspace_id
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return ScenarioComparisonResponse(
+        scenario_id=comparison.scenario_id,
+        currency=comparison.currency,
+        amount_kind=comparison.amount_kind.value,
+        rows=tuple(
+            ScenarioComparisonRowResponse(
+                market_id=row.market_id,
+                channel_id=row.channel_id,
+                model_variable_id=row.model_variable_id,
+                baseline_amount=format(row.baseline_amount, "f"),
+                recommended_amount=format(row.recommended_amount, "f"),
+                delta=format(row.delta, "f"),
+                share_change=None if row.share_change is None else format(row.share_change, "f"),
+                percent_change=(
+                    None if row.percent_change is None else format(row.percent_change, "f")
+                ),
+                percent_change_unavailable=row.percent_change_unavailable,
+                amount_kind=row.amount_kind.value,
+            )
+            for row in comparison.rows
+        ),
+        fingerprint=comparison.fingerprint,
+    )
+
+
+async def create_proposal(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+    body: CreateProposalRequest,
+) -> ProposalResponse:
+    try:
+        item = service.create_proposal(
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+            scenario_id=body.scenario_id,
+            title=body.title,
+            summary=body.summary,
+            decision_owner_user_id=body.decision_owner_user_id,
+            supersedes_proposal_id=body.supersedes_proposal_id,
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _proposal_response(item)
+
+
+async def list_proposals(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+) -> ProposalListResponse:
+    try:
+        items = service.list_proposals(project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return ProposalListResponse(items=tuple(_proposal_response(item) for item in items))
+
+
+async def get_proposal(
+    proposal_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+) -> ProposalResponse:
+    try:
+        item = service.get_proposal(proposal_id=proposal_id, project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _proposal_response(item)
+
+
+async def submit_proposal(
+    proposal_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+) -> ProposalResponse:
+    try:
+        item = service.submit_proposal(
+            proposal_id=proposal_id,
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _proposal_response(item)
+
+
+async def review_proposal(
+    proposal_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+) -> ProposalResponse:
+    try:
+        item = service.review_proposal(
+            proposal_id=proposal_id,
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _proposal_response(item)
+
+
+async def decide_proposal(
+    proposal_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+    body: ProposalDecisionRequest,
+) -> ProposalDecisionResponse:
+    try:
+        proposal, receipt = service.decide(
+            proposal_id=proposal_id,
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+            decision=ProposalDecision(body.action),
+            comment=body.comment,
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return ProposalDecisionResponse(
+        proposal=_proposal_response(proposal),
+        decision_receipt_id=receipt.decision_receipt_id,
+        decision=receipt.decision.value,
+        decided_by_user_id=receipt.decided_by_user_id,
+        decided_at=receipt.decided_at,
+    )
+
+
+async def create_plan_revision_from_proposal(
+    proposal_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[ProposalGovernanceService, Depends(get_proposal_governance)],
+) -> PlanRevisionFromProposalResponse:
+    try:
+        plan = service.create_plan_revision_from_proposal(
+            proposal_id=proposal_id,
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return PlanRevisionFromProposalResponse(
+        plan_id=plan.plan_id,
+        predecessor_plan_id=plan.predecessor_plan_id,
+        revision=plan.revision,
+        status=plan.status.value,
+        source_proposal_id=plan.source_proposal_id,
+        source_decision_receipt_id=plan.source_decision_receipt_id,
+        source_scenario_id=plan.source_scenario_id,
+    )
+
+
 canonical_portfolio_router.add_api_route(
     "/model-mapping",
     create_model_mapping,
@@ -650,6 +909,86 @@ canonical_portfolio_router.add_api_route(
     methods=["GET"],
     operation_id="getOptimizationResult",
     response_model=OptimizationResultResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/scenarios",
+    create_scenario,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createOptimizationScenario",
+    response_model=ScenarioResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/scenarios",
+    list_scenarios,
+    methods=["GET"],
+    operation_id="listOptimizationScenarios",
+    response_model=ScenarioListResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/scenarios/{scenario_id}",
+    get_scenario,
+    methods=["GET"],
+    operation_id="getOptimizationScenario",
+    response_model=ScenarioResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/scenarios/{scenario_id}/comparison",
+    get_scenario_comparison,
+    methods=["GET"],
+    operation_id="getOptimizationScenarioComparison",
+    response_model=ScenarioComparisonResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/proposals",
+    create_proposal,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createOptimizationProposal",
+    response_model=ProposalResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/proposals",
+    list_proposals,
+    methods=["GET"],
+    operation_id="listOptimizationProposals",
+    response_model=ProposalListResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}",
+    get_proposal,
+    methods=["GET"],
+    operation_id="getOptimizationProposal",
+    response_model=ProposalResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}/submit",
+    submit_proposal,
+    methods=["POST"],
+    operation_id="submitOptimizationProposal",
+    response_model=ProposalResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}/review",
+    review_proposal,
+    methods=["POST"],
+    operation_id="reviewOptimizationProposal",
+    response_model=ProposalResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}/decision",
+    decide_proposal,
+    methods=["POST"],
+    operation_id="decideOptimizationProposal",
+    response_model=ProposalDecisionResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}/create-plan-revision",
+    create_plan_revision_from_proposal,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createPlanRevisionFromProposal",
+    response_model=PlanRevisionFromProposalResponse,
 )
 workspace_alias_portfolio_router.add_api_route(
     "/model-mapping",
@@ -722,5 +1061,96 @@ workspace_alias_portfolio_router.add_api_route(
     methods=["GET"],
     operation_id="getOptimizationResultWorkspaceAlias",
     response_model=OptimizationResultResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/scenarios",
+    create_scenario,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createOptimizationScenarioWorkspaceAlias",
+    response_model=ScenarioResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/scenarios",
+    list_scenarios,
+    methods=["GET"],
+    operation_id="listOptimizationScenariosWorkspaceAlias",
+    response_model=ScenarioListResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/scenarios/{scenario_id}",
+    get_scenario,
+    methods=["GET"],
+    operation_id="getOptimizationScenarioWorkspaceAlias",
+    response_model=ScenarioResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/scenarios/{scenario_id}/comparison",
+    get_scenario_comparison,
+    methods=["GET"],
+    operation_id="getOptimizationScenarioComparisonWorkspaceAlias",
+    response_model=ScenarioComparisonResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/proposals",
+    create_proposal,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createOptimizationProposalWorkspaceAlias",
+    response_model=ProposalResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/proposals",
+    list_proposals,
+    methods=["GET"],
+    operation_id="listOptimizationProposalsWorkspaceAlias",
+    response_model=ProposalListResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}",
+    get_proposal,
+    methods=["GET"],
+    operation_id="getOptimizationProposalWorkspaceAlias",
+    response_model=ProposalResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}/submit",
+    submit_proposal,
+    methods=["POST"],
+    operation_id="submitOptimizationProposalWorkspaceAlias",
+    response_model=ProposalResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}/review",
+    review_proposal,
+    methods=["POST"],
+    operation_id="reviewOptimizationProposalWorkspaceAlias",
+    response_model=ProposalResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}/decision",
+    decide_proposal,
+    methods=["POST"],
+    operation_id="decideOptimizationProposalWorkspaceAlias",
+    response_model=ProposalDecisionResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/proposals/{proposal_id}/create-plan-revision",
+    create_plan_revision_from_proposal,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createPlanRevisionFromProposalWorkspaceAlias",
+    response_model=PlanRevisionFromProposalResponse,
     include_in_schema=False,
 )

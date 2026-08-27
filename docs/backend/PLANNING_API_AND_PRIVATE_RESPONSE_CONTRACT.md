@@ -10,7 +10,7 @@ Canonical namespace:
 
 `/v1/workspaces/{workspace_id}/...` is a documented alias of the same state machine. `project_id == workspace_id`.
 
-P6-01 registers real Investment Plan handlers on the canonical namespace. Workspace paths are a same-state alias (`include_in_schema=False`). `GET /v1/projects/{project_id}/investment-portfolio` is registered (P6-02/P6-03). P6-04 registers mapping and readiness under the same portfolio prefix. P6-05 registers `.../optimizations` (202 create, metadata get/list, private result) under that prefix. The unused P6-00 `/investment-optimizations` namespace stays unregistered. `GET .../view` is not registered.
+P6-01 registers real Investment Plan handlers on the canonical namespace. Workspace paths are a same-state alias (`include_in_schema=False`). `GET /v1/projects/{project_id}/investment-portfolio` is registered (P6-02/P6-03). P6-04 registers mapping and readiness under the same portfolio prefix. P6-05 registers `.../optimizations`. P6-06 registers `.../scenarios` and `.../proposals` (including submit/review/decision and `create-plan-revision`). The unused P6-00 `/investment-optimizations` namespace stays unregistered. `GET .../view` is not registered.
 
 P6-03 extends the portfolio response with `actuals_source_id`, coverage, observations, and plan-vs-actual remaining/variance. Optional query parameter: `fiscal_year`. Client-supplied actual rows are not accepted. Entitlement remains `Feature.PORTFOLIO_VIEW`.
 
@@ -55,10 +55,28 @@ GET    /v1/projects/{project_id}/investment-portfolio/optimizations/{optimizatio
 
 Create is 202 metadata (`readiness_receipt_id`, optional `idempotency_key`). Result is amount-bearing `MODEL_RECOMMENDED` with `Cache-Control: private, no-store`. Clients cannot supply tenant, paths, budget arrays, or variable maps.
 
-Contract fingerprints at P6-05:
+Implemented P6-06 HTTP routes (workspace alias omitted from OpenAPI):
 
-- `contracts/openapi.yaml` sha256 `e0da0cfdefe6466bf0cb26db81f4056a51199704708bcf9e646415a31e42181c`
-- `contracts/schema/planning.schema.json` sha256 `35a3315ed745ecc0b3bbf8533cf6f9dcfce6c21c45bab1c3f6c1aa41f6a95e40`
+```text
+POST   /v1/projects/{project_id}/investment-portfolio/scenarios
+GET    /v1/projects/{project_id}/investment-portfolio/scenarios
+GET    /v1/projects/{project_id}/investment-portfolio/scenarios/{scenario_id}
+GET    /v1/projects/{project_id}/investment-portfolio/scenarios/{scenario_id}/comparison
+POST   /v1/projects/{project_id}/investment-portfolio/proposals
+GET    /v1/projects/{project_id}/investment-portfolio/proposals
+GET    /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}
+POST   /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}/submit
+POST   /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}/review
+POST   /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}/decision
+POST   /v1/projects/{project_id}/investment-portfolio/proposals/{proposal_id}/create-plan-revision
+```
+
+Scenario comparison is amount-bearing and private/no-store. Create-plan-revision returns a **draft** `plan_id`; it does not approve the Investment Plan.
+
+Contract fingerprints at P6-06:
+
+- `contracts/openapi.yaml` sha256 `67eb3380484160207e51a96426993646677d07686dbc8c2b7671e14647775c52`
+- `contracts/schema/planning.schema.json` sha256 `2dc39c9e438e889d484d6c2ad2cdc0c60e660fac077c9a620683b0ee610fc464`
 
 Generated schemas live in `contracts/schema/planning.schema.json`.
 

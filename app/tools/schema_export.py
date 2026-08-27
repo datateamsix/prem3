@@ -32,11 +32,16 @@ from app.intelligence.contracts import (
 )
 from app.investment_optimization.contracts import (
     OptimizationInputContract,
+    OptimizationProposal,
     OptimizationProposalRef,
     OptimizationReadinessReceipt,
     OptimizationResultRef,
     OptimizationRun,
+    PlanningDecisionRecord,
     PortfolioModelMapping,
+    ProposalDecisionReceipt,
+    ProposalReadinessReceipt,
+    ScenarioArtifact,
 )
 from app.investment_planning.contracts import (
     ActualSpendSourceRef,
@@ -290,6 +295,11 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             OptimizationReadinessReceipt,
             OptimizationRun,
             OptimizationResultRef,
+            ScenarioArtifact,
+            OptimizationProposal,
+            ProposalReadinessReceipt,
+            ProposalDecisionReceipt,
+            PlanningDecisionRecord,
         ),
         composition="catalog",
     ),
