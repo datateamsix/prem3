@@ -59,6 +59,7 @@ def _assembler(request: Request, repo: ControlPlaneRepository) -> ProjectHomeAss
         data_foundation=request.app.state.data_foundation,
         model_ready=getattr(request.app.state, "model_ready_resolver", None),
         modeling=getattr(request.app.state, "mmm_modeling", None),
+        optimization=getattr(request.app.state, "optimization_readiness", None),
     )
 
 

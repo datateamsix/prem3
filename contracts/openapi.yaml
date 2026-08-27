@@ -996,6 +996,27 @@ components:
       - model_window_end
       title: CreateModelDesignRequest
       type: object
+    CreatePortfolioModelMappingRequest:
+      additionalProperties: false
+      properties:
+        mapping_overrides:
+          default: []
+          items:
+            $ref: '#/components/schemas/MappingOverrideRequest'
+          title: Mapping Overrides
+          type: array
+        model_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Version Id
+        portfolio_snapshot_id:
+          title: Portfolio Snapshot Id
+          type: string
+      required:
+      - portfolio_snapshot_id
+      title: CreatePortfolioModelMappingRequest
+      type: object
     CreateProjectRequest:
       additionalProperties: false
       properties:
@@ -1531,6 +1552,27 @@ components:
           title: Uses Intraday For Canonical
           type: boolean
       title: EvaluateMTAReadinessRequest
+      type: object
+    EvaluateOptimizationReadinessRequest:
+      additionalProperties: false
+      properties:
+        mapping_overrides:
+          default: []
+          items:
+            $ref: '#/components/schemas/MappingOverrideRequest'
+          title: Mapping Overrides
+          type: array
+        model_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Version Id
+        portfolio_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Portfolio Snapshot Id
+      title: EvaluateOptimizationReadinessRequest
       type: object
     EvaluationExecutionView:
       additionalProperties: false
@@ -2792,6 +2834,47 @@ components:
       - execution_plan_id
       title: MTARunResponse
       type: object
+    MappingOverrideRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          title: Authority
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        market_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+        model_variable_ids:
+          items:
+            type: string
+          title: Model Variable Ids
+          type: array
+        policy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Policy
+        split_weights_bps:
+          default: []
+          items:
+            type: integer
+          title: Split Weights Bps
+          type: array
+        unmapped_treatment:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unmapped Treatment
+      required:
+      - channel_id
+      - model_variable_ids
+      - authority
+      title: MappingOverrideRequest
+      type: object
     MaterializeDatasetSourceRequest:
       additionalProperties: false
       properties:
@@ -3320,6 +3403,170 @@ components:
       - official_report_available
       title: OfficialEdaReportView
       type: object
+    OptimizationCoverageSummaryResponse:
+      additionalProperties: false
+      properties:
+        accepted_model_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Accepted Model Ref
+        covered_channel_ids:
+          default: []
+          items:
+            type: string
+          title: Covered Channel Ids
+          type: array
+        covered_market_ids:
+          default: []
+          items:
+            type: string
+          title: Covered Market Ids
+          type: array
+        mta_evidence_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Mta Evidence Ref
+        review_required_channel_ids:
+          default: []
+          items:
+            type: string
+          title: Review Required Channel Ids
+          type: array
+        status:
+          title: Status
+          type: string
+        uncovered_channel_ids:
+          default: []
+          items:
+            type: string
+          title: Uncovered Channel Ids
+          type: array
+        unsupported_market_ids:
+          default: []
+          items:
+            type: string
+          title: Unsupported Market Ids
+          type: array
+      required:
+      - status
+      title: OptimizationCoverageSummaryResponse
+      type: object
+    OptimizationIssueResponse:
+      additionalProperties: false
+      properties:
+        blocking:
+          title: Blocking
+          type: boolean
+        channel_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Id
+        code:
+          title: Code
+          type: string
+        market_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+        message_key:
+          title: Message Key
+          type: string
+        review_required:
+          default: false
+          title: Review Required
+          type: boolean
+        variable_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Variable Id
+      required:
+      - code
+      - blocking
+      - message_key
+      title: OptimizationIssueResponse
+      type: object
+    OptimizationReadinessCheckResponse:
+      additionalProperties: false
+      properties:
+        code:
+          title: Code
+          type: string
+        passed:
+          title: Passed
+          type: boolean
+      required:
+      - code
+      - passed
+      title: OptimizationReadinessCheckResponse
+      type: object
+    OptimizationReadinessResponse:
+      additionalProperties: false
+      properties:
+        checks:
+          default: []
+          items:
+            $ref: '#/components/schemas/OptimizationReadinessCheckResponse'
+          title: Checks
+          type: array
+        coverage:
+          anyOf:
+          - $ref: '#/components/schemas/OptimizationCoverageSummaryResponse'
+          - type: 'null'
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        issues:
+          default: []
+          items:
+            $ref: '#/components/schemas/OptimizationIssueResponse'
+          title: Issues
+          type: array
+        mapping_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Mapping Id
+        model_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Version Id
+        optimization_input_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Optimization Input Id
+        portfolio_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Portfolio Snapshot Id
+        project_id:
+          title: Project Id
+          type: string
+        receipt_id:
+          title: Receipt Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - status
+      - receipt_id
+      - project_id
+      - fingerprint
+      - created_at
+      title: OptimizationReadinessResponse
+      type: object
     OrganizationReadModel:
       additionalProperties: false
       properties:
@@ -3698,6 +3945,139 @@ components:
           - type: 'null'
           title: Plan Source As Of
       title: PortfolioFreshnessResponse
+      type: object
+    PortfolioModelMappingEntryResponse:
+      additionalProperties: false
+      properties:
+        authority:
+          title: Authority
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        mapping_entry_id:
+          title: Mapping Entry Id
+          type: string
+        mapping_kind:
+          title: Mapping Kind
+          type: string
+        market_compatibility:
+          title: Market Compatibility
+          type: string
+        market_id:
+          title: Market Id
+          type: string
+        model_variable_id:
+          title: Model Variable Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - mapping_entry_id
+      - market_id
+      - channel_id
+      - model_variable_id
+      - mapping_kind
+      - authority
+      - status
+      - market_compatibility
+      - fingerprint
+      title: PortfolioModelMappingEntryResponse
+      type: object
+    PortfolioModelMappingListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/PortfolioModelMappingResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: PortfolioModelMappingListResponse
+      type: object
+    PortfolioModelMappingResponse:
+      additionalProperties: false
+      properties:
+        baseline_kind:
+          title: Baseline Kind
+          type: string
+        conflicts:
+          default: []
+          items:
+            type: string
+          title: Conflicts
+          type: array
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        mapped_cells:
+          default: 0
+          title: Mapped Cells
+          type: integer
+        mapping_entries:
+          default: []
+          items:
+            $ref: '#/components/schemas/PortfolioModelMappingEntryResponse'
+          title: Mapping Entries
+          type: array
+        mapping_id:
+          title: Mapping Id
+          type: string
+        mapping_status:
+          title: Mapping Status
+          type: string
+        model_version_id:
+          title: Model Version Id
+          type: string
+        portfolio_cells_total:
+          default: 0
+          title: Portfolio Cells Total
+          type: integer
+        portfolio_snapshot_id:
+          title: Portfolio Snapshot Id
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        review_required_cells:
+          default: 0
+          title: Review Required Cells
+          type: integer
+        unmapped_cells:
+          default: 0
+          title: Unmapped Cells
+          type: integer
+        unmapped_model_variables:
+          default: []
+          items:
+            type: string
+          title: Unmapped Model Variables
+          type: array
+        unmapped_portfolio_cells:
+          default: []
+          items:
+            type: string
+          title: Unmapped Portfolio Cells
+          type: array
+      required:
+      - mapping_id
+      - project_id
+      - portfolio_snapshot_id
+      - model_version_id
+      - baseline_kind
+      - mapping_status
+      - fingerprint
+      - created_at
+      title: PortfolioModelMappingResponse
       type: object
     PortfolioObservationResponse:
       additionalProperties: false
@@ -6305,6 +6685,117 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Portfolio
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/model-mapping:
+    get:
+      operationId: listPortfolioModelMappings
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioModelMappingListResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Model Mappings
+      tags:
+      - investment-portfolio
+    post:
+      operationId: createPortfolioModelMapping
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePortfolioModelMappingRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioModelMappingResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Model Mapping
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/model-mapping/{mapping_id}:
+    get:
+      operationId: getPortfolioModelMapping
+      parameters:
+      - in: path
+        name: mapping_id
+        required: true
+        schema:
+          title: Mapping Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioModelMappingResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Model Mapping
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/optimization-readiness:
+    get:
+      operationId: getOptimizationReadiness
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationReadinessResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Get Optimization Readiness
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/optimization-readiness/evaluate:
+    post:
+      operationId: evaluateOptimizationReadiness
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateOptimizationReadinessRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationReadinessResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Evaluate Optimization Readiness
       tags:
       - investment-portfolio
   /v1/projects/{project_id}/measurement-home:

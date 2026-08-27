@@ -36,6 +36,11 @@ from app.integrations.google.vault import (
     ControlPlaneCredentialVault,
     InMemoryCredentialVault,
 )
+from app.investment_optimization.accepted_model import ModelingRepositoryDirectory
+from app.investment_optimization.consumption import MemoryModelConsumptionSource
+from app.investment_optimization.firestore import FirestoreOptimizationMetadataStore
+from app.investment_optimization.service import OptimizationReadinessService
+from app.investment_optimization.store import InMemoryOptimizationMetadataStore
 from app.investment_planning.actuals import DataFoundationActualSpendAdapter
 from app.investment_planning.errors import PlanningError
 from app.investment_planning.firestore import FirestoreInvestmentPlanningStore
@@ -282,6 +287,12 @@ def create_app(
         markets=IdentityGraphMarketDirectory(identity_graph_store),
         actuals=DataFoundationActualSpendAdapter(data_foundation_store),
     )
+    if isinstance(repo, FirestoreControlPlaneRepository):
+        optimization_store = FirestoreOptimizationMetadataStore(repo.client)
+    else:
+        optimization_store = InMemoryOptimizationMetadataStore()
+    app.state.optimization_store = optimization_store
+    app.state.optimization_consumption = MemoryModelConsumptionSource()
     if foundation_source_gate is None:
         foundation_source_gate = CanonicalFoundationSourceGate(data_foundation_store)
     upload = app.state.upload_service
@@ -312,6 +323,13 @@ def create_app(
     )
     app.state.mmm_modeling = modeling
     app.state.mmm_fit_launcher = fit_launcher
+    app.state.optimization_readiness = OptimizationReadinessService(
+        repo=repo,
+        store=optimization_store,
+        planning=app.state.investment_planning,
+        models=ModelingRepositoryDirectory(modeling.repo),
+        consumption=app.state.optimization_consumption,
+    )
     app.state.mta_service = MTAService()
     app.state.mmm_service_identity_verifier = _mmm_service_identity_verifier(cfg)
     if extended_eda is None:

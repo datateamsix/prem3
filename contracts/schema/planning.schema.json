@@ -1,5 +1,369 @@
 {
   "$defs": {
+    "app_investment_optimization_contracts__BudgetResolutionPath": {
+      "enum": [
+        "APPROVED_DRIVE_PLAN_TRANSIENT_VIEW"
+      ],
+      "title": "BudgetResolutionPath",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__MappingAuthority": {
+      "enum": [
+        "MODEL_CONTRACT_EXACT",
+        "CANONICAL_CHANNEL_BINDING",
+        "CANONICAL_MARKET_BINDING",
+        "USER_CONFIRMED",
+        "APPROVED_CUSTOM_MAPPING"
+      ],
+      "title": "MappingAuthority",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__MappingConflict": {
+      "additionalProperties": false,
+      "properties": {
+        "channel_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Channel Ids",
+          "type": "array"
+        },
+        "issue_code": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationIssueCode"
+        },
+        "kind": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__MappingKind"
+        },
+        "model_variable_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Model Variable Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "issue_code"
+      ],
+      "title": "MappingConflict",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__MappingEntryStatus": {
+      "enum": [
+        "MAPPED",
+        "UNMAPPED",
+        "REVIEW_REQUIRED",
+        "CONFLICT",
+        "AUTO_SAFE",
+        "APPROVAL_REQUIRED",
+        "EXCLUDED",
+        "FIXED"
+      ],
+      "title": "MappingEntryStatus",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__MappingKind": {
+      "enum": [
+        "ONE_TO_ONE",
+        "MANY_TO_ONE",
+        "ONE_TO_MANY",
+        "MANY_TO_MANY"
+      ],
+      "title": "MappingKind",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__MarketModelCompatibility": {
+      "enum": [
+        "DIRECTLY_MODELED",
+        "AGGREGATED_IN_MODEL",
+        "NOT_MODELED",
+        "REVIEW_REQUIRED"
+      ],
+      "title": "MarketModelCompatibility",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationInputContract": {
+      "additionalProperties": false,
+      "description": "Metadata only. P6-05 re-resolves approved amounts from Drive/Portfolio.",
+      "properties": {
+        "baseline_kind": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__PortfolioBaselineKind"
+        },
+        "budget_period_end": {
+          "title": "Budget Period End",
+          "type": "string"
+        },
+        "budget_period_start": {
+          "title": "Budget Period Start",
+          "type": "string"
+        },
+        "budget_resolution_path": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__BudgetResolutionPath",
+          "default": "APPROVED_DRIVE_PLAN_TRANSIENT_VIEW"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "drive_file_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drive File Id"
+        },
+        "drive_version_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drive Version Fingerprint"
+        },
+        "excluded_variable_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Excluded Variable Ids",
+          "type": "array"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "fixed_variable_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Fixed Variable Ids",
+          "type": "array"
+        },
+        "issues": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "mapping_fingerprint": {
+          "title": "Mapping Fingerprint",
+          "type": "string"
+        },
+        "mapping_id": {
+          "title": "Mapping Id",
+          "type": "string"
+        },
+        "model_contract_fingerprint": {
+          "title": "Model Contract Fingerprint",
+          "type": "string"
+        },
+        "model_version_id": {
+          "title": "Model Version Id",
+          "type": "string"
+        },
+        "optimizable_variable_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Optimizable Variable Ids",
+          "type": "array"
+        },
+        "optimization_input_id": {
+          "title": "Optimization Input Id",
+          "type": "string"
+        },
+        "plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Id"
+        },
+        "plan_version_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Version Fingerprint"
+        },
+        "portfolio_fingerprint": {
+          "title": "Portfolio Fingerprint",
+          "type": "string"
+        },
+        "portfolio_snapshot_id": {
+          "title": "Portfolio Snapshot Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationInputStatus"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "optimization_input_id",
+        "tenant_id",
+        "project_id",
+        "portfolio_snapshot_id",
+        "model_version_id",
+        "mapping_id",
+        "baseline_kind",
+        "budget_period_start",
+        "budget_period_end",
+        "currency",
+        "mapping_fingerprint",
+        "portfolio_fingerprint",
+        "model_contract_fingerprint",
+        "status",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "OptimizationInputContract",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__OptimizationInputStatus": {
+      "enum": [
+        "READY",
+        "REVIEW_REQUIRED",
+        "NOT_READY"
+      ],
+      "title": "OptimizationInputStatus",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "blocking": {
+          "title": "Blocking",
+          "type": "boolean"
+        },
+        "code": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationIssueCode"
+        },
+        "message_key": {
+          "title": "Message Key",
+          "type": "string"
+        },
+        "review_required": {
+          "default": false,
+          "title": "Review Required",
+          "type": "boolean"
+        },
+        "subject_channel_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Channel Id"
+        },
+        "subject_market_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Market Id"
+        },
+        "subject_variable_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Variable Id"
+        }
+      },
+      "required": [
+        "code",
+        "blocking",
+        "message_key"
+      ],
+      "title": "OptimizationIssue",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__OptimizationIssueCode": {
+      "enum": [
+        "NO_ACCEPTED_MODEL",
+        "MULTIPLE_ACCEPTED_MODELS",
+        "MODEL_CONSUMPTION_CONTRACT_INCOMPLETE",
+        "MODEL_CONSUMPTION_PROJECTION_STALE",
+        "PORTFOLIO_CHANNEL_NOT_MODELED",
+        "MODEL_VARIABLE_WITHOUT_PORTFOLIO_ALLOCATION",
+        "MARKET_NOT_MODELED",
+        "MARKET_SCOPE_TOO_GRANULAR",
+        "PERIOD_COMPATIBILITY_REVIEW_REQUIRED",
+        "CURRENCY_COMPATIBILITY_REVIEW_REQUIRED",
+        "SPEND_SEMANTICS_MISMATCH",
+        "MODEL_VARIABLE_NOT_OPTIMIZABLE",
+        "ONE_TO_MANY_MAPPING_REQUIRES_SPLIT",
+        "MANY_TO_ONE_MAPPING_REDUCES_CONTROL",
+        "MANY_TO_MANY_MAPPING_UNSUPPORTED",
+        "OPTIMIZER_INPUT_ARTIFACT_MISSING",
+        "MODEL_RUNTIME_INCOMPATIBLE",
+        "STALE_READINESS_RECEIPT",
+        "APPROVED_PLAN_REQUIRED",
+        "ACTUALS_NEVER_REPLACE_APPROVED_BASELINE",
+        "FUZZY_MAPPING_NOT_AUTHORITY",
+        "CROSS_PROJECT_MODEL_MAPPING",
+        "CROSS_TENANT_MODEL_MAPPING",
+        "CLIENT_SUPPLIED_TENANT",
+        "CLIENT_SUPPLIED_ARTIFACT_LOCATION",
+        "MTA_NOT_CAUSAL_AUTHORITY",
+        "OBSERVATION_BLOCKER"
+      ],
+      "title": "OptimizationIssueCode",
+      "type": "string"
+    },
     "app_investment_optimization_contracts__OptimizationObjectiveKind": {
       "enum": [
         "EXPECTED_KPI",
@@ -153,6 +517,237 @@
       "title": "OptimizationProposalStatus",
       "type": "string"
     },
+    "app_investment_optimization_contracts__OptimizationReadinessCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationReadinessCheckCode"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "passed"
+      ],
+      "title": "OptimizationReadinessCheck",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__OptimizationReadinessCheckCode": {
+      "enum": [
+        "APPROVED_PLAN_AVAILABLE",
+        "PORTFOLIO_SNAPSHOT_VALID",
+        "MODEL_ACCEPTED",
+        "MODEL_CONSUMPTION_CONTRACT_VALID",
+        "MODEL_OPTIMIZER_ARTIFACTS_AVAILABLE",
+        "MARKET_COMPATIBLE",
+        "CHANNEL_MAPPING_COMPLETE",
+        "PERIOD_COMPATIBLE",
+        "CURRENCY_COMPATIBLE",
+        "SPEND_SEMANTICS_COMPATIBLE",
+        "OPTIMIZABLE_VARIABLES_VALID",
+        "NO_UNRESOLVED_MAPPING_CONFLICTS",
+        "INPUT_CONTRACT_FINGERPRINTED"
+      ],
+      "title": "OptimizationReadinessCheckCode",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationReadinessReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationReadinessCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "expires_or_stales_on": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expires Or Stales On"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "input_contract_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Contract Fingerprint"
+        },
+        "issues": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "mapping_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mapping Fingerprint"
+        },
+        "mapping_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mapping Id"
+        },
+        "model_consumption_contract_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Consumption Contract Fingerprint"
+        },
+        "model_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Fingerprint"
+        },
+        "model_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Version Id"
+        },
+        "optimization_input_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Optimization Input Id"
+        },
+        "policy_version": {
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "portfolio_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Portfolio Fingerprint"
+        },
+        "portfolio_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Portfolio Snapshot Id"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationReadinessStatus"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "tenant_id",
+        "project_id",
+        "status",
+        "policy_version",
+        "created_at",
+        "fingerprint"
+      ],
+      "title": "OptimizationReadinessReceipt",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__OptimizationReadinessStatus": {
+      "enum": [
+        "NOT_READY",
+        "OPTIMIZATION_READY",
+        "REQUIRES_ACCEPTED_MMM",
+        "REQUIRES_SUPPORTED_MAPPING",
+        "REVIEW_REQUIRED",
+        "NOT_CONFIGURED",
+        "STALE"
+      ],
+      "title": "OptimizationReadinessStatus",
+      "type": "string"
+    },
     "app_investment_optimization_contracts__OptimizationSolverKind": {
       "enum": [
         "MERIDIAN_NATIVE_FIXED_BUDGET",
@@ -160,6 +755,326 @@
         "PREM3_RISK_AWARE_FRONTIER"
       ],
       "title": "OptimizationSolverKind",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__PortfolioBaselineKind": {
+      "enum": [
+        "APPROVED_PLAN",
+        "ACTUAL_YTD",
+        "FORECAST_AT_COMPLETION",
+        "TRANSIENT_SCENARIO",
+        "GOVERNED_ACTUALS"
+      ],
+      "title": "PortfolioBaselineKind",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__PortfolioModelMapping": {
+      "additionalProperties": false,
+      "description": "Metadata mapping. Never carries portfolio amount arrays.",
+      "properties": {
+        "baseline_kind": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__PortfolioBaselineKind",
+          "default": "APPROVED_PLAN"
+        },
+        "conflicts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__MappingConflict"
+          },
+          "title": "Conflicts",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "title": "Created By",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "mapped_cells": {
+          "default": 0,
+          "title": "Mapped Cells",
+          "type": "integer"
+        },
+        "mapped_optimizable_variables": {
+          "default": 0,
+          "title": "Mapped Optimizable Variables",
+          "type": "integer"
+        },
+        "mapping_entries": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__PortfolioModelMappingEntry"
+          },
+          "title": "Mapping Entries",
+          "type": "array"
+        },
+        "mapping_id": {
+          "title": "Mapping Id",
+          "type": "string"
+        },
+        "mapping_status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__PortfolioModelMappingStatus"
+        },
+        "model_variables_total": {
+          "default": 0,
+          "title": "Model Variables Total",
+          "type": "integer"
+        },
+        "model_version_id": {
+          "title": "Model Version Id",
+          "type": "string"
+        },
+        "optimizable_model_variables": {
+          "default": 0,
+          "title": "Optimizable Model Variables",
+          "type": "integer"
+        },
+        "portfolio_cells_total": {
+          "default": 0,
+          "title": "Portfolio Cells Total",
+          "type": "integer"
+        },
+        "portfolio_snapshot_id": {
+          "title": "Portfolio Snapshot Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "review_required_cells": {
+          "default": 0,
+          "title": "Review Required Cells",
+          "type": "integer"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "unmapped_cells": {
+          "default": 0,
+          "title": "Unmapped Cells",
+          "type": "integer"
+        },
+        "unmapped_model_variables": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__UnmappedModelVariable"
+          },
+          "title": "Unmapped Model Variables",
+          "type": "array"
+        },
+        "unmapped_portfolio_cells": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__UnmappedPortfolioCell"
+          },
+          "title": "Unmapped Portfolio Cells",
+          "type": "array"
+        }
+      },
+      "required": [
+        "mapping_id",
+        "tenant_id",
+        "project_id",
+        "portfolio_snapshot_id",
+        "model_version_id",
+        "mapping_status",
+        "created_at",
+        "created_by",
+        "fingerprint"
+      ],
+      "title": "PortfolioModelMapping",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__PortfolioModelMappingEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "authority": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__MappingAuthority"
+        },
+        "channel_id": {
+          "title": "Channel Id",
+          "type": "string"
+        },
+        "effective_period_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective Period End"
+        },
+        "effective_period_start": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective Period Start"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "issues": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "mapping_entry_id": {
+          "title": "Mapping Entry Id",
+          "type": "string"
+        },
+        "mapping_kind": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__MappingKind"
+        },
+        "market_compatibility": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__MarketModelCompatibility"
+        },
+        "market_id": {
+          "title": "Market Id",
+          "type": "string"
+        },
+        "model_geo_scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Geo Scope"
+        },
+        "model_market_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Market Ref"
+        },
+        "model_variable_id": {
+          "title": "Model Variable Id",
+          "type": "string"
+        },
+        "model_variable_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Variable Name"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__MappingEntryStatus"
+        }
+      },
+      "required": [
+        "mapping_entry_id",
+        "market_id",
+        "channel_id",
+        "model_variable_id",
+        "mapping_kind",
+        "authority",
+        "status",
+        "market_compatibility",
+        "fingerprint"
+      ],
+      "title": "PortfolioModelMappingEntry",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__PortfolioModelMappingStatus": {
+      "enum": [
+        "COMPLETE",
+        "REVIEW_REQUIRED",
+        "NOT_READY",
+        "CONFLICT"
+      ],
+      "title": "PortfolioModelMappingStatus",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__UnmappedModelVariable": {
+      "additionalProperties": false,
+      "properties": {
+        "issue_code": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationIssueCode"
+        },
+        "model_variable_id": {
+          "title": "Model Variable Id",
+          "type": "string"
+        },
+        "treatment": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__UnmappedVariableTreatment"
+        }
+      },
+      "required": [
+        "model_variable_id",
+        "treatment",
+        "issue_code"
+      ],
+      "title": "UnmappedModelVariable",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__UnmappedPortfolioCell": {
+      "additionalProperties": false,
+      "properties": {
+        "channel_id": {
+          "title": "Channel Id",
+          "type": "string"
+        },
+        "issue_code": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationIssueCode"
+        },
+        "market_id": {
+          "title": "Market Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "market_id",
+        "channel_id",
+        "issue_code"
+      ],
+      "title": "UnmappedPortfolioCell",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__UnmappedVariableTreatment": {
+      "enum": [
+        "FIXED_AT_ZERO",
+        "FIXED_BASELINE",
+        "EXCLUDED",
+        "REVIEW_REQUIRED"
+      ],
+      "title": "UnmappedVariableTreatment",
       "type": "string"
     },
     "app_investment_planning_contracts__ActualSpendAuthority": {
@@ -1602,6 +2517,15 @@
     },
     {
       "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationProposalRef"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__PortfolioModelMapping"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationInputContract"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationReadinessReceipt"
     }
   ],
   "title": "PreM3 investment planning and portfolio contracts"

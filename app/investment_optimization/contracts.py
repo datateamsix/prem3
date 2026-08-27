@@ -6,16 +6,32 @@ from datetime import datetime
 from decimal import Decimal
 from typing import ClassVar, Protocol
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.investment_optimization.enums import (
+    BudgetResolutionPath,
+    MappingAuthority,
+    MappingCardinalityPolicy,
+    MappingEntryStatus,
+    MappingKind,
+    MarketModelCompatibility,
+    ModelGeoSemantics,
+    ModelVariableOptimizationEligibility,
+    ModelVariableRole,
+    OptimizationEvidenceCoverageStatus,
+    OptimizationInputStatus,
+    OptimizationIssueCode,
     OptimizationObjectiveKind,
     OptimizationProposalStatus,
+    OptimizationReadinessCheckCode,
     OptimizationReadinessStatus,
     OptimizationSolverKind,
+    PortfolioModelMappingStatus,
+    SpendSemantics,
+    UnmappedVariableTreatment,
 )
 from app.investment_planning.contracts import MoneyAmount, PortfolioAllocationView
-from app.investment_planning.enums import SensitiveDataClass
+from app.investment_planning.enums import PortfolioBaselineKind, SensitiveDataClass
 
 
 class FrozenModel(BaseModel):
@@ -97,11 +113,286 @@ class OptimizationExecutionPayload(FrozenModel):
     recommended_totals: tuple[MoneyAmount, ...] = ()
 
 
+class OptimizationIssue(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    code: OptimizationIssueCode
+    blocking: bool
+    review_required: bool = False
+    message_key: str
+    subject_market_id: str | None = None
+    subject_channel_id: str | None = None
+    subject_variable_id: str | None = None
+
+
+class OptimizationReadinessCheck(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    code: OptimizationReadinessCheckCode
+    passed: bool
+
+
+class ModelConsumptionVariable(FrozenModel):
+    """One accepted-model variable. Canonical IDs are explicit bindings only."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    model_variable_id: str
+    model_variable_name: str | None = None
+    variable_role: ModelVariableRole
+    eligibility: ModelVariableOptimizationEligibility
+    spend_semantics: SpendSemantics | None = None
+    canonical_channel_id: str | None = None
+    canonical_market_id: str | None = None
+    model_geo_scope: str | None = None
+
+
+class ModelConsumptionContract(FrozenModel):
+    """Planning projection of an accepted MMM. MMM remains source of truth."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    consumption_contract_id: str
+    tenant_id: str
+    project_id: str
+    model_version_id: str
+    model_plan_fingerprint: str
+    model_consumption_contract_fingerprint: str
+    model_acceptance_ref: str
+    meridian_version: str
+    runtime_mode: str
+    accepted_model_state: str
+    modeled_window_start: str
+    modeled_window_end: str
+    geo_semantics: ModelGeoSemantics
+    currency: str
+    kpi: str
+    outcome_variable_id: str | None = None
+    variables: tuple[ModelConsumptionVariable, ...] = ()
+    optimizer_artifact_ref: str | None = None
+    response_evidence_ref: str | None = None
+    model_spec_ref: str | None = None
+    future_horizon_allowed: bool = False
+    complete: bool = False
+    issues: tuple[OptimizationIssue, ...] = ()
+    fingerprint: str
+
+
+class MappingOverride(FrozenModel):
+    """Governed custom mapping. Canonical IDs only; no budget amounts."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    market_id: str | None = None
+    channel_id: str
+    model_variable_ids: tuple[str, ...]
+    authority: MappingAuthority
+    policy: MappingCardinalityPolicy | None = None
+    split_weights_bps: tuple[int, ...] = ()
+    unmapped_treatment: UnmappedVariableTreatment | None = None
+
+
+class UnmappedPortfolioCell(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    market_id: str
+    channel_id: str
+    issue_code: OptimizationIssueCode
+
+
+class UnmappedModelVariable(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    model_variable_id: str
+    treatment: UnmappedVariableTreatment
+    issue_code: OptimizationIssueCode
+
+
+class MappingConflict(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    kind: MappingKind
+    channel_ids: tuple[str, ...] = ()
+    model_variable_ids: tuple[str, ...] = ()
+    issue_code: OptimizationIssueCode
+
+
+class PortfolioModelMappingEntry(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    mapping_entry_id: str
+    market_id: str
+    channel_id: str
+    model_variable_id: str
+    model_variable_name: str | None = None
+    model_market_ref: str | None = None
+    model_geo_scope: str | None = None
+    mapping_kind: MappingKind
+    authority: MappingAuthority
+    status: MappingEntryStatus
+    market_compatibility: MarketModelCompatibility
+    effective_period_start: str | None = None
+    effective_period_end: str | None = None
+    issues: tuple[OptimizationIssue, ...] = ()
+    fingerprint: str
+
+
+class PortfolioModelMapping(FrozenModel):
+    """Metadata mapping. Never carries portfolio amount arrays."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    mapping_id: str
+    tenant_id: str
+    project_id: str
+    portfolio_snapshot_id: str
+    model_version_id: str
+    baseline_kind: PortfolioBaselineKind = PortfolioBaselineKind.APPROVED_PLAN
+    mapping_status: PortfolioModelMappingStatus
+    mapping_entries: tuple[PortfolioModelMappingEntry, ...] = ()
+    unmapped_portfolio_cells: tuple[UnmappedPortfolioCell, ...] = ()
+    unmapped_model_variables: tuple[UnmappedModelVariable, ...] = ()
+    conflicts: tuple[MappingConflict, ...] = ()
+    portfolio_cells_total: int = 0
+    mapped_cells: int = 0
+    unmapped_cells: int = 0
+    review_required_cells: int = 0
+    model_variables_total: int = 0
+    optimizable_model_variables: int = 0
+    mapped_optimizable_variables: int = 0
+    created_at: datetime
+    created_by: str
+    fingerprint: str
+
+    @model_validator(mode="after")
+    def _no_amount_fields(self) -> PortfolioModelMapping:
+        dumped = self.model_dump()
+        for key in (
+            "amounts",
+            "allocations",
+            "total_budget",
+            "recommended_allocations",
+            "recommended_totals",
+        ):
+            if key in dumped:
+                raise ValueError(f"{key} cannot appear on PortfolioModelMapping.")
+        return self
+
+
+class OptimizationEvidenceCoverage(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    coverage_id: str
+    tenant_id: str
+    project_id: str
+    model_version_id: str
+    portfolio_snapshot_id: str
+    covered_channel_ids: tuple[str, ...] = ()
+    uncovered_channel_ids: tuple[str, ...] = ()
+    review_required_channel_ids: tuple[str, ...] = ()
+    covered_market_ids: tuple[str, ...] = ()
+    unsupported_market_ids: tuple[str, ...] = ()
+    accepted_model_ref: str
+    response_evidence_ref: str | None = None
+    optimizer_artifact_ref: str | None = None
+    mta_evidence_ref: str | None = None
+    status: OptimizationEvidenceCoverageStatus
+    issues: tuple[OptimizationIssue, ...] = ()
+    fingerprint: str
+
+
+class OptimizationInputContract(FrozenModel):
+    """Metadata only. P6-05 re-resolves approved amounts from Drive/Portfolio."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    optimization_input_id: str
+    tenant_id: str
+    project_id: str
+    portfolio_snapshot_id: str
+    model_version_id: str
+    mapping_id: str
+    baseline_kind: PortfolioBaselineKind
+    budget_period_start: str
+    budget_period_end: str
+    currency: str
+    budget_resolution_path: BudgetResolutionPath = (
+        BudgetResolutionPath.APPROVED_DRIVE_PLAN_TRANSIENT_VIEW
+    )
+    plan_id: str | None = None
+    plan_version_fingerprint: str | None = None
+    drive_file_id: str | None = None
+    drive_version_fingerprint: str | None = None
+    optimizable_variable_ids: tuple[str, ...] = ()
+    fixed_variable_ids: tuple[str, ...] = ()
+    excluded_variable_ids: tuple[str, ...] = ()
+    mapping_fingerprint: str
+    portfolio_fingerprint: str
+    model_contract_fingerprint: str
+    status: OptimizationInputStatus
+    issues: tuple[OptimizationIssue, ...] = ()
+    fingerprint: str
+    created_at: datetime
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> OptimizationInputContract:
+        dumped = self.model_dump()
+        for key in (
+            "amounts",
+            "allocations",
+            "total_budget",
+            "recommended_allocations",
+            "recommended_totals",
+        ):
+            if key in dumped:
+                raise ValueError(f"{key} cannot appear on OptimizationInputContract.")
+        return self
+
+
+class OptimizationReadinessReceipt(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    receipt_id: str
+    tenant_id: str
+    project_id: str
+    portfolio_snapshot_id: str | None = None
+    model_version_id: str | None = None
+    mapping_id: str | None = None
+    optimization_input_id: str | None = None
+    status: OptimizationReadinessStatus
+    checks: tuple[OptimizationReadinessCheck, ...] = ()
+    issues: tuple[OptimizationIssue, ...] = ()
+    portfolio_fingerprint: str | None = None
+    model_fingerprint: str | None = None
+    mapping_fingerprint: str | None = None
+    input_contract_fingerprint: str | None = None
+    model_consumption_contract_fingerprint: str | None = None
+    policy_version: str
+    created_at: datetime
+    expires_or_stales_on: datetime | None = None
+    fingerprint: str
+
+    @model_validator(mode="after")
+    def _no_budget_values(self) -> OptimizationReadinessReceipt:
+        dumped = self.model_dump()
+        for key in (
+            "amounts",
+            "allocations",
+            "total_budget",
+            "recommended_allocations",
+            "recommended_totals",
+            "value",
+        ):
+            if key in dumped:
+                raise ValueError(f"{key} cannot appear on OptimizationReadinessReceipt.")
+        return self
+
+
 OPTIMIZATION_METADATA_MODELS: tuple[type[FrozenModel], ...] = (
     OptimizationProposalRef,
     OptimizationExecutionPlan,
     ConstraintSetRef,
     ScenarioAssumptionSetRef,
+    OptimizationIssue,
+    OptimizationReadinessCheck,
+    ModelConsumptionVariable,
+    ModelConsumptionContract,
+    MappingOverride,
+    UnmappedPortfolioCell,
+    UnmappedModelVariable,
+    MappingConflict,
+    PortfolioModelMappingEntry,
+    PortfolioModelMapping,
+    OptimizationEvidenceCoverage,
+    OptimizationInputContract,
+    OptimizationReadinessReceipt,
 )
 
 OPTIMIZATION_AMOUNT_BEARING_MODELS: tuple[type[FrozenModel], ...] = (

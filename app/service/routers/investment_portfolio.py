@@ -4,10 +4,22 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.control_plane.models import Workspace
 from app.core.tenancy import require_tenant
+from app.investment_optimization.contracts import (
+    MappingOverride,
+    OptimizationReadinessReceipt,
+    PortfolioModelMapping,
+)
+from app.investment_optimization.enums import (
+    MappingAuthority,
+    MappingCardinalityPolicy,
+    UnmappedVariableTreatment,
+)
+from app.investment_optimization.mapping import reject_forbidden_authority
+from app.investment_optimization.service import OptimizationReadinessService
 from app.investment_planning.contracts import (
     MoneyAmount,
     PortfolioAllocationView,
@@ -26,13 +38,23 @@ from app.investment_planning.portfolio import (
 from app.investment_planning.service import InvestmentPlanService
 from app.service.errors import planning_error
 from app.service.investment_planning_models import (
+    CreatePortfolioModelMappingRequest,
+    EvaluateOptimizationReadinessRequest,
     InvestmentPortfolioResponse,
+    MappingOverrideRequest,
     MoneyAmountResponse,
+    OptimizationCoverageSummaryResponse,
+    OptimizationIssueResponse,
+    OptimizationReadinessCheckResponse,
+    OptimizationReadinessResponse,
     PortfolioAllocationResponse,
     PortfolioDimensionTotalResponse,
     PortfolioEvidenceCoverageItemResponse,
     PortfolioEvidenceCoverageResponse,
     PortfolioFreshnessResponse,
+    PortfolioModelMappingEntryResponse,
+    PortfolioModelMappingListResponse,
+    PortfolioModelMappingResponse,
     PortfolioObservationResponse,
     PortfolioVarianceResponse,
     QuarterlyPortfolioResponse,
@@ -256,5 +278,264 @@ workspace_alias_portfolio_router.add_api_route(
     methods=["GET"],
     operation_id="getInvestmentPortfolioWorkspaceAlias",
     response_model=InvestmentPortfolioResponse,
+    include_in_schema=False,
+)
+
+
+def get_optimization_readiness_service(request: Request) -> OptimizationReadinessService:
+    service = getattr(request.app.state, "optimization_readiness", None)
+    if service is None:
+        raise RuntimeError("Optimization readiness service is not configured.")
+    return service
+
+
+def _overrides(items: tuple[MappingOverrideRequest, ...]) -> tuple[MappingOverride, ...]:
+    parsed: list[MappingOverride] = []
+    for item in items:
+        reject_forbidden_authority(item.authority)
+        parsed.append(
+            MappingOverride(
+                market_id=item.market_id,
+                channel_id=item.channel_id,
+                model_variable_ids=item.model_variable_ids,
+                authority=MappingAuthority(item.authority),
+                policy=None if item.policy is None else MappingCardinalityPolicy(item.policy),
+                split_weights_bps=item.split_weights_bps,
+                unmapped_treatment=(
+                    None
+                    if item.unmapped_treatment is None
+                    else UnmappedVariableTreatment(item.unmapped_treatment)
+                ),
+            )
+        )
+    return tuple(parsed)
+
+
+def _mapping_response(mapping: PortfolioModelMapping) -> PortfolioModelMappingResponse:
+    return PortfolioModelMappingResponse(
+        mapping_id=mapping.mapping_id,
+        project_id=mapping.project_id,
+        portfolio_snapshot_id=mapping.portfolio_snapshot_id,
+        model_version_id=mapping.model_version_id,
+        baseline_kind=mapping.baseline_kind.value,
+        mapping_status=mapping.mapping_status.value,
+        mapping_entries=tuple(
+            PortfolioModelMappingEntryResponse(
+                mapping_entry_id=entry.mapping_entry_id,
+                market_id=entry.market_id,
+                channel_id=entry.channel_id,
+                model_variable_id=entry.model_variable_id,
+                mapping_kind=entry.mapping_kind.value,
+                authority=entry.authority.value,
+                status=entry.status.value,
+                market_compatibility=entry.market_compatibility.value,
+                fingerprint=entry.fingerprint,
+            )
+            for entry in mapping.mapping_entries
+        ),
+        unmapped_portfolio_cells=tuple(
+            f"{cell.market_id}:{cell.channel_id}" for cell in mapping.unmapped_portfolio_cells
+        ),
+        unmapped_model_variables=tuple(
+            item.model_variable_id for item in mapping.unmapped_model_variables
+        ),
+        conflicts=tuple(item.issue_code.value for item in mapping.conflicts),
+        portfolio_cells_total=mapping.portfolio_cells_total,
+        mapped_cells=mapping.mapped_cells,
+        unmapped_cells=mapping.unmapped_cells,
+        review_required_cells=mapping.review_required_cells,
+        fingerprint=mapping.fingerprint,
+        created_at=mapping.created_at,
+    )
+
+
+def _readiness_response(
+    receipt: OptimizationReadinessReceipt,
+    *,
+    coverage: OptimizationCoverageSummaryResponse | None = None,
+) -> OptimizationReadinessResponse:
+    return OptimizationReadinessResponse(
+        status=receipt.status.value,
+        receipt_id=receipt.receipt_id,
+        project_id=receipt.project_id,
+        portfolio_snapshot_id=receipt.portfolio_snapshot_id,
+        model_version_id=receipt.model_version_id,
+        mapping_id=receipt.mapping_id,
+        optimization_input_id=receipt.optimization_input_id,
+        checks=tuple(
+            OptimizationReadinessCheckResponse(code=item.code.value, passed=item.passed)
+            for item in receipt.checks
+        ),
+        issues=tuple(
+            OptimizationIssueResponse(
+                code=item.code.value,
+                blocking=item.blocking,
+                review_required=item.review_required,
+                message_key=item.message_key,
+                market_id=item.subject_market_id,
+                channel_id=item.subject_channel_id,
+                variable_id=item.subject_variable_id,
+            )
+            for item in receipt.issues
+        ),
+        coverage=coverage,
+        fingerprint=receipt.fingerprint,
+        created_at=receipt.created_at,
+    )
+
+
+async def create_model_mapping(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[
+        OptimizationReadinessService, Depends(get_optimization_readiness_service)
+    ],
+    body: CreatePortfolioModelMappingRequest,
+) -> PortfolioModelMappingResponse:
+    try:
+        mapping = service.create_mapping(
+            project_id=workspace.workspace_id,
+            portfolio_snapshot_id=body.portfolio_snapshot_id,
+            actor_id=require_tenant().user_id or "unknown",
+            model_version_id=body.model_version_id,
+            mapping_overrides=_overrides(body.mapping_overrides),
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _mapping_response(mapping)
+
+
+async def list_model_mappings(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[
+        OptimizationReadinessService, Depends(get_optimization_readiness_service)
+    ],
+) -> PortfolioModelMappingListResponse:
+    try:
+        items = service.list_mappings(project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return PortfolioModelMappingListResponse(items=tuple(_mapping_response(item) for item in items))
+
+
+async def get_model_mapping(
+    mapping_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[
+        OptimizationReadinessService, Depends(get_optimization_readiness_service)
+    ],
+) -> PortfolioModelMappingResponse:
+    try:
+        mapping = service.get_mapping(mapping_id=mapping_id, project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _mapping_response(mapping)
+
+
+async def get_optimization_readiness(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[
+        OptimizationReadinessService, Depends(get_optimization_readiness_service)
+    ],
+) -> OptimizationReadinessResponse:
+    try:
+        receipt = service.get_readiness(project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _readiness_response(receipt)
+
+
+async def evaluate_optimization_readiness(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[
+        OptimizationReadinessService, Depends(get_optimization_readiness_service)
+    ],
+    body: EvaluateOptimizationReadinessRequest,
+) -> OptimizationReadinessResponse:
+    try:
+        receipt = service.evaluate(
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+            portfolio_snapshot_id=body.portfolio_snapshot_id,
+            model_version_id=body.model_version_id,
+            mapping_overrides=_overrides(body.mapping_overrides),
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _readiness_response(receipt)
+
+
+canonical_portfolio_router.add_api_route(
+    "/model-mapping",
+    create_model_mapping,
+    methods=["POST"],
+    operation_id="createPortfolioModelMapping",
+    response_model=PortfolioModelMappingResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/model-mapping",
+    list_model_mappings,
+    methods=["GET"],
+    operation_id="listPortfolioModelMappings",
+    response_model=PortfolioModelMappingListResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/model-mapping/{mapping_id}",
+    get_model_mapping,
+    methods=["GET"],
+    operation_id="getPortfolioModelMapping",
+    response_model=PortfolioModelMappingResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/optimization-readiness",
+    get_optimization_readiness,
+    methods=["GET"],
+    operation_id="getOptimizationReadiness",
+    response_model=OptimizationReadinessResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/optimization-readiness/evaluate",
+    evaluate_optimization_readiness,
+    methods=["POST"],
+    operation_id="evaluateOptimizationReadiness",
+    response_model=OptimizationReadinessResponse,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/model-mapping",
+    create_model_mapping,
+    methods=["POST"],
+    operation_id="createPortfolioModelMappingWorkspaceAlias",
+    response_model=PortfolioModelMappingResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/model-mapping",
+    list_model_mappings,
+    methods=["GET"],
+    operation_id="listPortfolioModelMappingsWorkspaceAlias",
+    response_model=PortfolioModelMappingListResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/model-mapping/{mapping_id}",
+    get_model_mapping,
+    methods=["GET"],
+    operation_id="getPortfolioModelMappingWorkspaceAlias",
+    response_model=PortfolioModelMappingResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/optimization-readiness",
+    get_optimization_readiness,
+    methods=["GET"],
+    operation_id="getOptimizationReadinessWorkspaceAlias",
+    response_model=OptimizationReadinessResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/optimization-readiness/evaluate",
+    evaluate_optimization_readiness,
+    methods=["POST"],
+    operation_id="evaluateOptimizationReadinessWorkspaceAlias",
+    response_model=OptimizationReadinessResponse,
     include_in_schema=False,
 )

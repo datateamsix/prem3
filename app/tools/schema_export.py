@@ -30,7 +30,12 @@ from app.intelligence.contracts import (
     Prem3PreEdaFinding,
     SemanticQuestion,
 )
-from app.investment_optimization.contracts import OptimizationProposalRef
+from app.investment_optimization.contracts import (
+    OptimizationInputContract,
+    OptimizationProposalRef,
+    OptimizationReadinessReceipt,
+    PortfolioModelMapping,
+)
 from app.investment_planning.contracts import (
     ActualSpendSourceRef,
     BudgetDriveSourceVersion,
@@ -278,6 +283,9 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             ActualSpendSourceRef,
             PortfolioView,
             OptimizationProposalRef,
+            PortfolioModelMapping,
+            OptimizationInputContract,
+            OptimizationReadinessReceipt,
         ),
         composition="catalog",
     ),

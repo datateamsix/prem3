@@ -187,7 +187,10 @@
         "PortfolioSnapshotRef",
         "ActualSpendSourceRef",
         "PortfolioView",
-        "OptimizationProposalRef"
+        "OptimizationProposalRef",
+        "PortfolioModelMapping",
+        "OptimizationInputContract",
+        "OptimizationReadinessReceipt"
       ],
       "python_module": "app.investment_planning.contracts",
       "python_qualnames": [
@@ -197,9 +200,12 @@
         "app.investment_planning.contracts.PortfolioSnapshotRef",
         "app.investment_planning.contracts.ActualSpendSourceRef",
         "app.investment_planning.contracts.PortfolioView",
-        "app.investment_optimization.contracts.OptimizationProposalRef"
+        "app.investment_optimization.contracts.OptimizationProposalRef",
+        "app.investment_optimization.contracts.PortfolioModelMapping",
+        "app.investment_optimization.contracts.OptimizationInputContract",
+        "app.investment_optimization.contracts.OptimizationReadinessReceipt"
       ],
-      "sha256": "e0315ce91459b561a8b9c14ff9d9f1b43696a95ece799a892d4a76d8849a218a"
+      "sha256": "4a64123be72d30456745dac46711c51044db2f88ae3ec62dc53e8bd8af893bcd"
     }
   ],
   "hash_algorithm": "sha256",

@@ -206,3 +206,101 @@ class InvestmentPortfolioResponse(ApiModel):
     coverage: PortfolioEvidenceCoverageResponse | None = None
     observations: tuple[PortfolioObservationResponse, ...] = ()
     freshness: PortfolioFreshnessResponse | None = None
+
+
+class MappingOverrideRequest(ApiModel):
+    market_id: str | None = None
+    channel_id: str
+    model_variable_ids: tuple[str, ...]
+    authority: str
+    policy: str | None = None
+    split_weights_bps: tuple[int, ...] = ()
+    unmapped_treatment: str | None = None
+
+
+class CreatePortfolioModelMappingRequest(ApiModel):
+    portfolio_snapshot_id: str
+    model_version_id: str | None = None
+    mapping_overrides: tuple[MappingOverrideRequest, ...] = ()
+
+
+class EvaluateOptimizationReadinessRequest(ApiModel):
+    portfolio_snapshot_id: str | None = None
+    model_version_id: str | None = None
+    mapping_overrides: tuple[MappingOverrideRequest, ...] = ()
+
+
+class OptimizationIssueResponse(ApiModel):
+    code: str
+    blocking: bool
+    review_required: bool = False
+    message_key: str
+    market_id: str | None = None
+    channel_id: str | None = None
+    variable_id: str | None = None
+
+
+class OptimizationReadinessCheckResponse(ApiModel):
+    code: str
+    passed: bool
+
+
+class PortfolioModelMappingEntryResponse(ApiModel):
+    mapping_entry_id: str
+    market_id: str
+    channel_id: str
+    model_variable_id: str
+    mapping_kind: str
+    authority: str
+    status: str
+    market_compatibility: str
+    fingerprint: str
+
+
+class PortfolioModelMappingResponse(ApiModel):
+    mapping_id: str
+    project_id: str
+    portfolio_snapshot_id: str
+    model_version_id: str
+    baseline_kind: str
+    mapping_status: str
+    mapping_entries: tuple[PortfolioModelMappingEntryResponse, ...] = ()
+    unmapped_portfolio_cells: tuple[str, ...] = ()
+    unmapped_model_variables: tuple[str, ...] = ()
+    conflicts: tuple[str, ...] = ()
+    portfolio_cells_total: int = 0
+    mapped_cells: int = 0
+    unmapped_cells: int = 0
+    review_required_cells: int = 0
+    fingerprint: str
+    created_at: datetime
+
+
+class PortfolioModelMappingListResponse(ApiModel):
+    items: tuple[PortfolioModelMappingResponse, ...]
+
+
+class OptimizationCoverageSummaryResponse(ApiModel):
+    status: str
+    covered_channel_ids: tuple[str, ...] = ()
+    uncovered_channel_ids: tuple[str, ...] = ()
+    review_required_channel_ids: tuple[str, ...] = ()
+    covered_market_ids: tuple[str, ...] = ()
+    unsupported_market_ids: tuple[str, ...] = ()
+    accepted_model_ref: str | None = None
+    mta_evidence_ref: str | None = None
+
+
+class OptimizationReadinessResponse(ApiModel):
+    status: str
+    receipt_id: str
+    project_id: str
+    portfolio_snapshot_id: str | None = None
+    model_version_id: str | None = None
+    mapping_id: str | None = None
+    optimization_input_id: str | None = None
+    checks: tuple[OptimizationReadinessCheckResponse, ...] = ()
+    issues: tuple[OptimizationIssueResponse, ...] = ()
+    coverage: OptimizationCoverageSummaryResponse | None = None
+    fingerprint: str
+    created_at: datetime

@@ -231,12 +231,14 @@ class ProjectHomeAssembler:
         data_foundation: DataFoundationService,
         model_ready: ModelReadyEvidenceResolver | None = None,
         modeling=None,
+        optimization=None,
     ) -> None:
         self.repo = repo
         self.business_iq = business_iq
         self.data_foundation = data_foundation
         self.model_ready = model_ready
         self.modeling = modeling
+        self.optimization = optimization
 
     def list_items(
         self, *, tenant_id: str, entitlement: EntitlementSnapshot
@@ -766,6 +768,29 @@ class ProjectHomeAssembler:
             ):
                 availability_value = "REQUIRES_ACCEPTED_MMM_MODEL"
                 reason = "Requires an accepted MMM model"
+            elif accepted and capability is CapabilityFamily.BUDGET_OPTIMIZATION:
+                generated = None
+                if self.optimization is not None:
+                    generated = self.optimization.latest_status(
+                        tenant_id=workspace.tenant_id,
+                        project_id=workspace.workspace_id,
+                    )
+                if generated in {
+                    "OPTIMIZATION_READY",
+                    "NOT_READY",
+                    "REVIEW_REQUIRED",
+                    "NOT_CONFIGURED",
+                    "STALE",
+                }:
+                    availability_value = (
+                        "NOT_READY" if generated == "STALE" else generated
+                    )
+                    if generated == "OPTIMIZATION_READY":
+                        reason = "Optimization readiness is available"
+                    elif generated == "STALE":
+                        reason = "Optimization readiness is stale"
+                    else:
+                        reason = "Optimization is not ready"
             rows.append(
                 PlanningCapabilitySummary(
                     capability=capability.value,

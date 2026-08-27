@@ -35,7 +35,7 @@ flowchart TD
 ## Bounded contexts
 
 - `app/investment_planning/` owns plan metadata, portfolio read contracts, privacy, and the metadata-only store barrier.
-- `app/investment_optimization/` owns proposal refs, solver kinds, and the unimplemented Meridian adapter seam.
+- `app/investment_optimization/` owns proposal refs, solver kinds, the unimplemented Meridian adapter seam, portfolio-to-model mapping, Model Consumption Contract compilation, and optimization readiness receipts.
 - Business IQ, Data Foundation, and `app/modeling/mmm/` are not Planning owners.
 
 ## Canonical grain
@@ -54,4 +54,10 @@ The Investment Plan is Project-scoped and optional. Missing `INVESTMENT_PLAN_REA
 
 Governed actual spend is assembled through `ActualSpendQuery`. See [PORTFOLIO_ACTUALS_INTEGRATION.md](PORTFOLIO_ACTUALS_INTEGRATION.md), [PORTFOLIO_STATE_MODEL.md](PORTFOLIO_STATE_MODEL.md), [PORTFOLIO_EVIDENCE_COVERAGE.md](PORTFOLIO_EVIDENCE_COVERAGE.md), and [PORTFOLIO_OBSERVATIONS.md](PORTFOLIO_OBSERVATIONS.md).
 
-`canonical_media` is not portfolio actual-spend authority. `OPTIMIZATION_READY` is not emitted.
+`canonical_media` is not portfolio actual-spend authority.
+
+## Optimization readiness (P6-04)
+
+Governed mapping from portfolio cells to accepted MMM variables, plus a fingerprinted `OptimizationReadinessReceipt`. See [PORTFOLIO_TO_MODEL_MAPPING.md](PORTFOLIO_TO_MODEL_MAPPING.md), [OPTIMIZATION_READINESS.md](OPTIMIZATION_READINESS.md), [OPTIMIZATION_INPUT_CONTRACT.md](OPTIMIZATION_INPUT_CONTRACT.md), and [PLANNING_CAUSAL_EVIDENCE_AUTHORITY.md](PLANNING_CAUSAL_EVIDENCE_AUTHORITY.md).
+
+`OPTIMIZATION_READY` is readiness, not optimizer execution. Production BigQuery actuals remain `P6_03_PRODUCTION_ACTUALS_QUERY_PENDING`.
