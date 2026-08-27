@@ -88,7 +88,16 @@ Spec-named §§65–77: topology, overlap, market, channel, campaign, audience, 
 
 **244 passed** (IG-00/01/02/02A/03 plus IG-04).
 
-Primary regressions (Identity Graph + Project + BIQ + registry + OpenAPI + Channel Registry + MTA contracts + Firestore + DF durable stores): **310 passed**. Data Foundation + `test_mta_m5_01a_governance`: **99 passed**. Ruff: all checks passed.
+```text
+uv run --extra dev pytest tests/unit/identity_graph tests/unit/test_project_architecture.py tests/unit/business_iq tests/unit/test_registry.py tests/unit/test_prem3_api_openapi.py tests/unit/test_channel_registry.py tests/unit/test_mmm_m5_00_mta.py tests/unit/test_firestore_client.py tests/unit/data_foundation/test_durable_stores.py -q
+# 310 passed
+
+uv run --extra dev pytest tests/unit/data_foundation tests/unit/test_mta_m5_01a_governance.py -q
+# 99 passed
+
+uv run ruff check app/identity_graph app/service/app.py app/service/routers/identity_graph.py app/service/identity_graph_models.py app/service/product_stores.py tests/unit/identity_graph
+# All checks passed
+```
 
 ## Q. Docs / ADRs
 
