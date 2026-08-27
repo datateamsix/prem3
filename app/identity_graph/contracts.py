@@ -9,6 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.core.contracts import utc_now
 from app.identity_graph.enums import (
+    AudienceRefreshCadence,
+    AudienceSourceKind,
+    AudienceStatus,
+    AudienceType,
     BindingStatus,
     BqLocationClass,
     CampaignIdentitySource,
@@ -25,6 +29,7 @@ from app.identity_graph.enums import (
     MarketMappingMethod,
     MarketResolutionMethod,
     MarketStatus,
+    PersonaStatus,
     ResolutionAuthority,
     SourceOverlapPolicy,
     TopologyStatus,
@@ -72,6 +77,78 @@ class BusinessMarketBinding(IdentityGraphModel):
     status: BindingStatus = BindingStatus.CONFIRMED
     confirmed_by: str | None = None
     confirmed_at: datetime | None = None
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class CanonicalPersona(IdentityGraphModel):
+    """Durable business archetype. Not a person and not a membership list."""
+
+    persona_id: str
+    tenant_id: str
+    project_id: str
+    name: str
+    description: str | None = None
+    status: PersonaStatus = PersonaStatus.DRAFT
+    market_ids: tuple[str, ...] = ()
+    lifecycle_stage_refs: tuple[str, ...] = ()
+    business_segment_ref: str | None = None
+    business_profile_snapshot_id: str | None = None
+    owner_type: CampaignOwnerType | None = None
+    owner_ref: str | None = None
+    owner_label: str | None = None
+    persona_id_authority: IdentitySourceAuthority = IdentitySourceAuthority.PREM3_GENERATED
+    market_scope_authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_DECLARED
+    definition_authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_DECLARED
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+    created_by: str = ""
+
+
+class CanonicalAudience(IdentityGraphModel):
+    """Operational segment definition. Not members, size, or match rate."""
+
+    audience_id: str
+    tenant_id: str
+    project_id: str
+    name: str
+    description: str | None = None
+    status: AudienceStatus = AudienceStatus.DRAFT
+    audience_type: AudienceType
+    source_kind: AudienceSourceKind
+    source_ref: str | None = None
+    market_ids: tuple[str, ...] = ()
+    persona_ids: tuple[str, ...] = ()
+    parent_audience_id: str | None = None
+    definition_summary: str | None = None
+    criteria_summary: str | None = None
+    effective_start_date: str | None = None
+    effective_end_date: str | None = None
+    refresh_cadence: AudienceRefreshCadence | None = None
+    owner_type: CampaignOwnerType | None = None
+    owner_ref: str | None = None
+    owner_label: str | None = None
+    audience_id_authority: IdentitySourceAuthority = IdentitySourceAuthority.PREM3_GENERATED
+    market_scope_authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_DECLARED
+    source_authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_DECLARED
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+    created_by: str = ""
+
+
+class AudienceExternalBinding(IdentityGraphModel):
+    """IG-03 seam only. Provider IDs never replace audience_id. No CRUD in IG-02A."""
+
+    binding_id: str
+    audience_id: str
+    provider_id: str
+    external_account_id: str | None = None
+    external_audience_id: str
+    external_audience_name: str | None = None
+    mapping_method: MappingMethod = MappingMethod.PROVIDER_ID_EXACT
+    status: BindingStatus = BindingStatus.CONFIRMED
     fingerprint: str = ""
     created_at: datetime = Field(default_factory=utc_now)
 
@@ -182,9 +259,52 @@ class CampaignLedgerValidationReceipt(IdentityGraphModel):
     created_at: datetime = Field(default_factory=utc_now)
 
 
+class PersonaLedgerValidationReceipt(IdentityGraphModel):
+    tenant_id: str
+    project_id: str
+    persona_id: str
+    state: IdentityGraphCapabilityState
+    persona_id_valid: bool = False
+    project_scoped: bool = False
+    markets_known: bool = False
+    snapshot_valid: bool = True
+    status_valid: bool = False
+    prohibited_fields_absent: bool = True
+    issues: tuple[str, ...] = ()
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class AudienceLedgerValidationReceipt(IdentityGraphModel):
+    tenant_id: str
+    project_id: str
+    audience_id: str
+    state: IdentityGraphCapabilityState
+    audience_id_valid: bool = False
+    project_scoped: bool = False
+    markets_known: bool = False
+    personas_known: bool = False
+    type_valid: bool = False
+    source_valid: bool = False
+    dates_valid: bool = False
+    hierarchy_valid: bool = False
+    status_valid: bool = False
+    prohibited_fields_absent: bool = True
+    issues: tuple[str, ...] = ()
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+
+
 class CampaignLineage(IdentityGraphModel):
     campaign_id: str
     parent_campaign_id: str | None = None
+    ancestors: tuple[str, ...] = ()
+    children: tuple[str, ...] = ()
+
+
+class AudienceLineage(IdentityGraphModel):
+    audience_id: str
+    parent_audience_id: str | None = None
     ancestors: tuple[str, ...] = ()
     children: tuple[str, ...] = ()
 
@@ -308,8 +428,16 @@ class IdentityGraphOverview(IdentityGraphModel):
     campaign_ledger_state: IdentityGraphCapabilityState = (
         IdentityGraphCapabilityState.NOT_CONFIGURED
     )
+    persona_ledger_state: IdentityGraphCapabilityState = (
+        IdentityGraphCapabilityState.NOT_CONFIGURED
+    )
+    audience_ledger_state: IdentityGraphCapabilityState = (
+        IdentityGraphCapabilityState.NOT_CONFIGURED
+    )
     component_states: tuple[IdentityGraphComponentState, ...] = ()
     campaign_count: int = 0
+    persona_count: int = 0
+    audience_count: int = 0
     source_count: int = 0
     mapping_count: int = 0
     issues: tuple[str, ...] = ()

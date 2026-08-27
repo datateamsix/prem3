@@ -759,6 +759,96 @@ components:
       - upload_id
       title: CreateEvaluationRequest
       type: object
+    CreateIdentityGraphAudienceRequest:
+      additionalProperties: false
+      properties:
+        audience_type:
+          title: Audience Type
+          type: string
+        criteria_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Criteria Summary
+        definition_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Definition Summary
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        effective_end_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective End Date
+        effective_start_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective Start Date
+        market_ids:
+          default: []
+          items:
+            type: string
+          title: Market Ids
+          type: array
+        name:
+          title: Name
+          type: string
+        owner_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Label
+        owner_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Ref
+        owner_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Type
+        parent_audience_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parent Audience Id
+        persona_ids:
+          default: []
+          items:
+            type: string
+          title: Persona Ids
+          type: array
+        refresh_cadence:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Refresh Cadence
+        source_kind:
+          title: Source Kind
+          type: string
+        source_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Ref
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      required:
+      - name
+      - audience_type
+      - source_kind
+      title: CreateIdentityGraphAudienceRequest
+      type: object
     CreateIdentityGraphCampaignRequest:
       additionalProperties: false
       properties:
@@ -879,6 +969,63 @@ components:
       required:
       - name
       title: CreateIdentityGraphMarketRequest
+      type: object
+    CreateIdentityGraphPersonaRequest:
+      additionalProperties: false
+      properties:
+        business_profile_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Profile Snapshot Id
+        business_segment_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Segment Ref
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        lifecycle_stage_refs:
+          default: []
+          items:
+            type: string
+          title: Lifecycle Stage Refs
+          type: array
+        market_ids:
+          default: []
+          items:
+            type: string
+          title: Market Ids
+          type: array
+        name:
+          title: Name
+          type: string
+        owner_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Label
+        owner_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Ref
+        owner_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Type
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      required:
+      - name
+      title: CreateIdentityGraphPersonaRequest
       type: object
     CreateIdentityGraphSourceRequest:
       additionalProperties: false
@@ -3220,6 +3367,100 @@ components:
           type: array
       title: ParameterExplanationsView
       type: object
+    PatchIdentityGraphAudienceRequest:
+      additionalProperties: false
+      properties:
+        audience_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Audience Type
+        criteria_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Criteria Summary
+        definition_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Definition Summary
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        effective_end_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective End Date
+        effective_start_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective Start Date
+        market_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Market Ids
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        owner_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Label
+        owner_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Ref
+        owner_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Type
+        parent_audience_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parent Audience Id
+        persona_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Persona Ids
+        refresh_cadence:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Refresh Cadence
+        source_kind:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Kind
+        source_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Ref
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      title: PatchIdentityGraphAudienceRequest
+      type: object
     PatchIdentityGraphCampaignRequest:
       additionalProperties: false
       properties:
@@ -3312,6 +3553,65 @@ components:
           - type: 'null'
           title: Utm Campaign
       title: PatchIdentityGraphCampaignRequest
+      type: object
+    PatchIdentityGraphPersonaRequest:
+      additionalProperties: false
+      properties:
+        business_profile_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Profile Snapshot Id
+        business_segment_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Segment Ref
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        lifecycle_stage_refs:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Lifecycle Stage Refs
+        market_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Market Ids
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        owner_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Label
+        owner_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Ref
+        owner_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Type
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      title: PatchIdentityGraphPersonaRequest
       type: object
     PatchMeasurementTrackRequest:
       additionalProperties: false
@@ -6000,6 +6300,364 @@ paths:
       summary: Get Identity Graph Overview
       tags:
       - identity-graph
+  /v1/projects/{project_id}/identity-graph/audiences:
+    get:
+      operationId: listIdentityGraphAudiences
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - in: query
+        name: audience_type
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Audience Type
+      - in: query
+        name: source_kind
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Kind
+      - in: query
+        name: market_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+      - in: query
+        name: persona_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Persona Id
+      - in: query
+        name: owner_ref
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Ref
+      - in: query
+        name: parent_audience_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parent Audience Id
+      - in: query
+        name: effective_start_date
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective Start Date
+      - in: query
+        name: effective_end_date
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective End Date
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphaudiences
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Audiences
+      tags:
+      - identity-graph
+    post:
+      operationId: createIdentityGraphAudience
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentityGraphAudienceRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createidentitygraphaudience
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Audience
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/audiences/{audience_id}:
+    get:
+      operationId: getIdentityGraphAudience
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: audience_id
+        required: true
+        schema:
+          title: Audience Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphaudience
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Audience
+      tags:
+      - identity-graph
+    patch:
+      operationId: patchIdentityGraphAudience
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: audience_id
+        required: true
+        schema:
+          title: Audience Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchIdentityGraphAudienceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Patchidentitygraphaudience
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Patch Audience
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/audiences/{audience_id}/campaigns:
+    get:
+      operationId: listIdentityGraphAudienceCampaigns
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: audience_id
+        required: true
+        schema:
+          title: Audience Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphaudiencecampaigns
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Audience Campaigns
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/audiences/{audience_id}/children:
+    get:
+      operationId: listIdentityGraphAudienceChildren
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: audience_id
+        required: true
+        schema:
+          title: Audience Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphaudiencechildren
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Audience Children
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/audiences/{audience_id}/lineage:
+    get:
+      operationId: getIdentityGraphAudienceLineage
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: audience_id
+        required: true
+        schema:
+          title: Audience Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphaudiencelineage
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Audience Lineage
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/audiences/{audience_id}/personas:
+    get:
+      operationId: listIdentityGraphAudiencePersonas
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: audience_id
+        required: true
+        schema:
+          title: Audience Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphaudiencepersonas
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Audience Personas
+      tags:
+      - identity-graph
   /v1/projects/{project_id}/identity-graph/campaigns:
     get:
       operationId: listIdentityGraphCampaigns
@@ -6459,6 +7117,244 @@ paths:
       security:
       - HTTPBearer: []
       summary: Create Market
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/personas:
+    get:
+      operationId: listIdentityGraphPersonas
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - in: query
+        name: market_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+      - in: query
+        name: owner_ref
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Ref
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphpersonas
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Personas
+      tags:
+      - identity-graph
+    post:
+      operationId: createIdentityGraphPersona
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentityGraphPersonaRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createidentitygraphpersona
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Persona
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/personas/{persona_id}:
+    get:
+      operationId: getIdentityGraphPersona
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: persona_id
+        required: true
+        schema:
+          title: Persona Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphpersona
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Persona
+      tags:
+      - identity-graph
+    patch:
+      operationId: patchIdentityGraphPersona
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: persona_id
+        required: true
+        schema:
+          title: Persona Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchIdentityGraphPersonaRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Patchidentitygraphpersona
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Patch Persona
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/personas/{persona_id}/audiences:
+    get:
+      operationId: listIdentityGraphPersonaAudiences
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: persona_id
+        required: true
+        schema:
+          title: Persona Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphpersonaaudiences
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Persona Audiences
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/personas/{persona_id}/campaigns:
+    get:
+      operationId: listIdentityGraphPersonaCampaigns
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: persona_id
+        required: true
+        schema:
+          title: Persona Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphpersonacampaigns
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Persona Campaigns
       tags:
       - identity-graph
   /v1/projects/{project_id}/identity-graph/sources:

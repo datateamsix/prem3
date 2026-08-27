@@ -57,6 +57,26 @@ def new_edge_id() -> str:
     return _opaque("ige")
 
 
+def new_persona_id(*, issued: set[str] | frozenset[str] | None = None) -> str:
+    """Mint an opaque per_ ID. Never derived from name, market, or CRM segment."""
+    used = issued or set()
+    for _ in range(8):
+        value = _opaque("per")
+        if value not in used:
+            return value
+    raise RuntimeError("Unable to mint a unique persona_id.")
+
+
+def new_audience_id(*, issued: set[str] | frozenset[str] | None = None) -> str:
+    """Mint an opaque aud_ ID. Never derived from name, provider, or CRM segment."""
+    used = issued or set()
+    for _ in range(8):
+        value = _opaque("aud")
+        if value not in used:
+            return value
+    raise RuntimeError("Unable to mint a unique audience_id.")
+
+
 def assert_campaign_id_shape(campaign_id: str) -> str:
     if not campaign_id.startswith(f"{CAMPAIGN_ID_PREFIX}_"):
         raise ValueError(f"campaign_id must start with {CAMPAIGN_ID_PREFIX}_.")
@@ -67,3 +87,15 @@ def assert_market_id_shape(market_id: str) -> str:
     if not market_id.startswith("mkt_"):
         raise ValueError("market_id must start with mkt_.")
     return validate_resource_identifier(market_id, field="market_id")
+
+
+def assert_persona_id_shape(persona_id: str) -> str:
+    if not persona_id.startswith("per_"):
+        raise ValueError("persona_id must start with per_.")
+    return validate_resource_identifier(persona_id, field="persona_id")
+
+
+def assert_audience_id_shape(audience_id: str) -> str:
+    if not audience_id.startswith("aud_"):
+        raise ValueError("audience_id must start with aud_.")
+    return validate_resource_identifier(audience_id, field="audience_id")

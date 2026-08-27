@@ -23,10 +23,10 @@ _APPROVED_CUSTOM = {BindingStatus.APPROVED}
 _USER_CONFIRMED = {BindingStatus.CONFIRMED, BindingStatus.APPROVED}
 
 
-def assert_not_self_parent(campaign_id: str, parent_campaign_id: str | None) -> None:
-    if parent_campaign_id is not None and parent_campaign_id == campaign_id:
+def assert_not_self_parent(node_id: str, parent_id: str | None) -> None:
+    if parent_id is not None and parent_id == node_id:
         raise IdentityGraphError(
-            "A campaign cannot parent itself.",
+            "A node cannot parent itself.",
             code="SELF_PARENT",
         )
 

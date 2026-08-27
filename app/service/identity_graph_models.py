@@ -43,6 +43,72 @@ class PatchIdentityGraphCampaignRequest(ApiModel):
     audience_ids: list[str] | None = None
 
 
+class CreateIdentityGraphPersonaRequest(ApiModel):
+    name: str
+    description: str | None = None
+    status: str | None = None
+    market_ids: list[str] = []
+    lifecycle_stage_refs: list[str] = []
+    business_segment_ref: str | None = None
+    business_profile_snapshot_id: str | None = None
+    owner_type: str | None = None
+    owner_ref: str | None = None
+    owner_label: str | None = None
+
+
+class PatchIdentityGraphPersonaRequest(ApiModel):
+    name: str | None = None
+    description: str | None = None
+    status: str | None = None
+    market_ids: list[str] | None = None
+    lifecycle_stage_refs: list[str] | None = None
+    business_segment_ref: str | None = None
+    business_profile_snapshot_id: str | None = None
+    owner_type: str | None = None
+    owner_ref: str | None = None
+    owner_label: str | None = None
+
+
+class CreateIdentityGraphAudienceRequest(ApiModel):
+    name: str
+    audience_type: str
+    source_kind: str
+    description: str | None = None
+    status: str | None = None
+    source_ref: str | None = None
+    market_ids: list[str] = []
+    persona_ids: list[str] = []
+    parent_audience_id: str | None = None
+    definition_summary: str | None = None
+    criteria_summary: str | None = None
+    effective_start_date: str | None = None
+    effective_end_date: str | None = None
+    refresh_cadence: str | None = None
+    owner_type: str | None = None
+    owner_ref: str | None = None
+    owner_label: str | None = None
+
+
+class PatchIdentityGraphAudienceRequest(ApiModel):
+    name: str | None = None
+    audience_type: str | None = None
+    source_kind: str | None = None
+    description: str | None = None
+    status: str | None = None
+    source_ref: str | None = None
+    market_ids: list[str] | None = None
+    persona_ids: list[str] | None = None
+    parent_audience_id: str | None = None
+    definition_summary: str | None = None
+    criteria_summary: str | None = None
+    effective_start_date: str | None = None
+    effective_end_date: str | None = None
+    refresh_cadence: str | None = None
+    owner_type: str | None = None
+    owner_ref: str | None = None
+    owner_label: str | None = None
+
+
 class CreateIdentityGraphMarketRequest(ApiModel):
     name: str
     description: str | None = None

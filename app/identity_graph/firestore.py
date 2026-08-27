@@ -6,17 +6,21 @@ from typing import Any
 
 from app.control_plane.serialization import document_to_model, model_to_document
 from app.identity_graph.contracts import (
+    AudienceLedgerValidationReceipt,
     BusinessMarketBinding,
     CampaignExternalBinding,
     CampaignLedgerValidationReceipt,
     CampaignTrackingBinding,
     CampaignTrackingInstructions,
+    CanonicalAudience,
     CanonicalCampaign,
     CanonicalMarket,
+    CanonicalPersona,
     GA4PropertySourceBinding,
     GA4SourceTopology,
     GA4TopologyReadinessReceipt,
     MarketResolutionPolicy,
+    PersonaLedgerValidationReceipt,
 )
 from app.identity_graph.errors import IdentityGraphError
 from app.identity_graph.relationships import MarketingIdentityEdge
@@ -37,6 +41,10 @@ COL_TOPOLOGY = "ga4_topology"
 COL_TOPOLOGY_RECEIPTS = "ga4_topology_receipts"
 COL_POLICIES = "market_policies"
 COL_EDGES = "edges"
+COL_PERSONAS = "personas"
+COL_AUDIENCES = "audiences"
+COL_PERSONA_RECEIPTS = "persona_receipts"
+COL_AUDIENCE_RECEIPTS = "audience_receipts"
 
 
 class FirestoreIdentityGraphStore:
@@ -67,6 +75,16 @@ class FirestoreIdentityGraphStore:
     def _index_market(self, market_id: str, tenant_id: str, project_id: str) -> None:
         self._db.collection(COL_INDEX).document(f"market__{market_id}").set(
             {"tenant_id": tenant_id, "workspace_id": project_id, "kind": "market"}
+        )
+
+    def _index_persona(self, persona_id: str, tenant_id: str, project_id: str) -> None:
+        self._db.collection(COL_INDEX).document(f"persona__{persona_id}").set(
+            {"tenant_id": tenant_id, "workspace_id": project_id, "kind": "persona"}
+        )
+
+    def _index_audience(self, audience_id: str, tenant_id: str, project_id: str) -> None:
+        self._db.collection(COL_INDEX).document(f"audience__{audience_id}").set(
+            {"tenant_id": tenant_id, "workspace_id": project_id, "kind": "audience"}
         )
 
     def _lookup(self, kind: str, key: str) -> tuple[str, str] | None:
@@ -114,6 +132,20 @@ class FirestoreIdentityGraphStore:
         for snap in self._db.collection(COL_INDEX).stream():
             if str(snap.id).startswith("market__"):
                 ids.add(str(snap.id).removeprefix("market__"))
+        return ids
+
+    def issued_persona_ids(self) -> set[str]:
+        ids: set[str] = set()
+        for snap in self._db.collection(COL_INDEX).stream():
+            if str(snap.id).startswith("persona__"):
+                ids.add(str(snap.id).removeprefix("persona__"))
+        return ids
+
+    def issued_audience_ids(self) -> set[str]:
+        ids: set[str] = set()
+        for snap in self._db.collection(COL_INDEX).stream():
+            if str(snap.id).startswith("audience__"):
+                ids.add(str(snap.id).removeprefix("audience__"))
         return ids
 
     def put_market(self, value: CanonicalMarket) -> CanonicalMarket:
@@ -206,6 +238,110 @@ class FirestoreIdentityGraphStore:
         for edge in self.list_edges(tenant_id=tenant_id, project_id=project_id):
             if edge.from_node_id == campaign_id or edge.to_node_id == campaign_id:
                 self._delete_doc(tenant_id, project_id, COL_EDGES, edge.edge_id)
+
+    def put_persona(self, value: CanonicalPersona) -> CanonicalPersona:
+        existing = self.get_persona(
+            tenant_id=value.tenant_id, project_id=value.project_id, persona_id=value.persona_id
+        )
+        loc = self._lookup("persona", value.persona_id)
+        if existing is None and loc is not None:
+            raise IdentityGraphError(
+                f"persona_id {value.persona_id} was already issued and cannot be reused.",
+                code="ID_REUSED",
+            )
+        self._put(value.tenant_id, value.project_id, COL_PERSONAS, value.persona_id, value)
+        self._index_persona(value.persona_id, value.tenant_id, value.project_id)
+        return value
+
+    def get_persona(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> CanonicalPersona | None:
+        return self._get(tenant_id, project_id, COL_PERSONAS, persona_id, CanonicalPersona)
+
+    def list_personas(self, *, tenant_id: str, project_id: str) -> list[CanonicalPersona]:
+        return self._list(tenant_id, project_id, COL_PERSONAS, CanonicalPersona)
+
+    def delete_persona(self, *, tenant_id: str, project_id: str, persona_id: str) -> None:
+        found = self.get_persona(tenant_id=tenant_id, project_id=project_id, persona_id=persona_id)
+        if found is None:
+            raise IdentityGraphError(
+                f"Unknown persona_id {persona_id}.",
+                code="UNKNOWN_PERSONA",
+            )
+        self._delete_doc(tenant_id, project_id, COL_PERSONAS, persona_id)
+        self._delete_doc(tenant_id, project_id, COL_PERSONA_RECEIPTS, persona_id)
+        for edge in self.list_edges(tenant_id=tenant_id, project_id=project_id):
+            if edge.from_node_id == persona_id or edge.to_node_id == persona_id:
+                self._delete_doc(tenant_id, project_id, COL_EDGES, edge.edge_id)
+
+    def put_persona_receipt(
+        self, value: PersonaLedgerValidationReceipt
+    ) -> PersonaLedgerValidationReceipt:
+        self._put(value.tenant_id, value.project_id, COL_PERSONA_RECEIPTS, value.persona_id, value)
+        return value
+
+    def get_persona_receipt(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> PersonaLedgerValidationReceipt | None:
+        return self._get(
+            tenant_id, project_id, COL_PERSONA_RECEIPTS, persona_id, PersonaLedgerValidationReceipt
+        )
+
+    def put_audience(self, value: CanonicalAudience) -> CanonicalAudience:
+        existing = self.get_audience(
+            tenant_id=value.tenant_id, project_id=value.project_id, audience_id=value.audience_id
+        )
+        loc = self._lookup("audience", value.audience_id)
+        if existing is None and loc is not None:
+            raise IdentityGraphError(
+                f"audience_id {value.audience_id} was already issued and cannot be reused.",
+                code="ID_REUSED",
+            )
+        self._put(value.tenant_id, value.project_id, COL_AUDIENCES, value.audience_id, value)
+        self._index_audience(value.audience_id, value.tenant_id, value.project_id)
+        return value
+
+    def get_audience(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> CanonicalAudience | None:
+        return self._get(tenant_id, project_id, COL_AUDIENCES, audience_id, CanonicalAudience)
+
+    def list_audiences(self, *, tenant_id: str, project_id: str) -> list[CanonicalAudience]:
+        return self._list(tenant_id, project_id, COL_AUDIENCES, CanonicalAudience)
+
+    def delete_audience(self, *, tenant_id: str, project_id: str, audience_id: str) -> None:
+        found = self.get_audience(
+            tenant_id=tenant_id, project_id=project_id, audience_id=audience_id
+        )
+        if found is None:
+            raise IdentityGraphError(
+                f"Unknown audience_id {audience_id}.",
+                code="UNKNOWN_AUDIENCE",
+            )
+        self._delete_doc(tenant_id, project_id, COL_AUDIENCES, audience_id)
+        self._delete_doc(tenant_id, project_id, COL_AUDIENCE_RECEIPTS, audience_id)
+        for edge in self.list_edges(tenant_id=tenant_id, project_id=project_id):
+            if edge.from_node_id == audience_id or edge.to_node_id == audience_id:
+                self._delete_doc(tenant_id, project_id, COL_EDGES, edge.edge_id)
+
+    def put_audience_receipt(
+        self, value: AudienceLedgerValidationReceipt
+    ) -> AudienceLedgerValidationReceipt:
+        self._put(
+            value.tenant_id, value.project_id, COL_AUDIENCE_RECEIPTS, value.audience_id, value
+        )
+        return value
+
+    def get_audience_receipt(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> AudienceLedgerValidationReceipt | None:
+        return self._get(
+            tenant_id,
+            project_id,
+            COL_AUDIENCE_RECEIPTS,
+            audience_id,
+            AudienceLedgerValidationReceipt,
+        )
 
     def put_tracking(self, value: CampaignTrackingBinding) -> CampaignTrackingBinding:
         loc = self._lookup("campaign", value.campaign_id)
@@ -318,6 +454,9 @@ class FirestoreIdentityGraphStore:
 
     def list_edges(self, *, tenant_id: str, project_id: str) -> list[MarketingIdentityEdge]:
         return self._list(tenant_id, project_id, COL_EDGES, MarketingIdentityEdge)
+
+    def delete_edge(self, *, tenant_id: str, project_id: str, edge_id: str) -> None:
+        self._delete_doc(tenant_id, project_id, COL_EDGES, edge_id)
 
     def put_topology_receipt(
         self, value: GA4TopologyReadinessReceipt

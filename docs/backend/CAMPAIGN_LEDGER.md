@@ -45,6 +45,12 @@ Project component `campaign_ledger_state`: `NOT_CONFIGURED` · `PARTIAL` · `REA
 
 This component does not gate `BUSINESS_CONTEXT_READY`, `DATA_FOUNDATION_READY`, `MODEL_READY`, `MTA_INPUT_READY`, or `INVESTMENT_PLAN_READY`.
 
+## Audience / Persona intended scope
+
+`persona_ids[]` / `audience_ids[]` are optional resolvable refs to Identity Graph `per_` / `aud_` definition IDs. They describe intended campaign scope, not observed delivery. Empty lists remain valid. Unknown or cross-project IDs fail closed. Archived audiences/personas cannot be attached to a new or active campaign (`ARCHIVED_TARGET`) unless the campaign itself is already `ARCHIVED`.
+
+See [PERSONA_LEDGER.md](PERSONA_LEDGER.md), [AUDIENCE_LEDGER.md](AUDIENCE_LEDGER.md), and [AUDIENCE_PERSONA_RELATIONSHIPS.md](AUDIENCE_PERSONA_RELATIONSHIPS.md).
+
 ## BUSINESS_IQ_OBJECTIVE_INTEGRATION_REQUEST
 
 If `objective_ref` is supplied, IG-02 fail-closed matches it to a `MeasurementObjective.objective_id` (`obj_*`) on the current Business IQ profile snapshot.

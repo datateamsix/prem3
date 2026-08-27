@@ -15,7 +15,7 @@ Metadata only. No budget, attribution, or platform metrics.
 | `status` | `PLANNED` · `ACTIVE` · `PAUSED` · `COMPLETE` · `ARCHIVED` |
 | `market_ids[]` | Canonical Identity Graph `market_id` (`mkt_<opaque>`); unknown IDs fail closed |
 | `channel_ids[]` | Channel Registry IDs; unknown IDs fail closed |
-| `persona_ids[]` / `audience_ids[]` | Empty is valid. Any submitted ID is unknown until IG-02A and is rejected. Not members. |
+| `persona_ids[]` / `audience_ids[]` | Optional resolvable `per_` / `aud_` intended-scope refs. Empty is valid. Unknown/cross-project fail closed. Not members. |
 | `planned_start_date` / `planned_end_date` | Optional; end ≥ start when both set; evergreen = both absent |
 
 Status changes do not change identity. Hierarchy is execution detail for later Planning; IG-02 does not aggregate causal return by parent/child.

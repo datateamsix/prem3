@@ -11,6 +11,8 @@ from app.core.tenancy import require_tenant
 from app.domain.channels.registry import cached_channel_registry
 from app.domain.channels.validation import ChannelValidationError, assert_channel_id_in_registry
 from app.identity_graph.contracts import (
+    AudienceLedgerValidationReceipt,
+    AudienceLineage,
     BusinessMarketBinding,
     CampaignCreateResult,
     CampaignExternalBinding,
@@ -19,8 +21,10 @@ from app.identity_graph.contracts import (
     CampaignLineage,
     CampaignTrackingBinding,
     CampaignTrackingInstructions,
+    CanonicalAudience,
     CanonicalCampaign,
     CanonicalMarket,
+    CanonicalPersona,
     GA4MarketCoverage,
     GA4PropertySourceBinding,
     GA4SourceTopology,
@@ -31,8 +35,13 @@ from app.identity_graph.contracts import (
     MarketResolutionPolicy,
     MTAIdentityTouchpointRefs,
     ObservedCampaignSignals,
+    PersonaLedgerValidationReceipt,
 )
 from app.identity_graph.enums import (
+    AudienceRefreshCadence,
+    AudienceSourceKind,
+    AudienceStatus,
+    AudienceType,
     BindingStatus,
     BqLocationClass,
     CampaignIdentitySource,
@@ -51,6 +60,7 @@ from app.identity_graph.enums import (
     MarketMappingMethod,
     MarketResolutionMethod,
     MarketStatus,
+    PersonaStatus,
     ResolutionAuthority,
     SourceOverlapPolicy,
     TopologyStatus,
@@ -61,16 +71,27 @@ from app.identity_graph.enums import (
 from app.identity_graph.errors import IdentityGraphError
 from app.identity_graph.fingerprint import identity_fingerprint
 from app.identity_graph.ids import (
+    assert_audience_id_shape,
     assert_campaign_id_shape,
     assert_market_id_shape,
+    assert_persona_id_shape,
+    new_audience_id,
     new_binding_id,
     new_campaign_id,
     new_edge_id,
     new_ga4_source_binding_id,
     new_market_id,
+    new_persona_id,
     new_policy_id,
     new_topology_id,
     new_tracking_binding_id,
+)
+from app.identity_graph.ledgers import (
+    assert_audience_status_transition,
+    assert_persona_status_transition,
+    ledger_state_from_receipts,
+    validate_source_ref,
+    would_create_audience_cycle,
 )
 from app.identity_graph.relationships import MarketingIdentityEdge
 from app.identity_graph.resolution import (
@@ -360,6 +381,11 @@ class CampaignIdentityService:
         self.store.put_campaign(updated)
         if updated.parent_campaign_id != campaign.parent_campaign_id:
             self._replace_child_edge(updated)
+        if (
+            updated.persona_ids != campaign.persona_ids
+            or updated.audience_ids != campaign.audience_ids
+        ):
+            self._sync_campaign_target_edges(updated)
         instructions = self.store.get_tracking_instructions(
             tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
         )
@@ -562,6 +588,634 @@ class CampaignIdentityService:
         self.store.delete_campaign(
             tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
         )
+
+    def create_persona(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        name: str,
+        actor_id: str,
+        description: str | None = None,
+        status: PersonaStatus = PersonaStatus.DRAFT,
+        market_ids: tuple[str, ...] = (),
+        lifecycle_stage_refs: tuple[str, ...] = (),
+        business_segment_ref: str | None = None,
+        business_profile_snapshot_id: str | None = None,
+        owner_type: CampaignOwnerType | None = None,
+        owner_ref: str | None = None,
+        owner_label: str | None = None,
+    ) -> CanonicalPersona:
+        self._authorize(tenant_id)
+        self._require_name(name)
+        now = datetime.now(UTC)
+        persona = CanonicalPersona(
+            persona_id=new_persona_id(issued=self.store.issued_persona_ids()),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            name=name,
+            description=description,
+            status=status,
+            market_ids=market_ids,
+            lifecycle_stage_refs=lifecycle_stage_refs,
+            business_segment_ref=business_segment_ref,
+            business_profile_snapshot_id=business_profile_snapshot_id,
+            owner_type=owner_type,
+            owner_ref=owner_ref,
+            owner_label=owner_label,
+            persona_id_authority=IdentitySourceAuthority.PREM3_GENERATED,
+            market_scope_authority=IdentitySourceAuthority.USER_DECLARED,
+            definition_authority=IdentitySourceAuthority.USER_DECLARED,
+            created_at=now,
+            updated_at=now,
+            created_by=actor_id,
+        )
+        self._validate_persona_payload(persona)
+        persona = persona.model_copy(update={"fingerprint": identity_fingerprint(persona)})
+        self.store.put_persona(persona)
+        self.validate_persona(
+            tenant_id=tenant_id, project_id=project_id, persona_id=persona.persona_id
+        )
+        return persona
+
+    def get_persona(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> CanonicalPersona:
+        self._authorize(tenant_id)
+        return self._require_persona(tenant_id, project_id, persona_id)
+
+    def list_personas(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        status: PersonaStatus | None = None,
+        market_id: str | None = None,
+        owner_ref: str | None = None,
+    ) -> list[CanonicalPersona]:
+        self._authorize(tenant_id)
+        rows = self.store.list_personas(tenant_id=tenant_id, project_id=project_id)
+        if status is not None:
+            rows = [item for item in rows if item.status == status]
+        if market_id is not None:
+            rows = [item for item in rows if market_id in item.market_ids]
+        if owner_ref is not None:
+            rows = [item for item in rows if item.owner_ref == owner_ref]
+        return rows
+
+    def update_persona(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        persona_id: str,
+        updates: dict[str, Any],
+    ) -> CanonicalPersona:
+        self._authorize(tenant_id)
+        persona = self._require_persona(tenant_id, project_id, persona_id)
+        allowed = {
+            "name",
+            "description",
+            "status",
+            "market_ids",
+            "lifecycle_stage_refs",
+            "business_segment_ref",
+            "business_profile_snapshot_id",
+            "owner_type",
+            "owner_ref",
+            "owner_label",
+        }
+        unknown = set(updates) - allowed
+        if unknown:
+            raise IdentityGraphError(
+                f"Unsupported persona update fields: {', '.join(sorted(unknown))}.",
+                code="UNSUPPORTED_UPDATE",
+            )
+        patch: dict[str, Any] = {}
+        for key, value in updates.items():
+            if key in {"market_ids", "lifecycle_stage_refs"}:
+                patch[key] = tuple(value) if value is not None else ()
+            elif key == "status":
+                next_status = value if isinstance(value, PersonaStatus) else PersonaStatus(value)
+                assert_persona_status_transition(persona.status, next_status)
+                patch["status"] = next_status
+            elif key == "owner_type":
+                patch["owner_type"] = (
+                    None
+                    if value is None
+                    else value
+                    if isinstance(value, CampaignOwnerType)
+                    else CampaignOwnerType(value)
+                )
+            elif key == "name":
+                self._require_name(str(value) if value is not None else "")
+                patch[key] = value
+            else:
+                patch[key] = value
+        patch["updated_at"] = datetime.now(UTC)
+        updated = persona.model_copy(update=patch)
+        self._validate_persona_payload(updated)
+        updated = updated.model_copy(update={"fingerprint": identity_fingerprint(updated)})
+        self.store.put_persona(updated)
+        self.validate_persona(
+            tenant_id=tenant_id, project_id=project_id, persona_id=persona_id
+        )
+        return updated
+
+    def archive_persona(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> CanonicalPersona:
+        return self.update_persona(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            persona_id=persona_id,
+            updates={"status": PersonaStatus.ARCHIVED},
+        )
+
+    def delete_persona(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> None:
+        self._authorize(tenant_id)
+        persona = self._require_persona(tenant_id, project_id, persona_id)
+        referenced = self._persona_is_referenced(
+            tenant_id=tenant_id, project_id=project_id, persona_id=persona_id
+        )
+        if persona.status != PersonaStatus.DRAFT or referenced:
+            raise IdentityGraphError(
+                "Hard delete is only allowed for never-referenced drafts; archive instead.",
+                code="PERSONA_REFERENCED",
+            )
+        self.store.delete_persona(
+            tenant_id=tenant_id, project_id=project_id, persona_id=persona_id
+        )
+
+    def persona_audiences(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> tuple[CanonicalAudience, ...]:
+        self._authorize(tenant_id)
+        self._require_persona(tenant_id, project_id, persona_id)
+        return tuple(
+            item
+            for item in self.store.list_audiences(tenant_id=tenant_id, project_id=project_id)
+            if persona_id in item.persona_ids
+        )
+
+    def persona_campaigns(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> tuple[CanonicalCampaign, ...]:
+        self._authorize(tenant_id)
+        self._require_persona(tenant_id, project_id, persona_id)
+        return tuple(
+            item
+            for item in self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
+            if persona_id in item.persona_ids
+        )
+
+    def validate_persona(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> PersonaLedgerValidationReceipt:
+        self._authorize(tenant_id)
+        persona = self._require_persona(tenant_id, project_id, persona_id)
+        issues: list[str] = []
+        persona_id_valid = True
+        try:
+            assert_persona_id_shape(persona.persona_id)
+        except (ValueError, InvalidResourceIdentifierError):
+            persona_id_valid = False
+            issues.append("PERSONA_ID_SHAPE")
+        project_scoped = persona.tenant_id == tenant_id and persona.project_id == project_id
+        if not project_scoped:
+            issues.append("PROJECT_SCOPE")
+        markets_known = True
+        try:
+            if persona.market_ids:
+                self._validate_markets(tenant_id, project_id, persona.market_ids)
+        except IdentityGraphError as exc:
+            markets_known = False
+            issues.append(exc.code)
+        snapshot_valid = True
+        try:
+            self._validate_biq_snapshot(persona.business_profile_snapshot_id)
+        except IdentityGraphError as exc:
+            snapshot_valid = False
+            issues.append(exc.code)
+        try:
+            PersonaStatus(persona.status)
+            status_valid = True
+        except ValueError:
+            status_valid = False
+            issues.append("STATUS_INVALID")
+        if issues:
+            if "HIERARCHY_CYCLE" in issues:
+                state = IdentityGraphCapabilityState.REVIEW_REQUIRED
+            else:
+                state = IdentityGraphCapabilityState.PARTIAL
+        else:
+            state = IdentityGraphCapabilityState.READY
+        receipt = PersonaLedgerValidationReceipt(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            persona_id=persona.persona_id,
+            state=state,
+            persona_id_valid=persona_id_valid,
+            project_scoped=project_scoped,
+            markets_known=markets_known,
+            snapshot_valid=snapshot_valid,
+            status_valid=status_valid,
+            prohibited_fields_absent=True,
+            issues=tuple(dict.fromkeys(issues)),
+        )
+        receipt = receipt.model_copy(update={"fingerprint": identity_fingerprint(receipt)})
+        return self.store.put_persona_receipt(receipt)
+
+    def create_audience(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        name: str,
+        actor_id: str,
+        audience_type: AudienceType,
+        source_kind: AudienceSourceKind,
+        description: str | None = None,
+        status: AudienceStatus = AudienceStatus.DRAFT,
+        source_ref: str | None = None,
+        market_ids: tuple[str, ...] = (),
+        persona_ids: tuple[str, ...] = (),
+        parent_audience_id: str | None = None,
+        definition_summary: str | None = None,
+        criteria_summary: str | None = None,
+        effective_start_date: str | None = None,
+        effective_end_date: str | None = None,
+        refresh_cadence: AudienceRefreshCadence | None = None,
+        owner_type: CampaignOwnerType | None = None,
+        owner_ref: str | None = None,
+        owner_label: str | None = None,
+    ) -> CanonicalAudience:
+        self._authorize(tenant_id)
+        self._require_name(name)
+        now = datetime.now(UTC)
+        source_authority = (
+            IdentitySourceAuthority.BUSINESS_IQ_DEFINED
+            if source_kind == AudienceSourceKind.BUSINESS_IQ_DEFINED
+            else IdentitySourceAuthority.USER_DECLARED
+        )
+        audience = CanonicalAudience(
+            audience_id=new_audience_id(issued=self.store.issued_audience_ids()),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            name=name,
+            description=description,
+            status=status,
+            audience_type=audience_type,
+            source_kind=source_kind,
+            source_ref=source_ref,
+            market_ids=market_ids,
+            persona_ids=persona_ids,
+            parent_audience_id=None,
+            definition_summary=definition_summary,
+            criteria_summary=criteria_summary,
+            effective_start_date=effective_start_date,
+            effective_end_date=effective_end_date,
+            refresh_cadence=refresh_cadence,
+            owner_type=owner_type,
+            owner_ref=owner_ref,
+            owner_label=owner_label,
+            audience_id_authority=IdentitySourceAuthority.PREM3_GENERATED,
+            market_scope_authority=IdentitySourceAuthority.USER_DECLARED,
+            source_authority=source_authority,
+            created_at=now,
+            updated_at=now,
+            created_by=actor_id,
+        )
+        self._validate_audience_payload(audience)
+        if parent_audience_id is not None:
+            audience = audience.model_copy(update={"parent_audience_id": parent_audience_id})
+            self._validate_audience_parent(audience)
+        audience = audience.model_copy(update={"fingerprint": identity_fingerprint(audience)})
+        self.store.put_audience(audience)
+        self._sync_audience_edges(audience)
+        self.validate_audience(
+            tenant_id=tenant_id, project_id=project_id, audience_id=audience.audience_id
+        )
+        return audience
+
+    def get_audience(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> CanonicalAudience:
+        self._authorize(tenant_id)
+        return self._require_audience(tenant_id, project_id, audience_id)
+
+    def list_audiences(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        status: AudienceStatus | None = None,
+        audience_type: AudienceType | None = None,
+        source_kind: AudienceSourceKind | None = None,
+        market_id: str | None = None,
+        persona_id: str | None = None,
+        owner_ref: str | None = None,
+        parent_audience_id: str | None = None,
+        effective_start_date: str | None = None,
+        effective_end_date: str | None = None,
+    ) -> list[CanonicalAudience]:
+        self._authorize(tenant_id)
+        rows = self.store.list_audiences(tenant_id=tenant_id, project_id=project_id)
+        if status is not None:
+            rows = [item for item in rows if item.status == status]
+        if audience_type is not None:
+            rows = [item for item in rows if item.audience_type == audience_type]
+        if source_kind is not None:
+            rows = [item for item in rows if item.source_kind == source_kind]
+        if market_id is not None:
+            rows = [item for item in rows if market_id in item.market_ids]
+        if persona_id is not None:
+            rows = [item for item in rows if persona_id in item.persona_ids]
+        if owner_ref is not None:
+            rows = [item for item in rows if item.owner_ref == owner_ref]
+        if parent_audience_id is not None:
+            rows = [item for item in rows if item.parent_audience_id == parent_audience_id]
+        if effective_start_date is not None or effective_end_date is not None:
+            rows = [
+                item
+                for item in rows
+                if _planned_dates_overlap(
+                    item.effective_start_date,
+                    item.effective_end_date,
+                    effective_start_date,
+                    effective_end_date,
+                )
+            ]
+        return rows
+
+    def update_audience(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        audience_id: str,
+        updates: dict[str, Any],
+    ) -> CanonicalAudience:
+        self._authorize(tenant_id)
+        audience = self._require_audience(tenant_id, project_id, audience_id)
+        allowed = {
+            "name",
+            "description",
+            "status",
+            "audience_type",
+            "source_kind",
+            "source_ref",
+            "market_ids",
+            "persona_ids",
+            "parent_audience_id",
+            "definition_summary",
+            "criteria_summary",
+            "effective_start_date",
+            "effective_end_date",
+            "refresh_cadence",
+            "owner_type",
+            "owner_ref",
+            "owner_label",
+        }
+        unknown = set(updates) - allowed
+        if unknown:
+            raise IdentityGraphError(
+                f"Unsupported audience update fields: {', '.join(sorted(unknown))}.",
+                code="UNSUPPORTED_UPDATE",
+            )
+        patch: dict[str, Any] = {}
+        for key, value in updates.items():
+            if key in {"market_ids", "persona_ids"}:
+                patch[key] = tuple(value) if value is not None else ()
+            elif key == "status":
+                next_status = (
+                    value if isinstance(value, AudienceStatus) else AudienceStatus(value)
+                )
+                assert_audience_status_transition(audience.status, next_status)
+                patch["status"] = next_status
+            elif key == "audience_type":
+                patch["audience_type"] = (
+                    value if isinstance(value, AudienceType) else AudienceType(value)
+                )
+            elif key == "source_kind":
+                kind = value if isinstance(value, AudienceSourceKind) else AudienceSourceKind(value)
+                patch["source_kind"] = kind
+                patch["source_authority"] = (
+                    IdentitySourceAuthority.BUSINESS_IQ_DEFINED
+                    if kind == AudienceSourceKind.BUSINESS_IQ_DEFINED
+                    else IdentitySourceAuthority.USER_DECLARED
+                )
+            elif key == "refresh_cadence":
+                patch["refresh_cadence"] = (
+                    None
+                    if value is None
+                    else value
+                    if isinstance(value, AudienceRefreshCadence)
+                    else AudienceRefreshCadence(value)
+                )
+            elif key == "owner_type":
+                patch["owner_type"] = (
+                    None
+                    if value is None
+                    else value
+                    if isinstance(value, CampaignOwnerType)
+                    else CampaignOwnerType(value)
+                )
+            elif key == "name":
+                self._require_name(str(value) if value is not None else "")
+                patch[key] = value
+            else:
+                patch[key] = value
+        patch["updated_at"] = datetime.now(UTC)
+        updated = audience.model_copy(update=patch)
+        self._validate_audience_payload(updated)
+        if updated.parent_audience_id is not None:
+            self._validate_audience_parent(updated)
+        updated = updated.model_copy(update={"fingerprint": identity_fingerprint(updated)})
+        self.store.put_audience(updated)
+        self._sync_audience_edges(updated)
+        self.validate_audience(
+            tenant_id=tenant_id, project_id=project_id, audience_id=audience_id
+        )
+        return updated
+
+    def archive_audience(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> CanonicalAudience:
+        return self.update_audience(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            audience_id=audience_id,
+            updates={"status": AudienceStatus.ARCHIVED},
+        )
+
+    def delete_audience(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> None:
+        self._authorize(tenant_id)
+        audience = self._require_audience(tenant_id, project_id, audience_id)
+        referenced = self._audience_is_referenced(
+            tenant_id=tenant_id, project_id=project_id, audience_id=audience_id
+        )
+        if audience.status != AudienceStatus.DRAFT or referenced:
+            raise IdentityGraphError(
+                "Hard delete is only allowed for never-referenced drafts; archive instead.",
+                code="AUDIENCE_REFERENCED",
+            )
+        self.store.delete_audience(
+            tenant_id=tenant_id, project_id=project_id, audience_id=audience_id
+        )
+
+    def audience_personas(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> tuple[CanonicalPersona, ...]:
+        self._authorize(tenant_id)
+        audience = self._require_audience(tenant_id, project_id, audience_id)
+        return tuple(
+            self._require_persona(tenant_id, project_id, persona_id)
+            for persona_id in audience.persona_ids
+        )
+
+    def audience_campaigns(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> tuple[CanonicalCampaign, ...]:
+        self._authorize(tenant_id)
+        self._require_audience(tenant_id, project_id, audience_id)
+        return tuple(
+            item
+            for item in self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
+            if audience_id in item.audience_ids
+        )
+
+    def audience_children(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> tuple[CanonicalAudience, ...]:
+        self._authorize(tenant_id)
+        self._require_audience(tenant_id, project_id, audience_id)
+        return tuple(
+            item
+            for item in self.store.list_audiences(tenant_id=tenant_id, project_id=project_id)
+            if item.parent_audience_id == audience_id
+        )
+
+    def audience_lineage(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> AudienceLineage:
+        self._authorize(tenant_id)
+        audience = self._require_audience(tenant_id, project_id, audience_id)
+        ancestors: list[str] = []
+        seen: set[str] = set()
+        current = audience.parent_audience_id
+        while current and current not in seen:
+            seen.add(current)
+            parent = self.store.get_audience(
+                tenant_id=tenant_id, project_id=project_id, audience_id=current
+            )
+            if parent is None:
+                break
+            ancestors.append(parent.audience_id)
+            current = parent.parent_audience_id
+        child_ids = tuple(
+            item.audience_id
+            for item in self.audience_children(
+                tenant_id=tenant_id, project_id=project_id, audience_id=audience_id
+            )
+        )
+        return AudienceLineage(
+            audience_id=audience.audience_id,
+            parent_audience_id=audience.parent_audience_id,
+            ancestors=tuple(ancestors),
+            children=child_ids,
+        )
+
+    def validate_audience(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> AudienceLedgerValidationReceipt:
+        self._authorize(tenant_id)
+        audience = self._require_audience(tenant_id, project_id, audience_id)
+        issues: list[str] = []
+        audience_id_valid = True
+        try:
+            assert_audience_id_shape(audience.audience_id)
+        except (ValueError, InvalidResourceIdentifierError):
+            audience_id_valid = False
+            issues.append("AUDIENCE_ID_SHAPE")
+        project_scoped = audience.tenant_id == tenant_id and audience.project_id == project_id
+        if not project_scoped:
+            issues.append("PROJECT_SCOPE")
+        markets_known = True
+        try:
+            if audience.market_ids:
+                self._validate_markets(tenant_id, project_id, audience.market_ids)
+        except IdentityGraphError as exc:
+            markets_known = False
+            issues.append(exc.code)
+        personas_known = True
+        try:
+            self._validate_audience_persona_ids(audience)
+        except IdentityGraphError as exc:
+            personas_known = False
+            issues.append(exc.code)
+        type_valid = True
+        try:
+            AudienceType(audience.audience_type)
+        except ValueError:
+            type_valid = False
+            issues.append("AUDIENCE_TYPE_INVALID")
+        source_valid = True
+        try:
+            AudienceSourceKind(audience.source_kind)
+            validate_source_ref(audience.source_ref)
+        except (ValueError, IdentityGraphError) as exc:
+            source_valid = False
+            issues.append(getattr(exc, "code", "SOURCE_INVALID"))
+        dates_valid = True
+        try:
+            _validate_planned_dates(audience.effective_start_date, audience.effective_end_date)
+        except IdentityGraphError:
+            dates_valid = False
+            issues.append("DATE_ORDER")
+        hierarchy_valid = True
+        try:
+            if audience.parent_audience_id is not None:
+                self._validate_audience_parent(audience)
+        except IdentityGraphError as exc:
+            hierarchy_valid = False
+            issues.append(exc.code)
+        try:
+            AudienceStatus(audience.status)
+            status_valid = True
+        except ValueError:
+            status_valid = False
+            issues.append("STATUS_INVALID")
+        if issues:
+            if "HIERARCHY_CYCLE" in issues:
+                state = IdentityGraphCapabilityState.REVIEW_REQUIRED
+            else:
+                state = IdentityGraphCapabilityState.PARTIAL
+        else:
+            state = IdentityGraphCapabilityState.READY
+        receipt = AudienceLedgerValidationReceipt(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            audience_id=audience.audience_id,
+            state=state,
+            audience_id_valid=audience_id_valid,
+            project_scoped=project_scoped,
+            markets_known=markets_known,
+            personas_known=personas_known,
+            type_valid=type_valid,
+            source_valid=source_valid,
+            dates_valid=dates_valid,
+            hierarchy_valid=hierarchy_valid,
+            status_valid=status_valid,
+            prohibited_fields_absent=True,
+            issues=tuple(dict.fromkeys(issues)),
+        )
+        receipt = receipt.model_copy(update={"fingerprint": identity_fingerprint(receipt)})
+        return self.store.put_audience_receipt(receipt)
 
     def create_market(
         self,
@@ -1077,6 +1731,8 @@ class CampaignIdentityService:
     def overview(self, *, tenant_id: str, project_id: str) -> IdentityGraphOverview:
         self._authorize(tenant_id)
         campaigns = self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
+        personas = self.store.list_personas(tenant_id=tenant_id, project_id=project_id)
+        audiences = self.store.list_audiences(tenant_id=tenant_id, project_id=project_id)
         sources = self.store.list_sources(tenant_id=tenant_id, project_id=project_id)
         mappings = self.store.list_external(tenant_id=tenant_id, project_id=project_id)
         topology = self.store.get_topology(tenant_id=tenant_id, project_id=project_id)
@@ -1088,6 +1744,18 @@ class CampaignIdentityService:
                 tenant_id=tenant_id, project_id=project_id, campaign_id=item.campaign_id
             )
             for item in campaigns
+        ]
+        persona_receipts = [
+            self.store.get_persona_receipt(
+                tenant_id=tenant_id, project_id=project_id, persona_id=item.persona_id
+            )
+            for item in personas
+        ]
+        audience_receipts = [
+            self.store.get_audience_receipt(
+                tenant_id=tenant_id, project_id=project_id, audience_id=item.audience_id
+            )
+            for item in audiences
         ]
         if not campaigns:
             campaign_ledger_state = IdentityGraphCapabilityState.NOT_CONFIGURED
@@ -1109,9 +1777,15 @@ class CampaignIdentityService:
             campaign_ledger_state = IdentityGraphCapabilityState.READY
         else:
             campaign_ledger_state = IdentityGraphCapabilityState.PARTIAL
+        persona_ledger_state = ledger_state_from_receipts(personas, persona_receipts)
+        audience_ledger_state = ledger_state_from_receipts(audiences, audience_receipts)
         ledger_ready = campaign_ledger_state == IdentityGraphCapabilityState.READY
         if ledger_ready:
             components.append(IdentityGraphComponentState.CAMPAIGN_LEDGER_READY)
+        if persona_ledger_state == IdentityGraphCapabilityState.READY:
+            components.append(IdentityGraphComponentState.PERSONA_LEDGER_READY)
+        if audience_ledger_state == IdentityGraphCapabilityState.READY:
+            components.append(IdentityGraphComponentState.AUDIENCE_LEDGER_READY)
         canonical_markets = self.store.list_canonical_markets(
             tenant_id=tenant_id, project_id=project_id
         )
@@ -1132,6 +1806,8 @@ class CampaignIdentityService:
             any(item.status == BindingStatus.REVIEW_REQUIRED for item in mappings)
             or (topology is not None and topology.status == TopologyStatus.REVIEW_REQUIRED)
             or campaign_ledger_state == IdentityGraphCapabilityState.REVIEW_REQUIRED
+            or persona_ledger_state == IdentityGraphCapabilityState.REVIEW_REQUIRED
+            or audience_ledger_state == IdentityGraphCapabilityState.REVIEW_REQUIRED
         )
         if review:
             state = IdentityGraphCapabilityState.REVIEW_REQUIRED
@@ -1146,8 +1822,12 @@ class CampaignIdentityService:
             project_id=project_id,
             capability_state=state,
             campaign_ledger_state=campaign_ledger_state,
+            persona_ledger_state=persona_ledger_state,
+            audience_ledger_state=audience_ledger_state,
             component_states=tuple(components),
             campaign_count=len(campaigns),
+            persona_count=len(personas),
+            audience_count=len(audiences),
             source_count=len(sources),
             mapping_count=len(mappings),
             issues=tuple(dict.fromkeys(issues)),
@@ -1347,6 +2027,275 @@ class CampaignIdentityService:
             )
         return found
 
+    def _require_persona(
+        self, tenant_id: str, project_id: str, persona_id: str
+    ) -> CanonicalPersona:
+        found = self.store.get_persona(
+            tenant_id=tenant_id, project_id=project_id, persona_id=persona_id
+        )
+        if found is None:
+            raise IdentityGraphError(
+                f"Unknown persona_id {persona_id}.",
+                code="UNKNOWN_PERSONA",
+            )
+        return found
+
+    def _require_audience(
+        self, tenant_id: str, project_id: str, audience_id: str
+    ) -> CanonicalAudience:
+        found = self.store.get_audience(
+            tenant_id=tenant_id, project_id=project_id, audience_id=audience_id
+        )
+        if found is None:
+            raise IdentityGraphError(
+                f"Unknown audience_id {audience_id}.",
+                code="UNKNOWN_AUDIENCE",
+            )
+        return found
+
+    def _require_name(self, name: str) -> None:
+        if not name or not str(name).strip():
+            raise IdentityGraphError("name is required.", code="NAME_REQUIRED")
+
+    def _validate_biq_snapshot(self, snapshot_id: str | None) -> None:
+        if not snapshot_id:
+            return
+        if self.business_iq_store is None:
+            raise IdentityGraphError(
+                "business_profile_snapshot_id cannot be validated without Business IQ.",
+                code="UNKNOWN_SNAPSHOT",
+            )
+        found = self.business_iq_store.get_snapshot(snapshot_id)
+        if found is None:
+            raise IdentityGraphError(
+                f"Unknown business_profile_snapshot_id {snapshot_id}.",
+                code="UNKNOWN_SNAPSHOT",
+            )
+
+    def _validate_persona_payload(self, persona: CanonicalPersona) -> None:
+        self._require_name(persona.name)
+        if persona.market_ids:
+            self._validate_markets(persona.tenant_id, persona.project_id, persona.market_ids)
+        self._validate_biq_snapshot(persona.business_profile_snapshot_id)
+
+    def _validate_audience_payload(self, audience: CanonicalAudience) -> None:
+        self._require_name(audience.name)
+        validate_source_ref(audience.source_ref)
+        _validate_planned_dates(audience.effective_start_date, audience.effective_end_date)
+        if audience.market_ids:
+            self._validate_markets(audience.tenant_id, audience.project_id, audience.market_ids)
+        self._validate_audience_persona_ids(audience)
+
+    def _validate_audience_persona_ids(self, audience: CanonicalAudience) -> None:
+        for persona_id in audience.persona_ids:
+            try:
+                assert_persona_id_shape(persona_id)
+            except (ValueError, InvalidResourceIdentifierError) as exc:
+                raise IdentityGraphError(
+                    f"Unknown persona_id {persona_id}.",
+                    code="UNKNOWN_PERSONA",
+                ) from exc
+            found = self.store.get_persona(
+                tenant_id=audience.tenant_id,
+                project_id=audience.project_id,
+                persona_id=persona_id,
+            )
+            if found is None:
+                raise IdentityGraphError(
+                    f"Unknown persona_id {persona_id}.",
+                    code="UNKNOWN_PERSONA",
+                )
+
+    def _validate_campaign_persona_ids(self, campaign: CanonicalCampaign) -> None:
+        for persona_id in campaign.persona_ids:
+            try:
+                assert_persona_id_shape(persona_id)
+            except (ValueError, InvalidResourceIdentifierError) as exc:
+                raise IdentityGraphError(
+                    f"Unknown persona_id {persona_id}.",
+                    code="UNKNOWN_PERSONA",
+                ) from exc
+            found = self.store.get_persona(
+                tenant_id=campaign.tenant_id,
+                project_id=campaign.project_id,
+                persona_id=persona_id,
+            )
+            if found is None:
+                raise IdentityGraphError(
+                    f"Unknown persona_id {persona_id}.",
+                    code="UNKNOWN_PERSONA",
+                )
+            if (
+                found.status == PersonaStatus.ARCHIVED
+                and campaign.status != CampaignStatus.ARCHIVED
+            ):
+                raise IdentityGraphError(
+                    "Archived personas cannot be targeted by a non-archived campaign.",
+                    code="ARCHIVED_TARGET",
+                )
+
+    def _validate_campaign_audience_ids(self, campaign: CanonicalCampaign) -> None:
+        for audience_id in campaign.audience_ids:
+            try:
+                assert_audience_id_shape(audience_id)
+            except (ValueError, InvalidResourceIdentifierError) as exc:
+                raise IdentityGraphError(
+                    f"Unknown audience_id {audience_id}.",
+                    code="UNKNOWN_AUDIENCE",
+                ) from exc
+            found = self.store.get_audience(
+                tenant_id=campaign.tenant_id,
+                project_id=campaign.project_id,
+                audience_id=audience_id,
+            )
+            if found is None:
+                raise IdentityGraphError(
+                    f"Unknown audience_id {audience_id}.",
+                    code="UNKNOWN_AUDIENCE",
+                )
+            if (
+                found.status == AudienceStatus.ARCHIVED
+                and campaign.status != CampaignStatus.ARCHIVED
+            ):
+                raise IdentityGraphError(
+                    "Archived audiences cannot be targeted by a non-archived campaign.",
+                    code="ARCHIVED_TARGET",
+                )
+
+    def _validate_audience_parent(self, audience: CanonicalAudience) -> None:
+        parent_id = audience.parent_audience_id
+        if parent_id is None:
+            return
+        assert_not_self_parent(audience.audience_id, parent_id)
+        parent = self.store.get_audience(
+            tenant_id=audience.tenant_id,
+            project_id=audience.project_id,
+            audience_id=parent_id,
+        )
+        if parent is None:
+            raise IdentityGraphError(
+                "Parent audience was not found in this project.",
+                code="PARENT_CROSS_PROJECT",
+            )
+        if parent.tenant_id != audience.tenant_id or parent.project_id != audience.project_id:
+            raise IdentityGraphError(
+                "Audience parent must belong to the same project.",
+                code="PARENT_CROSS_PROJECT",
+            )
+        parents = {
+            item.audience_id: item.parent_audience_id
+            for item in self.store.list_audiences(
+                tenant_id=audience.tenant_id, project_id=audience.project_id
+            )
+        }
+        parents[audience.audience_id] = audience.parent_audience_id
+        if would_create_audience_cycle(
+            audience_id=audience.audience_id,
+            new_parent_id=parent_id,
+            audiences=parents,
+        ):
+            raise IdentityGraphError(
+                "Audience hierarchy rejects cycles.",
+                code="HIERARCHY_CYCLE",
+            )
+
+    def _persona_is_referenced(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> bool:
+        campaigns = self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
+        if any(persona_id in item.persona_ids for item in campaigns):
+            return True
+        audiences = self.store.list_audiences(tenant_id=tenant_id, project_id=project_id)
+        return any(persona_id in item.persona_ids for item in audiences)
+
+    def _audience_is_referenced(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> bool:
+        campaigns = self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
+        if any(audience_id in item.audience_ids for item in campaigns):
+            return True
+        audiences = self.store.list_audiences(tenant_id=tenant_id, project_id=project_id)
+        return any(item.parent_audience_id == audience_id for item in audiences)
+
+    def _sync_typed_edges(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        from_node_id: str,
+        from_node_type: MarketingIdentityNodeType,
+        edge_type: MarketingIdentityEdgeType,
+        to_node_type: MarketingIdentityNodeType,
+        to_ids: tuple[str, ...],
+    ) -> None:
+        existing = [
+            item
+            for item in self.store.list_edges(tenant_id=tenant_id, project_id=project_id)
+            if item.from_node_id == from_node_id and item.edge_type == edge_type
+        ]
+        wanted = set(to_ids)
+        have = {item.to_node_id: item for item in existing}
+        for to_id, edge in have.items():
+            if to_id not in wanted:
+                self.store.delete_edge(
+                    tenant_id=tenant_id, project_id=project_id, edge_id=edge.edge_id
+                )
+        for to_id in to_ids:
+            if to_id in have:
+                continue
+            self.store.put_edge(
+                MarketingIdentityEdge(
+                    edge_id=new_edge_id(),
+                    tenant_id=tenant_id,
+                    project_id=project_id,
+                    edge_type=edge_type,
+                    from_node_type=from_node_type,
+                    from_node_id=from_node_id,
+                    to_node_type=to_node_type,
+                    to_node_id=to_id,
+                )
+            )
+
+    def _sync_audience_edges(self, audience: CanonicalAudience) -> None:
+        self._sync_typed_edges(
+            tenant_id=audience.tenant_id,
+            project_id=audience.project_id,
+            from_node_id=audience.audience_id,
+            from_node_type=MarketingIdentityNodeType.AUDIENCE,
+            edge_type=MarketingIdentityEdgeType.AUDIENCE_REPRESENTS_PERSONA,
+            to_node_type=MarketingIdentityNodeType.PERSONA,
+            to_ids=audience.persona_ids,
+        )
+        self._sync_typed_edges(
+            tenant_id=audience.tenant_id,
+            project_id=audience.project_id,
+            from_node_id=audience.audience_id,
+            from_node_type=MarketingIdentityNodeType.AUDIENCE,
+            edge_type=MarketingIdentityEdgeType.AUDIENCE_AVAILABLE_IN_MARKET,
+            to_node_type=MarketingIdentityNodeType.MARKET,
+            to_ids=audience.market_ids,
+        )
+
+    def _sync_campaign_target_edges(self, campaign: CanonicalCampaign) -> None:
+        self._sync_typed_edges(
+            tenant_id=campaign.tenant_id,
+            project_id=campaign.project_id,
+            from_node_id=campaign.campaign_id,
+            from_node_type=MarketingIdentityNodeType.CAMPAIGN,
+            edge_type=MarketingIdentityEdgeType.CAMPAIGN_TARGETS_PERSONA,
+            to_node_type=MarketingIdentityNodeType.PERSONA,
+            to_ids=campaign.persona_ids,
+        )
+        self._sync_typed_edges(
+            tenant_id=campaign.tenant_id,
+            project_id=campaign.project_id,
+            from_node_id=campaign.campaign_id,
+            from_node_type=MarketingIdentityNodeType.CAMPAIGN,
+            edge_type=MarketingIdentityEdgeType.CAMPAIGN_TARGETS_AUDIENCE,
+            to_node_type=MarketingIdentityNodeType.AUDIENCE,
+            to_ids=campaign.audience_ids,
+        )
+
     def _canonical_id_for_legacy_ref(
         self, *, tenant_id: str, project_id: str, business_market_ref: str
     ) -> str | None:
@@ -1364,16 +2313,8 @@ class CampaignIdentityService:
         self, campaign: CanonicalCampaign, *, require_scope: bool = True
     ) -> None:
         _validate_planned_dates(campaign.planned_start_date, campaign.planned_end_date)
-        if campaign.audience_ids:
-            raise IdentityGraphError(
-                "Audience IDs are unknown until IG-02A.",
-                code="UNKNOWN_AUDIENCE",
-            )
-        if campaign.persona_ids:
-            raise IdentityGraphError(
-                "Persona IDs are unknown until IG-02A.",
-                code="UNKNOWN_PERSONA",
-            )
+        self._validate_campaign_persona_ids(campaign)
+        self._validate_campaign_audience_ids(campaign)
         self._validate_objective(campaign)
         if require_scope:
             self._validate_markets_required(campaign.market_ids)
@@ -1566,6 +2507,7 @@ class CampaignIdentityService:
                 to_node_id=tracking.tracking_binding_id,
             )
         )
+        self._sync_campaign_target_edges(campaign)
 
     def _replace_child_edge(self, campaign: CanonicalCampaign) -> None:
         if campaign.parent_campaign_id is None:

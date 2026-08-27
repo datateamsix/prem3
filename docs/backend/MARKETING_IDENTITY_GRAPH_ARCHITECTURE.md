@@ -1,6 +1,6 @@
 # Marketing Identity Graph architecture
 
-**Mission:** IG-00 architecture freeze + IG-01 canonical market identity and GA4 topology + IG-02 Campaign Ledger  
+**Mission:** IG-00 architecture freeze + IG-01 canonical market identity and GA4 topology + IG-02 Campaign Ledger + IG-02A Audience + Persona Ledger  
 **Domain:** `app/identity_graph/`
 
 ```text
@@ -25,7 +25,7 @@ The PreM3 Identity Graph models marketing execution identities and business mark
 | **Audience** | Operational/targetable segment definition |
 | **Campaign** | Governed marketing initiative/execution identity |
 
-`PERSONA` and `AUDIENCE` node types (and related edges) are reserved. IG-00 does not persist, CRUD, activate, or discover them. A later IG-02A may own Audience/Persona ledgers.
+`PERSONA` and `AUDIENCE` node types are Identity Graph ledgers (definitions, not people). See [PERSONA_LEDGER.md](PERSONA_LEDGER.md) and [AUDIENCE_LEDGER.md](AUDIENCE_LEDGER.md).
 
 This graph is a Project-scoped Foundation capability. MTA, Planning, experiments, and Decision Intelligence consume its IDs. They do not mint parallel campaign, market, or channel identities.
 
@@ -45,6 +45,8 @@ flowchart TD
   GRAPH --> Market
   GRAPH --> Channel
   GRAPH --> Campaign
+  GRAPH --> Persona
+  GRAPH --> Audience
   GRAPH --> Provider
   GRAPH --> ExternalCampaign
   GRAPH --> GA4Property
@@ -90,7 +92,7 @@ Reserved for later ledgers: `AUDIENCE_REPRESENTS_PERSONA` · `CAMPAIGN_TARGETS_A
 | `planned_start_date` / `planned_end_date` | optional `str`; end ≥ start when both set; evergreen = both absent |
 | `objective_ref` / `objective_label` | optional; if `objective_ref` is set it must match a current BIQ `MeasurementObjective.objective_id` |
 | `owner_type` / `owner_ref` / `owner_label` | optional metadata; not execution authority |
-| `persona_ids[]` / `audience_ids[]` | default empty; any submitted ID is unknown until IG-02A and is rejected |
+| `persona_ids[]` / `audience_ids[]` | optional resolvable intended-scope refs to `per_` / `aud_` IDs; empty remains valid; unknown/cross-project fail closed |
 | `description` | optional |
 
 No `campaign_type` in V1. No `actual_*` dates.
@@ -112,7 +114,7 @@ Firestore path:
 
 `tenants/{tenant_id}/workspaces/{workspace_id}/identity_graph/...`
 
-Subcollections include `campaigns`, `campaign_tracking`, `campaign_tracking_instructions`, `campaign_receipts`, plus IG-01 market/source/topology metadata. CI/local uses `InMemoryIdentityGraphStore`. Cloud runtime selects `FirestoreIdentityGraphStore`. Store metadata only. No event-scale GA4 rows, budget values, performance metrics, or person identifiers.
+Subcollections include `campaigns`, `personas`, `audiences`, receipts, tracking, plus IG-01 market/source/topology metadata. CI/local uses `InMemoryIdentityGraphStore`. Cloud runtime selects `FirestoreIdentityGraphStore`. Store metadata only. No event-scale GA4 rows, budget values, performance metrics, member lists, or person identifiers.
 
 ## Architecture decisions
 
@@ -228,9 +230,9 @@ Contracts and APIs use `planned_start_date` / `planned_end_date`. End must be on
 
 If `objective_ref` is set, it must match a `MeasurementObjective.objective_id` on the current Business IQ snapshot. Omitting objective does not block create. See `BUSINESS_IQ_OBJECTIVE_INTEGRATION_REQUEST`: BIQ objectives are profile-local statements, not a governed ontology.
 
-### IG-ADR-029 — submitted Audience/Persona IDs are unknown until IG-02A
+### IG-ADR-029 — submitted Audience/Persona IDs were unknown until IG-02A
 
-Empty `audience_ids[]` / `persona_ids[]` are valid. Any non-empty ID is rejected. Do not mint placeholders.
+IG-02 rejected any non-empty campaign `audience_ids[]` / `persona_ids[]`. IG-02A replaces that stub with store lookups. Empty lists remain valid.
 
 ### IG-ADR-030 — tracking implementation status is honest
 
@@ -251,3 +253,52 @@ Hard delete is allowed only for never-referenced `PLANNED` drafts. Tracking beyo
 ### IG-ADR-034 — intended vs observed tracking is IG-03 / IG-04 QA
 
 IG-02 generates intended `utm_id=<campaign_id>` instructions. Observing those parameters in GA4 or verifying them against live properties is later work. Do not mark instructions `OBSERVED` or `VERIFIED` without that evidence.
+
+### IG-ADR-035 — Persona is a business archetype, not people
+
+`CanonicalPersona` (`per_<opaque>`) is a durable strategic definition. It does not store contacts, CRM person IDs, or membership.
+
+### IG-ADR-036 — Audience is a segment definition, not members
+
+`CanonicalAudience` (`aud_<opaque>`) is operational targeting metadata. `CUSTOMER_LIST` is a type, not stored members.
+
+### IG-ADR-037 — Identity Graph owns V1 Persona/Audience
+
+Business IQ has no implemented persona/segment object. Record `BUSINESS_IQ_PERSONA_INTEGRATION_REQUEST`. Optional snapshot/segment refs are metadata; if `business_profile_snapshot_id` is set, the snapshot must exist. Do not rewrite historical BIQ snapshots. Persona is not required on Audience create.
+
+### IG-ADR-038 — empty `market_ids[]` means unspecified/global scope
+
+Empty is allowed on Persona and Audience. Non-empty IDs must be known canonical `mkt_` markets. Display labels never join.
+
+### IG-ADR-039 — no research-authoring fields on Persona
+
+Skip `needs_summary`, motivations, barriers, and value proposition. Those would invent BIQ-adjacent prose authority.
+
+### IG-ADR-040 — no audience size, match rate, or reach on identity docs
+
+Those measures belong to IG-03 / Exposure evidence, not the definition ledger.
+
+### IG-ADR-041 — optional `parent_audience_id`; derivation is reserved
+
+Same-project, no self-parent, no cycles. Child does not imply membership subset. `AUDIENCE_DERIVED_FROM` is enum-reserved only.
+
+### IG-ADR-042 — Persona/Audience statuses are definition statuses
+
+`DRAFT` · `ACTIVE` · `INACTIVE` · `ARCHIVED`. Campaign execution statuses are the wrong vocabulary. Default create is `DRAFT`. Prefer archive. Hard delete only never-referenced drafts.
+
+### IG-ADR-043 — archived targeting fails closed except historical archived campaigns
+
+New or active campaign create/update targeting an archived audience or persona raises `ARCHIVED_TARGET`. A campaign that is already `ARCHIVED` may keep those refs.
+
+### IG-ADR-044 — campaigns without persona/audience refs remain valid
+
+Empty `persona_ids[]` / `audience_ids[]` are valid. Known same-project IDs are accepted. Unknown or cross-project IDs fail closed.
+
+### IG-ADR-045 — persona/audience ledger readiness does not gate modeling or planning
+
+`PersonaLedgerValidationReceipt` / `AudienceLedgerValidationReceipt` and overview `persona_ledger_state` / `audience_ledger_state` do not block `BUSINESS_CONTEXT_READY`, `DATA_FOUNDATION_READY`, `MODEL_READY`, `MTA_INPUT_READY`, or `INVESTMENT_PLAN_READY`.
+
+### IG-ADR-046 — provider audience IDs never replace `audience_id`
+
+`AudienceExternalBinding` is an IG-03 seam. The same canonical audience on multiple providers does not mean identical membership.
+

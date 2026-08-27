@@ -5,17 +5,21 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from app.identity_graph.contracts import (
+    AudienceLedgerValidationReceipt,
     BusinessMarketBinding,
     CampaignExternalBinding,
     CampaignLedgerValidationReceipt,
     CampaignTrackingBinding,
     CampaignTrackingInstructions,
+    CanonicalAudience,
     CanonicalCampaign,
     CanonicalMarket,
+    CanonicalPersona,
     GA4PropertySourceBinding,
     GA4SourceTopology,
     GA4TopologyReadinessReceipt,
     MarketResolutionPolicy,
+    PersonaLedgerValidationReceipt,
 )
 from app.identity_graph.errors import IdentityGraphError
 from app.identity_graph.relationships import MarketingIdentityEdge
@@ -37,6 +41,10 @@ class IdentityGraphStore(Protocol):
     def issued_campaign_ids(self) -> set[str]: ...
 
     def issued_market_ids(self) -> set[str]: ...
+
+    def issued_persona_ids(self) -> set[str]: ...
+
+    def issued_audience_ids(self) -> set[str]: ...
 
     def put_market(self, value: CanonicalMarket) -> CanonicalMarket: ...
 
@@ -72,6 +80,42 @@ class IdentityGraphStore(Protocol):
     def list_campaigns(self, *, tenant_id: str, project_id: str) -> list[CanonicalCampaign]: ...
 
     def delete_campaign(self, *, tenant_id: str, project_id: str, campaign_id: str) -> None: ...
+
+    def put_persona(self, value: CanonicalPersona) -> CanonicalPersona: ...
+
+    def get_persona(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> CanonicalPersona | None: ...
+
+    def list_personas(self, *, tenant_id: str, project_id: str) -> list[CanonicalPersona]: ...
+
+    def delete_persona(self, *, tenant_id: str, project_id: str, persona_id: str) -> None: ...
+
+    def put_persona_receipt(
+        self, value: PersonaLedgerValidationReceipt
+    ) -> PersonaLedgerValidationReceipt: ...
+
+    def get_persona_receipt(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> PersonaLedgerValidationReceipt | None: ...
+
+    def put_audience(self, value: CanonicalAudience) -> CanonicalAudience: ...
+
+    def get_audience(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> CanonicalAudience | None: ...
+
+    def list_audiences(self, *, tenant_id: str, project_id: str) -> list[CanonicalAudience]: ...
+
+    def delete_audience(self, *, tenant_id: str, project_id: str, audience_id: str) -> None: ...
+
+    def put_audience_receipt(
+        self, value: AudienceLedgerValidationReceipt
+    ) -> AudienceLedgerValidationReceipt: ...
+
+    def get_audience_receipt(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> AudienceLedgerValidationReceipt | None: ...
 
     def put_tracking(self, value: CampaignTrackingBinding) -> CampaignTrackingBinding: ...
 
@@ -125,6 +169,8 @@ class IdentityGraphStore(Protocol):
 
     def list_edges(self, *, tenant_id: str, project_id: str) -> list[MarketingIdentityEdge]: ...
 
+    def delete_edge(self, *, tenant_id: str, project_id: str, edge_id: str) -> None: ...
+
     def put_topology_receipt(
         self, value: GA4TopologyReadinessReceipt
     ) -> GA4TopologyReadinessReceipt: ...
@@ -140,8 +186,14 @@ class InMemoryIdentityGraphStore:
     def __init__(self) -> None:
         self._issued_campaign_ids: set[str] = set()
         self._issued_market_ids: set[str] = set()
+        self._issued_persona_ids: set[str] = set()
+        self._issued_audience_ids: set[str] = set()
         self.campaigns: dict[tuple[str, str, str], CanonicalCampaign] = {}
         self.markets: dict[tuple[str, str, str], CanonicalMarket] = {}
+        self.personas: dict[tuple[str, str, str], CanonicalPersona] = {}
+        self.audiences: dict[tuple[str, str, str], CanonicalAudience] = {}
+        self.persona_receipts: dict[tuple[str, str, str], PersonaLedgerValidationReceipt] = {}
+        self.audience_receipts: dict[tuple[str, str, str], AudienceLedgerValidationReceipt] = {}
         self.market_bindings: dict[tuple[str, str, str, str], BusinessMarketBinding] = {}
         self.tracking: dict[tuple[str, str], list[CampaignTrackingBinding]] = {}
         self.tracking_instructions: dict[tuple[str, str, str], CampaignTrackingInstructions] = {}
@@ -159,6 +211,12 @@ class InMemoryIdentityGraphStore:
 
     def issued_market_ids(self) -> set[str]:
         return set(self._issued_market_ids)
+
+    def issued_persona_ids(self) -> set[str]:
+        return set(self._issued_persona_ids)
+
+    def issued_audience_ids(self) -> set[str]:
+        return set(self._issued_audience_ids)
 
     def put_market(self, value: CanonicalMarket) -> CanonicalMarket:
         key = (value.tenant_id, value.project_id, value.market_id)
@@ -261,6 +319,112 @@ class InMemoryIdentityGraphStore:
             for item in edges
             if item.from_node_id != campaign_id and item.to_node_id != campaign_id
         ]
+
+    def put_persona(self, value: CanonicalPersona) -> CanonicalPersona:
+        key = (value.tenant_id, value.project_id, value.persona_id)
+        existing = self.personas.get(key)
+        if existing is None and value.persona_id in self._issued_persona_ids:
+            raise IdentityGraphError(
+                f"persona_id {value.persona_id} was already issued and cannot be reused.",
+                code="ID_REUSED",
+            )
+        self._issued_persona_ids.add(value.persona_id)
+        self.personas[key] = value
+        return value
+
+    def get_persona(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> CanonicalPersona | None:
+        return self.personas.get((tenant_id, project_id, persona_id))
+
+    def list_personas(self, *, tenant_id: str, project_id: str) -> list[CanonicalPersona]:
+        return [
+            persona
+            for (tid, pid, _), persona in self.personas.items()
+            if tid == tenant_id and pid == project_id
+        ]
+
+    def delete_persona(self, *, tenant_id: str, project_id: str, persona_id: str) -> None:
+        key = (tenant_id, project_id, persona_id)
+        if key not in self.personas:
+            raise IdentityGraphError(
+                f"Unknown persona_id {persona_id}.",
+                code="UNKNOWN_PERSONA",
+            )
+        del self.personas[key]
+        self.persona_receipts.pop(key, None)
+        scope = _scope(tenant_id, project_id)
+        edges = self.edges.get(scope, [])
+        self.edges[scope] = [
+            item
+            for item in edges
+            if item.from_node_id != persona_id and item.to_node_id != persona_id
+        ]
+
+    def put_persona_receipt(
+        self, value: PersonaLedgerValidationReceipt
+    ) -> PersonaLedgerValidationReceipt:
+        key = (value.tenant_id, value.project_id, value.persona_id)
+        self.persona_receipts[key] = value
+        return value
+
+    def get_persona_receipt(
+        self, *, tenant_id: str, project_id: str, persona_id: str
+    ) -> PersonaLedgerValidationReceipt | None:
+        return self.persona_receipts.get((tenant_id, project_id, persona_id))
+
+    def put_audience(self, value: CanonicalAudience) -> CanonicalAudience:
+        key = (value.tenant_id, value.project_id, value.audience_id)
+        existing = self.audiences.get(key)
+        if existing is None and value.audience_id in self._issued_audience_ids:
+            raise IdentityGraphError(
+                f"audience_id {value.audience_id} was already issued and cannot be reused.",
+                code="ID_REUSED",
+            )
+        self._issued_audience_ids.add(value.audience_id)
+        self.audiences[key] = value
+        return value
+
+    def get_audience(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> CanonicalAudience | None:
+        return self.audiences.get((tenant_id, project_id, audience_id))
+
+    def list_audiences(self, *, tenant_id: str, project_id: str) -> list[CanonicalAudience]:
+        return [
+            audience
+            for (tid, pid, _), audience in self.audiences.items()
+            if tid == tenant_id and pid == project_id
+        ]
+
+    def delete_audience(self, *, tenant_id: str, project_id: str, audience_id: str) -> None:
+        key = (tenant_id, project_id, audience_id)
+        if key not in self.audiences:
+            raise IdentityGraphError(
+                f"Unknown audience_id {audience_id}.",
+                code="UNKNOWN_AUDIENCE",
+            )
+        del self.audiences[key]
+        self.audience_receipts.pop(key, None)
+        scope = _scope(tenant_id, project_id)
+        edges = self.edges.get(scope, [])
+        self.edges[scope] = [
+            item
+            for item in edges
+            if item.from_node_id != audience_id and item.to_node_id != audience_id
+        ]
+
+    def put_audience_receipt(
+        self, value: AudienceLedgerValidationReceipt
+    ) -> AudienceLedgerValidationReceipt:
+        key = (value.tenant_id, value.project_id, value.audience_id)
+        self.audience_receipts[key] = value
+        return value
+
+    def get_audience_receipt(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> AudienceLedgerValidationReceipt | None:
+        return self.audience_receipts.get((tenant_id, project_id, audience_id))
 
     def put_tracking(self, value: CampaignTrackingBinding) -> CampaignTrackingBinding:
         scope = self.campaign_scope.get(value.campaign_id)
@@ -371,6 +535,11 @@ class InMemoryIdentityGraphStore:
 
     def list_edges(self, *, tenant_id: str, project_id: str) -> list[MarketingIdentityEdge]:
         return list(self.edges.get(_scope(tenant_id, project_id), []))
+
+    def delete_edge(self, *, tenant_id: str, project_id: str, edge_id: str) -> None:
+        scope = _scope(tenant_id, project_id)
+        bucket = self.edges.get(scope, [])
+        self.edges[scope] = [item for item in bucket if item.edge_id != edge_id]
 
     def put_topology_receipt(
         self, value: GA4TopologyReadinessReceipt

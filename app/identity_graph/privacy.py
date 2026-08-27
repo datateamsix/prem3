@@ -22,6 +22,12 @@ PROHIBITED_PERSON_FIELDS = frozenset(
         "audience_members",
         "raw_audience_membership",
         "membership",
+        "member_list",
+        "hashed_member_list",
+        "membership_snapshot",
+        "mobile_advertising_id",
+        "idfa",
+        "gaid",
     }
 )
 
@@ -54,6 +60,11 @@ PROHIBITED_PERFORMANCE_FIELDS = frozenset(
         "cpc",
         "clicks",
         "platform_metrics",
+        "estimated_size",
+        "match_rate",
+        "member_count",
+        "eligible_size",
+        "reach",
     }
 )
 

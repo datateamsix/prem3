@@ -17,6 +17,8 @@ This graph maps **marketing execution objects**. It does not ingest or persist:
 - cookie ID
 - raw audience membership
 - individual-level audience membership
+- member lists, hashed member lists, membership snapshots
+- mobile advertising IDs (`idfa`, `gaid`)
 
 Contracts use `extra="forbid"` plus `reject_identity_graph_payload`. Those fields raise `PERSON_IDENTITY_FORBIDDEN`.
 
@@ -25,11 +27,13 @@ Also prohibited:
 - budget / spend fields (`planned_spend`, `budget`, `actual_spend`, `recommended_spend`)
 - GA4 event-scale rows (`events`, `event_rows`, `ga4_events`, `event_data`)
 
-**Future Audience / Persona nodes (reserved, not implemented in IG-00)**
+**Audience / Persona ledgers (IG-02A)**
 
 ALLOWED: audience identity, audience definition metadata, persona definition, market scope, campaign relationships, provider/platform mapping refs, measurement/data-asset refs.
 
-PROHIBITED: all person identifiers above, plus audience members.
+PROHIBITED: all person identifiers above, plus audience members, member lists, size/match-rate/reach, and research-authoring prose fields.
+
+See [AUDIENCE_PRIVACY_BOUNDARY.md](AUDIENCE_PRIVACY_BOUNDARY.md).
 
 `cmp_` campaign IDs and default `utm_id` values are **non-secret** machine identifiers. They are safe to copy into tracking templates. They are not credentials.
 

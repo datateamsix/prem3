@@ -9,10 +9,15 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from app.control_plane.repository import ControlPlaneRepository
 from app.core.tenancy import TenantContext, require_tenant
 from app.identity_graph.enums import (
+    AudienceRefreshCadence,
+    AudienceSourceKind,
+    AudienceStatus,
+    AudienceType,
     CampaignOwnerType,
     CampaignStatus,
     GA4TopologyKind,
     MarketKind,
+    PersonaStatus,
     SourceOverlapPolicy,
 )
 from app.identity_graph.errors import IdentityGraphError
@@ -20,11 +25,15 @@ from app.identity_graph.service import CampaignIdentityService
 from app.service.dependencies import authenticated_tenant, get_control_plane
 from app.service.errors import ProblemFieldError, resource_not_found, validation_error
 from app.service.identity_graph_models import (
+    CreateIdentityGraphAudienceRequest,
     CreateIdentityGraphCampaignRequest,
     CreateIdentityGraphMarketRequest,
+    CreateIdentityGraphPersonaRequest,
     CreateIdentityGraphSourceRequest,
     DiscoverIdentityGraphSourcesRequest,
+    PatchIdentityGraphAudienceRequest,
     PatchIdentityGraphCampaignRequest,
+    PatchIdentityGraphPersonaRequest,
 )
 
 router = APIRouter(
@@ -54,7 +63,12 @@ def _require_project(
 
 
 def _raise_identity_graph_error(exc: IdentityGraphError) -> None:
-    if exc.code in {"UNKNOWN_CAMPAIGN", "UNKNOWN_BINDING"}:
+    if exc.code in {
+        "UNKNOWN_CAMPAIGN",
+        "UNKNOWN_BINDING",
+        "UNKNOWN_PERSONA",
+        "UNKNOWN_AUDIENCE",
+    }:
         raise resource_not_found() from exc
     raise validation_error(
         [ProblemFieldError(field="campaign", message=str(exc))]
@@ -465,3 +479,431 @@ async def list_mappings(
     _require_project(tenant=tenant, repo=repo, project_id=project_id)
     rows = service.list_mappings(tenant_id=tenant.tenant_id, project_id=project_id)
     return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+def _parse_owner_type(value: str | None) -> CampaignOwnerType | None:
+    if value is None:
+        return None
+    try:
+        return CampaignOwnerType(value)
+    except ValueError as exc:
+        raise validation_error(
+            [ProblemFieldError(field="owner_type", message="Unsupported owner type.")]
+        ) from exc
+
+
+@router.get("/personas", operation_id="listIdentityGraphPersonas")
+async def list_personas(
+    project_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+    status_filter: Annotated[str | None, Query(alias="status")] = None,
+    market_id: str | None = None,
+    owner_ref: str | None = None,
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    status_value = None
+    if status_filter is not None:
+        try:
+            status_value = PersonaStatus(status_filter)
+        except ValueError as exc:
+            raise validation_error(
+                [ProblemFieldError(field="status", message="Unsupported persona status.")]
+            ) from exc
+    rows = service.list_personas(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        status=status_value,
+        market_id=market_id,
+        owner_ref=owner_ref,
+    )
+    return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.post(
+    "/personas",
+    operation_id="createIdentityGraphPersona",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_persona(
+    project_id: str,
+    body: CreateIdentityGraphPersonaRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    status_value = PersonaStatus.DRAFT
+    if body.status is not None:
+        try:
+            status_value = PersonaStatus(body.status)
+        except ValueError as extra:
+            raise validation_error(
+                [ProblemFieldError(field="status", message="Unsupported persona status.")]
+            ) from extra
+    try:
+        persona = service.create_persona(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            name=body.name,
+            actor_id=ctx.user_id or "unknown",
+            description=body.description,
+            status=status_value,
+            market_ids=tuple(body.market_ids),
+            lifecycle_stage_refs=tuple(body.lifecycle_stage_refs),
+            business_segment_ref=body.business_segment_ref,
+            business_profile_snapshot_id=body.business_profile_snapshot_id,
+            owner_type=_parse_owner_type(body.owner_type),
+            owner_ref=body.owner_ref,
+            owner_label=body.owner_label,
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return persona.model_dump(mode="json")
+
+
+@router.get("/personas/{persona_id}", operation_id="getIdentityGraphPersona")
+async def get_persona(
+    project_id: str,
+    persona_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        persona = service.get_persona(
+            tenant_id=tenant.tenant_id, project_id=project_id, persona_id=persona_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return persona.model_dump(mode="json")
+
+
+@router.patch("/personas/{persona_id}", operation_id="patchIdentityGraphPersona")
+async def patch_persona(
+    project_id: str,
+    persona_id: str,
+    body: PatchIdentityGraphPersonaRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    updates = body.model_dump(exclude_unset=True)
+    try:
+        persona = service.update_persona(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            persona_id=persona_id,
+            updates=updates,
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return persona.model_dump(mode="json")
+
+
+@router.get("/personas/{persona_id}/audiences", operation_id="listIdentityGraphPersonaAudiences")
+async def list_persona_audiences(
+    project_id: str,
+    persona_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        rows = service.persona_audiences(
+            tenant_id=tenant.tenant_id, project_id=project_id, persona_id=persona_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.get("/personas/{persona_id}/campaigns", operation_id="listIdentityGraphPersonaCampaigns")
+async def list_persona_campaigns(
+    project_id: str,
+    persona_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        rows = service.persona_campaigns(
+            tenant_id=tenant.tenant_id, project_id=project_id, persona_id=persona_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.get("/audiences", operation_id="listIdentityGraphAudiences")
+async def list_audiences(
+    project_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+    status_filter: Annotated[str | None, Query(alias="status")] = None,
+    audience_type: str | None = None,
+    source_kind: str | None = None,
+    market_id: str | None = None,
+    persona_id: str | None = None,
+    owner_ref: str | None = None,
+    parent_audience_id: str | None = None,
+    effective_start_date: str | None = None,
+    effective_end_date: str | None = None,
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    status_value = None
+    if status_filter is not None:
+        try:
+            status_value = AudienceStatus(status_filter)
+        except ValueError as extra:
+            raise validation_error(
+                [ProblemFieldError(field="status", message="Unsupported audience status.")]
+            ) from extra
+    type_value = None
+    if audience_type is not None:
+        try:
+            type_value = AudienceType(audience_type)
+        except ValueError as extra:
+            raise validation_error(
+                [ProblemFieldError(field="audience_type", message="Unsupported audience type.")]
+            ) from extra
+    kind_value = None
+    if source_kind is not None:
+        try:
+            kind_value = AudienceSourceKind(source_kind)
+        except ValueError as extra:
+            raise validation_error(
+                [ProblemFieldError(field="source_kind", message="Unsupported source kind.")]
+            ) from extra
+    rows = service.list_audiences(
+        tenant_id=tenant.tenant_id,
+        project_id=project_id,
+        status=status_value,
+        audience_type=type_value,
+        source_kind=kind_value,
+        market_id=market_id,
+        persona_id=persona_id,
+        owner_ref=owner_ref,
+        parent_audience_id=parent_audience_id,
+        effective_start_date=effective_start_date,
+        effective_end_date=effective_end_date,
+    )
+    return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.post(
+    "/audiences",
+    operation_id="createIdentityGraphAudience",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_audience(
+    project_id: str,
+    body: CreateIdentityGraphAudienceRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        type_value = AudienceType(body.audience_type)
+    except ValueError as extra:
+        raise validation_error(
+            [ProblemFieldError(field="audience_type", message="Unsupported audience type.")]
+        ) from extra
+    try:
+        kind_value = AudienceSourceKind(body.source_kind)
+    except ValueError as extra:
+        raise validation_error(
+            [ProblemFieldError(field="source_kind", message="Unsupported source kind.")]
+        ) from extra
+    status_value = AudienceStatus.DRAFT
+    if body.status is not None:
+        try:
+            status_value = AudienceStatus(body.status)
+        except ValueError as extra:
+            raise validation_error(
+                [ProblemFieldError(field="status", message="Unsupported audience status.")]
+            ) from extra
+    cadence = None
+    if body.refresh_cadence is not None:
+        try:
+            cadence = AudienceRefreshCadence(body.refresh_cadence)
+        except ValueError as extra:
+            raise validation_error(
+                [
+                    ProblemFieldError(
+                        field="refresh_cadence", message="Unsupported refresh cadence."
+                    )
+                ]
+            ) from extra
+    try:
+        audience = service.create_audience(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            name=body.name,
+            actor_id=ctx.user_id or "unknown",
+            audience_type=type_value,
+            source_kind=kind_value,
+            description=body.description,
+            status=status_value,
+            source_ref=body.source_ref,
+            market_ids=tuple(body.market_ids),
+            persona_ids=tuple(body.persona_ids),
+            parent_audience_id=body.parent_audience_id,
+            definition_summary=body.definition_summary,
+            criteria_summary=body.criteria_summary,
+            effective_start_date=body.effective_start_date,
+            effective_end_date=body.effective_end_date,
+            refresh_cadence=cadence,
+            owner_type=_parse_owner_type(body.owner_type),
+            owner_ref=body.owner_ref,
+            owner_label=body.owner_label,
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return audience.model_dump(mode="json")
+
+
+@router.get("/audiences/{audience_id}", operation_id="getIdentityGraphAudience")
+async def get_audience(
+    project_id: str,
+    audience_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        audience = service.get_audience(
+            tenant_id=tenant.tenant_id, project_id=project_id, audience_id=audience_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return audience.model_dump(mode="json")
+
+
+@router.patch("/audiences/{audience_id}", operation_id="patchIdentityGraphAudience")
+async def patch_audience(
+    project_id: str,
+    audience_id: str,
+    body: PatchIdentityGraphAudienceRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    updates = body.model_dump(exclude_unset=True)
+    try:
+        audience = service.update_audience(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            audience_id=audience_id,
+            updates=updates,
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return audience.model_dump(mode="json")
+
+
+@router.get("/audiences/{audience_id}/personas", operation_id="listIdentityGraphAudiencePersonas")
+async def list_audience_personas(
+    project_id: str,
+    audience_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        rows = service.audience_personas(
+            tenant_id=tenant.tenant_id, project_id=project_id, audience_id=audience_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.get("/audiences/{audience_id}/campaigns", operation_id="listIdentityGraphAudienceCampaigns")
+async def list_audience_campaigns(
+    project_id: str,
+    audience_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        rows = service.audience_campaigns(
+            tenant_id=tenant.tenant_id, project_id=project_id, audience_id=audience_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.get("/audiences/{audience_id}/children", operation_id="listIdentityGraphAudienceChildren")
+async def list_audience_children(
+    project_id: str,
+    audience_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        rows = service.audience_children(
+            tenant_id=tenant.tenant_id, project_id=project_id, audience_id=audience_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.get("/audiences/{audience_id}/lineage", operation_id="getIdentityGraphAudienceLineage")
+async def get_audience_lineage(
+    project_id: str,
+    audience_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        lineage = service.audience_lineage(
+            tenant_id=tenant.tenant_id, project_id=project_id, audience_id=audience_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return lineage.model_dump(mode="json")
