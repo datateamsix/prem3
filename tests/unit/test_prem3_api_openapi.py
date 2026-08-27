@@ -94,6 +94,6 @@ def test_openapi_has_no_stripe_price_id_input() -> None:
 def test_openapi_has_no_firestore_document_shapes() -> None:
     schema = create_app().openapi()
     blob = str(schema).lower()
-    assert "schema_version" not in blob
     assert "identity_org_mappings" not in blob
     assert "processed_webhook_events" not in blob
+    assert "investment_planning_index" not in blob

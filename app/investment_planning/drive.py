@@ -117,4 +117,9 @@ def provision_budget_folders(
 
 
 def file_is_under_folder(file: DriveFile, folder_id: str) -> bool:
-    return folder_id in file.parents
+    return bool(folder_id) and folder_id in file.parents
+
+
+def file_is_under_budget_tree(file: DriveFile, folder_ids: tuple[str | None, ...]) -> bool:
+    allowed = {folder_id for folder_id in folder_ids if folder_id}
+    return any(parent in allowed for parent in file.parents)

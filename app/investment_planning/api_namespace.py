@@ -1,4 +1,4 @@
-"""Documented Planning API namespace. No fake HTTP 200 handlers in P6-00."""
+"""Documented Planning API namespace. P6-01 registers real Investment Plan routes."""
 
 from __future__ import annotations
 

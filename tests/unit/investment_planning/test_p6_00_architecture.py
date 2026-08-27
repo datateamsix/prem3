@@ -121,13 +121,18 @@ def test_canonical_api_namespace_has_workspace_alias() -> None:
     assert WORKSPACE_ALIAS_INVESTMENT_PLANS.startswith("/v1/workspaces/{workspace_id}/")
 
 
-def test_p6_00_does_not_register_fake_investment_plan_routes() -> None:
+def test_canonical_api_namespace_registers_investment_plan_routes() -> None:
     schema = create_app().openapi()
     paths = schema.get("paths", {})
+    assert "/v1/projects/{project_id}/investment-plans" in paths
+    assert "/v1/projects/{project_id}/investment-plans/{plan_id}" in paths
+    assert "/v1/projects/{project_id}/investment-plans/{plan_id}/ready" in paths
     for path in paths:
-        assert "investment-plan" not in path
         assert "investment-portfolio" not in path
         assert "investment-optimization" not in path
+    assert not any(
+        path.startswith("/v1/workspaces/{workspace_id}/investment-plans") for path in paths
+    )
 
 
 def test_drive_budget_folder_fields_are_optional_on_historical_bindings() -> None:

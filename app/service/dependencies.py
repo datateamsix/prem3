@@ -217,6 +217,21 @@ async def authorized_workspace(
         yield workspace
 
 
+async def authorized_project(
+    project_id: str,
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+) -> AsyncIterator[Workspace]:
+    """Project_id is the Workspace alias. Tenant is never taken from the path as authority beyond lookup."""
+    workspace = repo.get_workspace_for_tenant(
+        tenant_id=tenant.tenant_id, workspace_id=project_id
+    )
+    if workspace is None:
+        raise resource_not_found()
+    with bind_workspace(WorkspaceContext(workspace_id=workspace.workspace_id)) as _:
+        yield workspace
+
+
 def authorized_dataset(
     dataset_id: str,
     workspace: Annotated[Workspace, Depends(authorized_workspace)],

@@ -6,6 +6,13 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
+from app.investment_planning.errors import (
+    BudgetFormatError,
+    PlanningAuthorityError,
+    PlanningError,
+    PortfolioAssemblyNotImplementedError,
+)
+
 
 class ProblemFieldError(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -255,6 +262,40 @@ def internal_error() -> APIError:
         status=500,
         title="Internal error",
         detail="An unexpected error occurred.",
+    )
+
+
+def planning_error(exc: PlanningError) -> APIError:
+    """Map Planning domain errors to ProblemDetail. Never include amounts."""
+    message = str(exc)
+    if isinstance(exc, PlanningAuthorityError) and "was not found" in message:
+        return resource_not_found()
+    if isinstance(exc, BudgetFormatError):
+        return APIError(
+            code=exc.code,
+            status=422,
+            title="Budget format error",
+            detail=message,
+        )
+    if isinstance(exc, PortfolioAssemblyNotImplementedError):
+        return APIError(
+            code=exc.code,
+            status=501,
+            title="Portfolio assembly not implemented",
+            detail=message,
+        )
+    if isinstance(exc, PlanningAuthorityError):
+        return APIError(
+            code=exc.code,
+            status=403,
+            title="Planning authority denied",
+            detail=message,
+        )
+    return APIError(
+        code=exc.code,
+        status=409,
+        title="Planning request failed",
+        detail=message,
     )
 
 

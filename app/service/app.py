@@ -18,11 +18,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.business_iq.service import BusinessIqService
 from app.config import Settings, load_settings
+from app.control_plane.firestore_repo import FirestoreControlPlaneRepository
 from app.control_plane.repository import ControlPlaneRepository
 from app.data_foundation.service import DataFoundationService
 from app.data_foundation.warehouse import FoundationWarehouse
 from app.eda.repository import FirestoreExtendedEDARepository, InMemoryExtendedEDARepository
 from app.eda.service import ExtendedEDAService
+from app.identity_graph.store import InMemoryIdentityGraphStore
 from app.integrations.google.adapters import (
     FakeBigQueryClient,
     FakeDriveClient,
@@ -35,6 +37,11 @@ from app.integrations.google.vault import (
     ControlPlaneCredentialVault,
     InMemoryCredentialVault,
 )
+from app.investment_planning.errors import PlanningError
+from app.investment_planning.firestore import FirestoreInvestmentPlanningStore
+from app.investment_planning.markets import IdentityGraphMarketDirectory
+from app.investment_planning.service import InvestmentPlanService
+from app.investment_planning.store import InMemoryInvestmentPlanningMetadataStore
 from app.materialization.canonical_gate import CanonicalFoundationSourceGate
 from app.materialization.foundation_compat import FoundationSourceGate
 from app.materialization.service import MaterializationService
@@ -63,6 +70,7 @@ from app.service.errors import (
     ProblemDetail,
     ProblemFieldError,
     internal_error,
+    planning_error,
     problem_json,
     validation_error,
 )
@@ -103,6 +111,7 @@ from app.service.routers import (
     identity_webhooks,
     import_governance,
     internal_dispatch,
+    investment_planning,
     materializations,
     mmm,
     mta,
@@ -255,6 +264,22 @@ def create_app(
         bigquery_client=google_services["bq_client"],
         drive_client=google_services["drive_client"],
     )
+    identity_graph_store = InMemoryIdentityGraphStore()
+    if isinstance(repo, FirestoreControlPlaneRepository):
+        planning_store = FirestoreInvestmentPlanningStore(repo.client)
+    else:
+        planning_store = InMemoryInvestmentPlanningMetadataStore()
+    app.state.identity_graph_store = identity_graph_store
+    app.state.investment_planning_store = planning_store
+    app.state.investment_planning = InvestmentPlanService(
+        repo=repo,
+        store=planning_store,
+        drive=google_services["drive_client"],
+        connections=google_services["connections"],
+        drive_bindings=google_services["drive"],
+        business_iq=business_iq_store,
+        markets=IdentityGraphMarketDirectory(identity_graph_store),
+    )
     if foundation_source_gate is None:
         foundation_source_gate = CanonicalFoundationSourceGate(data_foundation_store)
     upload = app.state.upload_service
@@ -315,6 +340,8 @@ def create_app(
     app.include_router(import_governance.router)
     app.include_router(business_iq.router)
     app.include_router(data_foundation.router)
+    app.include_router(investment_planning.canonical_router)
+    app.include_router(investment_planning.workspace_alias_router)
     app.include_router(materializations.router)
     app.include_router(publishes.router)
     app.include_router(mmm.router)
@@ -322,6 +349,13 @@ def create_app(
     app.include_router(billing.router)
     app.include_router(identity_webhooks.router)
     app.include_router(internal_dispatch.router)
+
+    @app.exception_handler(PlanningError)
+    async def planning_error_handler(request: Request, exc: PlanningError) -> JSONResponse:
+        problem = planning_error(exc).to_problem(
+            request_id=_request_id(), instance=str(request.url.path)
+        )
+        return _problem_response(problem)
 
     @app.exception_handler(APIError)
     async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:

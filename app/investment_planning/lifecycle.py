@@ -17,6 +17,22 @@ from app.investment_planning.fingerprint import investment_plan_fingerprint
 from app.investment_planning.ids import new_plan_id
 
 
+def capability_ready_status(
+    *,
+    plan: InvestmentPlan,
+    receipt: InvestmentPlanValidationReceipt | None,
+) -> InvestmentPlanReadyStatus:
+    """GET /ready. Validation receipt READY is not the capability until the plan is approved."""
+    if (
+        plan.status is InvestmentPlanStatus.APPROVED
+        and receipt is not None
+        and receipt.status is InvestmentPlanReadyStatus.INVESTMENT_PLAN_READY
+        and receipt.source_version_id == plan.active_source_version_id
+    ):
+        return InvestmentPlanReadyStatus.INVESTMENT_PLAN_READY
+    return InvestmentPlanReadyStatus.PENDING
+
+
 def mark_validated(plan: InvestmentPlan, receipt: InvestmentPlanValidationReceipt) -> InvestmentPlan:
     if receipt.plan_id != plan.plan_id:
         raise PlanningAuthorityError("Validation receipt does not belong to this plan.")

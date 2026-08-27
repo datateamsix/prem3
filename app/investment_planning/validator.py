@@ -13,7 +13,7 @@ from app.investment_planning.contracts import (
     InvestmentPlan,
     InvestmentPlanValidationReceipt,
 )
-from app.investment_planning.drive import file_is_under_folder
+from app.investment_planning.drive import file_is_under_budget_tree
 from app.investment_planning.drive_binding import SUPPORTED_BUDGET_MIMES
 from app.investment_planning.enums import BudgetSourceGrain, BudgetValidationCode, InvestmentPlanReadyStatus
 from app.investment_planning.errors import (
@@ -52,11 +52,19 @@ def validate_budget_plan(
             passed=binding.status == BindingStatus.ACTIVE.value,
         )
     )
-    budgets_folder_id = binding.budgets_folder_id
     checks.append(
         BudgetValidationCheck(
             code=BudgetValidationCode.BUDGET_FOLDER_BOUND.value,
-            passed=bool(budgets_folder_id) and file_is_under_folder(file, budgets_folder_id or ""),
+            passed=file_is_under_budget_tree(
+                file,
+                (
+                    binding.budgets_folder_id,
+                    binding.budget_templates_folder_id,
+                    binding.budget_plans_folder_id,
+                    binding.budget_scenarios_folder_id,
+                    binding.budget_proposals_folder_id,
+                ),
+            ),
         )
     )
     checks.append(

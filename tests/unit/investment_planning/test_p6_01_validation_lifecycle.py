@@ -271,6 +271,7 @@ def test_create_and_ingest_keeps_amounts_off_control_plane() -> None:
         )
         source, _table, proposal = service.ingest_bytes(
             plan_id=plan.plan_id,
+            project_id=project_id,
             file_name="FY2027_marketing_budget_v001.csv",
             mime_type=CSV_MIME,
             data=csv_bytes,
@@ -279,12 +280,14 @@ def test_create_and_ingest_keeps_amounts_off_control_plane() -> None:
         receipt = service.validate(
             plan_id=plan.plan_id,
             mapping_id=proposal.mapping.mapping_id,
-            table=_table,
             blanks_acknowledged=True,
         )
         with pytest.raises(UnresolvedMarketIdentityError):
             service.approve(
-                plan_id=plan.plan_id, receipt_id=receipt.receipt_id, actor_id="user_acme"
+                plan_id=plan.plan_id,
+                project_id=project_id,
+                receipt_id=receipt.receipt_id,
+                actor_id="user_acme",
             )
     dumped = source.model_dump()
     assert "250000" not in str(dumped)

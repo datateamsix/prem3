@@ -20,6 +20,16 @@ components:
           type: array
       title: AcknowledgeReviewRequest
       type: object
+    ApproveInvestmentPlanRequest:
+      additionalProperties: false
+      properties:
+        receipt_id:
+          title: Receipt Id
+          type: string
+      required:
+      - receipt_id
+      title: ApproveInvestmentPlanRequest
+      type: object
     ApprovePlanRequest:
       additionalProperties: false
       properties:
@@ -260,6 +270,18 @@ components:
       - url
       title: BillingSessionResponse
       type: object
+    BindDriveBudgetSourceRequest:
+      additionalProperties: false
+      properties:
+        drive_file_id:
+          maxLength: 128
+          minLength: 1
+          title: Drive File Id
+          type: string
+      required:
+      - drive_file_id
+      title: BindDriveBudgetSourceRequest
+      type: object
     BindSourceRequest:
       additionalProperties: false
       properties:
@@ -315,6 +337,134 @@ components:
       required:
       - candidate_id
       title: BindSourceRequest
+      type: object
+    BudgetDriveSourceAcceptedResponse:
+      additionalProperties: false
+      properties:
+        mapping:
+          $ref: '#/components/schemas/BudgetMappingResponse'
+        source:
+          $ref: '#/components/schemas/BudgetSourceResponse'
+      required:
+      - source
+      - mapping
+      title: BudgetDriveSourceAcceptedResponse
+      type: object
+    BudgetMappingResponse:
+      additionalProperties: false
+      properties:
+        ambiguous:
+          default: []
+          items:
+            type: string
+          title: Ambiguous
+          type: array
+        channel_column:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Column
+        confirmed:
+          title: Confirmed
+          type: boolean
+        initiative_column:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Initiative Column
+        mapping_id:
+          title: Mapping Id
+          type: string
+        market_column:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Column
+        plan_id:
+          title: Plan Id
+          type: string
+        quarter_columns:
+          default: []
+          items:
+            type: string
+          title: Quarter Columns
+          type: array
+        source_version_id:
+          title: Source Version Id
+          type: string
+      required:
+      - mapping_id
+      - plan_id
+      - source_version_id
+      - confirmed
+      title: BudgetMappingResponse
+      type: object
+    BudgetScope:
+      enum:
+      - PAID_MEDIA_ONLY
+      - PAID_MEDIA_PLUS_CREATIVE
+      - FULLY_LOADED_MARKETING_INVESTMENT
+      - CUSTOM
+      title: BudgetScope
+      type: string
+    BudgetSourceResponse:
+      additionalProperties: false
+      properties:
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        created_by:
+          title: Created By
+          type: string
+        drive_file_id:
+          title: Drive File Id
+          type: string
+        drive_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Drive Version
+        file_name:
+          title: File Name
+          type: string
+        head_revision_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Head Revision Id
+        md5_checksum:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Md5 Checksum
+        mime_type:
+          title: Mime Type
+          type: string
+        plan_id:
+          title: Plan Id
+          type: string
+        predecessor_source_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Predecessor Source Version Id
+        schema_version:
+          title: Schema Version
+          type: string
+        source_version_id:
+          title: Source Version Id
+          type: string
+      required:
+      - source_version_id
+      - plan_id
+      - drive_file_id
+      - file_name
+      - mime_type
+      - schema_version
+      - created_at
+      - created_by
+      title: BudgetSourceResponse
       type: object
     BusinessIqHomeSummary:
       additionalProperties: false
@@ -608,6 +758,33 @@ components:
       - files
       title: CompleteUploadResponse
       type: object
+    ConfirmBudgetMappingRequest:
+      additionalProperties: false
+      properties:
+        channel_column:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Column
+        mapping_id:
+          title: Mapping Id
+          type: string
+        market_column:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Column
+        quarter_columns:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Quarter Columns
+      required:
+      - mapping_id
+      title: ConfirmBudgetMappingRequest
+      type: object
     CoverageReadModel:
       additionalProperties: false
       properties:
@@ -718,6 +895,29 @@ components:
       required:
       - upload_id
       title: CreateEvaluationRequest
+      type: object
+    CreateInvestmentPlanRequest:
+      additionalProperties: false
+      properties:
+        budget_scope:
+          $ref: '#/components/schemas/BudgetScope'
+          default: PAID_MEDIA_ONLY
+        currency:
+          default: USD
+          title: Currency
+          type: string
+        fiscal_year:
+          title: Fiscal Year
+          type: integer
+        name:
+          maxLength: 120
+          minLength: 1
+          title: Name
+          type: string
+      required:
+      - name
+      - fiscal_year
+      title: CreateInvestmentPlanRequest
       type: object
     CreateMTARunRequest:
       additionalProperties: false
@@ -2030,6 +2230,172 @@ components:
       required:
       - generated_at
       title: IntelligenceHomeSummary
+      type: object
+    InvestmentPlanListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/InvestmentPlanResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: InvestmentPlanListResponse
+      type: object
+    InvestmentPlanReadyResponse:
+      additionalProperties: false
+      properties:
+        error_codes:
+          default: []
+          items:
+            type: string
+          title: Error Codes
+          type: array
+        plan_id:
+          title: Plan Id
+          type: string
+        receipt_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receipt Id
+        status:
+          title: Status
+          type: string
+      required:
+      - plan_id
+      - status
+      title: InvestmentPlanReadyResponse
+      type: object
+    InvestmentPlanResponse:
+      additionalProperties: false
+      properties:
+        active_source_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Active Source Version Id
+        approved_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Approved At
+        approved_by:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approved By
+        budget_scope:
+          title: Budget Scope
+          type: string
+        business_profile_fingerprint:
+          title: Business Profile Fingerprint
+          type: string
+        business_profile_snapshot_id:
+          title: Business Profile Snapshot Id
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        created_by:
+          title: Created By
+          type: string
+        currency:
+          title: Currency
+          type: string
+        fiscal_start_month:
+          title: Fiscal Start Month
+          type: integer
+        fiscal_year:
+          title: Fiscal Year
+          type: integer
+        name:
+          title: Name
+          type: string
+        plan_id:
+          title: Plan Id
+          type: string
+        predecessor_plan_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Predecessor Plan Id
+        project_id:
+          title: Project Id
+          type: string
+        revision:
+          title: Revision
+          type: integer
+        status:
+          title: Status
+          type: string
+        updated_at:
+          format: date-time
+          title: Updated At
+          type: string
+        workspace_id:
+          title: Workspace Id
+          type: string
+      required:
+      - plan_id
+      - project_id
+      - workspace_id
+      - name
+      - fiscal_year
+      - fiscal_start_month
+      - currency
+      - budget_scope
+      - business_profile_snapshot_id
+      - business_profile_fingerprint
+      - status
+      - revision
+      - created_at
+      - updated_at
+      - created_by
+      title: InvestmentPlanResponse
+      type: object
+    InvestmentPlanValidationResponse:
+      additionalProperties: false
+      properties:
+        error_codes:
+          default: []
+          items:
+            type: string
+          title: Error Codes
+          type: array
+        flagged_headers:
+          default: []
+          items:
+            type: string
+          title: Flagged Headers
+          type: array
+        flagged_row_indexes:
+          default: []
+          items:
+            type: integer
+          title: Flagged Row Indexes
+          type: array
+        plan_id:
+          title: Plan Id
+          type: string
+        receipt_id:
+          title: Receipt Id
+          type: string
+        source_version_id:
+          title: Source Version Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - receipt_id
+      - plan_id
+      - source_version_id
+      - status
+      title: InvestmentPlanValidationResponse
       type: object
     IterateModelRequest:
       additionalProperties: false
@@ -4231,6 +4597,20 @@ components:
       - updated_at
       title: UploadResponse
       type: object
+    ValidateInvestmentPlanRequest:
+      additionalProperties: false
+      properties:
+        blanks_acknowledged:
+          default: false
+          title: Blanks Acknowledged
+          type: boolean
+        mapping_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Mapping Id
+      title: ValidateInvestmentPlanRequest
+      type: object
     ValidationError:
       properties:
         ctx:
@@ -5212,6 +5592,323 @@ paths:
       summary: Get Project Home
       tags:
       - projects
+  /v1/projects/{project_id}/investment-plans:
+    get:
+      operationId: listInvestmentPlans
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentPlanListResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Plans
+      tags:
+      - investment-plans
+    post:
+      operationId: createInvestmentPlan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvestmentPlanRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentPlanResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Plan
+      tags:
+      - investment-plans
+  /v1/projects/{project_id}/investment-plans/{plan_id}:
+    get:
+      operationId: getInvestmentPlan
+      parameters:
+      - in: path
+        name: plan_id
+        required: true
+        schema:
+          title: Plan Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentPlanResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Plan
+      tags:
+      - investment-plans
+  /v1/projects/{project_id}/investment-plans/{plan_id}/approve:
+    post:
+      operationId: approveInvestmentPlan
+      parameters:
+      - in: path
+        name: plan_id
+        required: true
+        schema:
+          title: Plan Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveInvestmentPlanRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentPlanResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Approve Plan
+      tags:
+      - investment-plans
+  /v1/projects/{project_id}/investment-plans/{plan_id}/mapping:
+    post:
+      operationId: confirmInvestmentPlanMapping
+      parameters:
+      - in: path
+        name: plan_id
+        required: true
+        schema:
+          title: Plan Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmBudgetMappingRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetMappingResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Confirm Mapping
+      tags:
+      - investment-plans
+  /v1/projects/{project_id}/investment-plans/{plan_id}/ready:
+    get:
+      operationId: getInvestmentPlanReady
+      parameters:
+      - in: path
+        name: plan_id
+        required: true
+        schema:
+          title: Plan Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentPlanReadyResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Ready
+      tags:
+      - investment-plans
+  /v1/projects/{project_id}/investment-plans/{plan_id}/revise:
+    post:
+      operationId: reviseInvestmentPlan
+      parameters:
+      - in: path
+        name: plan_id
+        required: true
+        schema:
+          title: Plan Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentPlanResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Revise Plan
+      tags:
+      - investment-plans
+  /v1/projects/{project_id}/investment-plans/{plan_id}/save-version:
+    post:
+      operationId: saveInvestmentPlanVersion
+      parameters:
+      - in: path
+        name: plan_id
+        required: true
+        schema:
+          title: Plan Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetSourceResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Save Version
+      tags:
+      - investment-plans
+  /v1/projects/{project_id}/investment-plans/{plan_id}/sources/drive:
+    post:
+      operationId: bindInvestmentPlanDriveSource
+      parameters:
+      - in: path
+        name: plan_id
+        required: true
+        schema:
+          title: Plan Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindDriveBudgetSourceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetDriveSourceAcceptedResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Bind Drive Source
+      tags:
+      - investment-plans
+  /v1/projects/{project_id}/investment-plans/{plan_id}/template:
+    post:
+      operationId: createInvestmentPlanTemplate
+      parameters:
+      - in: path
+        name: plan_id
+        required: true
+        schema:
+          title: Plan Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetSourceResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Template
+      tags:
+      - investment-plans
+  /v1/projects/{project_id}/investment-plans/{plan_id}/validate:
+    post:
+      operationId: validateInvestmentPlan
+      parameters:
+      - in: path
+        name: plan_id
+        required: true
+        schema:
+          title: Plan Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateInvestmentPlanRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentPlanValidationResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Validate Plan
+      tags:
+      - investment-plans
   /v1/projects/{project_id}/measurement-home:
     get:
       operationId: getProjectMeasurementHome
