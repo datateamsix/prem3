@@ -62,3 +62,51 @@ def test_same_name_campaigns_have_distinct_ids(graph) -> None:
         tenant_id=TENANT_ID, project_id=PROJECT_ID, name="Always On", actor_id="user-a"
     )
     assert first.campaign.campaign_id != second.campaign.campaign_id
+
+
+def test_campaign_id_is_project_scoped(graph) -> None:
+    created = graph.create_campaign(
+        tenant_id=TENANT_ID, project_id=PROJECT_ID, name="Scoped", actor_id="user-a"
+    )
+    other_project = "wsp_otherproject0000001"
+    assert (
+        graph.store.get_campaign(
+            tenant_id=TENANT_ID,
+            project_id=other_project,
+            campaign_id=created.campaign.campaign_id,
+        )
+        is None
+    )
+    found = graph.get_campaign(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        campaign_id=created.campaign.campaign_id,
+    )
+    assert found.campaign_id == created.campaign.campaign_id
+    assert found.project_id == PROJECT_ID
+
+
+def test_campaign_id_is_stable(graph) -> None:
+    created = graph.create_campaign(
+        tenant_id=TENANT_ID, project_id=PROJECT_ID, name="Original", actor_id="user-a"
+    )
+    campaign_id = created.campaign.campaign_id
+    updated = graph.update_campaign(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        campaign_id=campaign_id,
+        updates={"name": "Renamed"},
+    )
+    assert updated.campaign_id == campaign_id
+    assert updated.name == "Renamed"
+    assert updated.fingerprint != created.campaign.fingerprint
+
+
+def test_campaign_id_safe_for_utm_id(graph) -> None:
+    created = graph.create_campaign(
+        tenant_id=TENANT_ID, project_id=PROJECT_ID, name="UTM Safe", actor_id="user-a"
+    )
+    assert _URL_SAFE.fullmatch(created.campaign.campaign_id)
+    assert created.instructions.utm_id == created.campaign.campaign_id
+    assert created.instructions.parameter_value == created.campaign.campaign_id
+    assert created.tracking.parameter_value == created.campaign.campaign_id

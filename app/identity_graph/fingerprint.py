@@ -16,6 +16,7 @@ _EXCLUDE = frozenset(
         "created_by",
         "confirmed_at",
         "confirmed_by",
+        "generated_at",
     }
 )
 

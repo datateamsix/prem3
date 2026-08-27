@@ -174,11 +174,27 @@ class IdentityGraphComponentState(StrEnum):
     GA4_TOPOLOGY_READY = "GA4_TOPOLOGY_READY"
 
 
+class CampaignOwnerType(StrEnum):
+    USER = "USER"
+    TEAM = "TEAM"
+    AGENCY = "AGENCY"
+    OTHER = "OTHER"
+
+
 class TrackingImplementationStatus(StrEnum):
+    """Customer-facing tracking implementation honesty. Not generation provenance."""
+
+    NOT_IMPLEMENTED = "NOT_IMPLEMENTED"
+    DECLARED_IMPLEMENTED = "DECLARED_IMPLEMENTED"
+    OBSERVED = "OBSERVED"
+    VERIFIED = "VERIFIED"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
+
+
+class TrackingInstructionProvenance(StrEnum):
+    """Internal generation provenance. Never a customer-facing verified state."""
+
     GENERATED = "GENERATED"
-    COPIED = "COPIED"
-    VALIDATED = "VALIDATED"
-    MAPPED = "MAPPED"
 
 
 class TopologyStatus(StrEnum):

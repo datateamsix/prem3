@@ -43,6 +43,20 @@ PROHIBITED_EVENT_FIELDS = frozenset(
     }
 )
 
+PROHIBITED_PERFORMANCE_FIELDS = frozenset(
+    {
+        "impressions",
+        "conversions",
+        "attributed_conversions",
+        "attribution",
+        "roas",
+        "cpa",
+        "cpc",
+        "clicks",
+        "platform_metrics",
+    }
+)
+
 
 def _walk_keys(payload: Any) -> list[str]:
     keys: list[str] = []
@@ -75,4 +89,10 @@ def reject_identity_graph_payload(payload: Any) -> None:
         raise IdentityGraphError(
             f"Identity Graph rejects event-scale rows: {', '.join(events)}.",
             code="EVENT_ROWS_FORBIDDEN",
+        )
+    performance = sorted(keys & PROHIBITED_PERFORMANCE_FIELDS)
+    if performance:
+        raise IdentityGraphError(
+            f"Identity Graph rejects performance fields: {', '.join(performance)}.",
+            code="PERFORMANCE_FORBIDDEN",
         )

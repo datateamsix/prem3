@@ -1,6 +1,6 @@
 # Marketing Identity Graph architecture
 
-**Mission:** IG-00 architecture freeze + IG-01 canonical market identity and GA4 topology  
+**Mission:** IG-00 architecture freeze + IG-01 canonical market identity and GA4 topology + IG-02 Campaign Ledger  
 **Domain:** `app/identity_graph/`
 
 ```text
@@ -75,29 +75,27 @@ No free-text edge types. Implemented types are listed in the diagram.
 
 Reserved for later ledgers: `AUDIENCE_REPRESENTS_PERSONA` · `CAMPAIGN_TARGETS_AUDIENCE` · `CAMPAIGN_TARGETS_PERSONA` · `AUDIENCE_AVAILABLE_IN_MARKET` · `AUDIENCE_BOUND_TO_EXTERNAL`
 
-## Campaign Ledger V1 (IG-02 guidance)
+## Campaign Ledger V1 (IG-02)
 
-`CanonicalCampaign` is identity metadata, not a performance or budget ledger. Optional `persona_ids[]` / `audience_ids[]` are strategic/execution scope refs. They do not contain audience members.
-
-Recommended IG-02 fields:
+`CanonicalCampaign` is the persistent Project-scoped campaign identity ledger. It is metadata only: no budget, spend, impressions, conversions, attribution, ROAS, or person-level identity.
 
 | Field | IG-02 |
 |---|---|
-| `campaign_id` | server-generated immutable |
-| `name` | required |
-| `parent_campaign_id` | optional |
-| `status` | required |
-| `market_ids[]` | required (canonical market IDs after IG-01) |
-| `channel_ids[]` | required |
-| `planned_start_date` / `start_date` | strongly recommended |
-| `planned_end_date` / `end_date` | strongly recommended |
-| `objective_ref` / `objective` | optional |
-| `owner_ref` / `owner_label` | optional |
-| `persona_ids[]` | optional |
-| `audience_ids[]` | optional |
+| `campaign_id` | server-generated immutable `cmp_<opaque>`; `campaign_id_authority=PREM3_GENERATED` |
+| `name` | required; editable; rename does not change `campaign_id` or `utm_id` |
+| `parent_campaign_id` | optional; same project; no self-parent; no cycles |
+| `status` | required; default `PLANNED`; governed transitions |
+| `market_ids[]` | **required** on create; canonical `mkt_` IDs; `market_scope_authority=USER_DECLARED` |
+| `channel_ids[]` | **required** on create; Channel Registry IDs |
+| `planned_start_date` / `planned_end_date` | optional `str`; end ≥ start when both set; evergreen = both absent |
+| `objective_ref` / `objective_label` | optional; if `objective_ref` is set it must match a current BIQ `MeasurementObjective.objective_id` |
+| `owner_type` / `owner_ref` / `owner_label` | optional metadata; not execution authority |
+| `persona_ids[]` / `audience_ids[]` | default empty; any submitted ID is unknown until IG-02A and is rejected |
 | `description` | optional |
 
-Keep budget, spend, impressions, conversions, attribution, ROAS, and person-level identity out of `CanonicalCampaign`.
+No `campaign_type` in V1. No `actual_*` dates.
+
+Readiness: per-campaign `CampaignLedgerValidationReceipt` plus project component `NOT_CONFIGURED` · `PARTIAL` · `READY` · `REVIEW_REQUIRED`. This does **not** gate `BUSINESS_CONTEXT_READY`, `DATA_FOUNDATION_READY`, `MODEL_READY`, `MTA_INPUT_READY`, or `INVESTMENT_PLAN_READY`.
 
 ## Reuse
 
@@ -110,11 +108,11 @@ Keep budget, spend, impressions, conversions, attribution, ROAS, and person-leve
 
 ## Persistence
 
-Reserved Firestore path:
+Firestore path:
 
 `tenants/{tenant_id}/workspaces/{workspace_id}/identity_graph/...`
 
-IG-00 uses in-memory contract behavior. Real persistence is IG-02. No event-scale GA4 rows, budget values, or person identifiers.
+Subcollections include `campaigns`, `campaign_tracking`, `campaign_tracking_instructions`, `campaign_receipts`, plus IG-01 market/source/topology metadata. CI/local uses `InMemoryIdentityGraphStore`. Cloud runtime selects `FirestoreIdentityGraphStore`. Store metadata only. No event-scale GA4 rows, budget values, performance metrics, or person identifiers.
 
 ## Architecture decisions
 
@@ -205,3 +203,51 @@ No `ga4_sessions_unified` in IG-01. No cross-region replication.
 ### IG-ADR-022 — Audience/Persona remain metadata identities, never person membership
 
 Reserved node types only. No audience members, hashed PII, or CRM person IDs.
+
+### IG-ADR-023 — Campaign Ledger is the persistent Foundation campaign store
+
+IG-00/IG-01 froze campaign identity in memory. IG-02 persists `CanonicalCampaign` as the Project-scoped ledger. MTA, MMM, and Planning consume `campaign_id`; they do not mint parallel campaign IDs.
+
+### IG-ADR-024 — no `campaign_type` in V1
+
+Business IQ has no campaign classification. Adding a type would invent parallel truth.
+
+### IG-ADR-025 — create requires known markets and channels
+
+`market_ids[]` must be non-empty canonical `mkt_` IDs. `channel_ids[]` must be non-empty Channel Registry IDs. Unknown or display-string values fail closed.
+
+### IG-ADR-026 — flight fields are planned dates; evergreen is both absent
+
+Contracts and APIs use `planned_start_date` / `planned_end_date`. End must be on or after start when both are set. There are no `actual_*` dates in V1.
+
+### IG-ADR-027 — owner is metadata, not execution authority
+
+`owner_type` (`USER` · `TEAM` · `AGENCY` · `OTHER`), `owner_ref`, and `owner_label` do not gate actions. `USER` may store a Clerk `user_id` as `owner_ref` without a new ownership subsystem.
+
+### IG-ADR-028 — objective refs fail closed against the current BIQ profile
+
+If `objective_ref` is set, it must match a `MeasurementObjective.objective_id` on the current Business IQ snapshot. Omitting objective does not block create. See `BUSINESS_IQ_OBJECTIVE_INTEGRATION_REQUEST`: BIQ objectives are profile-local statements, not a governed ontology.
+
+### IG-ADR-029 — submitted Audience/Persona IDs are unknown until IG-02A
+
+Empty `audience_ids[]` / `persona_ids[]` are valid. Any non-empty ID is rejected. Do not mint placeholders.
+
+### IG-ADR-030 — tracking implementation status is honest
+
+Customer-facing statuses: `NOT_IMPLEMENTED` · `DECLARED_IMPLEMENTED` · `OBSERVED` · `VERIFIED` · `REVIEW_REQUIRED`. Create returns generated instructions with `NOT_IMPLEMENTED`. `OBSERVED` / `VERIFIED` are rejected in IG-02. IG-00 `GENERATED` is internal provenance only.
+
+### IG-ADR-031 — `ARCHIVED` is preferred; hard delete is fail-closed
+
+Hard delete is allowed only for never-referenced `PLANNED` drafts. Tracking beyond the default UTM binding, external bindings, or children block hard delete. Archived identity persists.
+
+### IG-ADR-032 — campaign ledger readiness does not gate modeling or planning
+
+`CampaignLedgerValidationReceipt` and project `campaign_ledger_state` do not block `BUSINESS_CONTEXT_READY`, `DATA_FOUNDATION_READY`, `MODEL_READY`, `MTA_INPUT_READY`, or `INVESTMENT_PLAN_READY`.
+
+### IG-ADR-033 — provider campaign IDs never replace `campaign_id`
+
+`CampaignExternalBinding` is a read-only seam in IG-02. IG-03 may add provider bindings and observed/verified tracking with evidence. The provider ID is provenance, not PreM3 identity.
+
+### IG-ADR-034 — intended vs observed tracking is IG-03 / IG-04 QA
+
+IG-02 generates intended `utm_id=<campaign_id>` instructions. Observing those parameters in GA4 or verifying them against live properties is later work. Do not mark instructions `OBSERVED` or `VERIFIED` without that evidence.

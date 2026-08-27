@@ -53,6 +53,10 @@ tenants/{tenant_id}/workspaces/{workspace_id}/datasets/{dataset_id}/import_selec
 tenants/{tenant_id}/workspaces/{workspace_id}/datasets/{dataset_id}/import_receipts/{receipt_id}
   plus import_receipts/current pointer. Historical receipts are retained.
 
+tenants/{tenant_id}/workspaces/{workspace_id}/identity_graph/...
+  Marketing Identity Graph metadata (campaigns, markets, tracking, receipts).
+  Not people, budget, events, or performance.
+
 processed_webhook_events/{provider}__{provider_event_id}
 
 Tenant deletion (future)

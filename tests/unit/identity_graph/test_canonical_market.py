@@ -104,6 +104,6 @@ def test_market_id_is_stable(graph) -> None:
         tenant_id=TENANT_ID, project_id=PROJECT_ID, market_id=market.market_id
     )
     assert fetched is not None
-    assert listed[0].market_id == market.market_id
+    assert market.market_id in {item.market_id for item in listed}
     assert fetched.market_id == market.market_id
     assert fetched.fingerprint == market.fingerprint

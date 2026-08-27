@@ -762,6 +762,12 @@ components:
     CreateIdentityGraphCampaignRequest:
       additionalProperties: false
       properties:
+        audience_ids:
+          default: []
+          items:
+            type: string
+          title: Audience Ids
+          type: array
         channel_ids:
           default: []
           items:
@@ -773,11 +779,6 @@ components:
           - type: string
           - type: 'null'
           title: Description
-        end_date:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: End Date
         market_ids:
           default: []
           items:
@@ -787,16 +788,52 @@ components:
         name:
           title: Name
           type: string
+        objective_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Objective Label
+        objective_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Objective Ref
+        owner_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Label
+        owner_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Ref
+        owner_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Type
         parent_campaign_id:
           anyOf:
           - type: string
           - type: 'null'
           title: Parent Campaign Id
-        start_date:
+        persona_ids:
+          default: []
+          items:
+            type: string
+          title: Persona Ids
+          type: array
+        planned_end_date:
           anyOf:
           - type: string
           - type: 'null'
-          title: Start Date
+          title: Planned End Date
+        planned_start_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Planned Start Date
         status:
           anyOf:
           - type: string
@@ -3182,6 +3219,99 @@ components:
           title: Models
           type: array
       title: ParameterExplanationsView
+      type: object
+    PatchIdentityGraphCampaignRequest:
+      additionalProperties: false
+      properties:
+        audience_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Audience Ids
+        channel_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Channel Ids
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        market_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Market Ids
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        objective_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Objective Label
+        objective_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Objective Ref
+        owner_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Label
+        owner_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Ref
+        owner_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Type
+        parent_campaign_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parent Campaign Id
+        persona_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Persona Ids
+        planned_end_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Planned End Date
+        planned_start_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Planned Start Date
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        utm_campaign:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Utm Campaign
+      title: PatchIdentityGraphCampaignRequest
       type: object
     PatchMeasurementTrackRequest:
       additionalProperties: false
@@ -5880,6 +6010,62 @@ paths:
         schema:
           title: Project Id
           type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - in: query
+        name: market_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+      - in: query
+        name: channel_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Id
+      - in: query
+        name: parent_campaign_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parent Campaign Id
+      - in: query
+        name: planned_start_date
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Planned Start Date
+      - in: query
+        name: planned_end_date
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Planned End Date
+      - in: query
+        name: owner_ref
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Ref
       responses:
         '200':
           content:
@@ -5933,6 +6119,191 @@ paths:
       security:
       - HTTPBearer: []
       summary: Create Campaign
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}:
+    get:
+      operationId: getIdentityGraphCampaign
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: campaign_id
+        required: true
+        schema:
+          title: Campaign Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphcampaign
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Campaign
+      tags:
+      - identity-graph
+    patch:
+      operationId: patchIdentityGraphCampaign
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: campaign_id
+        required: true
+        schema:
+          title: Campaign Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchIdentityGraphCampaignRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Patchidentitygraphcampaign
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Patch Campaign
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/children:
+    get:
+      operationId: getIdentityGraphCampaignChildren
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: campaign_id
+        required: true
+        schema:
+          title: Campaign Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphcampaignchildren
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Campaign Children
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/lineage:
+    get:
+      operationId: getIdentityGraphCampaignLineage
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: campaign_id
+        required: true
+        schema:
+          title: Campaign Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphcampaignlineage
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Campaign Lineage
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/tracking:
+    get:
+      operationId: getIdentityGraphCampaignTracking
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: campaign_id
+        required: true
+        schema:
+          title: Campaign Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphcampaigntracking
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Campaign Tracking
       tags:
       - identity-graph
   /v1/projects/{project_id}/identity-graph/ga4-topology:

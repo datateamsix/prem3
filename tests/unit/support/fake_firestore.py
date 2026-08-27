@@ -37,6 +37,10 @@ class FakeDocument:
         with self._lock:
             return _Snapshot(self._db.get(self._path), self._path.rsplit("/", 1)[-1])
 
+    def delete(self) -> None:
+        with self._lock:
+            self._db.pop(self._path, None)
+
     def collection(self, name: str) -> FakeCollection:
         return FakeCollection(self._db, f"{self._path}/{name}", self._lock)
 

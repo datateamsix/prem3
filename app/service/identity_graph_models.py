@@ -12,9 +12,35 @@ class CreateIdentityGraphCampaignRequest(ApiModel):
     market_ids: list[str] = []
     channel_ids: list[str] = []
     parent_campaign_id: str | None = None
-    start_date: str | None = None
-    end_date: str | None = None
+    planned_start_date: str | None = None
+    planned_end_date: str | None = None
     utm_campaign: str | None = None
+    owner_type: str | None = None
+    owner_ref: str | None = None
+    owner_label: str | None = None
+    objective_ref: str | None = None
+    objective_label: str | None = None
+    persona_ids: list[str] = []
+    audience_ids: list[str] = []
+
+
+class PatchIdentityGraphCampaignRequest(ApiModel):
+    name: str | None = None
+    description: str | None = None
+    status: str | None = None
+    market_ids: list[str] | None = None
+    channel_ids: list[str] | None = None
+    parent_campaign_id: str | None = None
+    planned_start_date: str | None = None
+    planned_end_date: str | None = None
+    utm_campaign: str | None = None
+    owner_type: str | None = None
+    owner_ref: str | None = None
+    owner_label: str | None = None
+    objective_ref: str | None = None
+    objective_label: str | None = None
+    persona_ids: list[str] | None = None
+    audience_ids: list[str] | None = None
 
 
 class CreateIdentityGraphMarketRequest(ApiModel):

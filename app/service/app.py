@@ -24,7 +24,6 @@ from app.data_foundation.warehouse import FoundationWarehouse
 from app.eda.repository import FirestoreExtendedEDARepository, InMemoryExtendedEDARepository
 from app.eda.service import ExtendedEDAService
 from app.identity_graph.service import CampaignIdentityService
-from app.identity_graph.store import InMemoryIdentityGraphStore
 from app.integrations.google.adapters import (
     FakeBigQueryClient,
     FakeDriveClient,
@@ -89,7 +88,7 @@ from app.service.import_governance import ImportGovernanceService
 from app.service.middleware import RequestIdMiddleware, current_request_id
 from app.service.models import PlanCatalogResponse
 from app.service.object_store import FakeObjectStore, GcsObjectStore, ObjectStore
-from app.service.product_stores import build_product_stores
+from app.service.product_stores import build_identity_graph_store, build_product_stores
 from app.service.publish_governance import PublishGovernanceService
 from app.service.routers import (
     billing,
@@ -254,7 +253,7 @@ def create_app(
     app.state.data_foundation_store = data_foundation_store
     app.state.business_iq = BusinessIqService(store=business_iq_store)
     app.state.identity_graph = CampaignIdentityService(
-        store=InMemoryIdentityGraphStore(),
+        store=build_identity_graph_store(repo),
         business_iq_store=business_iq_store,
     )
     app.state.data_foundation = DataFoundationService(

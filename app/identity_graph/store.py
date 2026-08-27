@@ -1,4 +1,4 @@
-"""Identity Graph persistence port. In-memory for IG-00; Firestore paths reserved."""
+"""Identity Graph persistence port. In-memory for tests; Firestore for cloud."""
 
 from __future__ import annotations
 
@@ -7,7 +7,9 @@ from typing import Protocol, runtime_checkable
 from app.identity_graph.contracts import (
     BusinessMarketBinding,
     CampaignExternalBinding,
+    CampaignLedgerValidationReceipt,
     CampaignTrackingBinding,
+    CampaignTrackingInstructions,
     CanonicalCampaign,
     CanonicalMarket,
     GA4PropertySourceBinding,
@@ -22,7 +24,7 @@ FIRESTORE_GRAPH_COLLECTION = "identity_graph"
 
 
 def firestore_graph_path(*, tenant_id: str, workspace_id: str) -> str:
-    """Reserved control-plane path. IG-00 does not write Firestore documents."""
+    """Workspace-scoped Identity Graph metadata root. No people, budget, or events."""
     return f"tenants/{tenant_id}/workspaces/{workspace_id}/{FIRESTORE_GRAPH_COLLECTION}"
 
 
@@ -69,11 +71,29 @@ class IdentityGraphStore(Protocol):
 
     def list_campaigns(self, *, tenant_id: str, project_id: str) -> list[CanonicalCampaign]: ...
 
+    def delete_campaign(self, *, tenant_id: str, project_id: str, campaign_id: str) -> None: ...
+
     def put_tracking(self, value: CampaignTrackingBinding) -> CampaignTrackingBinding: ...
 
     def list_tracking(
         self, *, tenant_id: str, project_id: str, campaign_id: str | None = None
     ) -> list[CampaignTrackingBinding]: ...
+
+    def put_tracking_instructions(
+        self, value: CampaignTrackingInstructions
+    ) -> CampaignTrackingInstructions: ...
+
+    def get_tracking_instructions(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> CampaignTrackingInstructions | None: ...
+
+    def put_campaign_receipt(
+        self, value: CampaignLedgerValidationReceipt
+    ) -> CampaignLedgerValidationReceipt: ...
+
+    def get_campaign_receipt(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> CampaignLedgerValidationReceipt | None: ...
 
     def put_external(self, value: CampaignExternalBinding) -> CampaignExternalBinding: ...
 
@@ -115,7 +135,7 @@ class IdentityGraphStore(Protocol):
 
 
 class InMemoryIdentityGraphStore:
-    """Test/local store. Cloud persistence is IG-02."""
+    """Test/local store. Cloud persistence is FirestoreIdentityGraphStore."""
 
     def __init__(self) -> None:
         self._issued_campaign_ids: set[str] = set()
@@ -124,6 +144,8 @@ class InMemoryIdentityGraphStore:
         self.markets: dict[tuple[str, str, str], CanonicalMarket] = {}
         self.market_bindings: dict[tuple[str, str, str, str], BusinessMarketBinding] = {}
         self.tracking: dict[tuple[str, str], list[CampaignTrackingBinding]] = {}
+        self.tracking_instructions: dict[tuple[str, str, str], CampaignTrackingInstructions] = {}
+        self.campaign_receipts: dict[tuple[str, str, str], CampaignLedgerValidationReceipt] = {}
         self.external: dict[tuple[str, str], list[CampaignExternalBinding]] = {}
         self.sources: dict[tuple[str, str], dict[str, GA4PropertySourceBinding]] = {}
         self.topologies: dict[tuple[str, str], GA4SourceTopology] = {}
@@ -218,6 +240,28 @@ class InMemoryIdentityGraphStore:
             if tid == tenant_id and pid == project_id
         ]
 
+    def delete_campaign(self, *, tenant_id: str, project_id: str, campaign_id: str) -> None:
+        key = (tenant_id, project_id, campaign_id)
+        if key not in self.campaigns:
+            raise IdentityGraphError(
+                f"Unknown campaign_id {campaign_id}.",
+                code="UNKNOWN_CAMPAIGN",
+            )
+        del self.campaigns[key]
+        self.tracking_instructions.pop(key, None)
+        self.campaign_receipts.pop(key, None)
+        scope = _scope(tenant_id, project_id)
+        bucket = self.tracking.get(scope, [])
+        self.tracking[scope] = [item for item in bucket if item.campaign_id != campaign_id]
+        externals = self.external.get(scope, [])
+        self.external[scope] = [item for item in externals if item.campaign_id != campaign_id]
+        edges = self.edges.get(scope, [])
+        self.edges[scope] = [
+            item
+            for item in edges
+            if item.from_node_id != campaign_id and item.to_node_id != campaign_id
+        ]
+
     def put_tracking(self, value: CampaignTrackingBinding) -> CampaignTrackingBinding:
         scope = self.campaign_scope.get(value.campaign_id)
         if scope is None:
@@ -239,6 +283,30 @@ class InMemoryIdentityGraphStore:
         if campaign_id is not None:
             return [item for item in rows if item.campaign_id == campaign_id]
         return rows
+
+    def put_tracking_instructions(
+        self, value: CampaignTrackingInstructions
+    ) -> CampaignTrackingInstructions:
+        key = (value.tenant_id, value.project_id, value.campaign_id)
+        self.tracking_instructions[key] = value
+        return value
+
+    def get_tracking_instructions(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> CampaignTrackingInstructions | None:
+        return self.tracking_instructions.get((tenant_id, project_id, campaign_id))
+
+    def put_campaign_receipt(
+        self, value: CampaignLedgerValidationReceipt
+    ) -> CampaignLedgerValidationReceipt:
+        key = (value.tenant_id, value.project_id, value.campaign_id)
+        self.campaign_receipts[key] = value
+        return value
+
+    def get_campaign_receipt(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> CampaignLedgerValidationReceipt | None:
+        return self.campaign_receipts.get((tenant_id, project_id, campaign_id))
 
     def put_external(self, value: CampaignExternalBinding) -> CampaignExternalBinding:
         scope = self.campaign_scope.get(value.campaign_id)

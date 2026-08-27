@@ -15,6 +15,8 @@ from app.identity_graph.contracts import (
     CampaignCreateResult,
     CampaignExternalBinding,
     CampaignIdentityResolution,
+    CampaignLedgerValidationReceipt,
+    CampaignLineage,
     CampaignTrackingBinding,
     CampaignTrackingInstructions,
     CanonicalCampaign,
@@ -34,6 +36,7 @@ from app.identity_graph.enums import (
     BindingStatus,
     BqLocationClass,
     CampaignIdentitySource,
+    CampaignOwnerType,
     CampaignStatus,
     GA4TopologyKind,
     GA4TopologyReadinessState,
@@ -52,11 +55,13 @@ from app.identity_graph.enums import (
     SourceOverlapPolicy,
     TopologyStatus,
     TrackingImplementationStatus,
+    TrackingInstructionProvenance,
     TrackingKind,
 )
 from app.identity_graph.errors import IdentityGraphError
 from app.identity_graph.fingerprint import identity_fingerprint
 from app.identity_graph.ids import (
+    assert_campaign_id_shape,
     assert_market_id_shape,
     new_binding_id,
     new_campaign_id,
@@ -109,11 +114,57 @@ _GEO_LEVEL_TO_KIND = {
     "CUSTOM": MarketKind.CUSTOM,
 }
 
+_UNEVIDENCED_TRACKING = frozenset(
+    {
+        TrackingImplementationStatus.OBSERVED,
+        TrackingImplementationStatus.VERIFIED,
+    }
+)
+
+_STATUS_TRANSITIONS: dict[CampaignStatus, frozenset[CampaignStatus]] = {
+    CampaignStatus.PLANNED: frozenset({CampaignStatus.ACTIVE, CampaignStatus.ARCHIVED}),
+    CampaignStatus.ACTIVE: frozenset(
+        {CampaignStatus.PAUSED, CampaignStatus.COMPLETE, CampaignStatus.ARCHIVED}
+    ),
+    CampaignStatus.PAUSED: frozenset(
+        {CampaignStatus.ACTIVE, CampaignStatus.COMPLETE, CampaignStatus.ARCHIVED}
+    ),
+    CampaignStatus.COMPLETE: frozenset({CampaignStatus.ARCHIVED}),
+    CampaignStatus.ARCHIVED: frozenset(),
+}
+
 
 def _market_kind_from_biq(geo_level: str | None) -> MarketKind:
     if geo_level is None:
         return MarketKind.CUSTOM
     return _GEO_LEVEL_TO_KIND.get(geo_level.upper(), MarketKind.CUSTOM)
+
+
+def _validate_planned_dates(start: str | None, end: str | None) -> None:
+    if start is None or end is None:
+        return
+    if end < start:
+        raise IdentityGraphError(
+            "planned_end_date must be on or after planned_start_date.",
+            code="DATE_ORDER",
+        )
+
+
+def _planned_dates_overlap(
+    start: str | None,
+    end: str | None,
+    window_start: str | None,
+    window_end: str | None,
+) -> bool:
+    if window_start is None and window_end is None:
+        return True
+    if start is None and end is None:
+        return True
+    campaign_start = start or "0000-01-01"
+    campaign_end = end or "9999-12-31"
+    query_start = window_start or "0000-01-01"
+    query_end = window_end or "9999-12-31"
+    return campaign_start <= query_end and campaign_end >= query_start
 
 
 class CampaignIdentityService:
@@ -138,10 +189,17 @@ class CampaignIdentityService:
         market_ids: tuple[str, ...] = (),
         channel_ids: tuple[str, ...] = (),
         parent_campaign_id: str | None = None,
-        start_date: str | None = None,
-        end_date: str | None = None,
+        planned_start_date: str | None = None,
+        planned_end_date: str | None = None,
         utm_campaign: str | None = None,
         campaign_name_raw: str | None = None,
+        owner_type: CampaignOwnerType | None = None,
+        owner_ref: str | None = None,
+        owner_label: str | None = None,
+        objective_ref: str | None = None,
+        objective_label: str | None = None,
+        persona_ids: tuple[str, ...] = (),
+        audience_ids: tuple[str, ...] = (),
     ) -> CampaignCreateResult:
         self._authorize(tenant_id)
         campaign_id = new_campaign_id(issued=self.store.issued_campaign_ids())
@@ -157,13 +215,22 @@ class CampaignIdentityService:
             status=status,
             market_ids=market_ids,
             channel_ids=channel_ids,
-            start_date=start_date,
-            end_date=end_date,
+            persona_ids=persona_ids,
+            audience_ids=audience_ids,
+            planned_start_date=planned_start_date,
+            planned_end_date=planned_end_date,
+            owner_type=owner_type,
+            owner_ref=owner_ref,
+            owner_label=owner_label,
+            objective_ref=objective_ref,
+            objective_label=objective_label,
+            campaign_id_authority=IdentitySourceAuthority.PREM3_GENERATED,
+            market_scope_authority=IdentitySourceAuthority.USER_DECLARED,
             created_at=now,
             updated_at=now,
             created_by=actor_id,
         )
-        self._validate_scope(campaign)
+        self._validate_create_payload(campaign)
         if parent_campaign_id is not None:
             campaign = campaign.model_copy(update={"parent_campaign_id": parent_campaign_id})
             self._validate_parent(campaign)
@@ -172,21 +239,329 @@ class CampaignIdentityService:
         tracking = self._default_utm_binding(campaign, actor_id=actor_id)
         self.store.put_tracking(tracking)
         self._write_campaign_edges(campaign, tracking)
-        display = utm_campaign or name
-        instructions = CampaignTrackingInstructions(
-            campaign_id=campaign_id,
-            utm_id=campaign_id,
-            utm_campaign=display,
-            query_parameters={"utm_id": campaign_id, "utm_campaign": display},
-            implementation_status=TrackingImplementationStatus.GENERATED,
+        instructions = self._mint_tracking_instructions(
+            campaign, display=utm_campaign or name, generated_at=now
+        )
+        self.store.put_tracking_instructions(instructions)
+        self.validate_campaign(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
         )
         return CampaignCreateResult(
             campaign=campaign, tracking=tracking, instructions=instructions
         )
 
-    def list_campaigns(self, *, tenant_id: str, project_id: str) -> list[CanonicalCampaign]:
+    def get_campaign(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> CanonicalCampaign:
         self._authorize(tenant_id)
-        return self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
+        return self._require_campaign(tenant_id, project_id, campaign_id)
+
+    def list_campaigns(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        status: CampaignStatus | None = None,
+        market_id: str | None = None,
+        channel_id: str | None = None,
+        parent_campaign_id: str | None = None,
+        planned_start_date: str | None = None,
+        planned_end_date: str | None = None,
+        owner_ref: str | None = None,
+    ) -> list[CanonicalCampaign]:
+        self._authorize(tenant_id)
+        rows = self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
+        if status is not None:
+            rows = [item for item in rows if item.status == status]
+        if market_id is not None:
+            rows = [item for item in rows if market_id in item.market_ids]
+        if channel_id is not None:
+            rows = [item for item in rows if channel_id in item.channel_ids]
+        if parent_campaign_id is not None:
+            rows = [item for item in rows if item.parent_campaign_id == parent_campaign_id]
+        if owner_ref is not None:
+            rows = [item for item in rows if item.owner_ref == owner_ref]
+        if planned_start_date is not None or planned_end_date is not None:
+            rows = [
+                item
+                for item in rows
+                if _planned_dates_overlap(
+                    item.planned_start_date,
+                    item.planned_end_date,
+                    planned_start_date,
+                    planned_end_date,
+                )
+            ]
+        return rows
+
+    def update_campaign(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        campaign_id: str,
+        updates: dict[str, Any],
+    ) -> CanonicalCampaign:
+        self._authorize(tenant_id)
+        campaign = self._require_campaign(tenant_id, project_id, campaign_id)
+        allowed = {
+            "name",
+            "description",
+            "status",
+            "market_ids",
+            "channel_ids",
+            "parent_campaign_id",
+            "planned_start_date",
+            "planned_end_date",
+            "owner_type",
+            "owner_ref",
+            "owner_label",
+            "objective_ref",
+            "objective_label",
+            "persona_ids",
+            "audience_ids",
+            "utm_campaign",
+        }
+        unknown = set(updates) - allowed
+        if unknown:
+            raise IdentityGraphError(
+                f"Unsupported campaign update fields: {', '.join(sorted(unknown))}.",
+                code="UNSUPPORTED_UPDATE",
+            )
+        patch: dict[str, Any] = {}
+        utm_campaign = updates.pop("utm_campaign", None) if "utm_campaign" in updates else None
+        for key, value in updates.items():
+            if key in {"market_ids", "channel_ids", "persona_ids", "audience_ids"}:
+                patch[key] = tuple(value) if value is not None else ()
+            elif key == "status":
+                next_status = value if isinstance(value, CampaignStatus) else CampaignStatus(value)
+                self._assert_status_transition(campaign.status, next_status)
+                patch["status"] = next_status
+            elif key == "owner_type":
+                patch["owner_type"] = (
+                    None
+                    if value is None
+                    else value
+                    if isinstance(value, CampaignOwnerType)
+                    else CampaignOwnerType(value)
+                )
+            else:
+                patch[key] = value
+        if "name" in patch:
+            patch["campaign_name_raw"] = patch["name"]
+        patch["updated_at"] = datetime.now(UTC)
+        updated = campaign.model_copy(update=patch)
+        self._validate_create_payload(updated, require_scope=True)
+        if updated.parent_campaign_id is not None:
+            self._validate_parent(updated)
+        elif "parent_campaign_id" in patch and updated.parent_campaign_id is None:
+            pass
+        updated = updated.model_copy(update={"fingerprint": identity_fingerprint(updated)})
+        self.store.put_campaign(updated)
+        if updated.parent_campaign_id != campaign.parent_campaign_id:
+            self._replace_child_edge(updated)
+        instructions = self.store.get_tracking_instructions(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        if instructions is not None and ("name" in patch or utm_campaign is not None):
+            display = utm_campaign or updated.name
+            refreshed = instructions.model_copy(
+                update={
+                    "utm_campaign": display,
+                    "recommended_utm_campaign": display,
+                    "query_parameters": {
+                        **instructions.query_parameters,
+                        "utm_id": updated.campaign_id,
+                        "utm_campaign": display,
+                    },
+                }
+            )
+            refreshed = refreshed.model_copy(
+                update={"fingerprint": identity_fingerprint(refreshed)}
+            )
+            self.store.put_tracking_instructions(refreshed)
+        self.validate_campaign(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        return updated
+
+    def tracking_instructions(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> CampaignTrackingInstructions:
+        self._authorize(tenant_id)
+        self._require_campaign(tenant_id, project_id, campaign_id)
+        found = self.store.get_tracking_instructions(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        if found is None:
+            raise IdentityGraphError(
+                f"Tracking instructions missing for {campaign_id}.",
+                code="TRACKING_MISSING",
+            )
+        if found.implementation_status in _UNEVIDENCED_TRACKING:
+            raise IdentityGraphError(
+                "Observed or verified tracking requires IG-03 evidence.",
+                code="TRACKING_STATUS_UNEVIDENCED",
+            )
+        return found
+
+    def children(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> tuple[CanonicalCampaign, ...]:
+        self._authorize(tenant_id)
+        self._require_campaign(tenant_id, project_id, campaign_id)
+        return tuple(
+            item
+            for item in self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
+            if item.parent_campaign_id == campaign_id
+        )
+
+    def lineage(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> CampaignLineage:
+        self._authorize(tenant_id)
+        campaign = self._require_campaign(tenant_id, project_id, campaign_id)
+        ancestors: list[str] = []
+        seen: set[str] = set()
+        current = campaign.parent_campaign_id
+        while current and current not in seen:
+            seen.add(current)
+            parent = self.store.get_campaign(
+                tenant_id=tenant_id, project_id=project_id, campaign_id=current
+            )
+            if parent is None:
+                break
+            ancestors.append(parent.campaign_id)
+            current = parent.parent_campaign_id
+        child_ids = tuple(item.campaign_id for item in self.children(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        ))
+        return CampaignLineage(
+            campaign_id=campaign.campaign_id,
+            parent_campaign_id=campaign.parent_campaign_id,
+            ancestors=tuple(ancestors),
+            children=child_ids,
+        )
+
+    def validate_campaign(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> CampaignLedgerValidationReceipt:
+        self._authorize(tenant_id)
+        campaign = self._require_campaign(tenant_id, project_id, campaign_id)
+        issues: list[str] = []
+        campaign_id_valid = True
+        try:
+            assert_campaign_id_shape(campaign.campaign_id)
+        except (ValueError, InvalidResourceIdentifierError):
+            campaign_id_valid = False
+            issues.append("CAMPAIGN_ID_SHAPE")
+        project_scoped = (
+            campaign.tenant_id == tenant_id and campaign.project_id == project_id
+        )
+        if not project_scoped:
+            issues.append("PROJECT_SCOPE")
+        markets_known = True
+        channels_known = True
+        dates_valid = True
+        hierarchy_valid = True
+        try:
+            self._validate_markets_required(campaign.market_ids)
+            self._validate_markets(tenant_id, project_id, campaign.market_ids)
+        except IdentityGraphError as exc:
+            markets_known = False
+            issues.append(exc.code)
+        try:
+            self._validate_channels_required(campaign.channel_ids)
+            self._validate_channels(campaign.channel_ids)
+        except IdentityGraphError as exc:
+            channels_known = False
+            issues.append(exc.code)
+        try:
+            _validate_planned_dates(campaign.planned_start_date, campaign.planned_end_date)
+        except IdentityGraphError:
+            dates_valid = False
+            issues.append("DATE_ORDER")
+        try:
+            if campaign.parent_campaign_id is not None:
+                self._validate_parent(campaign)
+        except IdentityGraphError as exc:
+            hierarchy_valid = False
+            issues.append(exc.code)
+        try:
+            CampaignStatus(campaign.status)
+            status_valid = True
+        except ValueError:
+            status_valid = False
+            issues.append("STATUS_INVALID")
+        instructions = self.store.get_tracking_instructions(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        tracking_present = (
+            instructions is not None
+            and instructions.utm_id == campaign.campaign_id
+            and instructions.parameter_name == "utm_id"
+            and instructions.parameter_value == campaign.campaign_id
+        )
+        if not tracking_present:
+            issues.append("TRACKING_INSTRUCTION")
+        if (
+            instructions is not None
+            and instructions.implementation_status in _UNEVIDENCED_TRACKING
+        ):
+            issues.append("TRACKING_STATUS_UNEVIDENCED")
+        if issues:
+            if "TRACKING_STATUS_UNEVIDENCED" in issues or "HIERARCHY_CYCLE" in issues:
+                state = IdentityGraphCapabilityState.REVIEW_REQUIRED
+            else:
+                state = IdentityGraphCapabilityState.PARTIAL
+        else:
+            state = IdentityGraphCapabilityState.READY
+        receipt = CampaignLedgerValidationReceipt(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            campaign_id=campaign.campaign_id,
+            state=state,
+            campaign_id_valid=campaign_id_valid,
+            project_scoped=project_scoped,
+            markets_known=markets_known,
+            channels_known=channels_known,
+            dates_valid=dates_valid,
+            hierarchy_valid=hierarchy_valid,
+            status_valid=status_valid,
+            tracking_instruction_present=tracking_present,
+            prohibited_fields_absent=True,
+            issues=tuple(dict.fromkeys(issues)),
+        )
+        receipt = receipt.model_copy(update={"fingerprint": identity_fingerprint(receipt)})
+        return self.store.put_campaign_receipt(receipt)
+
+    def delete_campaign(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> None:
+        self._authorize(tenant_id)
+        campaign = self._require_campaign(tenant_id, project_id, campaign_id)
+        externals = self.store.list_external(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        child_rows = self.children(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        extra_tracking = [
+            item
+            for item in self.store.list_tracking(
+                tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+            )
+            if item.tracking_kind != TrackingKind.PREM3_UTM_ID
+        ]
+        referenced = bool(externals or child_rows or extra_tracking)
+        if campaign.status != CampaignStatus.PLANNED or referenced:
+            raise IdentityGraphError(
+                "Hard delete is only allowed for never-referenced drafts; archive instead.",
+                code="CAMPAIGN_REFERENCED",
+            )
+        self.store.delete_campaign(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
 
     def create_market(
         self,
@@ -704,16 +1079,37 @@ class CampaignIdentityService:
         campaigns = self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
         sources = self.store.list_sources(tenant_id=tenant_id, project_id=project_id)
         mappings = self.store.list_external(tenant_id=tenant_id, project_id=project_id)
-        tracking = self.store.list_tracking(tenant_id=tenant_id, project_id=project_id)
         topology = self.store.get_topology(tenant_id=tenant_id, project_id=project_id)
         components: list[IdentityGraphComponentState] = []
         issues: list[str] = []
-        ledger_ready = any(
-            item.tracking_kind == TrackingKind.PREM3_UTM_ID
-            and item.parameter_name == "utm_id"
-            and item.parameter_value == item.campaign_id
-            for item in tracking
-        )
+        ledger_issues: list[str] = []
+        receipts = [
+            self.store.get_campaign_receipt(
+                tenant_id=tenant_id, project_id=project_id, campaign_id=item.campaign_id
+            )
+            for item in campaigns
+        ]
+        if not campaigns:
+            campaign_ledger_state = IdentityGraphCapabilityState.NOT_CONFIGURED
+        elif any(
+            receipt is not None and receipt.state == IdentityGraphCapabilityState.REVIEW_REQUIRED
+            for receipt in receipts
+        ):
+            campaign_ledger_state = IdentityGraphCapabilityState.REVIEW_REQUIRED
+            ledger_issues.extend(
+                issue
+                for receipt in receipts
+                if receipt is not None
+                for issue in receipt.issues
+            )
+        elif campaigns and all(
+            receipt is not None and receipt.state == IdentityGraphCapabilityState.READY
+            for receipt in receipts
+        ):
+            campaign_ledger_state = IdentityGraphCapabilityState.READY
+        else:
+            campaign_ledger_state = IdentityGraphCapabilityState.PARTIAL
+        ledger_ready = campaign_ledger_state == IdentityGraphCapabilityState.READY
         if ledger_ready:
             components.append(IdentityGraphComponentState.CAMPAIGN_LEDGER_READY)
         canonical_markets = self.store.list_canonical_markets(
@@ -731,9 +1127,12 @@ class CampaignIdentityService:
             components.append(IdentityGraphComponentState.GA4_TOPOLOGY_READY)
         if topology is not None:
             issues.extend(topology.issues)
-        review = any(
-            item.status == BindingStatus.REVIEW_REQUIRED for item in mappings
-        ) or (topology is not None and topology.status == TopologyStatus.REVIEW_REQUIRED)
+        issues.extend(ledger_issues)
+        review = (
+            any(item.status == BindingStatus.REVIEW_REQUIRED for item in mappings)
+            or (topology is not None and topology.status == TopologyStatus.REVIEW_REQUIRED)
+            or campaign_ledger_state == IdentityGraphCapabilityState.REVIEW_REQUIRED
+        )
         if review:
             state = IdentityGraphCapabilityState.REVIEW_REQUIRED
         elif not campaigns and not sources:
@@ -746,11 +1145,12 @@ class CampaignIdentityService:
             tenant_id=tenant_id,
             project_id=project_id,
             capability_state=state,
+            campaign_ledger_state=campaign_ledger_state,
             component_states=tuple(components),
             campaign_count=len(campaigns),
             source_count=len(sources),
             mapping_count=len(mappings),
-            issues=tuple(issues),
+            issues=tuple(dict.fromkeys(issues)),
         )
 
     def mta_touchpoint_refs(
@@ -958,14 +1358,110 @@ class CampaignIdentityService:
         return None
 
     def _validate_scope(self, campaign: CanonicalCampaign) -> None:
+        self._validate_create_payload(campaign)
+
+    def _validate_create_payload(
+        self, campaign: CanonicalCampaign, *, require_scope: bool = True
+    ) -> None:
+        _validate_planned_dates(campaign.planned_start_date, campaign.planned_end_date)
+        if campaign.audience_ids:
+            raise IdentityGraphError(
+                "Audience IDs are unknown until IG-02A.",
+                code="UNKNOWN_AUDIENCE",
+            )
+        if campaign.persona_ids:
+            raise IdentityGraphError(
+                "Persona IDs are unknown until IG-02A.",
+                code="UNKNOWN_PERSONA",
+            )
+        self._validate_objective(campaign)
+        if require_scope:
+            self._validate_markets_required(campaign.market_ids)
+            self._validate_channels_required(campaign.channel_ids)
+        self._validate_channels(campaign.channel_ids)
+        if campaign.market_ids:
+            self._validate_markets(campaign.tenant_id, campaign.project_id, campaign.market_ids)
+
+    def _validate_markets_required(self, market_ids: tuple[str, ...]) -> None:
+        if not market_ids:
+            raise IdentityGraphError(
+                "Campaign create requires at least one canonical market_id.",
+                code="MARKETS_REQUIRED",
+            )
+
+    def _validate_channels_required(self, channel_ids: tuple[str, ...]) -> None:
+        if not channel_ids:
+            raise IdentityGraphError(
+                "Campaign create requires at least one Channel Registry channel_id.",
+                code="CHANNELS_REQUIRED",
+            )
+
+    def _validate_channels(self, channel_ids: tuple[str, ...]) -> None:
         registry = cached_channel_registry()
-        for channel_id in campaign.channel_ids:
+        for channel_id in channel_ids:
             try:
                 assert_channel_id_in_registry(channel_id, registry)
             except ChannelValidationError as exc:
                 raise IdentityGraphError(str(exc), code="UNKNOWN_CHANNEL") from exc
-        if campaign.market_ids:
-            self._validate_markets(campaign.tenant_id, campaign.project_id, campaign.market_ids)
+
+    def _validate_objective(self, campaign: CanonicalCampaign) -> None:
+        if not campaign.objective_ref:
+            return
+        if self.business_iq_store is None:
+            raise IdentityGraphError(
+                "objective_ref cannot be validated without Business IQ.",
+                code="UNKNOWN_OBJECTIVE",
+            )
+        profile = self.business_iq_store.get_profile(
+            tenant_id=campaign.tenant_id, workspace_id=campaign.project_id
+        )
+        if profile is None:
+            raise IdentityGraphError(
+                "objective_ref does not match a Business IQ objective on the current snapshot.",
+                code="UNKNOWN_OBJECTIVE",
+            )
+        known = {item.objective_id for item in profile.measurement_objectives}
+        if campaign.objective_ref not in known:
+            raise IdentityGraphError(
+                f"Unknown objective_ref {campaign.objective_ref}.",
+                code="UNKNOWN_OBJECTIVE",
+            )
+
+    def _assert_status_transition(
+        self, current: CampaignStatus, proposed: CampaignStatus
+    ) -> None:
+        if proposed == current:
+            return
+        allowed = _STATUS_TRANSITIONS.get(current, frozenset())
+        if proposed not in allowed:
+            raise IdentityGraphError(
+                f"Status transition {current.value} → {proposed.value} is not allowed.",
+                code="STATUS_TRANSITION",
+            )
+
+    def _mint_tracking_instructions(
+        self,
+        campaign: CanonicalCampaign,
+        *,
+        display: str,
+        generated_at: datetime,
+    ) -> CampaignTrackingInstructions:
+        instructions = CampaignTrackingInstructions(
+            campaign_id=campaign.campaign_id,
+            tenant_id=campaign.tenant_id,
+            project_id=campaign.project_id,
+            utm_id=campaign.campaign_id,
+            parameter_name="utm_id",
+            parameter_value=campaign.campaign_id,
+            utm_campaign=display,
+            recommended_utm_campaign=display,
+            query_parameters={"utm_id": campaign.campaign_id, "utm_campaign": display},
+            implementation_status=TrackingImplementationStatus.NOT_IMPLEMENTED,
+            generation_provenance=TrackingInstructionProvenance.GENERATED,
+            instruction_authority=IdentitySourceAuthority.PREM3_GENERATED,
+            generated_at=generated_at,
+        )
+        return instructions.model_copy(update={"fingerprint": identity_fingerprint(instructions)})
 
     def _validate_markets(
         self, tenant_id: str, project_id: str, market_ids: tuple[str, ...]

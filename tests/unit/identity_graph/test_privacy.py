@@ -35,6 +35,9 @@ def test_identity_graph_contains_no_budget_values() -> None:
     assert "planned_spend" not in fields
     assert "actual_spend" not in fields
     assert "recommended_spend" not in fields
+    assert "impressions" not in fields
+    assert "attribution" not in fields
+    assert "roas" not in fields
 
 
 def test_identity_graph_contains_no_event_rows() -> None:
@@ -57,3 +60,9 @@ def test_campaign_tracking_id_is_non_secret(graph) -> None:
     assert not campaign_id.startswith("sk_")
     assert created.instructions.utm_id == campaign_id
     assert created.tracking.parameter_value == campaign_id
+
+
+def test_identity_graph_rejects_performance_fields() -> None:
+    with pytest.raises(IdentityGraphError) as exc:
+        reject_identity_graph_payload({"name": "Perf", "impressions": 12, "roas": 3.2})
+    assert exc.value.code == "PERFORMANCE_FORBIDDEN"

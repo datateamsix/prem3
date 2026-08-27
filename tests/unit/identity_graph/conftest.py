@@ -12,6 +12,7 @@ from tests.unit.business_iq.conftest import ready_payload
 
 TENANT_ID = "tenant-a"
 PROJECT_ID = "wsp_projecta000000001"
+REGISTRY_CHANNEL_ID = "search_paid"
 
 
 @pytest.fixture
@@ -43,10 +44,30 @@ def biq_store(tenant_ctx) -> InMemoryBusinessIqStore:
 @pytest.fixture
 def graph(tenant_ctx, biq_store) -> CampaignIdentityService:
     del tenant_ctx
-    return CampaignIdentityService(
+    service = CampaignIdentityService(
         store=InMemoryIdentityGraphStore(),
         business_iq_store=biq_store,
     )
+    original = service.create_campaign
+    default_market_ids: tuple[str, ...] | None = None
+
+    def create_campaign_with_scope(**kwargs):
+        nonlocal default_market_ids
+        if "market_ids" not in kwargs:
+            if default_market_ids is None:
+                market = service.create_market(
+                    tenant_id=TENANT_ID,
+                    project_id=PROJECT_ID,
+                    name="Default test market",
+                    actor_id="user-a",
+                )
+                default_market_ids = (market.market_id,)
+            kwargs["market_ids"] = default_market_ids
+        kwargs.setdefault("channel_ids", (REGISTRY_CHANNEL_ID,))
+        return original(**kwargs)
+
+    service.create_campaign = create_campaign_with_scope  # type: ignore[method-assign]
+    return service
 
 
 def make_canonical_market(

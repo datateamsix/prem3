@@ -12,6 +12,7 @@ from app.identity_graph.enums import (
     BindingStatus,
     BqLocationClass,
     CampaignIdentitySource,
+    CampaignOwnerType,
     CampaignStatus,
     GA4TopologyKind,
     GA4TopologyReadinessState,
@@ -28,6 +29,7 @@ from app.identity_graph.enums import (
     SourceOverlapPolicy,
     TopologyStatus,
     TrackingImplementationStatus,
+    TrackingInstructionProvenance,
     TrackingKind,
 )
 from app.identity_graph.privacy import reject_identity_graph_payload
@@ -87,8 +89,15 @@ class CanonicalCampaign(IdentityGraphModel):
     channel_ids: tuple[str, ...] = ()
     persona_ids: tuple[str, ...] = ()
     audience_ids: tuple[str, ...] = ()
-    start_date: str | None = None
-    end_date: str | None = None
+    planned_start_date: str | None = None
+    planned_end_date: str | None = None
+    objective_ref: str | None = None
+    objective_label: str | None = None
+    owner_type: CampaignOwnerType | None = None
+    owner_ref: str | None = None
+    owner_label: str | None = None
+    campaign_id_authority: IdentitySourceAuthority = IdentitySourceAuthority.PREM3_GENERATED
+    market_scope_authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_DECLARED
     tracking_policy_id: str | None = None
     fingerprint: str = ""
     created_at: datetime = Field(default_factory=utc_now)
@@ -129,16 +138,55 @@ class CampaignTrackingBinding(IdentityGraphModel):
 
 class CampaignTrackingInstructions(IdentityGraphModel):
     campaign_id: str
+    tenant_id: str = ""
+    project_id: str = ""
     utm_id: str
+    parameter_name: str = "utm_id"
+    parameter_value: str = ""
     utm_campaign: str | None = None
+    recommended_utm_campaign: str | None = None
     query_parameters: dict[str, str] = Field(default_factory=dict)
-    implementation_status: TrackingImplementationStatus = TrackingImplementationStatus.GENERATED
+    implementation_status: TrackingImplementationStatus = (
+        TrackingImplementationStatus.NOT_IMPLEMENTED
+    )
+    generation_provenance: TrackingInstructionProvenance = (
+        TrackingInstructionProvenance.GENERATED
+    )
+    instruction_authority: IdentitySourceAuthority = IdentitySourceAuthority.PREM3_GENERATED
+    generated_at: datetime = Field(default_factory=utc_now)
+    fingerprint: str = ""
 
 
 class CampaignCreateResult(IdentityGraphModel):
     campaign: CanonicalCampaign
     tracking: CampaignTrackingBinding
     instructions: CampaignTrackingInstructions
+
+
+class CampaignLedgerValidationReceipt(IdentityGraphModel):
+    tenant_id: str
+    project_id: str
+    campaign_id: str
+    state: IdentityGraphCapabilityState
+    campaign_id_valid: bool = False
+    project_scoped: bool = False
+    markets_known: bool = False
+    channels_known: bool = False
+    dates_valid: bool = False
+    hierarchy_valid: bool = False
+    status_valid: bool = False
+    tracking_instruction_present: bool = False
+    prohibited_fields_absent: bool = True
+    issues: tuple[str, ...] = ()
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class CampaignLineage(IdentityGraphModel):
+    campaign_id: str
+    parent_campaign_id: str | None = None
+    ancestors: tuple[str, ...] = ()
+    children: tuple[str, ...] = ()
 
 
 class CampaignIdentityResolution(IdentityGraphModel):
@@ -257,6 +305,9 @@ class IdentityGraphOverview(IdentityGraphModel):
     tenant_id: str
     project_id: str
     capability_state: IdentityGraphCapabilityState
+    campaign_ledger_state: IdentityGraphCapabilityState = (
+        IdentityGraphCapabilityState.NOT_CONFIGURED
+    )
     component_states: tuple[IdentityGraphComponentState, ...] = ()
     campaign_count: int = 0
     source_count: int = 0

@@ -15,15 +15,18 @@ Metadata only. No budget, attribution, or platform metrics.
 | `status` | `PLANNED` · `ACTIVE` · `PAUSED` · `COMPLETE` · `ARCHIVED` |
 | `market_ids[]` | Canonical Identity Graph `market_id` (`mkt_<opaque>`); unknown IDs fail closed |
 | `channel_ids[]` | Channel Registry IDs; unknown IDs fail closed |
-| `persona_ids[]` / `audience_ids[]` | Reserved empty scope refs; not members; no CRUD in IG-00 |
+| `persona_ids[]` / `audience_ids[]` | Empty is valid. Any submitted ID is unknown until IG-02A and is rejected. Not members. |
+| `planned_start_date` / `planned_end_date` | Optional; end ≥ start when both set; evergreen = both absent |
 
-Status changes do not change identity. Hierarchy is execution detail for later Planning; IG-00 does not aggregate causal return by parent/child.
+Status changes do not change identity. Hierarchy is execution detail for later Planning; IG-02 does not aggregate causal return by parent/child.
 
 Persona = strategic/durable business archetype. Audience = operational/targetable segment definition. Campaign = governed marketing initiative/execution identity. None of these persist people.
 
 ## Campaign Ledger V1 (IG-02)
 
-See architecture doc. IG-02 should treat `name`, `status`, `market_ids[]`, and `channel_ids[]` as required. Planned dates are strongly recommended. Budget, spend, impressions, conversions, attribution, ROAS, and person-level identity stay out.
+See [CAMPAIGN_LEDGER.md](CAMPAIGN_LEDGER.md). `name`, `status`, `market_ids[]`, and `channel_ids[]` are required on create. Planned dates are optional. Owner and objective are optional metadata. Budget, spend, impressions, conversions, attribution, ROAS, and person-level identity stay out.
+
+No `campaign_type` in V1.
 
 ## Default tracking
 
@@ -33,7 +36,9 @@ See architecture doc. IG-02 should treat `name`, `status`, `market_ids[]`, and `
 - `parameter_value = <campaign_id>`
 - `tracking_kind = PREM3_UTM_ID`
 
-`CampaignTrackingInstructions` returns `utm_id`, optional display `utm_campaign`, and query parameters. `utm_campaign` is not canonical identity.
+`CampaignTrackingInstructions` returns `utm_id`, `parameter_name` / `parameter_value`, `recommended_utm_campaign`, query parameters, `implementation_status=NOT_IMPLEMENTED`, and a fingerprint. `utm_campaign` is not canonical identity. Rename does not change `utm_id`.
+
+Customer-facing statuses: `NOT_IMPLEMENTED` · `DECLARED_IMPLEMENTED` · `OBSERVED` · `VERIFIED` · `REVIEW_REQUIRED`. `OBSERVED` / `VERIFIED` are IG-03+ with evidence. Internal provenance may still be `GENERATED`.
 
 Tracking kinds: `PREM3_UTM_ID` · `PLATFORM_CAMPAIGN_ID` · `CUSTOM_EVENT_PARAM` · `MANUAL_MAPPING`.
 
@@ -63,6 +68,10 @@ If two exact bindings resolve to different campaigns: `REVIEW_REQUIRED`. Do not 
 
 - `POST /v1/projects/{project_id}/identity-graph/campaigns`
 - `GET /v1/projects/{project_id}/identity-graph/campaigns`
+- `GET|PATCH /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}`
+- `GET /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/tracking`
+- `GET /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/children`
+- `GET /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/lineage`
 - `GET /v1/projects/{project_id}/identity-graph/mappings`
 
 Tenant is never accepted from the client. `campaign_id` is never client-supplied on create.

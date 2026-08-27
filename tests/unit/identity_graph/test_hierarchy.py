@@ -81,3 +81,55 @@ def test_parent_child_identity_is_stable(graph) -> None:
     assert found.parent_campaign_id == parent_id
     assert found.campaign_id == child_id
     assert parent.campaign.campaign_id == parent_id
+
+
+def test_campaign_children_read_model(graph) -> None:
+    parent = graph.create_campaign(
+        tenant_id=TENANT_ID, project_id=PROJECT_ID, name="Parent", actor_id="user-a"
+    )
+    child = graph.create_campaign(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        name="Child",
+        actor_id="user-a",
+        parent_campaign_id=parent.campaign.campaign_id,
+    )
+    children = graph.children(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        campaign_id=parent.campaign.campaign_id,
+    )
+    assert [item.campaign_id for item in children] == [child.campaign.campaign_id]
+    lineage = graph.lineage(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        campaign_id=child.campaign.campaign_id,
+    )
+    assert lineage.parent_campaign_id == parent.campaign.campaign_id
+    assert lineage.ancestors == (parent.campaign.campaign_id,)
+    assert lineage.children == ()
+
+
+def test_parent_change_does_not_change_campaign_id(graph) -> None:
+    first = graph.create_campaign(
+        tenant_id=TENANT_ID, project_id=PROJECT_ID, name="First", actor_id="user-a"
+    )
+    second = graph.create_campaign(
+        tenant_id=TENANT_ID, project_id=PROJECT_ID, name="Second", actor_id="user-a"
+    )
+    child = graph.create_campaign(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        name="Child",
+        actor_id="user-a",
+        parent_campaign_id=first.campaign.campaign_id,
+    )
+    child_id = child.campaign.campaign_id
+    moved = graph.set_parent(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        campaign_id=child_id,
+        parent_campaign_id=second.campaign.campaign_id,
+    )
+    assert moved.campaign_id == child_id
+    assert moved.parent_campaign_id == second.campaign.campaign_id
