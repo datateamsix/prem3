@@ -38,3 +38,23 @@ class PlanningValueAuthorityError(PlanningError):
 
 class PortfolioAssemblyNotImplementedError(PlanningError):
     code = "PORTFOLIO_ASSEMBLY_NOT_IMPLEMENTED"
+
+
+class SourceChangedSinceLoadError(PlanningError):
+    code = "SOURCE_CHANGED_SINCE_LOAD"
+
+
+class SourceUnidentifiableError(PlanningError):
+    code = "SOURCE_VERSION_UNVERIFIABLE"
+
+
+class BudgetFormatError(PlanningError):
+    code = "FORMAT_UNSUPPORTED"
+
+
+class BudgetFolderDegradedError(PlanningError):
+    code = "BUDGET_FOLDER_DEGRADED"
+
+
+class MixedGrainUnresolvedError(PlanningError):
+    code = "MIXED_GRAIN_UNRESOLVED"

@@ -9,6 +9,7 @@ from app.investment_planning.contracts import (
     METADATA_MODELS,
     BudgetColumnMapping,
     BudgetDriveSourceVersion,
+    BudgetValidationCheck,
     ExposureGuardrailRef,
     FrozenModel,
     InvestmentPlan,
@@ -25,6 +26,7 @@ InvestmentPlanningMetadata = (
     InvestmentPlan
     | BudgetDriveSourceVersion
     | BudgetColumnMapping
+    | BudgetValidationCheck
     | InvestmentPlanValidationReceipt
     | PortfolioDimensionMapping
     | PortfolioSnapshotRef
@@ -56,12 +58,23 @@ class InvestmentPlanningMetadataStore(Protocol):
 
     def get_plan(self, plan_id: str) -> InvestmentPlan | None: ...
 
+    def list_plans(self, *, project_id: str) -> tuple[InvestmentPlan, ...]: ...
+
+    def get_source(self, source_version_id: str) -> BudgetDriveSourceVersion | None: ...
+
+    def get_mapping(self, mapping_id: str) -> BudgetColumnMapping | None: ...
+
+    def get_receipt(self, receipt_id: str) -> InvestmentPlanValidationReceipt | None: ...
+
 
 class InMemoryInvestmentPlanningMetadataStore:
     """Process memory for contract tests. Not a production truth."""
 
     def __init__(self) -> None:
         self._plans: dict[str, InvestmentPlan] = {}
+        self._sources: dict[str, BudgetDriveSourceVersion] = {}
+        self._mappings: dict[str, BudgetColumnMapping] = {}
+        self._receipts: dict[str, InvestmentPlanValidationReceipt] = {}
         self._rows: list[FrozenModel] = []
 
     def put(self, value: InvestmentPlanningMetadata) -> InvestmentPlanningMetadata:
@@ -69,10 +82,28 @@ class InMemoryInvestmentPlanningMetadataStore:
         self._rows.append(safe)
         if isinstance(safe, InvestmentPlan):
             self._plans[safe.plan_id] = safe
+        elif isinstance(safe, BudgetDriveSourceVersion):
+            self._sources[safe.source_version_id] = safe
+        elif isinstance(safe, BudgetColumnMapping):
+            self._mappings[safe.mapping_id] = safe
+        elif isinstance(safe, InvestmentPlanValidationReceipt):
+            self._receipts[safe.receipt_id] = safe
         return safe
 
     def get_plan(self, plan_id: str) -> InvestmentPlan | None:
         return self._plans.get(plan_id)
+
+    def list_plans(self, *, project_id: str) -> tuple[InvestmentPlan, ...]:
+        return tuple(plan for plan in self._plans.values() if plan.project_id == project_id)
+
+    def get_source(self, source_version_id: str) -> BudgetDriveSourceVersion | None:
+        return self._sources.get(source_version_id)
+
+    def get_mapping(self, mapping_id: str) -> BudgetColumnMapping | None:
+        return self._mappings.get(mapping_id)
+
+    def get_receipt(self, receipt_id: str) -> InvestmentPlanValidationReceipt | None:
+        return self._receipts.get(receipt_id)
 
     def stored_types(self) -> tuple[str, ...]:
         return tuple(type(row).__name__ for row in self._rows)

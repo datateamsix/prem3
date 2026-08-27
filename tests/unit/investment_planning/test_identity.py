@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from app.investment_planning.errors import (
-    CanonicalMarketContractPendingError,
     UnresolvedChannelIdentityError,
     UnresolvedMarketIdentityError,
 )
@@ -20,34 +19,37 @@ from app.investment_planning.identity import (
 
 
 def test_market_id_is_required_and_display_strings_are_non_authoritative() -> None:
-    known = frozenset({"mkt_us"})
-    assert require_canonical_market_id("mkt_us", known_market_ids=known) == "mkt_us"
+    known = frozenset({"mkt_aaaaaaaaaaaaaaaaaaaa"})
+    assert require_canonical_market_id("mkt_aaaaaaaaaaaaaaaaaaaa", known_market_ids=known) == (
+        "mkt_aaaaaaaaaaaaaaaaaaaa"
+    )
     with pytest.raises(UnresolvedMarketIdentityError, match="required"):
         require_canonical_market_id(None, known_market_ids=known)
     with pytest.raises(UnresolvedMarketIdentityError, match="required"):
         require_canonical_market_id("  ", known_market_ids=known)
-    with pytest.raises(UnresolvedMarketIdentityError, match="display string"):
+    with pytest.raises(UnresolvedMarketIdentityError, match="canonical identifier"):
         require_canonical_market_id("United States", known_market_ids=known)
-    with pytest.raises(UnresolvedMarketIdentityError, match="display string"):
+    with pytest.raises(UnresolvedMarketIdentityError, match="canonical identifier"):
         require_canonical_market_id("United States / Canada", known_market_ids=known)
     assert MARKET_IDENTITY_OWNER == "FOUNDATION_MARKETING_IDENTITY_GRAPH"
     assert MARKET_IDENTITY_PENDING_MISSIONS == ("IG-00", "IG-01")
-    assert CANONICAL_MARKET_CONTRACT_INTEGRATED is False
+    assert CANONICAL_MARKET_CONTRACT_INTEGRATED is True
 
 
 def test_market_id_is_not_derived_from_iso_or_fuzzy_names() -> None:
-    known = frozenset({"mkt_us"})
+    known = frozenset({"mkt_aaaaaaaaaaaaaaaaaaaa"})
     for alias in ("US", "USA", "us", "CA", "CAN", "GB", "GBR"):
-        with pytest.raises(UnresolvedMarketIdentityError, match="canonical Identity Graph"):
+        with pytest.raises(UnresolvedMarketIdentityError):
             require_canonical_market_id(alias, known_market_ids=known)
     with pytest.raises(UnresolvedMarketIdentityError, match="canonical Identity Graph"):
         require_canonical_market_id("mkt_uk", known_market_ids=known)
 
 
-def test_market_bearing_plan_cannot_be_investment_plan_ready_until_ig01() -> None:
+def test_investment_plan_ready_requires_resolved_market_refs() -> None:
     assert_investment_plan_ready_permitted(market_bearing=False)
-    with pytest.raises(CanonicalMarketContractPendingError, match="IG-01"):
-        assert_investment_plan_ready_permitted(market_bearing=True)
+    assert_investment_plan_ready_permitted(market_bearing=True, markets_resolved=True)
+    with pytest.raises(UnresolvedMarketIdentityError, match="canonical Identity Graph"):
+        assert_investment_plan_ready_permitted(market_bearing=True, markets_resolved=False)
 
 
 def test_channel_id_must_be_registry_id_not_profile_local() -> None:

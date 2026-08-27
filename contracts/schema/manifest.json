@@ -197,7 +197,7 @@
         "app.investment_planning.contracts.PortfolioView",
         "app.investment_optimization.contracts.OptimizationProposalRef"
       ],
-      "sha256": "51a1bb4deafd558135e4ba72bdd7fca25d335f783508423fd130cb1b58a9038f"
+      "sha256": "9213a388832794f259a579416b6e8c962895e2e7a92da3d23873aae597df24ec"
     }
   ],
   "hash_algorithm": "sha256",

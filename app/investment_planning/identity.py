@@ -6,17 +6,17 @@ from app.core.errors import InvalidResourceIdentifierError
 from app.core.identifiers import validate_resource_identifier
 from app.domain.channels.registry import cached_channel_registry
 from app.domain.channels.validation import ChannelValidationError, assert_channel_id_in_registry
+from app.identity_graph.ids import assert_market_id_shape
 from app.investment_planning.errors import (
     CanonicalMarketContractPendingError,
     UnresolvedChannelIdentityError,
     UnresolvedMarketIdentityError,
 )
 
-# Planning never invents a market registry. IG-00/IG-01 owns durable market identity.
+# Planning never invents a market registry. Identity Graph owns durable market identity.
 MARKET_IDENTITY_OWNER = "FOUNDATION_MARKETING_IDENTITY_GRAPH"
 MARKET_IDENTITY_PENDING_MISSIONS = ("IG-00", "IG-01")
-# Flipped only by a focused IG-01 integration pass. Do not reopen P6-00 architecture.
-CANONICAL_MARKET_CONTRACT_INTEGRATED = False
+CANONICAL_MARKET_CONTRACT_INTEGRATED = True
 
 
 def require_canonical_market_id(
@@ -24,10 +24,10 @@ def require_canonical_market_id(
     *,
     known_market_ids: frozenset[str] | set[str],
 ) -> str:
-    """Join key is market_id. Display names, ISO codes, and invented IDs fail closed.
+    """Join key is Identity Graph CanonicalMarket.market_id.
 
-    Planning does not map names or ISO 3166 tokens onto a market_id. A token is
-    accepted only when it already is a canonical id in ``known_market_ids``.
+    Display names, ISO codes, and invented IDs fail closed. Planning does not
+    map names or ISO 3166 tokens onto a market_id.
     """
     if market_id is None or not str(market_id).strip():
         raise UnresolvedMarketIdentityError(
@@ -35,8 +35,9 @@ def require_canonical_market_id(
             code="UNRESOLVED_MARKET_IDENTITY",
         )
     try:
-        validated = validate_resource_identifier(market_id, field="market_id")
-    except InvalidResourceIdentifierError as exc:
+        validated = assert_market_id_shape(market_id)
+        validate_resource_identifier(validated, field="market_id")
+    except (InvalidResourceIdentifierError, ValueError) as exc:
         raise UnresolvedMarketIdentityError(
             "Planning market_id must be a canonical identifier, not a display string.",
             code="UNRESOLVED_MARKET_IDENTITY",
@@ -49,13 +50,23 @@ def require_canonical_market_id(
     return validated
 
 
-def assert_investment_plan_ready_permitted(*, market_bearing: bool) -> None:
-    """Full INVESTMENT_PLAN_READY waits on the IG-01 canonical-market contract."""
-    if market_bearing and not CANONICAL_MARKET_CONTRACT_INTEGRATED:
+def assert_investment_plan_ready_permitted(
+    *,
+    market_bearing: bool,
+    markets_resolved: bool = True,
+) -> None:
+    """INVESTMENT_PLAN_READY requires the IG-01 contract and resolved market_id refs."""
+    if not CANONICAL_MARKET_CONTRACT_INTEGRATED and market_bearing:
         raise CanonicalMarketContractPendingError(
             "INVESTMENT_PLAN_READY cannot be declared for a market-bearing plan until "
             "the IG-01 canonical-market contract is integrated.",
             code="CANONICAL_MARKET_CONTRACT_PENDING",
+        )
+    if market_bearing and not markets_resolved:
+        raise UnresolvedMarketIdentityError(
+            "INVESTMENT_PLAN_READY requires every market reference to resolve to a "
+            "canonical Identity Graph market_id.",
+            code="UNRESOLVED_MARKET_IDENTITY",
         )
 
 

@@ -40,7 +40,7 @@ At `9ece5ac`, `PlanningChannelAllocation.amount: float | None` exists on the sha
 
 ### Market identity
 
-Planning requires `market_id`. Display strings are non-authoritative. P6 does not own market identity and does not derive IDs from names, fuzzy labels, or ISO 3166 codes (`"United States"`, `"US"`, `"USA"`). Unresolved identity fails closed. Durable canonical market identity is a Foundation / Marketing Identity Graph dependency. Until IG-01 is integrated, a market-bearing plan cannot receive full `INVESTMENT_PLAN_READY`. See `BUSINESS_IQ_INTEGRATION_REQUEST` below.
+Planning requires Identity Graph `CanonicalMarket.market_id`. Display strings are non-authoritative. P6 does not own market identity and does not derive IDs from names, fuzzy labels, or ISO 3166 codes (`"United States"`, `"US"`, `"USA"`). Unresolved identity fails closed and blocks `INVESTMENT_PLAN_READY`. Historical Business IQ market refs join only through `BusinessMarketBinding`. See `BUSINESS_IQ_INTEGRATION_REQUEST` below.
 
 ### Channel identity
 
@@ -62,4 +62,32 @@ Requested from Business IQ / Identity Graph, not implemented in P6-00:
 2. Typed channel↔market references (`MarketingChannel.markets` is untyped strings today).
 3. Fail-closed resolution policy owned by IG-00/IG-01, consumed by Planning.
 
-Until then Planning fail-closes unknown or non-identifier market values and refuses full `INVESTMENT_PLAN_READY` for market-bearing plans. When IG-01 completes, flip `CANONICAL_MARKET_CONTRACT_INTEGRATED` in a focused integration pass rather than reopening P6-00 architecture.
+IG-01 closed this request at the contract layer (`CanonicalMarket`, `BusinessMarketBinding`). P6 consumes `app/identity_graph/` and keeps `CANONICAL_MARKET_CONTRACT_INTEGRATED`. Unknown or non-canonical market values still fail closed. Do not reopen P6-00 architecture.
+
+## P6-01 canonical market integration
+
+Join authority remains `market_id × channel_id`:
+
+- `market_id` → Identity Graph `CanonicalMarket`
+- `channel_id` → canonical Channel Registry
+
+**Canonical Market source commit:**
+
+```text
+53b606a3b3bc529254816b8376d57c181b44a7ec
+branch: feature/prem3-ig-01-market-ga4-topology
+method: path-checkout of shared Identity Graph files (not an IG-01 branch merge)
+```
+
+Do not merge the entire IG-01 branch. Do not duplicate Identity Graph contracts under `app/investment_planning/`.
+
+Files imported from that SHA:
+
+- `app/identity_graph/`
+- `docs/backend/CANONICAL_MARKET_IDENTITY.md`
+- `docs/backend/BUSINESS_IQ_MARKET_BINDING.md`
+- `tests/unit/identity_graph/conftest.py`
+- `tests/unit/identity_graph/test_canonical_market.py`
+- `tests/unit/identity_graph/test_biq_market_bridge.py`
+
+GA4 topology, Campaign Ledger, and IG-02 are not P6-01 prerequisites. `campaign_id` is optional execution detail when present; it is not part of the canonical P6 portfolio grain and is not required for `INVESTMENT_PLAN_READY`. Continue P6-01 without waiting for IG-02.

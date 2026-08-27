@@ -14,7 +14,7 @@ from app.investment_planning.contracts import (
 )
 from app.investment_planning.drive_binding import BUDGET_DRIVE_FOLDER_FIELDS
 from app.investment_planning.enums import AmountKind, PortfolioBaselineKind, SensitiveDataClass
-from app.investment_planning.service import PortfolioAssembler
+from app.investment_planning.service import InvestmentPlanService, PortfolioAssembler
 
 __all__ = [
     "AMOUNT_BEARING_MODELS",
@@ -25,6 +25,7 @@ __all__ = [
     "METADATA_MODELS",
     "AmountKind",
     "InvestmentPlan",
+    "InvestmentPlanService",
     "PortfolioAssembler",
     "PortfolioBaselineKind",
     "PortfolioSnapshotRef",

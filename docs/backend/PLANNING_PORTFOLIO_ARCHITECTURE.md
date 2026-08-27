@@ -42,7 +42,9 @@ flowchart TD
 
 `Project × fiscal year × quarter × market_id × channel_id`
 
-`channel_id` is the Channel Registry ID. `market_id` is the required Planning join key. Market display strings are non-authoritative. Planning does not own market identity and does not resolve markets by name, fuzzy match, or ISO code. Durable market identity is an external IG-01 dependency. Unresolved market identity fails closed. Full `INVESTMENT_PLAN_READY` is withheld from market-bearing plans until that contract is integrated.
+`channel_id` is the Channel Registry ID. `market_id` is the Identity Graph `CanonicalMarket` ID. Market display strings are non-authoritative. Planning does not own market identity and does not resolve markets by name, fuzzy match, or ISO code. Unresolved `market_id` fails closed and blocks `INVESTMENT_PLAN_READY`. `campaign_id` is not part of this grain. Campaign Ledger is not a prerequisite for `INVESTMENT_PLAN_READY`.
+
+Canonical Market source commit: `53b606a3b3bc529254816b8376d57c181b44a7ec` (path-checkout; see [P6_SOURCE_AUTHORITY.md](P6_SOURCE_AUTHORITY.md)).
 
 ## Optional Investment Plan
 

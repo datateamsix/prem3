@@ -32,7 +32,7 @@ Planning, actuals, measurement evidence, and optimization share `fiscal year × 
 
 ## ADR-P6-008 — Canonical IDs, no Planning registries
 
-Reuse Channel Registry `channel_id`. `market_id` is required and is never derived from display names, fuzzy labels, or ISO 3166 codes. No `planning_channel_id`. No P6 market registry. Durable market identity is an external Foundation / Marketing Identity Graph dependency (IG-01). Do not declare full `INVESTMENT_PLAN_READY` for a market-bearing plan until that contract is integrated. When IG-01 completes, perform a focused market-identity integration pass; do not reopen this freeze.
+Reuse Channel Registry `channel_id`. `market_id` is required and is never derived from display names, fuzzy labels, or ISO 3166 codes. No `planning_channel_id`. No P6 market registry. Durable market identity is owned by the Marketing Identity Graph. IG-01 supplied `CanonicalMarket` and `BusinessMarketBinding` at `53b606a3b3bc529254816b8376d57c181b44a7ec`; P6 consumes those contracts via path-checkout and still fail-closes unresolved `market_id`. This freeze is not reopened. `campaign_id` is not a portfolio join key.
 
 ## ADR-P6-009 — Accepted MMM is the causal return engine
 

@@ -347,6 +347,42 @@
       "title": "BudgetSourceGrain",
       "type": "string"
     },
+    "app_investment_planning_contracts__BudgetValidationCheck": {
+      "additionalProperties": false,
+      "description": "Pass/fail plus safe row/header refs. Never amounts or cell contents.",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "flagged_headers": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Flagged Headers",
+          "type": "array"
+        },
+        "flagged_row_indexes": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Flagged Row Indexes",
+          "type": "array"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "passed"
+      ],
+      "title": "BudgetValidationCheck",
+      "type": "object"
+    },
     "app_investment_planning_contracts__EvidenceCoverageLabel": {
       "enum": [
         "MMM",
@@ -536,6 +572,14 @@
       "additionalProperties": false,
       "description": "Safe row/header references only. Never cell contents or amounts.",
       "properties": {
+        "checks": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_contracts__BudgetValidationCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
         "created_at": {
           "format": "date-time",
           "title": "Created At",

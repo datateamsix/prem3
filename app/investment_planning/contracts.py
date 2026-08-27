@@ -120,6 +120,16 @@ class BudgetColumnMapping(FrozenModel):
     confirmed: bool = False
 
 
+class BudgetValidationCheck(FrozenModel):
+    """Pass/fail plus safe row/header refs. Never amounts or cell contents."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    code: str
+    passed: bool
+    flagged_row_indexes: tuple[int, ...] = ()
+    flagged_headers: tuple[str, ...] = ()
+
+
 class InvestmentPlanValidationReceipt(FrozenModel):
     """Safe row/header references only. Never cell contents or amounts."""
 
@@ -131,6 +141,7 @@ class InvestmentPlanValidationReceipt(FrozenModel):
     error_codes: tuple[str, ...] = ()
     flagged_row_indexes: tuple[int, ...] = ()
     flagged_headers: tuple[str, ...] = ()
+    checks: tuple[BudgetValidationCheck, ...] = ()
     created_at: datetime = Field(default_factory=utc_now)
 
 
@@ -282,6 +293,7 @@ METADATA_MODELS: tuple[type[FrozenModel], ...] = (
     InvestmentPlan,
     BudgetDriveSourceVersion,
     BudgetColumnMapping,
+    BudgetValidationCheck,
     InvestmentPlanValidationReceipt,
     PortfolioDimensionMapping,
     PortfolioSnapshotRef,

@@ -9,6 +9,9 @@ from app.control_plane.repository import ControlPlaneRepository
 from app.core.tenancy import require_tenant
 from app.governance.codes import DRIVE_DEPOT_NAME, BindingStatus, ConnectionStatus, GoogleCapability
 from app.integrations.google.adapters import DriveClient
+from app.investment_planning.drive import provision_budget_folders
+from app.investment_planning.drive_binding import BUDGET_DRIVE_FOLDER_FIELDS
+from app.investment_planning.errors import BudgetFolderDegradedError
 from app.service.entitlements import require_feature
 from app.service.errors import ProblemFieldError, resource_not_found, validation_error
 from app.service.google_oauth import GoogleConnectionService
@@ -66,6 +69,25 @@ class DriveBindingService:
                     }
                 )
                 return self._repo.put_drive_binding(degraded)
+            try:
+                budget_ids = provision_budget_folders(
+                    drive=self._drive,
+                    access_token=access_token,
+                    root_folder_id=existing.root_folder_id,
+                    bound_ids={
+                        field: getattr(existing, field) for field in BUDGET_DRIVE_FOLDER_FIELDS
+                    },
+                )
+            except BudgetFolderDegradedError:
+                degraded_budget = existing.model_copy(
+                    update={
+                        "connection_id": connection.connection_id,
+                        "status": BindingStatus.DEGRADED.value,
+                        "updated_at": now,
+                        "last_verified_at": now,
+                    }
+                )
+                return self._repo.put_drive_binding(degraded_budget)
             repaired = existing.model_copy(
                 update={
                     "connection_id": connection.connection_id,
@@ -74,6 +96,7 @@ class DriveBindingService:
                     "export_enabled": export_enabled,
                     "updated_at": now,
                     "last_verified_at": now,
+                    **budget_ids.as_update(),
                 }
             )
             return self._repo.put_drive_binding(repaired)
@@ -86,6 +109,12 @@ class DriveBindingService:
                 access_token=access_token, name=name, parent_id=root.file_id
             )
             children[name] = folder.file_id
+        budget_ids = provision_budget_folders(
+            drive=self._drive,
+            access_token=access_token,
+            root_folder_id=root.file_id,
+            bound_ids={field: None for field in BUDGET_DRIVE_FOLDER_FIELDS},
+        )
         binding = DriveWorkspaceBinding(
             tenant_id=tenant.tenant_id,
             workspace_id=workspace_id,
@@ -101,6 +130,7 @@ class DriveBindingService:
             created_at=now,
             updated_at=now,
             last_verified_at=now,
+            **budget_ids.as_update(),
         )
         return self._repo.put_drive_binding(binding)
 
