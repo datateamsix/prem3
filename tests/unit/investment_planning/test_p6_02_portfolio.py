@@ -40,7 +40,7 @@ def test_coverage_states_and_actuals_only_baseline() -> None:
     assert coverage_state(has_plan=False, has_actuals=True) is PortfolioCoverageState.ACTUALS_ONLY
     assert coverage_state(has_plan=False, has_actuals=False) is PortfolioCoverageState.NEITHER
     assert baseline_for_coverage(PortfolioCoverageState.ACTUALS_ONLY) is (
-        PortfolioBaselineKind.GOVERNED_ACTUALS
+        PortfolioBaselineKind.ACTUAL_YTD
     )
     assert baseline_for_coverage(PortfolioCoverageState.ACTUALS_ONLY) is not (
         PortfolioBaselineKind.APPROVED_PLAN
@@ -181,14 +181,14 @@ def test_portfolio_http_plan_only_from_approved_drive_source() -> None:
     assert body["snapshot_id"]
     assert portfolio.headers.get("cache-control") == "private, no-store"
     totals = {item["kind"]: item for item in body["summary"]}
-    assert totals["APPROVED"]["value"] == "200"
+    assert totals["APPROVED"]["value"] == "200.00"
     assert totals["APPROVED"]["missing"] is False
     assert body["remaining"]["missing"] is True
-    assert body["channel_allocation"][0]["amount"]["value"] == "200"
-    assert body["market_allocation"][0]["amount"]["value"] == "200"
+    assert body["channel_allocation"][0]["amount"]["value"] == "200.00"
+    assert body["market_allocation"][0]["amount"]["value"] == "200.00"
     quarters = {item["quarter"]: item for item in body["quarterly"]}
-    assert quarters[1]["summary"][0]["value"] == "100"
-    assert quarters[2]["summary"][0]["value"] == "50"
+    assert quarters[1]["summary"][0]["value"] == "100.00"
+    assert quarters[2]["summary"][0]["value"] == "50.00"
     snapshot = client.app.state.investment_planning_store.get_snapshot(body["snapshot_id"])
     assert snapshot is not None
     assert "allocations" not in snapshot.model_dump()

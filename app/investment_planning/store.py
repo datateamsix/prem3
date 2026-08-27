@@ -7,6 +7,7 @@ from typing import Protocol, runtime_checkable
 from app.investment_planning.contracts import (
     AMOUNT_BEARING_MODELS,
     METADATA_MODELS,
+    ActualSpendSourceRef,
     BudgetColumnMapping,
     BudgetDriveSourceVersion,
     BudgetValidationCheck,
@@ -31,6 +32,7 @@ InvestmentPlanningMetadata = (
     | PortfolioDimensionMapping
     | PortfolioSnapshotRef
     | ExposureGuardrailRef
+    | ActualSpendSourceRef
     | PortfolioEvidenceCoverage
     | PortfolioSourceFreshness
     | PortfolioObservation
@@ -76,6 +78,8 @@ class InvestmentPlanningMetadataStore(Protocol):
         self, *, tenant_id: str, project_id: str, fiscal_year: int | None = None
     ) -> PortfolioSnapshotRef | None: ...
 
+    def get_actuals_source(self, actuals_source_id: str) -> ActualSpendSourceRef | None: ...
+
 
 class InMemoryInvestmentPlanningMetadataStore:
     """Process memory for contract tests. Not a production truth."""
@@ -86,6 +90,7 @@ class InMemoryInvestmentPlanningMetadataStore:
         self._mappings: dict[str, BudgetColumnMapping] = {}
         self._receipts: dict[str, InvestmentPlanValidationReceipt] = {}
         self._snapshots: dict[str, PortfolioSnapshotRef] = {}
+        self._actuals_sources: dict[str, ActualSpendSourceRef] = {}
         self._rows: list[FrozenModel] = []
 
     def put(self, value: InvestmentPlanningMetadata) -> InvestmentPlanningMetadata:
@@ -101,6 +106,8 @@ class InMemoryInvestmentPlanningMetadataStore:
             self._receipts[safe.receipt_id] = safe
         elif isinstance(safe, PortfolioSnapshotRef):
             self._snapshots[safe.snapshot_id] = safe
+        elif isinstance(safe, ActualSpendSourceRef):
+            self._actuals_sources[safe.actuals_source_id] = safe
         return safe
 
     def get_plan(self, plan_id: str) -> InvestmentPlan | None:
@@ -154,6 +161,9 @@ class InMemoryInvestmentPlanningMetadataStore:
         if not matches:
             return None
         return max(matches, key=lambda item: item.created_at)
+
+    def get_actuals_source(self, actuals_source_id: str) -> ActualSpendSourceRef | None:
+        return self._actuals_sources.get(actuals_source_id)
 
     def stored_types(self) -> tuple[str, ...]:
         return tuple(type(row).__name__ for row in self._rows)

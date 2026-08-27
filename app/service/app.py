@@ -36,6 +36,7 @@ from app.integrations.google.vault import (
     ControlPlaneCredentialVault,
     InMemoryCredentialVault,
 )
+from app.investment_planning.actuals import DataFoundationActualSpendAdapter
 from app.investment_planning.errors import PlanningError
 from app.investment_planning.firestore import FirestoreInvestmentPlanningStore
 from app.investment_planning.markets import IdentityGraphMarketDirectory
@@ -279,6 +280,7 @@ def create_app(
         drive_bindings=google_services["drive"],
         business_iq=business_iq_store,
         markets=IdentityGraphMarketDirectory(identity_graph_store),
+        actuals=DataFoundationActualSpendAdapter(data_foundation_store),
     )
     if foundation_source_gate is None:
         foundation_source_gate = CanonicalFoundationSourceGate(data_foundation_store)

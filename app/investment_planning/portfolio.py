@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import Literal
 
+from app.investment_planning.actuals import round_money
 from app.investment_planning.contracts import (
+    ActualSpendAllocation,
     BudgetColumnMapping,
     MoneyAmount,
     PortfolioAllocationView,
     PortfolioEvidenceCoverage,
+    PortfolioObservation,
     PortfolioSourceFreshness,
     PortfolioSummary,
     PortfolioView,
@@ -46,7 +50,7 @@ def baseline_for_coverage(state: PortfolioCoverageState) -> PortfolioBaselineKin
     if state is PortfolioCoverageState.PLAN_ONLY:
         return PortfolioBaselineKind.APPROVED_PLAN
     if state is PortfolioCoverageState.ACTUALS_ONLY:
-        return PortfolioBaselineKind.GOVERNED_ACTUALS
+        return PortfolioBaselineKind.ACTUAL_YTD
     return None
 
 
@@ -108,7 +112,11 @@ def summarize_allocations(
         )
     return PortfolioSummary(
         currency=currency,
-        totals=(MoneyAmount(kind=kind, currency=currency, value=total, missing=False),),
+        totals=(
+            MoneyAmount(
+                kind=kind, currency=currency, value=round_money(total), missing=False
+            ),
+        ),
     )
 
 
@@ -141,7 +149,117 @@ def remaining_amount(
         any_pair = True
     if not any_pair:
         return MoneyAmount(kind=AmountKind.REMAINING, currency=currency, value=None, missing=True)
-    return MoneyAmount(kind=AmountKind.REMAINING, currency=currency, value=remaining, missing=False)
+    return MoneyAmount(
+        kind=AmountKind.REMAINING, currency=currency, value=round_money(remaining), missing=False
+    )
+
+
+def variance_amount(
+    allocations: tuple[PortfolioAllocationView, ...], *, currency: str
+) -> MoneyAmount:
+    """Actual minus plan when both exist. Missing inputs stay missing, not zero."""
+    total = Decimal("0")
+    any_pair = False
+    for allocation in allocations:
+        approved = _amount_for_kind(allocation, AmountKind.APPROVED)
+        actual = _amount_for_kind(allocation, AmountKind.ACTUAL)
+        if (
+            approved is None
+            or actual is None
+            or approved.missing
+            or actual.missing
+            or approved.value is None
+            or actual.value is None
+        ):
+            continue
+        total += actual.value - approved.value
+        any_pair = True
+    if not any_pair:
+        return MoneyAmount(kind=AmountKind.ACTUAL, currency=currency, value=None, missing=True)
+    return MoneyAmount(
+        kind=AmountKind.ACTUAL,
+        currency=currency,
+        value=round_money(total),
+        missing=False,
+    )
+
+
+def variance_percent(approved: Decimal | None, actual: Decimal | None) -> Decimal | None:
+    if approved is None or actual is None or approved == 0:
+        return None
+    return ((actual - approved) / approved).quantize(Decimal("0.0001"))
+
+
+def cell_remaining(
+    approved: MoneyAmount | None, actual: MoneyAmount | None, *, currency: str
+) -> MoneyAmount:
+    if (
+        approved is None
+        or actual is None
+        or approved.missing
+        or actual.missing
+        or approved.value is None
+        or actual.value is None
+    ):
+        return MoneyAmount(kind=AmountKind.REMAINING, currency=currency, value=None, missing=True)
+    return MoneyAmount(
+        kind=AmountKind.REMAINING,
+        currency=currency,
+        value=round_money(approved.value - actual.value),
+        missing=False,
+    )
+
+
+def merge_plan_and_actual_allocations(
+    plan_rows: tuple[PortfolioAllocationView, ...],
+    actual_rows: tuple[ActualSpendAllocation, ...],
+    *,
+    currency: str,
+    include_remaining: bool,
+) -> tuple[PortfolioAllocationView, ...]:
+    grouped: dict[tuple[int, int, str, str], list[MoneyAmount]] = {}
+    registry_version = CHANNEL_REGISTRY_VERSION
+    for row in plan_rows:
+        key = (row.fiscal_year, row.quarter, row.market_id, row.channel_id)
+        grouped.setdefault(key, [])
+        grouped[key].extend(row.amounts)
+        registry_version = row.channel_registry_version
+    for row in actual_rows:
+        key = (row.fiscal_year, row.quarter, row.market_id, row.channel_id)
+        grouped.setdefault(key, [])
+        grouped[key].append(
+            MoneyAmount(
+                kind=AmountKind.ACTUAL,
+                currency=row.currency,
+                value=row.amount,
+                missing=row.missing,
+            )
+        )
+    merged: list[PortfolioAllocationView] = []
+    for (fiscal_year, quarter, market_id, channel_id), amounts in sorted(grouped.items()):
+        approved = next((item for item in amounts if item.kind is AmountKind.APPROVED), None)
+        actual = next((item for item in amounts if item.kind is AmountKind.ACTUAL), None)
+        combined = list(amounts)
+        if include_remaining:
+            combined.append(cell_remaining(approved, actual, currency=currency))
+        merged.append(
+            PortfolioAllocationView(
+                fiscal_year=fiscal_year,
+                quarter=cast_quarter(quarter),
+                market_id=market_id,
+                channel_id=channel_id,
+                channel_registry_version=registry_version,
+                amounts=tuple(combined),
+            )
+        )
+    return tuple(merged)
+
+
+def cast_quarter(quarter: int) -> Literal[1, 2, 3, 4]:
+    if quarter not in (1, 2, 3, 4):
+        raise ValueError("quarter must be 1-4.")
+    mapping: dict[int, Literal[1, 2, 3, 4]] = {1: 1, 2: 2, 3: 3, 4: 4}
+    return mapping[quarter]
 
 
 def rollup_by_dimension(
@@ -181,7 +299,7 @@ def rollup_by_dimension(
                 amount=MoneyAmount(
                     kind=kind,
                     currency=currency,
-                    value=None if missing else total,
+                    value=None if missing else round_money(total),
                     missing=missing,
                 ),
             )
@@ -216,12 +334,22 @@ def assemble_portfolio_view(
     allocations: tuple[PortfolioAllocationView, ...],
     coverage: PortfolioEvidenceCoverage,
     freshness: PortfolioSourceFreshness,
+    coverage_state: PortfolioCoverageState | None = None,
+    observations: tuple[PortfolioObservation, ...] = (),
 ) -> PortfolioView:
-    kind = (
-        AmountKind.ACTUAL
-        if actual_spend_is_not_approved_budget(baseline_kind)
-        else AmountKind.APPROVED
-    )
+    if coverage_state is PortfolioCoverageState.PLAN_AND_ACTUALS:
+        totals = (
+            *summarize_allocations(allocations, currency=currency, kind=AmountKind.APPROVED).totals,
+            *summarize_allocations(allocations, currency=currency, kind=AmountKind.ACTUAL).totals,
+            remaining_amount(allocations, currency=currency),
+        )
+        summary = PortfolioSummary(currency=currency, totals=totals)
+    elif actual_spend_is_not_approved_budget(baseline_kind) or (
+        coverage_state is PortfolioCoverageState.ACTUALS_ONLY
+    ):
+        summary = summarize_allocations(allocations, currency=currency, kind=AmountKind.ACTUAL)
+    else:
+        summary = summarize_allocations(allocations, currency=currency, kind=AmountKind.APPROVED)
     return PortfolioView(
         snapshot_id=snapshot_id,
         tenant_id=tenant_id,
@@ -229,9 +357,10 @@ def assemble_portfolio_view(
         fiscal_year=fiscal_year,
         currency=currency,
         baseline_kind=baseline_kind,
-        summary=summarize_allocations(allocations, currency=currency, kind=kind),
+        summary=summary,
         allocations=allocations,
         quarterly=quarterly_from_allocations(allocations, fiscal_year=fiscal_year),
         coverage=coverage,
         freshness=freshness,
+        observations=observations,
     )

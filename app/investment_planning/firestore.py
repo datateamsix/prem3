@@ -13,6 +13,7 @@ from app.control_plane.serialization import (
     _normalize_outbound,
 )
 from app.investment_planning.contracts import (
+    ActualSpendSourceRef,
     BudgetColumnMapping,
     BudgetDriveSourceVersion,
     InvestmentPlan,
@@ -33,6 +34,7 @@ COL_SOURCES = "budget_source_versions"
 COL_MAPPINGS = "budget_column_mappings"
 COL_RECEIPTS = "investment_plan_receipts"
 COL_SNAPSHOTS = "portfolio_snapshot_refs"
+COL_ACTUALS_SOURCES = "actual_spend_source_refs"
 COL_INDEX = "investment_planning_index"
 
 T = TypeVar("T", bound=BaseModel)
@@ -190,6 +192,16 @@ class FirestoreInvestmentPlanningStore:
                 tenant_id=safe.tenant_id,
                 workspace_id=safe.workspace_id,
             )
+        elif isinstance(safe, ActualSpendSourceRef):
+            self._workspace(safe.tenant_id, safe.workspace_id).collection(
+                COL_ACTUALS_SOURCES
+            ).document(safe.actuals_source_id).set(_planning_to_document(safe))
+            self._put_index(
+                kind="actuals_source",
+                resource_id=safe.actuals_source_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.workspace_id,
+            )
         return safe
 
     def get_plan(self, plan_id: str) -> InvestmentPlan | None:
@@ -263,3 +275,11 @@ class FirestoreInvestmentPlanningStore:
         if not matches:
             return None
         return max(matches, key=lambda item: item.created_at)
+
+    def get_actuals_source(self, actuals_source_id: str) -> ActualSpendSourceRef | None:
+        return self._load(
+            ActualSpendSourceRef,
+            kind="actuals_source",
+            resource_id=actuals_source_id,
+            collection=COL_ACTUALS_SOURCES,
+        )

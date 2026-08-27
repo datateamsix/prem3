@@ -32,6 +32,7 @@ from app.intelligence.contracts import (
 )
 from app.investment_optimization.contracts import OptimizationProposalRef
 from app.investment_planning.contracts import (
+    ActualSpendSourceRef,
     BudgetDriveSourceVersion,
     InvestmentPlan,
     InvestmentPlanValidationReceipt,
@@ -274,6 +275,7 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             BudgetDriveSourceVersion,
             InvestmentPlanValidationReceipt,
             PortfolioSnapshotRef,
+            ActualSpendSourceRef,
             PortfolioView,
             OptimizationProposalRef,
         ),

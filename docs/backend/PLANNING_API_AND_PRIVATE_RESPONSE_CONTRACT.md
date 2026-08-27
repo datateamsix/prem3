@@ -10,7 +10,9 @@ Canonical namespace:
 
 `/v1/workspaces/{workspace_id}/...` is a documented alias of the same state machine. `project_id == workspace_id`.
 
-P6-01 registers real Investment Plan handlers on the canonical namespace. Workspace paths are a same-state alias (`include_in_schema=False`). `investment-portfolio` and `investment-optimizations` remain unregistered until P6-02/P6-04. `GET .../view` is not registered in P6-01; portfolio assembly is P6-02.
+P6-01 registers real Investment Plan handlers on the canonical namespace. Workspace paths are a same-state alias (`include_in_schema=False`). `GET /v1/projects/{project_id}/investment-portfolio` is registered (P6-02/P6-03). `investment-optimizations` remain unregistered until P6-04. `GET .../view` is not registered.
+
+P6-03 extends the portfolio response with `actuals_source_id`, coverage, observations, and plan-vs-actual remaining/variance. Optional query parameter: `fiscal_year`. Client-supplied actual rows are not accepted. Entitlement remains `Feature.PORTFOLIO_VIEW`.
 
 Implemented P6-01 HTTP routes (workspace alias omitted from OpenAPI):
 
@@ -30,10 +32,10 @@ GET    /v1/projects/{project_id}/investment-plans/{plan_id}/ready
 
 `GET /ready` is the capability. A validation receipt may report `INVESTMENT_PLAN_READY` after checks pass; the capability stays `PENDING` until the plan is approved against that receipt and active Drive source version.
 
-Contract fingerprints at P6-01 HTTP checkpoint:
+Contract fingerprints at P6-03:
 
-- `contracts/openapi.yaml` sha256 `6fd1fae50d435702374f8688e155432ce79e79cd4628ef13b5d92fc063539a40`
-- `contracts/schema/planning.schema.json` sha256 `9213a388832794f259a579416b6e8c962895e2e7a92da3d23873aae597df24ec`
+- `contracts/openapi.yaml` sha256 `3677b08a76d663049564f2eb1b2f61ff7f465c43cb9247f5c1e40e35e4b7665b`
+- `contracts/schema/planning.schema.json` sha256 `e0315ce91459b561a8b9c14ff9d9f1b43696a95ece799a892d4a76d8849a218a`
 
 Generated schemas live in `contracts/schema/planning.schema.json`.
 

@@ -185,6 +185,7 @@
         "BudgetDriveSourceVersion",
         "InvestmentPlanValidationReceipt",
         "PortfolioSnapshotRef",
+        "ActualSpendSourceRef",
         "PortfolioView",
         "OptimizationProposalRef"
       ],
@@ -194,10 +195,11 @@
         "app.investment_planning.contracts.BudgetDriveSourceVersion",
         "app.investment_planning.contracts.InvestmentPlanValidationReceipt",
         "app.investment_planning.contracts.PortfolioSnapshotRef",
+        "app.investment_planning.contracts.ActualSpendSourceRef",
         "app.investment_planning.contracts.PortfolioView",
         "app.investment_optimization.contracts.OptimizationProposalRef"
       ],
-      "sha256": "9213a388832794f259a579416b6e8c962895e2e7a92da3d23873aae597df24ec"
+      "sha256": "e0315ce91459b561a8b9c14ff9d9f1b43696a95ece799a892d4a76d8849a218a"
     }
   ],
   "hash_algorithm": "sha256",

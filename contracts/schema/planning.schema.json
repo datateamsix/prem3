@@ -162,6 +162,222 @@
       "title": "OptimizationSolverKind",
       "type": "string"
     },
+    "app_investment_planning_contracts__ActualSpendAuthority": {
+      "enum": [
+        "TEST_ONLY",
+        "DATA_FOUNDATION_VERIFIED",
+        "CUSTOMER_GOVERNED_SOURCE",
+        "SYSTEM_VERIFIED"
+      ],
+      "title": "ActualSpendAuthority",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__ActualSpendSourceKind": {
+      "enum": [
+        "SYNTHETIC",
+        "DATA_FOUNDATION"
+      ],
+      "title": "ActualSpendSourceKind",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__ActualSpendSourceRef": {
+      "additionalProperties": false,
+      "description": "Firestore metadata for a governed actual-spend source. No spend rows.",
+      "properties": {
+        "actuals_source_id": {
+          "title": "Actuals Source Id",
+          "type": "string"
+        },
+        "as_of": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "As Of"
+        },
+        "authority": {
+          "$ref": "#/$defs/app_investment_planning_contracts__ActualSpendAuthority"
+        },
+        "bq_dataset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bq Dataset Id"
+        },
+        "bq_project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bq Project Id"
+        },
+        "bq_table_or_view_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bq Table Or View Id"
+        },
+        "channel_registry_version": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Channel Registry Version"
+        },
+        "coverage_end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage End"
+        },
+        "coverage_start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Start"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Currency"
+        },
+        "market_mapping_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Market Mapping Version"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "source_fingerprint": {
+          "title": "Source Fingerprint",
+          "type": "string"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/app_investment_planning_contracts__ActualSpendSourceKind"
+        },
+        "source_ref": {
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_planning_contracts__ActualSpendSourceStatus"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "timezone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timezone"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actuals_source_id",
+        "tenant_id",
+        "project_id",
+        "workspace_id",
+        "source_kind",
+        "source_ref",
+        "authority",
+        "status",
+        "source_fingerprint",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ActualSpendSourceRef",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__ActualSpendSourceStatus": {
+      "enum": [
+        "CONFIGURED",
+        "UNAVAILABLE",
+        "STALE",
+        "FRESH",
+        "UNKNOWN"
+      ],
+      "title": "ActualSpendSourceStatus",
+      "type": "string"
+    },
     "app_investment_planning_contracts__AmountKind": {
       "enum": [
         "PLANNED",
@@ -385,6 +601,7 @@
     },
     "app_investment_planning_contracts__EvidenceCoverageLabel": {
       "enum": [
+        "DATA_FOUNDATION",
         "MMM",
         "MTA",
         "EXPERIMENT",
@@ -393,6 +610,28 @@
         "NONE"
       ],
       "title": "EvidenceCoverageLabel",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__EvidenceCoverageScope": {
+      "enum": [
+        "PROJECT",
+        "MARKET",
+        "CHANNEL",
+        "MARKET_CHANNEL_PERIOD"
+      ],
+      "title": "EvidenceCoverageScope",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__EvidenceCoverageStatus": {
+      "enum": [
+        "COVERED",
+        "PARTIAL",
+        "MISSING",
+        "REVIEW_REQUIRED",
+        "NOT_APPLICABLE",
+        "UNKNOWN"
+      ],
+      "title": "EvidenceCoverageStatus",
       "type": "string"
     },
     "app_investment_planning_contracts__InvestmentPlan": {
@@ -671,6 +910,16 @@
       "title": "MoneyAmount",
       "type": "object"
     },
+    "app_investment_planning_contracts__ObservationSeverity": {
+      "enum": [
+        "INFO",
+        "REVIEW",
+        "WARNING",
+        "ERROR"
+      ],
+      "title": "ObservationSeverity",
+      "type": "string"
+    },
     "app_investment_planning_contracts__PortfolioAllocationView": {
       "additionalProperties": false,
       "properties": {
@@ -743,6 +992,14 @@
           "title": "Exposure Integrity Available",
           "type": "boolean"
         },
+        "items": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_contracts__PortfolioEvidenceCoverageItem"
+          },
+          "title": "Items",
+          "type": "array"
+        },
         "labels": {
           "default": [],
           "items": {
@@ -756,20 +1013,134 @@
           "title": "Mta Available",
           "type": "boolean"
         },
+        "scope": {
+          "$ref": "#/$defs/app_investment_planning_contracts__EvidenceCoverageScope",
+          "default": "PROJECT"
+        },
+        "snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot Id"
+        },
         "stale": {
           "default": false,
           "title": "Stale",
           "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_planning_contracts__EvidenceCoverageStatus",
+          "default": "UNKNOWN"
         }
       },
       "title": "PortfolioEvidenceCoverage",
       "type": "object"
     },
+    "app_investment_planning_contracts__PortfolioEvidenceCoverageItem": {
+      "additionalProperties": false,
+      "description": "One evidence category at an explicit scope. Metadata only.",
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/app_investment_planning_contracts__EvidenceCoverageLabel"
+        },
+        "causal": {
+          "default": false,
+          "title": "Causal",
+          "type": "boolean"
+        },
+        "channel_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Channel Id"
+        },
+        "evidence_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Ref"
+        },
+        "fiscal_year": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fiscal Year"
+        },
+        "market_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Market Id"
+        },
+        "quarter": {
+          "anyOf": [
+            {
+              "enum": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quarter"
+        },
+        "scope": {
+          "$ref": "#/$defs/app_investment_planning_contracts__EvidenceCoverageScope"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_planning_contracts__EvidenceCoverageStatus"
+        }
+      },
+      "required": [
+        "category",
+        "scope",
+        "status"
+      ],
+      "title": "PortfolioEvidenceCoverageItem",
+      "type": "object"
+    },
     "app_investment_planning_contracts__PortfolioObservation": {
       "additionalProperties": false,
-      "description": "Deterministic observation code. Gemini may explain later; it does not own truth.",
+      "description": "Deterministic observation metadata. No amount arrays.",
       "properties": {
         "code": {
+          "default": "",
           "title": "Code",
           "type": "string"
         },
@@ -785,6 +1156,29 @@
           "default": null,
           "title": "Fiscal Year"
         },
+        "message_key": {
+          "title": "Message Key",
+          "type": "string"
+        },
+        "observation_id": {
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "observation_type": {
+          "$ref": "#/$defs/app_investment_planning_contracts__PortfolioObservationType"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
+        },
         "quarter": {
           "anyOf": [
             {
@@ -796,6 +1190,21 @@
           ],
           "default": null,
           "title": "Quarter"
+        },
+        "severity": {
+          "$ref": "#/$defs/app_investment_planning_contracts__ObservationSeverity"
+        },
+        "snapshot_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot Fingerprint"
         },
         "subject_channel_id": {
           "anyOf": [
@@ -823,10 +1232,31 @@
         }
       },
       "required": [
-        "code"
+        "observation_id",
+        "observation_type",
+        "severity",
+        "message_key"
       ],
       "title": "PortfolioObservation",
       "type": "object"
+    },
+    "app_investment_planning_contracts__PortfolioObservationType": {
+      "enum": [
+        "ACTUAL_EXCEEDS_PLAN",
+        "ACTUAL_BELOW_PLAN",
+        "ACTUAL_WITHOUT_PLAN",
+        "PLAN_WITHOUT_ACTUALS",
+        "MISSING_ACTUALS_SOURCE",
+        "STALE_ACTUALS_SOURCE",
+        "UNRESOLVED_MARKET",
+        "UNRESOLVED_CHANNEL",
+        "CURRENCY_MISMATCH",
+        "PERIOD_MAPPING_REQUIRED",
+        "MEASUREMENT_COVERAGE_MISSING",
+        "MEASUREMENT_COVERAGE_PARTIAL"
+      ],
+      "title": "PortfolioObservationType",
+      "type": "string"
     },
     "app_investment_planning_contracts__PortfolioSnapshotRef": {
       "additionalProperties": false,
@@ -843,6 +1273,18 @@
           ],
           "default": null,
           "title": "Accepted Mmm Result Ref"
+        },
+        "actuals_source_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actuals Source Id"
         },
         "baseline_kind": {
           "$ref": "#/$defs/app_investment_planning_contracts__PortfolioBaselineKind"
@@ -1151,6 +1593,9 @@
     },
     {
       "$ref": "#/$defs/app_investment_planning_contracts__PortfolioSnapshotRef"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_contracts__ActualSpendSourceRef"
     },
     {
       "$ref": "#/$defs/app_investment_planning_contracts__PortfolioView"

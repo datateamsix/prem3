@@ -2400,6 +2400,11 @@ components:
     InvestmentPortfolioResponse:
       additionalProperties: false
       properties:
+        actuals_source_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Actuals Source Id
         allocations:
           default: []
           items:
@@ -2417,6 +2422,10 @@ components:
             $ref: '#/components/schemas/PortfolioDimensionTotalResponse'
           title: Channel Allocation
           type: array
+        coverage:
+          anyOf:
+          - $ref: '#/components/schemas/PortfolioEvidenceCoverageResponse'
+          - type: 'null'
         coverage_state:
           title: Coverage State
           type: string
@@ -2439,6 +2448,12 @@ components:
           items:
             $ref: '#/components/schemas/PortfolioDimensionTotalResponse'
           title: Market Allocation
+          type: array
+        observations:
+          default: []
+          items:
+            $ref: '#/components/schemas/PortfolioObservationResponse'
+          title: Observations
           type: array
         project_id:
           title: Project Id
@@ -2464,6 +2479,10 @@ components:
             $ref: '#/components/schemas/MoneyAmountResponse'
           title: Summary
           type: array
+        variance:
+          anyOf:
+          - $ref: '#/components/schemas/PortfolioVarianceResponse'
+          - type: 'null'
         workspace_id:
           title: Workspace Id
           type: string
@@ -3568,6 +3587,95 @@ components:
       - amount
       title: PortfolioDimensionTotalResponse
       type: object
+    PortfolioEvidenceCoverageItemResponse:
+      additionalProperties: false
+      properties:
+        category:
+          title: Category
+          type: string
+        causal:
+          default: false
+          title: Causal
+          type: boolean
+        channel_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Id
+        evidence_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Evidence Ref
+        fiscal_year:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Fiscal Year
+        market_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+        quarter:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Quarter
+        scope:
+          title: Scope
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - category
+      - scope
+      - status
+      title: PortfolioEvidenceCoverageItemResponse
+      type: object
+    PortfolioEvidenceCoverageResponse:
+      additionalProperties: false
+      properties:
+        accepted_mmm:
+          default: false
+          title: Accepted Mmm
+          type: boolean
+        exposure_integrity_available:
+          default: false
+          title: Exposure Integrity Available
+          type: boolean
+        items:
+          default: []
+          items:
+            $ref: '#/components/schemas/PortfolioEvidenceCoverageItemResponse'
+          title: Items
+          type: array
+        labels:
+          default: []
+          items:
+            type: string
+          title: Labels
+          type: array
+        mta_available:
+          default: false
+          title: Mta Available
+          type: boolean
+        scope:
+          title: Scope
+          type: string
+        stale:
+          default: false
+          title: Stale
+          type: boolean
+        status:
+          title: Status
+          type: string
+      required:
+      - scope
+      - status
+      title: PortfolioEvidenceCoverageResponse
+      type: object
     PortfolioFreshnessResponse:
       additionalProperties: false
       properties:
@@ -3590,6 +3698,77 @@ components:
           - type: 'null'
           title: Plan Source As Of
       title: PortfolioFreshnessResponse
+      type: object
+    PortfolioObservationResponse:
+      additionalProperties: false
+      properties:
+        channel_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Id
+        fiscal_year:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Fiscal Year
+        market_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+        message_key:
+          title: Message Key
+          type: string
+        observation_id:
+          title: Observation Id
+          type: string
+        observation_type:
+          title: Observation Type
+          type: string
+        quarter:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Quarter
+        severity:
+          title: Severity
+          type: string
+        snapshot_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Fingerprint
+      required:
+      - observation_id
+      - observation_type
+      - severity
+      - message_key
+      title: PortfolioObservationResponse
+      type: object
+    PortfolioVarianceResponse:
+      additionalProperties: false
+      properties:
+        currency:
+          title: Currency
+          type: string
+        missing:
+          default: true
+          title: Missing
+          type: boolean
+        percent:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Percent
+        value:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Value
+      required:
+      - currency
+      title: PortfolioVarianceResponse
       type: object
     ProblemDetail:
       $defs:

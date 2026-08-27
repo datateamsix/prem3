@@ -11,25 +11,31 @@ from app.core.tenancy import require_tenant
 from app.domain.channels.bindings import PlanningChannelAllocation
 from app.identity_graph.store import InMemoryIdentityGraphStore
 from app.integrations.google.adapters import DriveClient
+from app.investment_planning.actuals import (
+    PERIOD_AGGREGATION_RULE,
+    ActualSpendQuery,
+    query_actuals,
+)
 from app.investment_planning.authority import require_human_approver, require_server_owned_scope
 from app.investment_planning.contracts import (
     BudgetColumnMapping,
     BudgetDriveSourceVersion,
     InvestmentPlan,
     InvestmentPlanValidationReceipt,
-    PortfolioEvidenceCoverage,
     PortfolioSnapshotRef,
     PortfolioSourceFreshness,
     PortfolioView,
 )
+from app.investment_planning.coverage import assemble_evidence_coverage
 from app.investment_planning.drive import file_is_under_budget_tree
 from app.investment_planning.drive_binding import TEMPLATE_SCHEMA_VERSION
 from app.investment_planning.enums import (
+    ActualsFreshnessState,
+    ActualSpendSourceStatus,
     AmountKind,
     BudgetScope,
     BudgetSourceGrain,
     InvestmentPlanStatus,
-    PortfolioBaselineKind,
     PortfolioCoverageState,
 )
 from app.investment_planning.errors import (
@@ -50,11 +56,14 @@ from app.investment_planning.legacy_allocation import (
 from app.investment_planning.lifecycle import approve_plan, mark_validated, revise_plan
 from app.investment_planning.mapping import MappingProposal, propose_column_mapping
 from app.investment_planning.markets import IdentityGraphMarketDirectory, MarketIdentityDirectory
+from app.investment_planning.observations import emit_portfolio_observations
 from app.investment_planning.parser import ParsedBudgetTable, parse_budget_bytes
 from app.investment_planning.portfolio import (
     allocations_from_plan_table,
     assemble_portfolio_view,
+    baseline_for_coverage,
     coverage_state,
+    merge_plan_and_actual_allocations,
 )
 from app.investment_planning.source import require_source_identity
 from app.investment_planning.store import InvestmentPlanningMetadataStore
@@ -94,6 +103,7 @@ class InvestmentPlanService:
         drive_bindings: DriveBindingService,
         business_iq: BusinessIqStore,
         markets: MarketIdentityDirectory | None = None,
+        actuals: ActualSpendQuery | None = None,
     ) -> None:
         self._repo = repo
         self._store = store
@@ -102,6 +112,7 @@ class InvestmentPlanService:
         self._drive_bindings = drive_bindings
         self._business_iq = business_iq
         self._markets = markets or IdentityGraphMarketDirectory(InMemoryIdentityGraphStore())
+        self._actuals = actuals
 
     def create_plan(
         self,
@@ -425,61 +436,183 @@ class InvestmentPlanService:
         ]
         plan = max(approved, key=lambda item: item.updated_at) if approved else None
         has_plan = plan is not None and plan.active_source_version_id is not None
-        state = coverage_state(has_plan=has_plan, has_actuals=False)
-        if plan is None or not has_plan:
+        known = self._markets.known_market_ids(
+            tenant_id=tenant.tenant_id, project_id=project_id
+        )
+        if fiscal_year is not None:
+            query_year = fiscal_year
+        elif plan is not None:
+            query_year = plan.fiscal_year
+        else:
+            query_year = None
+        fiscal_start_month = 1 if plan is None else plan.fiscal_start_month
+        expected_currency = None if plan is None else plan.currency
+        actuals_result = query_actuals(
+            self._actuals,
+            tenant_id=tenant.tenant_id,
+            project_id=project_id,
+            fiscal_year=query_year,
+            fiscal_start_month=fiscal_start_month,
+            known_market_ids=known,
+            expected_currency=expected_currency,
+        )
+        has_actuals = actuals_result.source is not None and actuals_result.error_code is None
+        plan_allocations = ()
+        source = None
+        if has_plan and plan is not None:
+            source = self._store.get_source(plan.active_source_version_id or "")
+            mapping = (
+                self._store.mapping_for_source(plan.active_source_version_id)
+                if plan.active_source_version_id
+                else None
+            )
+            if source is None or mapping is None:
+                has_plan = False
+            else:
+                binding = self._live_binding(plan.project_id)
+                token = self._access_token(binding.connection_id)
+                data = self._drive.download_file(access_token=token, file_id=source.drive_file_id)
+                table = parse_budget_bytes(
+                    data=data, mime_type=source.mime_type, file_name=source.file_name
+                )
+                plan_allocations = allocations_from_plan_table(
+                    table=table,
+                    mapping=mapping,
+                    fiscal_year=plan.fiscal_year,
+                    amount_kind=AmountKind.APPROVED,
+                )
+        state = coverage_state(has_plan=has_plan, has_actuals=has_actuals)
+        if state is PortfolioCoverageState.NEITHER:
             return state, None, None
-        source = self._store.get_source(plan.active_source_version_id or "")
-        mapping = (
-            self._store.mapping_for_source(plan.active_source_version_id)
-            if plan.active_source_version_id
-            else None
-        )
-        if source is None or mapping is None:
+        resolved_year = query_year
+        if resolved_year is None and actuals_result.allocations:
+            resolved_year = actuals_result.allocations[0].fiscal_year
+        if resolved_year is None and plan is not None:
+            resolved_year = plan.fiscal_year
+        if resolved_year is None:
             return PortfolioCoverageState.NEITHER, None, None
-        binding = self._live_binding(plan.project_id)
-        token = self._access_token(binding.connection_id)
-        data = self._drive.download_file(access_token=token, file_id=source.drive_file_id)
-        table = parse_budget_bytes(data=data, mime_type=source.mime_type, file_name=source.file_name)
-        allocations = allocations_from_plan_table(
-            table=table,
-            mapping=mapping,
-            fiscal_year=plan.fiscal_year,
-            amount_kind=AmountKind.APPROVED,
+        currency = expected_currency
+        if currency is None and actuals_result.source is not None:
+            currency = actuals_result.source.currency
+        if currency is None and actuals_result.allocations:
+            currency = actuals_result.allocations[0].currency
+        if currency is None:
+            currency = "USD"
+        allocations = merge_plan_and_actual_allocations(
+            plan_allocations,
+            actuals_result.allocations if has_actuals else (),
+            currency=currency,
+            include_remaining=state is PortfolioCoverageState.PLAN_AND_ACTUALS,
         )
+        baseline = baseline_for_coverage(state)
+        if baseline is None:
+            return PortfolioCoverageState.NEITHER, None, None
+        profile_id = None if plan is None else plan.business_profile_snapshot_id
+        if profile_id is None:
+            profile = self._business_iq.get_profile(
+                tenant_id=tenant.tenant_id, workspace_id=project_id
+            )
+            if profile is None:
+                raise PlanningAuthorityError("A pinned Business IQ profile is required.")
+            profile_id = profile.current_snapshot_id
+        stale_actuals = actuals_result.freshness in {
+            ActualsFreshnessState.STALE,
+            ActualsFreshnessState.REVIEW_REQUIRED,
+        } or (
+            actuals_result.source is not None
+            and actuals_result.source.status is ActualSpendSourceStatus.STALE
+        )
+        if actuals_result.source is not None and actuals_result.error_code is None:
+            self._store.put(actuals_result.source)
         now = datetime.now(UTC)
-        snapshot = PortfolioSnapshotRef(
-            snapshot_id=new_snapshot_ref_id(),
-            tenant_id=plan.tenant_id,
-            project_id=plan.project_id,
-            workspace_id=plan.workspace_id,
-            fiscal_year=plan.fiscal_year,
-            baseline_kind=PortfolioBaselineKind.APPROVED_PLAN,
-            investment_plan_id=plan.plan_id,
-            source_version_id=source.source_version_id,
-            business_profile_snapshot_id=plan.business_profile_snapshot_id,
-            fingerprint=metadata_fingerprint(
-                {
-                    "plan_id": plan.plan_id,
-                    "source_version_id": source.source_version_id,
-                    "fiscal_year": plan.fiscal_year,
-                    "baseline_kind": "APPROVED_PLAN",
-                }
-            ),
-            created_at=now,
-            created_by=actor_id,
+        fingerprint = metadata_fingerprint(
+            {
+                "plan_id": None if plan is None else plan.plan_id,
+                "source_version_id": None if source is None else source.source_version_id,
+                "fiscal_year": resolved_year,
+                "baseline_kind": baseline.value,
+                "actuals_source_fingerprint": (
+                    None
+                    if not has_actuals or actuals_result.source is None
+                    else actuals_result.source.source_fingerprint
+                ),
+                "actuals_as_of": (
+                    None
+                    if (
+                        not has_actuals
+                        or actuals_result.source is None
+                        or actuals_result.source.as_of is None
+                    )
+                    else actuals_result.source.as_of.isoformat()
+                ),
+                "period_rule": PERIOD_AGGREGATION_RULE,
+            }
         )
-        stored = self._store.put(snapshot)
-        assert isinstance(stored, PortfolioSnapshotRef)
+        latest = self._store.latest_snapshot(
+            tenant_id=tenant.tenant_id, project_id=project_id, fiscal_year=resolved_year
+        )
+        if latest is not None and latest.fingerprint == fingerprint:
+            stored = latest
+        else:
+            snapshot = PortfolioSnapshotRef(
+                snapshot_id=new_snapshot_ref_id(),
+                tenant_id=tenant.tenant_id,
+                project_id=project_id,
+                workspace_id=project_id,
+                fiscal_year=resolved_year,
+                baseline_kind=baseline,
+                investment_plan_id=None if plan is None else plan.plan_id,
+                source_version_id=None if source is None else source.source_version_id,
+                business_profile_snapshot_id=profile_id,
+                actuals_source_id=(
+                    None
+                    if not has_actuals or actuals_result.source is None
+                    else actuals_result.source.actuals_source_id
+                ),
+                fingerprint=fingerprint,
+                created_at=now,
+                created_by=actor_id,
+            )
+            stored = self._store.put(snapshot)
+            assert isinstance(stored, PortfolioSnapshotRef)
+        coverage = assemble_evidence_coverage(
+            snapshot=stored,
+            actuals_source=actuals_result.source if has_actuals else None,
+            accepted_mmm_result_ref=stored.accepted_mmm_result_ref,
+            mta_result_ref=stored.mta_result_ref,
+            stale_actuals=stale_actuals and has_actuals,
+        )
+        self._store.put(coverage)
+        observations = emit_portfolio_observations(
+            project_id=project_id,
+            allocations=allocations,
+            coverage=coverage,
+            snapshot_fingerprint=stored.fingerprint,
+            coverage_state=state,
+            actuals_error_code=None if has_actuals else actuals_result.error_code,
+            stale_actuals=stale_actuals and has_actuals,
+        )
+        for observation in observations:
+            self._store.put(observation)
         view = assemble_portfolio_view(
             snapshot_id=stored.snapshot_id,
             tenant_id=stored.tenant_id,
             project_id=stored.project_id,
             fiscal_year=stored.fiscal_year,
-            currency=plan.currency,
+            currency=currency,
             baseline_kind=stored.baseline_kind,
             allocations=allocations,
-            coverage=PortfolioEvidenceCoverage(),
-            freshness=PortfolioSourceFreshness(plan_source_as_of=source.created_at),
+            coverage=coverage,
+            freshness=PortfolioSourceFreshness(
+                plan_source_as_of=None if source is None else source.created_at,
+                actuals_as_of=(
+                    None
+                    if not has_actuals or actuals_result.source is None
+                    else actuals_result.source.as_of
+                ),
+            ),
+            coverage_state=state,
+            observations=observations,
         )
         return state, stored, view
 

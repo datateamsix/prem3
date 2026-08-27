@@ -16,3 +16,5 @@ Baselines:
 - `TRANSIENT_SCENARIO`
 
 Planning, actuals, measurement evidence, and optimization share this grain. MTA may attach coverage; it must not replace MMM response curves.
+
+P6-03 adds `actuals_source_id` on `PortfolioSnapshotRef`. Fingerprint includes the actuals source fingerprint and as-of. `ACTUALS_ONLY` uses baseline `ACTUAL_YTD`.

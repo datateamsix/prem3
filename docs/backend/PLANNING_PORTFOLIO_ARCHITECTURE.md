@@ -49,3 +49,9 @@ Canonical Market source commit: `53b606a3b3bc529254816b8376d57c181b44a7ec` (path
 ## Optional Investment Plan
 
 The Investment Plan is Project-scoped and optional. Missing `INVESTMENT_PLAN_READY` does not block Business IQ, Data Foundation, MMM, MTA, or `MODEL_READY`.
+
+## Actuals and observations (P6-03)
+
+Governed actual spend is assembled through `ActualSpendQuery`. See [PORTFOLIO_ACTUALS_INTEGRATION.md](PORTFOLIO_ACTUALS_INTEGRATION.md), [PORTFOLIO_STATE_MODEL.md](PORTFOLIO_STATE_MODEL.md), [PORTFOLIO_EVIDENCE_COVERAGE.md](PORTFOLIO_EVIDENCE_COVERAGE.md), and [PORTFOLIO_OBSERVATIONS.md](PORTFOLIO_OBSERVATIONS.md).
+
+`canonical_media` is not portfolio actual-spend authority. `OPTIMIZATION_READY` is not emitted.

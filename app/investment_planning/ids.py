@@ -33,3 +33,11 @@ def new_validation_receipt_id() -> str:
 
 def new_dimension_mapping_id() -> str:
     return _opaque("pdmap")
+
+
+def new_actuals_source_id() -> str:
+    return _opaque("asrc")
+
+
+def new_observation_id() -> str:
+    return _opaque("pobs")

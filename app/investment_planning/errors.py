@@ -58,3 +58,27 @@ class BudgetFolderDegradedError(PlanningError):
 
 class MixedGrainUnresolvedError(PlanningError):
     code = "MIXED_GRAIN_UNRESOLVED"
+
+
+class ActualsSourceNotConfiguredError(PlanningError):
+    code = "ACTUALS_SOURCE_NOT_CONFIGURED"
+
+
+class ActualsSourceUnavailableError(PlanningError):
+    code = "ACTUALS_SOURCE_UNAVAILABLE"
+
+
+class ActualsSchemaInvalidError(PlanningError):
+    code = "ACTUALS_SCHEMA_INVALID"
+
+
+class PeriodMappingRequiredError(PlanningError):
+    code = "PERIOD_MAPPING_REQUIRED"
+
+
+class CurrencyReviewRequiredError(PlanningError):
+    code = "CURRENCY_REVIEW_REQUIRED"
+
+
+class SourceAuthorityInvalidError(PlanningError):
+    code = "SOURCE_AUTHORITY_INVALID"

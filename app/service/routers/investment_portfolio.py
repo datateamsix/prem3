@@ -8,13 +8,20 @@ from fastapi import APIRouter, Depends, Query
 
 from app.control_plane.models import Workspace
 from app.core.tenancy import require_tenant
-from app.investment_planning.contracts import MoneyAmount, PortfolioAllocationView, PortfolioView
-from app.investment_planning.enums import AmountKind
+from app.investment_planning.contracts import (
+    MoneyAmount,
+    PortfolioAllocationView,
+    PortfolioSnapshotRef,
+    PortfolioView,
+)
+from app.investment_planning.enums import AmountKind, PortfolioCoverageState
 from app.investment_planning.errors import PlanningError
 from app.investment_planning.portfolio import (
     remaining_amount,
     rollup_by_dimension,
     summarize_allocations,
+    variance_amount,
+    variance_percent,
 )
 from app.investment_planning.service import InvestmentPlanService
 from app.service.errors import planning_error
@@ -23,7 +30,11 @@ from app.service.investment_planning_models import (
     MoneyAmountResponse,
     PortfolioAllocationResponse,
     PortfolioDimensionTotalResponse,
+    PortfolioEvidenceCoverageItemResponse,
+    PortfolioEvidenceCoverageResponse,
     PortfolioFreshnessResponse,
+    PortfolioObservationResponse,
+    PortfolioVarianceResponse,
     QuarterlyPortfolioResponse,
 )
 from app.service.routers.investment_planning import (
@@ -69,18 +80,47 @@ def _portfolio_response(
     *,
     project_id: str,
     coverage_state: str,
-    snapshot_id: str | None,
+    snapshot: PortfolioSnapshotRef | None,
     view: PortfolioView | None,
 ) -> InvestmentPortfolioResponse:
+    snapshot_id = None if snapshot is None else snapshot.snapshot_id
+    actuals_source_id = None if snapshot is None else snapshot.actuals_source_id
     if view is None:
         return InvestmentPortfolioResponse(
             coverage_state=coverage_state,
             snapshot_id=snapshot_id,
             project_id=project_id,
             workspace_id=project_id,
+            actuals_source_id=actuals_source_id,
         )
     amount_kind = view.summary.totals[0].kind if view.summary.totals else AmountKind.APPROVED
     remaining = remaining_amount(view.allocations, currency=view.currency)
+    if coverage_state == PortfolioCoverageState.ACTUALS_ONLY.value:
+        remaining = remaining.model_copy(update={"missing": True, "value": None})
+    variance = variance_amount(view.allocations, currency=view.currency)
+    approved_total = next(
+        (
+            item
+            for item in view.summary.totals
+            if item.kind is AmountKind.APPROVED and not item.missing
+        ),
+        None,
+    )
+    actual_total = next(
+        (
+            item
+            for item in view.summary.totals
+            if item.kind is AmountKind.ACTUAL and not item.missing
+        ),
+        None,
+    )
+    percent = variance_percent(
+        None if approved_total is None else approved_total.value,
+        None if actual_total is None else actual_total.value,
+    )
+    if coverage_state != PortfolioCoverageState.PLAN_AND_ACTUALS.value:
+        variance = variance.model_copy(update={"missing": True, "value": None})
+        percent = None
     channel_rows = rollup_by_dimension(
         view.allocations, currency=view.currency, kind=amount_kind, by="channel"
     )
@@ -95,8 +135,19 @@ def _portfolio_response(
         fiscal_year=view.fiscal_year,
         currency=view.currency,
         baseline_kind=view.baseline_kind.value,
+        actuals_source_id=actuals_source_id,
         summary=tuple(_amount_response(amount) for amount in view.summary.totals),
         remaining=_amount_response(remaining),
+        variance=PortfolioVarianceResponse(
+            currency=view.currency,
+            value=(
+                None
+                if variance.missing or variance.value is None
+                else format(variance.value, "f")
+            ),
+            missing=variance.missing,
+            percent=None if percent is None else format(percent, "f"),
+        ),
         allocations=tuple(_allocation_response(row) for row in view.allocations),
         channel_allocation=tuple(
             PortfolioDimensionTotalResponse(
@@ -126,6 +177,43 @@ def _portfolio_response(
             )
             for bucket in view.quarterly
         ),
+        coverage=PortfolioEvidenceCoverageResponse(
+            scope=view.coverage.scope.value,
+            status=view.coverage.status.value,
+            labels=tuple(label.value for label in view.coverage.labels),
+            items=tuple(
+                PortfolioEvidenceCoverageItemResponse(
+                    category=item.category.value,
+                    scope=item.scope.value,
+                    status=item.status.value,
+                    evidence_ref=item.evidence_ref,
+                    market_id=item.market_id,
+                    channel_id=item.channel_id,
+                    fiscal_year=item.fiscal_year,
+                    quarter=item.quarter,
+                    causal=item.causal,
+                )
+                for item in view.coverage.items
+            ),
+            accepted_mmm=view.coverage.accepted_mmm,
+            mta_available=view.coverage.mta_available,
+            exposure_integrity_available=view.coverage.exposure_integrity_available,
+            stale=view.coverage.stale,
+        ),
+        observations=tuple(
+            PortfolioObservationResponse(
+                observation_id=item.observation_id,
+                observation_type=item.observation_type.value,
+                severity=item.severity.value,
+                market_id=item.subject_market_id,
+                channel_id=item.subject_channel_id,
+                fiscal_year=item.fiscal_year,
+                quarter=item.quarter,
+                message_key=item.message_key,
+                snapshot_fingerprint=item.snapshot_fingerprint,
+            )
+            for item in view.observations
+        ),
         freshness=PortfolioFreshnessResponse(
             plan_source_as_of=view.freshness.plan_source_as_of,
             actuals_as_of=view.freshness.actuals_as_of,
@@ -150,7 +238,7 @@ async def get_portfolio(
     return _portfolio_response(
         project_id=workspace.workspace_id,
         coverage_state=state.value,
-        snapshot_id=None if snapshot is None else snapshot.snapshot_id,
+        snapshot=snapshot,
         view=view,
     )
 

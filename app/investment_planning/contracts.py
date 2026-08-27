@@ -15,15 +15,22 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.core.contracts import utc_now
 from app.core.identifiers import validate_resource_identifier
 from app.investment_planning.enums import (
+    ActualSpendAuthority,
+    ActualSpendSourceKind,
+    ActualSpendSourceStatus,
     AmountKind,
     BudgetScope,
     BudgetSourceGrain,
     EvidenceCoverageLabel,
+    EvidenceCoverageScope,
+    EvidenceCoverageStatus,
     ExposureGuardrailRole,
     InvestmentPlanReadyStatus,
     InvestmentPlanStatus,
     MappingMethod,
+    ObservationSeverity,
     PortfolioBaselineKind,
+    PortfolioObservationType,
     SensitiveDataClass,
 )
 
@@ -174,6 +181,7 @@ class PortfolioSnapshotRef(FrozenModel):
     measurement_cycle_id: str | None = None
     accepted_mmm_result_ref: str | None = None
     mta_result_ref: str | None = None
+    actuals_source_id: str | None = None
     drive_artifact_file_id: str | None = None
     fingerprint: str
     created_at: datetime
@@ -196,9 +204,103 @@ class ExposureGuardrailRef(FrozenModel):
     methodologically_supported: bool
 
 
+class ActualSpendSourceRef(FrozenModel):
+    """Firestore metadata for a governed actual-spend source. No spend rows."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    actuals_source_id: str
+    tenant_id: str
+    project_id: str
+    workspace_id: str
+    source_kind: ActualSpendSourceKind
+    source_ref: str
+    bq_project_id: str | None = None
+    bq_dataset_id: str | None = None
+    bq_table_or_view_id: str | None = None
+    coverage_start: datetime | None = None
+    coverage_end: datetime | None = None
+    as_of: datetime | None = None
+    currency: str | None = None
+    timezone: str | None = None
+    market_mapping_version: str | None = None
+    channel_registry_version: int | None = None
+    authority: ActualSpendAuthority
+    status: ActualSpendSourceStatus
+    source_fingerprint: str
+    created_at: datetime
+    updated_at: datetime
+
+    @model_validator(mode="after")
+    def _project_is_workspace_alias(self) -> ActualSpendSourceRef:
+        if self.project_id != self.workspace_id:
+            raise ValueError("project_id must equal workspace_id (Project/Workspace alias).")
+        return self
+
+    @model_validator(mode="after")
+    def _ids(self) -> ActualSpendSourceRef:
+        validate_resource_identifier(self.actuals_source_id, field="actuals_source_id")
+        validate_resource_identifier(self.tenant_id, field="tenant_id")
+        validate_resource_identifier(self.project_id, field="project_id")
+        return self
+
+    @model_validator(mode="after")
+    def _test_only_is_synthetic(self) -> ActualSpendSourceRef:
+        if self.authority is ActualSpendAuthority.TEST_ONLY:
+            if self.source_kind is not ActualSpendSourceKind.SYNTHETIC:
+                raise ValueError("TEST_ONLY actuals must use source_kind=SYNTHETIC.")
+        if (
+            self.source_kind is ActualSpendSourceKind.SYNTHETIC
+            and self.authority is not ActualSpendAuthority.TEST_ONLY
+        ):
+            raise ValueError("SYNTHETIC actuals cannot be labeled customer-governed.")
+        return self
+
+
+class ActualSpendAllocation(FrozenModel):
+    """Transient Decimal actual-spend row. Never persisted to Firestore."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    fiscal_year: int
+    quarter: Literal[1, 2, 3, 4]
+    market_id: str
+    channel_id: str
+    amount: Decimal | None
+    currency: str
+    source_ref: str
+    as_of: datetime | None = None
+    missing: bool = False
+
+    @model_validator(mode="after")
+    def _missing_not_zero(self) -> ActualSpendAllocation:
+        if self.missing and self.amount is not None:
+            raise ValueError("MISSING actuals must not carry a numeric value.")
+        if not self.missing and self.amount is None:
+            raise ValueError("Non-missing actuals require a Decimal value.")
+        return self
+
+
+class PortfolioEvidenceCoverageItem(FrozenModel):
+    """One evidence category at an explicit scope. Metadata only."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    category: EvidenceCoverageLabel
+    scope: EvidenceCoverageScope
+    status: EvidenceCoverageStatus
+    evidence_ref: str | None = None
+    market_id: str | None = None
+    channel_id: str | None = None
+    fiscal_year: int | None = None
+    quarter: Literal[1, 2, 3, 4] | None = None
+    causal: bool = False
+
+
 class PortfolioEvidenceCoverage(FrozenModel):
     sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    snapshot_id: str | None = None
+    scope: EvidenceCoverageScope = EvidenceCoverageScope.PROJECT
+    status: EvidenceCoverageStatus = EvidenceCoverageStatus.UNKNOWN
     labels: tuple[EvidenceCoverageLabel, ...] = ()
+    items: tuple[PortfolioEvidenceCoverageItem, ...] = ()
     accepted_mmm: bool = False
     mta_available: bool = False
     exposure_integrity_available: bool = False
@@ -213,14 +315,26 @@ class PortfolioSourceFreshness(FrozenModel):
 
 
 class PortfolioObservation(FrozenModel):
-    """Deterministic observation code. Gemini may explain later; it does not own truth."""
+    """Deterministic observation metadata. No amount arrays."""
 
     sensitive_data_class: ClassVar[SensitiveDataClass] = _META
-    code: str
+    observation_id: str
+    project_id: str | None = None
+    observation_type: PortfolioObservationType
+    severity: ObservationSeverity
     subject_market_id: str | None = None
     subject_channel_id: str | None = None
     fiscal_year: int | None = None
     quarter: int | None = None
+    message_key: str
+    snapshot_fingerprint: str | None = None
+    code: str = ""
+
+    @model_validator(mode="after")
+    def _code_matches_type(self) -> PortfolioObservation:
+        if not self.code:
+            object.__setattr__(self, "code", self.observation_type.value)
+        return self
 
 
 class MoneyAmount(FrozenModel):
@@ -298,6 +412,8 @@ METADATA_MODELS: tuple[type[FrozenModel], ...] = (
     PortfolioDimensionMapping,
     PortfolioSnapshotRef,
     ExposureGuardrailRef,
+    ActualSpendSourceRef,
+    PortfolioEvidenceCoverageItem,
     PortfolioEvidenceCoverage,
     PortfolioSourceFreshness,
     PortfolioObservation,
@@ -305,6 +421,7 @@ METADATA_MODELS: tuple[type[FrozenModel], ...] = (
 
 AMOUNT_BEARING_MODELS: tuple[type[FrozenModel], ...] = (
     MoneyAmount,
+    ActualSpendAllocation,
     PortfolioAllocationView,
     QuarterlyPortfolioView,
     PortfolioSummary,

@@ -145,6 +145,48 @@ class PortfolioFreshnessResponse(ApiModel):
     measurement_as_of: datetime | None = None
 
 
+class PortfolioEvidenceCoverageItemResponse(ApiModel):
+    category: str
+    scope: str
+    status: str
+    evidence_ref: str | None = None
+    market_id: str | None = None
+    channel_id: str | None = None
+    fiscal_year: int | None = None
+    quarter: int | None = None
+    causal: bool = False
+
+
+class PortfolioEvidenceCoverageResponse(ApiModel):
+    scope: str
+    status: str
+    labels: tuple[str, ...] = ()
+    items: tuple[PortfolioEvidenceCoverageItemResponse, ...] = ()
+    accepted_mmm: bool = False
+    mta_available: bool = False
+    exposure_integrity_available: bool = False
+    stale: bool = False
+
+
+class PortfolioObservationResponse(ApiModel):
+    observation_id: str
+    observation_type: str
+    severity: str
+    market_id: str | None = None
+    channel_id: str | None = None
+    fiscal_year: int | None = None
+    quarter: int | None = None
+    message_key: str
+    snapshot_fingerprint: str | None = None
+
+
+class PortfolioVarianceResponse(ApiModel):
+    currency: str
+    value: str | None = None
+    missing: bool = True
+    percent: str | None = None
+
+
 class InvestmentPortfolioResponse(ApiModel):
     coverage_state: str
     snapshot_id: str | None = None
@@ -153,10 +195,14 @@ class InvestmentPortfolioResponse(ApiModel):
     fiscal_year: int | None = None
     currency: str | None = None
     baseline_kind: str | None = None
+    actuals_source_id: str | None = None
     summary: tuple[MoneyAmountResponse, ...] = ()
     remaining: MoneyAmountResponse | None = None
+    variance: PortfolioVarianceResponse | None = None
     allocations: tuple[PortfolioAllocationResponse, ...] = ()
     channel_allocation: tuple[PortfolioDimensionTotalResponse, ...] = ()
     market_allocation: tuple[PortfolioDimensionTotalResponse, ...] = ()
     quarterly: tuple[QuarterlyPortfolioResponse, ...] = ()
+    coverage: PortfolioEvidenceCoverageResponse | None = None
+    observations: tuple[PortfolioObservationResponse, ...] = ()
     freshness: PortfolioFreshnessResponse | None = None
