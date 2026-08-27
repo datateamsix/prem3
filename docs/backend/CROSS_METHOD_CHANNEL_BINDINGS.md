@@ -33,6 +33,10 @@ Historical snapshots stay immutable without forced migration.
 
 `PlanningChannelAllocation` stores `channel_id` + registry version. No optimizer in M5-01A.
 
+`PlanningChannelAllocation.amount: float | None` is a **pre-P6 compatibility field**. It is not Planning value authority. P6 Investment Plan / Portfolio amounts are Drive-owned `Decimal` values on transient `PortfolioView`. P6-00 does not modify this class.
+
+Canonical Planning join remains Channel Registry `channel_id`. See `docs/backend/P6_SOURCE_AUTHORITY.md`.
+
 ## Join rule
 
 ```python
