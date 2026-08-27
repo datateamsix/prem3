@@ -146,6 +146,54 @@ P6-04 does not invoke Meridian `BudgetOptimizer`, does not create recommended al
 
 `OptimizationInputContract` stores metadata and the resolution path `APPROVED_DRIVE_PLAN_TRANSIENT_VIEW`. P6-05 re-resolves total budget from Drive plan → transient `PortfolioView` → selected fiscal period. Firestore stores no budget arrays, Decimal amounts, or recommended allocations.
 
+## ADR-P6-037 — OptimizationRun is not a P6-00 execution plan
+
+P6-05 introduces `OptimizationRun` (`orun_`) bound to a non-stale `OptimizationReadinessReceipt` before any proposal exists. `OptimizationExecutionPlan.proposal_id` is not the run record.
+
+## ADR-P6-038 — Native Meridian BudgetOptimizer is the only V1 solver
+
+Fixed-budget execution calls `BudgetOptimizer.optimize(use_posterior=True, fixed_budget=True, budget=<approved-plan float>)`. Flexible budget and CVaR stay unimplemented. No custom PreM3 solver is the primary path.
+
+## ADR-P6-039 — Native defaults are pinned and fingerprinted
+
+P6-05 pins `spend_constraint_lower=0.3`, `spend_constraint_upper=0.3`, `gtol=0.0001`. These are not P6-07 Planning min/max objects. Historical-spend default `budget` is never used.
+
+## ADR-P6-040 — Dispatch revalidation is mandatory
+
+Fingerprints for portfolio, mapping, input contract, and model consumption are re-checked at dispatch. Mismatch is `OPTIMIZATION_READINESS_STALE`. Planning rebinds the consumption projection with `bind_projection_to_accepted_model`. MMM artifacts are not mutated.
+
+## ADR-P6-041 — Approved Drive plan is the only fixed-budget authority
+
+Budget is re-resolved via `APPROVED_DRIVE_PLAN_TRANSIENT_VIEW`. Actuals, MTA, Firestore, and client arrays cannot supply the fixed budget. Unapproved plans fail closed.
+
+## ADR-P6-042 — Decimal reconcile owns the budget invariant
+
+Meridian floats are quantized with Planning `ROUND_HALF_EVEN` money quantum. Residual cents go to the largest recommended optimizable line. After reconcile `|sum(rec) - fixed| == 0`. Pre-round drift beyond `max(0.01, gtol * budget)` is `OPTIMIZER_BUDGET_INVARIANT_FAILED`.
+
+## ADR-P6-043 — Results are MODEL_RECOMMENDED, never APPROVED_PLAN
+
+Recommended amounts are labeled `MODEL_RECOMMENDED`. Optional outcome fields from `OptimizationResults` are `MODEL_ESTIMATE`. They are not an approved Investment Plan.
+
+## ADR-P6-044 — Firestore stores run metadata only
+
+`OptimizationRun` and `OptimizationResultRef` are control-plane metadata. Amount arrays live on an immutable GCS artifact `optimization_result_{run_id}` and on the private result HTTP payload.
+
+## ADR-P6-045 — COMPLETE requires artifact read-back
+
+A run is `COMPLETE` only after the GCS object exists, schema and fingerprint match, the key set matches mapped variables, and the Decimal total equals the fixed budget. Failed read-back never completes.
+
+## ADR-P6-046 — Human POST is execution authorization, not proposal approval
+
+Create requires `Feature.BUDGET_OPTIMIZATION` and `OPTIMIZATION_READY`. `require_human_approver` authorizes execution. That is not P6-06 proposal approval and does not write Drive.
+
+## ADR-P6-047 — Optimizer worker is a sibling of the fit worker
+
+`app/tools/meridian_optimizer_worker.py` reconstructs from `optimization_run_id` only. `execute_approved_fit` is unchanged. A second Cloud Run Job name is a `SHARED_MERIDIAN_WORKER_CHANGE_REQUEST`.
+
+## ADR-P6-048 — HTTP lives under investment-portfolio
+
+Create/list/get run and get result are registered under `/v1/projects/{project_id}/investment-portfolio/optimizations`. The unused P6-00 `/investment-optimizations` namespace stays unregistered. Result responses are `Cache-Control: private, no-store`.
+
 ## Additional freeze notes
 
 - `PlanningChannelAllocation.amount` is pre-P6 compatibility, not value authority (see source-authority doc).

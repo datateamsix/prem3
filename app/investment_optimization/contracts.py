@@ -18,14 +18,21 @@ from app.investment_optimization.enums import (
     ModelGeoSemantics,
     ModelVariableOptimizationEligibility,
     ModelVariableRole,
+    OptimizationAmountKind,
     OptimizationEvidenceCoverageStatus,
+    OptimizationExecutionPhase,
+    OptimizationFailureClass,
     OptimizationInputStatus,
     OptimizationIssueCode,
     OptimizationObjectiveKind,
     OptimizationProposalStatus,
     OptimizationReadinessCheckCode,
     OptimizationReadinessStatus,
+    OptimizationRetrySemantics,
+    OptimizationRunKind,
+    OptimizationRunStatus,
     OptimizationSolverKind,
+    OptimizerConstraintStatus,
     PortfolioModelMappingStatus,
     SpendSemantics,
     UnmappedVariableTreatment,
@@ -375,6 +382,164 @@ class OptimizationReadinessReceipt(FrozenModel):
         return self
 
 
+def _reject_amount_keys(dumped: dict[str, object], *, owner: str) -> None:
+    for key in (
+        "amounts",
+        "allocations",
+        "total_budget",
+        "recommended_allocations",
+        "recommended_totals",
+        "budget_vector",
+        "recommended_rows",
+        "baseline_amount",
+        "recommended_amount",
+        "pct_of_spend",
+        "fixed_budget",
+        "value",
+    ):
+        if key in dumped:
+            raise ValueError(f"{key} cannot appear on {owner}.")
+
+
+class OptimizationRun(FrozenModel):
+    """Durable optimizer execution metadata. Never stores budget arrays."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    optimization_run_id: str
+    tenant_id: str
+    project_id: str
+    run_kind: OptimizationRunKind = OptimizationRunKind.FIXED_BUDGET
+    status: OptimizationRunStatus
+    phase: OptimizationExecutionPhase | None = None
+    readiness_receipt_id: str
+    optimization_input_id: str | None = None
+    mapping_id: str | None = None
+    model_version_id: str | None = None
+    portfolio_snapshot_id: str | None = None
+    readiness_fingerprint: str | None = None
+    input_contract_fingerprint: str | None = None
+    mapping_fingerprint: str | None = None
+    model_fingerprint: str | None = None
+    plan_version_fingerprint: str | None = None
+    runtime_version: str
+    optimizer_defaults_fingerprint: str
+    worker_ref: str | None = None
+    artifact_object_name: str | None = None
+    artifact_generation: str | None = None
+    result_id: str | None = None
+    result_fingerprint: str | None = None
+    failure_class: OptimizationFailureClass | None = None
+    failure_stage: OptimizationExecutionPhase | None = None
+    retry_semantics: OptimizationRetrySemantics | None = None
+    execution_key: str
+    idempotency_key: str | None = None
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> OptimizationRun:
+        _reject_amount_keys(self.model_dump(), owner="OptimizationRun")
+        return self
+
+
+class OptimizationResultRef(FrozenModel):
+    """Durable artifact pointer. Amounts live only on the GCS object."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    result_id: str
+    optimization_run_id: str
+    tenant_id: str
+    project_id: str
+    artifact_bucket: str
+    artifact_object_name: str
+    artifact_generation: str | None = None
+    result_fingerprint: str
+    schema_version: str
+    runtime_version: str
+    is_current: bool = False
+    created_at: datetime
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> OptimizationResultRef:
+        _reject_amount_keys(self.model_dump(), owner="OptimizationResultRef")
+        return self
+
+
+class OptimizerBudgetLine(FrozenModel):
+    """In-memory baseline line. Never persisted."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    model_variable_id: str
+    market_id: str
+    channel_id: str
+    baseline: Decimal
+    eligibility: ModelVariableOptimizationEligibility
+
+
+class OptimizerBudgetVector(FrozenModel):
+    """Transient approved-plan spend vector for native Meridian."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    currency: str
+    fixed_budget: Decimal
+    lines: tuple[OptimizerBudgetLine, ...] = ()
+
+
+class OptimizationOutcomeEstimate(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    name: str
+    value: str
+    amount_kind: OptimizationAmountKind = OptimizationAmountKind.MODEL_ESTIMATE
+
+
+class OptimizationResultRow(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    model_variable_id: str
+    market_id: str
+    channel_id: str
+    eligibility: ModelVariableOptimizationEligibility
+    baseline: Decimal
+    recommended: Decimal
+    absolute_change: Decimal
+    percent_change: Decimal | None = None
+    percent_change_unavailable: bool = False
+    constraint_status: OptimizerConstraintStatus = OptimizerConstraintStatus.WITHIN_BOUNDS
+    amount_kind: OptimizationAmountKind = OptimizationAmountKind.MODEL_RECOMMENDED
+    outcome_estimates: tuple[OptimizationOutcomeEstimate, ...] = ()
+
+
+class OptimizationResultPayload(FrozenModel):
+    """Transient amount-bearing result. Served privately; not a Firestore document."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    optimization_run_id: str
+    result_id: str
+    run_kind: OptimizationRunKind = OptimizationRunKind.FIXED_BUDGET
+    amount_kind: OptimizationAmountKind = OptimizationAmountKind.MODEL_RECOMMENDED
+    currency: str
+    fixed_budget: Decimal
+    recommended_total: Decimal
+    rows: tuple[OptimizationResultRow, ...] = ()
+    fingerprint: str
+    schema_version: str
+
+
+class NativeOptimizerChannelResult(FrozenModel):
+    """Raw Meridian channel output before Decimal reconcile."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    model_variable_id: str
+    recommended_spend: float
+    outcome_estimates: tuple[OptimizationOutcomeEstimate, ...] = ()
+
+
+class NativeOptimizerRawResult(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    channels: tuple[NativeOptimizerChannelResult, ...] = ()
+
+
 OPTIMIZATION_METADATA_MODELS: tuple[type[FrozenModel], ...] = (
     OptimizationProposalRef,
     OptimizationExecutionPlan,
@@ -393,12 +558,21 @@ OPTIMIZATION_METADATA_MODELS: tuple[type[FrozenModel], ...] = (
     OptimizationEvidenceCoverage,
     OptimizationInputContract,
     OptimizationReadinessReceipt,
+    OptimizationRun,
+    OptimizationResultRef,
 )
 
 OPTIMIZATION_AMOUNT_BEARING_MODELS: tuple[type[FrozenModel], ...] = (
     ConstraintSetPayload,
     ScenarioAssumptionPayload,
     OptimizationExecutionPayload,
+    OptimizerBudgetLine,
+    OptimizerBudgetVector,
+    OptimizationOutcomeEstimate,
+    OptimizationResultRow,
+    OptimizationResultPayload,
+    NativeOptimizerChannelResult,
+    NativeOptimizerRawResult,
 )
 
 

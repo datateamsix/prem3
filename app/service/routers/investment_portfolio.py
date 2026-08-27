@@ -19,6 +19,7 @@ from app.investment_optimization.enums import (
     UnmappedVariableTreatment,
 )
 from app.investment_optimization.mapping import reject_forbidden_authority
+from app.investment_optimization.run_service import OptimizationRunService
 from app.investment_optimization.service import OptimizationReadinessService
 from app.investment_planning.contracts import (
     MoneyAmount,
@@ -38,6 +39,7 @@ from app.investment_planning.portfolio import (
 from app.investment_planning.service import InvestmentPlanService
 from app.service.errors import planning_error
 from app.service.investment_planning_models import (
+    CreateOptimizationRunRequest,
     CreatePortfolioModelMappingRequest,
     EvaluateOptimizationReadinessRequest,
     InvestmentPortfolioResponse,
@@ -47,6 +49,10 @@ from app.service.investment_planning_models import (
     OptimizationIssueResponse,
     OptimizationReadinessCheckResponse,
     OptimizationReadinessResponse,
+    OptimizationResultResponse,
+    OptimizationResultRowResponse,
+    OptimizationRunListResponse,
+    OptimizationRunResponse,
     PortfolioAllocationResponse,
     PortfolioDimensionTotalResponse,
     PortfolioEvidenceCoverageItemResponse,
@@ -289,6 +295,13 @@ def get_optimization_readiness_service(request: Request) -> OptimizationReadines
     return service
 
 
+def get_optimization_run_service(request: Request) -> OptimizationRunService:
+    service = getattr(request.app.state, "optimization_runs", None)
+    if service is None:
+        raise RuntimeError("Optimization execution service is not configured.")
+    return service
+
+
 def _overrides(items: tuple[MappingOverrideRequest, ...]) -> tuple[MappingOverride, ...]:
     parsed: list[MappingOverride] = []
     for item in items:
@@ -464,6 +477,116 @@ async def evaluate_optimization_readiness(
     return _readiness_response(receipt)
 
 
+def _run_response(run) -> OptimizationRunResponse:
+    return OptimizationRunResponse(
+        optimization_run_id=run.optimization_run_id,
+        project_id=run.project_id,
+        run_kind=run.run_kind.value,
+        status=run.status.value,
+        phase=None if run.phase is None else run.phase.value,
+        readiness_receipt_id=run.readiness_receipt_id,
+        result_id=run.result_id,
+        failure_class=None if run.failure_class is None else run.failure_class.value,
+        retry_semantics=None if run.retry_semantics is None else run.retry_semantics.value,
+        runtime_version=run.runtime_version,
+        created_at=run.created_at,
+        updated_at=run.updated_at,
+        completed_at=run.completed_at,
+    )
+
+
+def _result_response(payload) -> OptimizationResultResponse:
+    return OptimizationResultResponse(
+        optimization_run_id=payload.optimization_run_id,
+        result_id=payload.result_id,
+        run_kind=payload.run_kind.value,
+        amount_kind=payload.amount_kind.value,
+        currency=payload.currency,
+        fixed_budget=format(payload.fixed_budget, "f"),
+        recommended_total=format(payload.recommended_total, "f"),
+        rows=tuple(
+            OptimizationResultRowResponse(
+                model_variable_id=row.model_variable_id,
+                market_id=row.market_id,
+                channel_id=row.channel_id,
+                eligibility=row.eligibility.value,
+                baseline=format(row.baseline, "f"),
+                recommended=format(row.recommended, "f"),
+                absolute_change=format(row.absolute_change, "f"),
+                percent_change=(
+                    None if row.percent_change is None else format(row.percent_change, "f")
+                ),
+                percent_change_unavailable=row.percent_change_unavailable,
+                constraint_status=row.constraint_status.value,
+                amount_kind=row.amount_kind.value,
+                outcome_estimates=tuple(
+                    {"name": item.name, "value": item.value, "amount_kind": item.amount_kind.value}
+                    for item in row.outcome_estimates
+                ),
+            )
+            for row in payload.rows
+        ),
+        fingerprint=payload.fingerprint,
+        schema_version=payload.schema_version,
+    )
+
+
+async def create_optimization_run(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[OptimizationRunService, Depends(get_optimization_run_service)],
+    body: CreateOptimizationRunRequest,
+) -> OptimizationRunResponse:
+    try:
+        run = service.create_run(
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+            readiness_receipt_id=body.readiness_receipt_id,
+            idempotency_key=body.idempotency_key,
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _run_response(run)
+
+
+async def list_optimization_runs(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[OptimizationRunService, Depends(get_optimization_run_service)],
+) -> OptimizationRunListResponse:
+    try:
+        items = service.list_runs(project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return OptimizationRunListResponse(items=tuple(_run_response(item) for item in items))
+
+
+async def get_optimization_run(
+    optimization_run_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[OptimizationRunService, Depends(get_optimization_run_service)],
+) -> OptimizationRunResponse:
+    try:
+        run = service.get_run(
+            optimization_run_id=optimization_run_id, project_id=workspace.workspace_id
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _run_response(run)
+
+
+async def get_optimization_result(
+    optimization_run_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[OptimizationRunService, Depends(get_optimization_run_service)],
+) -> OptimizationResultResponse:
+    try:
+        payload = service.get_result(
+            optimization_run_id=optimization_run_id, project_id=workspace.workspace_id
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _result_response(payload)
+
+
 canonical_portfolio_router.add_api_route(
     "/model-mapping",
     create_model_mapping,
@@ -498,6 +621,35 @@ canonical_portfolio_router.add_api_route(
     methods=["POST"],
     operation_id="evaluateOptimizationReadiness",
     response_model=OptimizationReadinessResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/optimizations",
+    create_optimization_run,
+    methods=["POST"],
+    status_code=202,
+    operation_id="createOptimizationRun",
+    response_model=OptimizationRunResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/optimizations",
+    list_optimization_runs,
+    methods=["GET"],
+    operation_id="listOptimizationRuns",
+    response_model=OptimizationRunListResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/optimizations/{optimization_run_id}",
+    get_optimization_run,
+    methods=["GET"],
+    operation_id="getOptimizationRun",
+    response_model=OptimizationRunResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/optimizations/{optimization_run_id}/result",
+    get_optimization_result,
+    methods=["GET"],
+    operation_id="getOptimizationResult",
+    response_model=OptimizationResultResponse,
 )
 workspace_alias_portfolio_router.add_api_route(
     "/model-mapping",
@@ -537,5 +689,38 @@ workspace_alias_portfolio_router.add_api_route(
     methods=["POST"],
     operation_id="evaluateOptimizationReadinessWorkspaceAlias",
     response_model=OptimizationReadinessResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/optimizations",
+    create_optimization_run,
+    methods=["POST"],
+    status_code=202,
+    operation_id="createOptimizationRunWorkspaceAlias",
+    response_model=OptimizationRunResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/optimizations",
+    list_optimization_runs,
+    methods=["GET"],
+    operation_id="listOptimizationRunsWorkspaceAlias",
+    response_model=OptimizationRunListResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/optimizations/{optimization_run_id}",
+    get_optimization_run,
+    methods=["GET"],
+    operation_id="getOptimizationRunWorkspaceAlias",
+    response_model=OptimizationRunResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/optimizations/{optimization_run_id}/result",
+    get_optimization_result,
+    methods=["GET"],
+    operation_id="getOptimizationResultWorkspaceAlias",
+    response_model=OptimizationResultResponse,
     include_in_schema=False,
 )

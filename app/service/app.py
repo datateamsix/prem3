@@ -37,8 +37,10 @@ from app.integrations.google.vault import (
     InMemoryCredentialVault,
 )
 from app.investment_optimization.accepted_model import ModelingRepositoryDirectory
+from app.investment_optimization.adapter import NativeMeridianFixedBudgetAdapter
 from app.investment_optimization.consumption import MemoryModelConsumptionSource
 from app.investment_optimization.firestore import FirestoreOptimizationMetadataStore
+from app.investment_optimization.run_service import OptimizationRunService
 from app.investment_optimization.service import OptimizationReadinessService
 from app.investment_optimization.store import InMemoryOptimizationMetadataStore
 from app.investment_planning.actuals import DataFoundationActualSpendAdapter
@@ -329,6 +331,18 @@ def create_app(
         planning=app.state.investment_planning,
         models=ModelingRepositoryDirectory(modeling.repo),
         consumption=app.state.optimization_consumption,
+    )
+    upload_store = getattr(app.state.upload_service, "_store", None)
+    app.state.optimization_runs = OptimizationRunService(
+        repo=repo,
+        store=optimization_store,
+        planning=app.state.investment_planning,
+        models=ModelingRepositoryDirectory(modeling.repo),
+        consumption=app.state.optimization_consumption,
+        object_store=upload_store or FakeObjectStore(),
+        artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
+        optimizer=NativeMeridianFixedBudgetAdapter(),
+        execute_inline=not uses_cloud_runtime(),
     )
     app.state.mta_service = MTAService()
     app.state.mmm_service_identity_verifier = _mmm_service_identity_verifier(cfg)

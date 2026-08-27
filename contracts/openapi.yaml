@@ -996,6 +996,21 @@ components:
       - model_window_end
       title: CreateModelDesignRequest
       type: object
+    CreateOptimizationRunRequest:
+      additionalProperties: false
+      properties:
+        idempotency_key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency Key
+        readiness_receipt_id:
+          title: Readiness Receipt Id
+          type: string
+      required:
+      - readiness_receipt_id
+      title: CreateOptimizationRunRequest
+      type: object
     CreatePortfolioModelMappingRequest:
       additionalProperties: false
       properties:
@@ -3566,6 +3581,191 @@ components:
       - fingerprint
       - created_at
       title: OptimizationReadinessResponse
+      type: object
+    OptimizationResultResponse:
+      additionalProperties: false
+      properties:
+        amount_kind:
+          title: Amount Kind
+          type: string
+        currency:
+          title: Currency
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        fixed_budget:
+          title: Fixed Budget
+          type: string
+        optimization_run_id:
+          title: Optimization Run Id
+          type: string
+        recommended_total:
+          title: Recommended Total
+          type: string
+        result_id:
+          title: Result Id
+          type: string
+        rows:
+          default: []
+          items:
+            $ref: '#/components/schemas/OptimizationResultRowResponse'
+          title: Rows
+          type: array
+        run_kind:
+          title: Run Kind
+          type: string
+        schema_version:
+          title: Schema Version
+          type: string
+      required:
+      - optimization_run_id
+      - result_id
+      - run_kind
+      - amount_kind
+      - currency
+      - fixed_budget
+      - recommended_total
+      - fingerprint
+      - schema_version
+      title: OptimizationResultResponse
+      type: object
+    OptimizationResultRowResponse:
+      additionalProperties: false
+      properties:
+        absolute_change:
+          title: Absolute Change
+          type: string
+        amount_kind:
+          title: Amount Kind
+          type: string
+        baseline:
+          title: Baseline
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        constraint_status:
+          title: Constraint Status
+          type: string
+        eligibility:
+          title: Eligibility
+          type: string
+        market_id:
+          title: Market Id
+          type: string
+        model_variable_id:
+          title: Model Variable Id
+          type: string
+        outcome_estimates:
+          default: []
+          items:
+            additionalProperties:
+              type: string
+            type: object
+          title: Outcome Estimates
+          type: array
+        percent_change:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Percent Change
+        percent_change_unavailable:
+          default: false
+          title: Percent Change Unavailable
+          type: boolean
+        recommended:
+          title: Recommended
+          type: string
+      required:
+      - model_variable_id
+      - market_id
+      - channel_id
+      - eligibility
+      - baseline
+      - recommended
+      - absolute_change
+      - constraint_status
+      - amount_kind
+      title: OptimizationResultRowResponse
+      type: object
+    OptimizationRunListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/OptimizationRunResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: OptimizationRunListResponse
+      type: object
+    OptimizationRunResponse:
+      additionalProperties: false
+      properties:
+        completed_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Completed At
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        failure_class:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Class
+        optimization_run_id:
+          title: Optimization Run Id
+          type: string
+        phase:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phase
+        project_id:
+          title: Project Id
+          type: string
+        readiness_receipt_id:
+          title: Readiness Receipt Id
+          type: string
+        result_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Id
+        retry_semantics:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Retry Semantics
+        run_kind:
+          title: Run Kind
+          type: string
+        runtime_version:
+          title: Runtime Version
+          type: string
+        status:
+          title: Status
+          type: string
+        updated_at:
+          format: date-time
+          title: Updated At
+          type: string
+      required:
+      - optimization_run_id
+      - project_id
+      - run_kind
+      - status
+      - readiness_receipt_id
+      - runtime_version
+      - created_at
+      - updated_at
+      title: OptimizationRunResponse
       type: object
     OrganizationReadModel:
       additionalProperties: false
@@ -6796,6 +6996,103 @@ paths:
       security:
       - HTTPBearer: []
       summary: Evaluate Optimization Readiness
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/optimizations:
+    get:
+      operationId: listOptimizationRuns
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationRunListResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Optimization Runs
+      tags:
+      - investment-portfolio
+    post:
+      operationId: createOptimizationRun
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOptimizationRunRequest'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationRunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Optimization Run
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/optimizations/{optimization_run_id}:
+    get:
+      operationId: getOptimizationRun
+      parameters:
+      - in: path
+        name: optimization_run_id
+        required: true
+        schema:
+          title: Optimization Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationRunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Optimization Run
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/optimizations/{optimization_run_id}/result:
+    get:
+      operationId: getOptimizationResult
+      parameters:
+      - in: path
+        name: optimization_run_id
+        required: true
+        schema:
+          title: Optimization Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationResultResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Optimization Result
       tags:
       - investment-portfolio
   /v1/projects/{project_id}/measurement-home:

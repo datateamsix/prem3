@@ -15,6 +15,8 @@ from app.investment_optimization.contracts import (
     OptimizationInputContract,
     OptimizationProposalRef,
     OptimizationReadinessReceipt,
+    OptimizationResultRef,
+    OptimizationRun,
     PortfolioModelMapping,
     ScenarioAssumptionSetRef,
 )
@@ -25,11 +27,13 @@ OptimizationMetadata = (
     | OptimizationExecutionPlan
     | ConstraintSetRef
     | ScenarioAssumptionSetRef
-    | ModelConsumptionContract
+    |     ModelConsumptionContract
     | PortfolioModelMapping
     | OptimizationEvidenceCoverage
     | OptimizationInputContract
     | OptimizationReadinessReceipt
+    | OptimizationRun
+    | OptimizationResultRef
 )
 
 FORBIDDEN_AMOUNT_KEYS = frozenset(
@@ -41,6 +45,12 @@ FORBIDDEN_AMOUNT_KEYS = frozenset(
         "allocations",
         "future_cpm_by_channel",
         "revenue_per_kpi",
+        "budget_vector",
+        "recommended_rows",
+        "baseline_amount",
+        "recommended_amount",
+        "pct_of_spend",
+        "fixed_budget",
     }
 )
 
@@ -107,6 +117,28 @@ class OptimizationMetadataStore(Protocol):
 
     def get_coverage(self, coverage_id: str) -> OptimizationEvidenceCoverage | None: ...
 
+    def get_consumption_for_model(
+        self, *, tenant_id: str, project_id: str, model_version_id: str
+    ) -> ModelConsumptionContract | None: ...
+
+    def get_run(self, optimization_run_id: str) -> OptimizationRun | None: ...
+
+    def list_runs(self, *, tenant_id: str, project_id: str) -> tuple[OptimizationRun, ...]: ...
+
+    def latest_run(self, *, tenant_id: str, project_id: str) -> OptimizationRun | None: ...
+
+    def get_run_by_idempotency(
+        self, *, tenant_id: str, project_id: str, idempotency_key: str
+    ) -> OptimizationRun | None: ...
+
+    def get_result_ref(self, result_id: str) -> OptimizationResultRef | None: ...
+
+    def get_result_ref_for_run(self, optimization_run_id: str) -> OptimizationResultRef | None: ...
+
+    def latest_completed_result(
+        self, *, tenant_id: str, project_id: str
+    ) -> OptimizationResultRef | None: ...
+
 
 class InMemoryOptimizationMetadataStore:
     def __init__(self) -> None:
@@ -116,6 +148,8 @@ class InMemoryOptimizationMetadataStore:
         self._inputs: dict[str, OptimizationInputContract] = {}
         self._coverage: dict[str, OptimizationEvidenceCoverage] = {}
         self._contracts: dict[str, ModelConsumptionContract] = {}
+        self._runs: dict[str, OptimizationRun] = {}
+        self._results: dict[str, OptimizationResultRef] = {}
 
     def put(self, value: OptimizationMetadata) -> OptimizationMetadata:
         safe = assert_optimization_metadata_only(value)
@@ -130,6 +164,18 @@ class InMemoryOptimizationMetadataStore:
             self._coverage[safe.coverage_id] = safe
         elif isinstance(safe, ModelConsumptionContract):
             self._contracts[safe.consumption_contract_id] = safe
+        elif isinstance(safe, OptimizationRun):
+            self._runs[safe.optimization_run_id] = safe
+        elif isinstance(safe, OptimizationResultRef):
+            if safe.is_current:
+                for result_id, existing in list(self._results.items()):
+                    if (
+                        existing.tenant_id == safe.tenant_id
+                        and existing.project_id == safe.project_id
+                        and existing.is_current
+                    ):
+                        self._results[result_id] = existing.model_copy(update={"is_current": False})
+            self._results[safe.result_id] = safe
         return safe
 
     def get_mapping(self, mapping_id: str) -> PortfolioModelMapping | None:
@@ -174,6 +220,81 @@ class InMemoryOptimizationMetadataStore:
 
     def get_coverage(self, coverage_id: str) -> OptimizationEvidenceCoverage | None:
         return self._coverage.get(coverage_id)
+
+    def get_consumption_for_model(
+        self, *, tenant_id: str, project_id: str, model_version_id: str
+    ) -> ModelConsumptionContract | None:
+        matches = [
+            item
+            for item in self._contracts.values()
+            if item.tenant_id == tenant_id
+            and item.project_id == project_id
+            and item.model_version_id == model_version_id
+        ]
+        if not matches:
+            return None
+        return matches[-1]
+
+    def get_run(self, optimization_run_id: str) -> OptimizationRun | None:
+        return self._runs.get(optimization_run_id)
+
+    def list_runs(self, *, tenant_id: str, project_id: str) -> tuple[OptimizationRun, ...]:
+        matches = [
+            item
+            for item in self._runs.values()
+            if item.tenant_id == tenant_id and item.project_id == project_id
+        ]
+        return tuple(sorted(matches, key=lambda item: item.created_at, reverse=True))
+
+    def latest_run(self, *, tenant_id: str, project_id: str) -> OptimizationRun | None:
+        matches = self.list_runs(tenant_id=tenant_id, project_id=project_id)
+        return matches[0] if matches else None
+
+    def get_run_by_idempotency(
+        self, *, tenant_id: str, project_id: str, idempotency_key: str
+    ) -> OptimizationRun | None:
+        matches = [
+            item
+            for item in self._runs.values()
+            if item.tenant_id == tenant_id
+            and item.project_id == project_id
+            and item.idempotency_key == idempotency_key
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def get_result_ref(self, result_id: str) -> OptimizationResultRef | None:
+        return self._results.get(result_id)
+
+    def get_result_ref_for_run(self, optimization_run_id: str) -> OptimizationResultRef | None:
+        matches = [
+            item
+            for item in self._results.values()
+            if item.optimization_run_id == optimization_run_id
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def latest_completed_result(
+        self, *, tenant_id: str, project_id: str
+    ) -> OptimizationResultRef | None:
+        current = [
+            item
+            for item in self._results.values()
+            if item.tenant_id == tenant_id and item.project_id == project_id and item.is_current
+        ]
+        if current:
+            return max(current, key=lambda item: item.created_at)
+        matches = [
+            item
+            for item in self._results.values()
+            if item.tenant_id == tenant_id and item.project_id == project_id
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
 
     def stored_types(self) -> tuple[str, ...]:
         return tuple(type(row).__name__ for row in self._rows)

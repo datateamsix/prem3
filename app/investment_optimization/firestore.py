@@ -17,6 +17,8 @@ from app.investment_optimization.contracts import (
     OptimizationEvidenceCoverage,
     OptimizationInputContract,
     OptimizationReadinessReceipt,
+    OptimizationResultRef,
+    OptimizationRun,
     PortfolioModelMapping,
 )
 from app.investment_optimization.store import (
@@ -32,6 +34,8 @@ COL_INPUTS = "optimization_input_contracts"
 COL_RECEIPTS = "optimization_readiness_receipts"
 COL_COVERAGE = "optimization_evidence_coverage"
 COL_CONTRACTS = "model_consumption_contracts"
+COL_RUNS = "optimization_runs"
+COL_RESULTS = "optimization_result_refs"
 COL_INDEX = "investment_optimization_index"
 
 
@@ -157,6 +161,26 @@ class FirestoreOptimizationMetadataStore:
                 tenant_id=safe.tenant_id,
                 workspace_id=safe.project_id,
             )
+        elif isinstance(safe, OptimizationRun):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_RUNS).document(
+                safe.optimization_run_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="run",
+                resource_id=safe.optimization_run_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, OptimizationResultRef):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_RESULTS).document(
+                safe.result_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="result",
+                resource_id=safe.result_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
         else:
             raise PersistenceBarrierError(
                 f"{type(safe).__name__} is not a P6-04 persistence contract.",
@@ -219,3 +243,77 @@ class FirestoreOptimizationMetadataStore:
             resource_id=coverage_id,
             collection=COL_COVERAGE,
         )
+
+    def get_consumption_for_model(
+        self, *, tenant_id: str, project_id: str, model_version_id: str
+    ) -> ModelConsumptionContract | None:
+        docs = self._workspace(tenant_id, project_id).collection(COL_CONTRACTS).stream()
+        matches = [
+            _from_document(ModelConsumptionContract, doc.to_dict())
+            for doc in docs
+            if (doc.to_dict() or {}).get("model_version_id") == model_version_id
+        ]
+        if not matches:
+            return None
+        return matches[-1]
+
+    def get_run(self, optimization_run_id: str) -> OptimizationRun | None:
+        return self._load(
+            OptimizationRun, kind="run", resource_id=optimization_run_id, collection=COL_RUNS
+        )
+
+    def list_runs(self, *, tenant_id: str, project_id: str) -> tuple[OptimizationRun, ...]:
+        docs = self._workspace(tenant_id, project_id).collection(COL_RUNS).stream()
+        matches = [_from_document(OptimizationRun, doc.to_dict()) for doc in docs]
+        return tuple(sorted(matches, key=lambda item: item.created_at, reverse=True))
+
+    def latest_run(self, *, tenant_id: str, project_id: str) -> OptimizationRun | None:
+        matches = self.list_runs(tenant_id=tenant_id, project_id=project_id)
+        return matches[0] if matches else None
+
+    def get_run_by_idempotency(
+        self, *, tenant_id: str, project_id: str, idempotency_key: str
+    ) -> OptimizationRun | None:
+        matches = [
+            item
+            for item in self.list_runs(tenant_id=tenant_id, project_id=project_id)
+            if item.idempotency_key == idempotency_key
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def get_result_ref(self, result_id: str) -> OptimizationResultRef | None:
+        return self._load(
+            OptimizationResultRef, kind="result", resource_id=result_id, collection=COL_RESULTS
+        )
+
+    def get_result_ref_for_run(self, optimization_run_id: str) -> OptimizationResultRef | None:
+        snap = self._index("run", optimization_run_id).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        docs = (
+            self._workspace(str(data["tenant_id"]), str(data["workspace_id"]))
+            .collection(COL_RESULTS)
+            .stream()
+        )
+        matches = [
+            _from_document(OptimizationResultRef, doc.to_dict())
+            for doc in docs
+            if (doc.to_dict() or {}).get("optimization_run_id") == optimization_run_id
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def latest_completed_result(
+        self, *, tenant_id: str, project_id: str
+    ) -> OptimizationResultRef | None:
+        docs = self._workspace(tenant_id, project_id).collection(COL_RESULTS).stream()
+        matches = [_from_document(OptimizationResultRef, doc.to_dict()) for doc in docs]
+        current = [item for item in matches if item.is_current]
+        pool = current or matches
+        if not pool:
+            return None
+        return max(pool, key=lambda item: item.created_at)

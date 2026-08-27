@@ -230,6 +230,11 @@ class EvaluateOptimizationReadinessRequest(ApiModel):
     mapping_overrides: tuple[MappingOverrideRequest, ...] = ()
 
 
+class CreateOptimizationRunRequest(ApiModel):
+    readiness_receipt_id: str
+    idempotency_key: str | None = None
+
+
 class OptimizationIssueResponse(ApiModel):
     code: str
     blocking: bool
@@ -304,3 +309,51 @@ class OptimizationReadinessResponse(ApiModel):
     coverage: OptimizationCoverageSummaryResponse | None = None
     fingerprint: str
     created_at: datetime
+
+
+class OptimizationRunResponse(ApiModel):
+    optimization_run_id: str
+    project_id: str
+    run_kind: str
+    status: str
+    phase: str | None = None
+    readiness_receipt_id: str
+    result_id: str | None = None
+    failure_class: str | None = None
+    retry_semantics: str | None = None
+    runtime_version: str
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None = None
+
+
+class OptimizationRunListResponse(ApiModel):
+    items: tuple[OptimizationRunResponse, ...]
+
+
+class OptimizationResultRowResponse(ApiModel):
+    model_variable_id: str
+    market_id: str
+    channel_id: str
+    eligibility: str
+    baseline: str
+    recommended: str
+    absolute_change: str
+    percent_change: str | None = None
+    percent_change_unavailable: bool = False
+    constraint_status: str
+    amount_kind: str
+    outcome_estimates: tuple[dict[str, str], ...] = ()
+
+
+class OptimizationResultResponse(ApiModel):
+    optimization_run_id: str
+    result_id: str
+    run_kind: str
+    amount_kind: str
+    currency: str
+    fixed_budget: str
+    recommended_total: str
+    rows: tuple[OptimizationResultRowResponse, ...] = ()
+    fingerprint: str
+    schema_version: str

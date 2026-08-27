@@ -199,13 +199,14 @@ def test_cross_tenant_model_mapping_fails() -> None:
     assert selection.issue_code.value == "CROSS_TENANT_MODEL_MAPPING"
 
 
-def test_openapi_has_no_optimizer_execution_route() -> None:
+def test_openapi_has_no_legacy_investment_optimizations_namespace() -> None:
     from app.service.openapi_export import build_openapi_document
 
     document = build_openapi_document()
     paths = document["paths"]
     assert "/v1/projects/{project_id}/investment-portfolio/optimization-readiness" in paths
     assert "/v1/projects/{project_id}/investment-portfolio/model-mapping" in paths
+    assert "/v1/projects/{project_id}/investment-portfolio/optimizations" in paths
     assert not any("optimize" in path and "execution" in path for path in paths)
     assert "/v1/projects/{project_id}/investment-optimizations" not in paths
 

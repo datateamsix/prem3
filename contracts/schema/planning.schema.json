@@ -85,6 +85,39 @@
       "title": "MarketModelCompatibility",
       "type": "string"
     },
+    "app_investment_optimization_contracts__OptimizationExecutionPhase": {
+      "enum": [
+        "REVALIDATE",
+        "RESOLVE_BUDGET",
+        "LOAD_MODEL",
+        "OPTIMIZE",
+        "VALIDATE",
+        "PERSIST",
+        "READBACK"
+      ],
+      "title": "OptimizationExecutionPhase",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationFailureClass": {
+      "enum": [
+        "OPTIMIZATION_NOT_READY",
+        "OPTIMIZATION_REVIEW_REQUIRED",
+        "OPTIMIZATION_READINESS_STALE",
+        "APPROVED_PLAN_REQUIRED",
+        "UNAPPROVED_PLAN",
+        "ACTUALS_NOT_FIXED_BUDGET",
+        "CLIENT_BUDGET_ARRAY_REJECTED",
+        "MODEL_ARTIFACT_UNAVAILABLE",
+        "NATIVE_OPTIMIZER_FAILED",
+        "MERIDIAN_OPTIMIZER_API_REVIEW_REQUIRED",
+        "OPTIMIZER_RESULT_INVALID",
+        "OPTIMIZER_BUDGET_INVARIANT_FAILED",
+        "RESULT_READBACK_FAILED",
+        "FLEXIBLE_BUDGET_NOT_IMPLEMENTED"
+      ],
+      "title": "OptimizationFailureClass",
+      "type": "string"
+    },
     "app_investment_optimization_contracts__OptimizationInputContract": {
       "additionalProperties": false,
       "description": "Metadata only. P6-05 re-resolves approved amounts from Drive/Portfolio.",
@@ -746,6 +779,422 @@
         "STALE"
       ],
       "title": "OptimizationReadinessStatus",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationResultRef": {
+      "additionalProperties": false,
+      "description": "Durable artifact pointer. Amounts live only on the GCS object.",
+      "properties": {
+        "artifact_bucket": {
+          "title": "Artifact Bucket",
+          "type": "string"
+        },
+        "artifact_generation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Generation"
+        },
+        "artifact_object_name": {
+          "title": "Artifact Object Name",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "is_current": {
+          "default": false,
+          "title": "Is Current",
+          "type": "boolean"
+        },
+        "optimization_run_id": {
+          "title": "Optimization Run Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "result_fingerprint": {
+          "title": "Result Fingerprint",
+          "type": "string"
+        },
+        "result_id": {
+          "title": "Result Id",
+          "type": "string"
+        },
+        "runtime_version": {
+          "title": "Runtime Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_id",
+        "optimization_run_id",
+        "tenant_id",
+        "project_id",
+        "artifact_bucket",
+        "artifact_object_name",
+        "result_fingerprint",
+        "schema_version",
+        "runtime_version",
+        "created_at"
+      ],
+      "title": "OptimizationResultRef",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__OptimizationRetrySemantics": {
+      "enum": [
+        "NOT_RETRYABLE",
+        "IDEMPOTENT_RETRY",
+        "NEW_RUN_REQUIRED"
+      ],
+      "title": "OptimizationRetrySemantics",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationRun": {
+      "additionalProperties": false,
+      "description": "Durable optimizer execution metadata. Never stores budget arrays.",
+      "properties": {
+        "artifact_generation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Generation"
+        },
+        "artifact_object_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Object Name"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "title": "Created By",
+          "type": "string"
+        },
+        "execution_key": {
+          "title": "Execution Key",
+          "type": "string"
+        },
+        "failure_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationFailureClass"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "failure_stage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationExecutionPhase"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "idempotency_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Idempotency Key"
+        },
+        "input_contract_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Contract Fingerprint"
+        },
+        "mapping_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mapping Fingerprint"
+        },
+        "mapping_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mapping Id"
+        },
+        "model_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Fingerprint"
+        },
+        "model_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Version Id"
+        },
+        "optimization_input_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Optimization Input Id"
+        },
+        "optimization_run_id": {
+          "title": "Optimization Run Id",
+          "type": "string"
+        },
+        "optimizer_defaults_fingerprint": {
+          "title": "Optimizer Defaults Fingerprint",
+          "type": "string"
+        },
+        "phase": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationExecutionPhase"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "plan_version_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Version Fingerprint"
+        },
+        "portfolio_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Portfolio Snapshot Id"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "readiness_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Readiness Fingerprint"
+        },
+        "readiness_receipt_id": {
+          "title": "Readiness Receipt Id",
+          "type": "string"
+        },
+        "result_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Fingerprint"
+        },
+        "result_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Id"
+        },
+        "retry_semantics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationRetrySemantics"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "run_kind": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationRunKind",
+          "default": "FIXED_BUDGET"
+        },
+        "runtime_version": {
+          "title": "Runtime Version",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationRunStatus"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "worker_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worker Ref"
+        }
+      },
+      "required": [
+        "optimization_run_id",
+        "tenant_id",
+        "project_id",
+        "status",
+        "readiness_receipt_id",
+        "runtime_version",
+        "optimizer_defaults_fingerprint",
+        "execution_key",
+        "created_by",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "OptimizationRun",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__OptimizationRunKind": {
+      "enum": [
+        "FIXED_BUDGET"
+      ],
+      "title": "OptimizationRunKind",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationRunStatus": {
+      "enum": [
+        "CREATED",
+        "QUEUED",
+        "DISPATCHED",
+        "RUNNING",
+        "VALIDATING",
+        "READBACK",
+        "COMPLETE",
+        "FAILED",
+        "STALE_REFUSED"
+      ],
+      "title": "OptimizationRunStatus",
       "type": "string"
     },
     "app_investment_optimization_contracts__OptimizationSolverKind": {
@@ -2526,6 +2975,12 @@
     },
     {
       "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationReadinessReceipt"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationRun"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationResultRef"
     }
   ],
   "title": "PreM3 investment planning and portfolio contracts"

@@ -10,7 +10,7 @@ Canonical namespace:
 
 `/v1/workspaces/{workspace_id}/...` is a documented alias of the same state machine. `project_id == workspace_id`.
 
-P6-01 registers real Investment Plan handlers on the canonical namespace. Workspace paths are a same-state alias (`include_in_schema=False`). `GET /v1/projects/{project_id}/investment-portfolio` is registered (P6-02/P6-03). P6-04 registers mapping and readiness under the same portfolio prefix. `investment-optimizations` remain unregistered until P6-05. `GET .../view` is not registered.
+P6-01 registers real Investment Plan handlers on the canonical namespace. Workspace paths are a same-state alias (`include_in_schema=False`). `GET /v1/projects/{project_id}/investment-portfolio` is registered (P6-02/P6-03). P6-04 registers mapping and readiness under the same portfolio prefix. P6-05 registers `.../optimizations` (202 create, metadata get/list, private result) under that prefix. The unused P6-00 `/investment-optimizations` namespace stays unregistered. `GET .../view` is not registered.
 
 P6-03 extends the portfolio response with `actuals_source_id`, coverage, observations, and plan-vs-actual remaining/variance. Optional query parameter: `fiscal_year`. Client-supplied actual rows are not accepted. Entitlement remains `Feature.PORTFOLIO_VIEW`.
 
@@ -42,12 +42,23 @@ GET    /v1/projects/{project_id}/investment-portfolio/optimization-readiness
 POST   /v1/projects/{project_id}/investment-portfolio/optimization-readiness/evaluate
 ```
 
-Bodies accept `portfolio_snapshot_id`, optional Project-scoped `model_version_id`, and canonical-ID mapping overrides. Clients cannot supply `tenant_id`, workspace-as-authority, amounts, or model artifact location. Responses carry status, IDs, checks, issues, coverage summary, receipt_id, and fingerprints. No budget values. No optimizer execution route.
+Bodies accept `portfolio_snapshot_id`, optional Project-scoped `model_version_id`, and canonical-ID mapping overrides. Clients cannot supply `tenant_id`, workspace-as-authority, amounts, or model artifact location. Responses carry status, IDs, checks, issues, coverage summary, receipt_id, and fingerprints. No budget values.
 
-Contract fingerprints at P6-04:
+Implemented P6-05 HTTP routes (workspace alias omitted from OpenAPI):
 
-- `contracts/openapi.yaml` sha256 `f9dca9867abdb90937a36f19d36be7b4dfffac0dddad4f7581f6d80256dda213`
-- `contracts/schema/planning.schema.json` sha256 `4a64123be72d30456745dac46711c51044db2f88ae3ec62dc53e8bd8af893bcd`
+```text
+POST   /v1/projects/{project_id}/investment-portfolio/optimizations
+GET    /v1/projects/{project_id}/investment-portfolio/optimizations
+GET    /v1/projects/{project_id}/investment-portfolio/optimizations/{optimization_run_id}
+GET    /v1/projects/{project_id}/investment-portfolio/optimizations/{optimization_run_id}/result
+```
+
+Create is 202 metadata (`readiness_receipt_id`, optional `idempotency_key`). Result is amount-bearing `MODEL_RECOMMENDED` with `Cache-Control: private, no-store`. Clients cannot supply tenant, paths, budget arrays, or variable maps.
+
+Contract fingerprints at P6-05:
+
+- `contracts/openapi.yaml` sha256 `e0da0cfdefe6466bf0cb26db81f4056a51199704708bcf9e646415a31e42181c`
+- `contracts/schema/planning.schema.json` sha256 `35a3315ed745ecc0b3bbf8533cf6f9dcfce6c21c45bab1c3f6c1aa41f6a95e40`
 
 Generated schemas live in `contracts/schema/planning.schema.json`.
 

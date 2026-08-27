@@ -781,6 +781,8 @@ class ProjectHomeAssembler:
                     "REVIEW_REQUIRED",
                     "NOT_CONFIGURED",
                     "STALE",
+                    "OPTIMIZATION_RUNNING",
+                    "OPTIMIZATION_COMPLETE",
                 }:
                     availability_value = (
                         "NOT_READY" if generated == "STALE" else generated
@@ -789,6 +791,10 @@ class ProjectHomeAssembler:
                         reason = "Optimization readiness is available"
                     elif generated == "STALE":
                         reason = "Optimization readiness is stale"
+                    elif generated == "OPTIMIZATION_RUNNING":
+                        reason = "Native fixed-budget optimization is running"
+                    elif generated == "OPTIMIZATION_COMPLETE":
+                        reason = "Native fixed-budget optimization is complete"
                     else:
                         reason = "Optimization is not ready"
             rows.append(

@@ -14,4 +14,4 @@ Solver kinds:
 
 Reach, frequency, and exposure-integrity evidence remain separately governed. They may be model inputs, constraints, or scenario/approval guardrails only when methodologically supported. They are not a universal score.
 
-`UnimplementedMeridianBudgetOptimizerAdapter` freezes the seam. P6-00 does not invoke Meridian.
+`UnimplementedMeridianBudgetOptimizerAdapter` remains the P6-00 flexible/CVaR seam. P6-05 adds `NativeMeridianFixedBudgetAdapter` for `BudgetOptimizer.optimize(fixed_budget=True)`. Recommended amounts are `MODEL_RECOMMENDED` on an immutable GCS artifact and a private result endpoint. They do not mutate Drive and are not proposal approval.

@@ -34,6 +34,7 @@ from app.investment_optimization.errors import (
     CrossProjectMappingError,
     CrossTenantMappingError,
 )
+from app.investment_optimization.execution import home_overlay_status
 from app.investment_optimization.mapping import build_portfolio_model_mapping
 from app.investment_optimization.readiness import (
     build_optimization_input_contract,
@@ -173,10 +174,7 @@ class OptimizationReadinessService:
         return receipt
 
     def latest_status(self, *, tenant_id: str, project_id: str) -> str | None:
-        receipt = self._store.latest_receipt(tenant_id=tenant_id, project_id=project_id)
-        if receipt is None:
-            return None
-        return receipt.status.value
+        return home_overlay_status(self._store, tenant_id=tenant_id, project_id=project_id)
 
     def _evaluate(
         self,

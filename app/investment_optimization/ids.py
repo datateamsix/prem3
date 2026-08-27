@@ -49,3 +49,11 @@ def new_readiness_receipt_id() -> str:
 
 def new_evidence_coverage_id() -> str:
     return _opaque("oecov")
+
+
+def new_optimization_run_id() -> str:
+    return _opaque("orun")
+
+
+def new_optimization_result_id() -> str:
+    return _opaque("ores")

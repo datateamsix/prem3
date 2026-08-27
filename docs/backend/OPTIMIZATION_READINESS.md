@@ -1,6 +1,6 @@
 # Optimization readiness
 
-P6-04 proves whether a governed portfolio can be mapped into an accepted MMM for later optimization. It does not run Meridian `BudgetOptimizer` and does not create recommended allocations.
+P6-04 proves whether a governed portfolio can be mapped into an accepted MMM for later optimization. P6-05 consumes a non-stale `OPTIMIZATION_READY` receipt and runs native Meridian `BudgetOptimizer` (fixed budget only).
 
 ```text
 PortfolioSnapshotRef + transient PortfolioView
@@ -51,4 +51,4 @@ The receipt is immutable. A new evaluation is required if portfolio, model, mapp
 
 ## Project Home
 
-Generated status feeds existing `BUDGET_OPTIMIZATION`. No accepted model still returns `REQUIRES_ACCEPTED_MMM_MODEL`. `STALE` is presented as `NOT_READY` with a stale reason. No new entitlement `CapabilityFamily`.
+Generated status feeds existing `BUDGET_OPTIMIZATION`. No accepted model still returns `REQUIRES_ACCEPTED_MMM_MODEL`. After an accepted model, overlay may be `OPTIMIZATION_READY` / `NOT_READY` / `REVIEW_REQUIRED` / `NOT_CONFIGURED`, or P6-05 `OPTIMIZATION_RUNNING` / `OPTIMIZATION_COMPLETE` from the latest run. `STALE` is presented as `NOT_READY` with a stale reason. No new entitlement `CapabilityFamily`.

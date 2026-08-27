@@ -61,3 +61,9 @@ Governed actual spend is assembled through `ActualSpendQuery`. See [PORTFOLIO_AC
 Governed mapping from portfolio cells to accepted MMM variables, plus a fingerprinted `OptimizationReadinessReceipt`. See [PORTFOLIO_TO_MODEL_MAPPING.md](PORTFOLIO_TO_MODEL_MAPPING.md), [OPTIMIZATION_READINESS.md](OPTIMIZATION_READINESS.md), [OPTIMIZATION_INPUT_CONTRACT.md](OPTIMIZATION_INPUT_CONTRACT.md), and [PLANNING_CAUSAL_EVIDENCE_AUTHORITY.md](PLANNING_CAUSAL_EVIDENCE_AUTHORITY.md).
 
 `OPTIMIZATION_READY` is readiness, not optimizer execution. Production BigQuery actuals remain `P6_03_PRODUCTION_ACTUALS_QUERY_PENDING`.
+
+## Native fixed-budget optimization (P6-05)
+
+A non-stale `OPTIMIZATION_READY` receipt may dispatch `OptimizationRun` (`orun_`). Native Meridian `BudgetOptimizer` (fixed budget) writes an immutable GCS result labeled `MODEL_RECOMMENDED`. See [NATIVE_MERIDIAN_FIXED_BUDGET_OPTIMIZATION.md](NATIVE_MERIDIAN_FIXED_BUDGET_OPTIMIZATION.md), [OPTIMIZATION_RUN_LIFECYCLE.md](OPTIMIZATION_RUN_LIFECYCLE.md), [OPTIMIZATION_RESULT_CONTRACT.md](OPTIMIZATION_RESULT_CONTRACT.md), and [OPTIMIZATION_EXECUTION_AUTHORITY.md](OPTIMIZATION_EXECUTION_AUTHORITY.md).
+
+Drive plans are not mutated. Proposal approval is P6-06.

@@ -34,6 +34,8 @@ from app.investment_optimization.contracts import (
     OptimizationInputContract,
     OptimizationProposalRef,
     OptimizationReadinessReceipt,
+    OptimizationResultRef,
+    OptimizationRun,
     PortfolioModelMapping,
 )
 from app.investment_planning.contracts import (
@@ -286,6 +288,8 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             PortfolioModelMapping,
             OptimizationInputContract,
             OptimizationReadinessReceipt,
+            OptimizationRun,
+            OptimizationResultRef,
         ),
         composition="catalog",
     ),
