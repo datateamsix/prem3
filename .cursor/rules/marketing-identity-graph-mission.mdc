@@ -1,0 +1,16 @@
+---
+description: Marketing Identity Graph IG-00 freeze — work only in prem3-ig-00; do not reopen M5-02A
+alwaysApply: true
+---
+
+# Marketing Identity Graph — IG-00 on this worktree
+
+**Worktree:** `C:/Users/zroda/Desktop/prem3-ig-00`  
+**Branch:** `feature/prem3-ig-00-marketing-identity-graph`  
+**Base:** `7204315f5483489237164b8fb7f2152ae116338f`
+
+Do **not** reopen M5-02A (`206da38`, DP6 runtime, Cloud E2E). Do not mix this work into the MMM tree. No push unless asked.
+
+Domain: `app/identity_graph/`. MTA/BIQ/Planning consume refs; they do not own campaign identity.
+
+IG-01+ may proceed from this freeze. Do not implement live GA4 discovery, ads writes, MTA SQL, or person identity.

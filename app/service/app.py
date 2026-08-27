@@ -23,6 +23,8 @@ from app.data_foundation.service import DataFoundationService
 from app.data_foundation.warehouse import FoundationWarehouse
 from app.eda.repository import FirestoreExtendedEDARepository, InMemoryExtendedEDARepository
 from app.eda.service import ExtendedEDAService
+from app.identity_graph.service import CampaignIdentityService
+from app.identity_graph.store import InMemoryIdentityGraphStore
 from app.integrations.google.adapters import (
     FakeBigQueryClient,
     FakeDriveClient,
@@ -100,6 +102,7 @@ from app.service.routers import (
     google_oauth,
     health,
     identity,
+    identity_graph,
     identity_webhooks,
     import_governance,
     internal_dispatch,
@@ -172,7 +175,8 @@ def create_app(
         description=(
             "Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, "
             "Google connection, import/publish governance, Business IQ, "
-            "Data Foundation, and governed MMM modeling contracts. Clerk session "
+            "Data Foundation, Marketing Identity Graph, and governed MMM modeling "
+            "contracts. Clerk session "
             "tokens are verified when the identity provider is configured. Creating "
             "an Evaluation returns 202 Accepted only after durable Cloud Tasks "
             "enqueue; 202 is not ADK completion and not MODEL_READY. Posterior "
@@ -249,6 +253,10 @@ def create_app(
     app.state.business_iq_store = business_iq_store
     app.state.data_foundation_store = data_foundation_store
     app.state.business_iq = BusinessIqService(store=business_iq_store)
+    app.state.identity_graph = CampaignIdentityService(
+        store=InMemoryIdentityGraphStore(),
+        business_iq_store=business_iq_store,
+    )
     app.state.data_foundation = DataFoundationService(
         store=data_foundation_store,
         warehouse=FoundationWarehouse(),
@@ -306,6 +314,7 @@ def create_app(
     app.include_router(identity.router)
     app.include_router(workspaces.router)
     app.include_router(projects.router)
+    app.include_router(identity_graph.router)
     app.include_router(datasets.router)
     app.include_router(uploads.router)
     app.include_router(evaluations.router)

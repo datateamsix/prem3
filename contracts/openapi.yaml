@@ -759,6 +759,58 @@ components:
       - upload_id
       title: CreateEvaluationRequest
       type: object
+    CreateIdentityGraphCampaignRequest:
+      additionalProperties: false
+      properties:
+        channel_ids:
+          default: []
+          items:
+            type: string
+          title: Channel Ids
+          type: array
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        end_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: End Date
+        market_ids:
+          default: []
+          items:
+            type: string
+          title: Market Ids
+          type: array
+        name:
+          title: Name
+          type: string
+        parent_campaign_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parent Campaign Id
+        start_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Start Date
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        utm_campaign:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Utm Campaign
+      required:
+      - name
+      title: CreateIdentityGraphCampaignRequest
+      type: object
     CreateMTARunRequest:
       additionalProperties: false
       description: Customer create-run body — no BQ/GCS/authority fields allowed.
@@ -4534,11 +4586,11 @@ components:
       type: http
 info:
   description: Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, Google connection, import/publish
-    governance, Business IQ, Data Foundation, and governed MMM modeling contracts. Clerk session tokens are verified when
-    the identity provider is configured. Creating an Evaluation returns 202 Accepted only after durable Cloud Tasks enqueue;
-    202 is not ADK completion and not MODEL_READY. Posterior sampling is never autonomous and requires an exact fingerprinted
-    FitPlan approval. Tenant identity is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY,
-    MODEL_READY, MODEL_ACCEPTED, and PUBLISH_READY are distinct deterministic states.
+    governance, Business IQ, Data Foundation, Marketing Identity Graph, and governed MMM modeling contracts. Clerk session
+    tokens are verified when the identity provider is configured. Creating an Evaluation returns 202 Accepted only after durable
+    Cloud Tasks enqueue; 202 is not ADK completion and not MODEL_READY. Posterior sampling is never autonomous and requires
+    an exact fingerprinted FitPlan approval. Tenant identity is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY,
+    DATA_FOUNDATION_READY, MODEL_READY, MODEL_ACCEPTED, and PUBLISH_READY are distinct deterministic states.
   summary: PreM3 authenticated product API
   title: prem3-api
   version: 0.1.0
@@ -5637,6 +5689,191 @@ paths:
       summary: Get Project Home
       tags:
       - projects
+  /v1/projects/{project_id}/identity-graph:
+    get:
+      operationId: getIdentityGraph
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraph
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Identity Graph Overview
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/campaigns:
+    get:
+      operationId: listIdentityGraphCampaigns
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphcampaigns
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Campaigns
+      tags:
+      - identity-graph
+    post:
+      operationId: createIdentityGraphCampaign
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentityGraphCampaignRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createidentitygraphcampaign
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Campaign
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/mappings:
+    get:
+      operationId: listIdentityGraphMappings
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphmappings
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Mappings
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/markets:
+    get:
+      operationId: listIdentityGraphMarkets
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphmarkets
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Markets
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/sources:
+    get:
+      operationId: listIdentityGraphSources
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphsources
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Sources
+      tags:
+      - identity-graph
   /v1/projects/{project_id}/measurement-home:
     get:
       operationId: getProjectMeasurementHome
