@@ -127,8 +127,8 @@ def test_canonical_api_namespace_registers_investment_plan_routes() -> None:
     assert "/v1/projects/{project_id}/investment-plans" in paths
     assert "/v1/projects/{project_id}/investment-plans/{plan_id}" in paths
     assert "/v1/projects/{project_id}/investment-plans/{plan_id}/ready" in paths
+    assert "/v1/projects/{project_id}/investment-portfolio" in paths
     for path in paths:
-        assert "investment-portfolio" not in path
         assert "investment-optimization" not in path
     assert not any(
         path.startswith("/v1/workspaces/{workspace_id}/investment-plans") for path in paths

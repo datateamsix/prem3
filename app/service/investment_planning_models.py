@@ -110,3 +110,53 @@ class InvestmentPlanReadyResponse(ApiModel):
     status: str
     receipt_id: str | None = None
     error_codes: tuple[str, ...] = ()
+
+
+class MoneyAmountResponse(ApiModel):
+    kind: str
+    currency: str
+    value: str | None = None
+    missing: bool = False
+
+
+class PortfolioAllocationResponse(ApiModel):
+    fiscal_year: int
+    quarter: int
+    market_id: str
+    channel_id: str
+    channel_registry_version: int
+    amounts: tuple[MoneyAmountResponse, ...] = ()
+
+
+class PortfolioDimensionTotalResponse(ApiModel):
+    market_id: str | None = None
+    channel_id: str | None = None
+    amount: MoneyAmountResponse
+
+
+class QuarterlyPortfolioResponse(ApiModel):
+    quarter: int
+    summary: tuple[MoneyAmountResponse, ...] = ()
+
+
+class PortfolioFreshnessResponse(ApiModel):
+    plan_source_as_of: datetime | None = None
+    actuals_as_of: datetime | None = None
+    measurement_as_of: datetime | None = None
+
+
+class InvestmentPortfolioResponse(ApiModel):
+    coverage_state: str
+    snapshot_id: str | None = None
+    project_id: str
+    workspace_id: str
+    fiscal_year: int | None = None
+    currency: str | None = None
+    baseline_kind: str | None = None
+    summary: tuple[MoneyAmountResponse, ...] = ()
+    remaining: MoneyAmountResponse | None = None
+    allocations: tuple[PortfolioAllocationResponse, ...] = ()
+    channel_allocation: tuple[PortfolioDimensionTotalResponse, ...] = ()
+    market_allocation: tuple[PortfolioDimensionTotalResponse, ...] = ()
+    quarterly: tuple[QuarterlyPortfolioResponse, ...] = ()
+    freshness: PortfolioFreshnessResponse | None = None

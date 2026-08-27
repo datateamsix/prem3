@@ -17,17 +17,33 @@ from app.investment_planning.contracts import (
     BudgetDriveSourceVersion,
     InvestmentPlan,
     InvestmentPlanValidationReceipt,
+    PortfolioEvidenceCoverage,
+    PortfolioSnapshotRef,
+    PortfolioSourceFreshness,
     PortfolioView,
 )
 from app.investment_planning.drive import file_is_under_budget_tree
 from app.investment_planning.drive_binding import TEMPLATE_SCHEMA_VERSION
-from app.investment_planning.enums import BudgetScope, BudgetSourceGrain, InvestmentPlanStatus
+from app.investment_planning.enums import (
+    AmountKind,
+    BudgetScope,
+    BudgetSourceGrain,
+    InvestmentPlanStatus,
+    PortfolioBaselineKind,
+    PortfolioCoverageState,
+)
 from app.investment_planning.errors import (
     BudgetFolderDegradedError,
     PlanningAuthorityError,
     PortfolioAssemblyNotImplementedError,
 )
-from app.investment_planning.ids import new_mapping_id, new_plan_id, new_source_version_id
+from app.investment_planning.fingerprint import metadata_fingerprint
+from app.investment_planning.ids import (
+    new_mapping_id,
+    new_plan_id,
+    new_snapshot_ref_id,
+    new_source_version_id,
+)
 from app.investment_planning.legacy_allocation import (
     reject_legacy_planning_allocation_as_value_authority,
 )
@@ -35,6 +51,11 @@ from app.investment_planning.lifecycle import approve_plan, mark_validated, revi
 from app.investment_planning.mapping import MappingProposal, propose_column_mapping
 from app.investment_planning.markets import IdentityGraphMarketDirectory, MarketIdentityDirectory
 from app.investment_planning.parser import ParsedBudgetTable, parse_budget_bytes
+from app.investment_planning.portfolio import (
+    allocations_from_plan_table,
+    assemble_portfolio_view,
+    coverage_state,
+)
 from app.investment_planning.source import require_source_identity
 from app.investment_planning.store import InvestmentPlanningMetadataStore
 from app.investment_planning.template import compile_budget_template
@@ -387,6 +408,80 @@ class InvestmentPlanService:
             )
         )
         return stored
+
+    def assemble_portfolio(
+        self, *, project_id: str, fiscal_year: int | None, actor_id: str
+    ) -> tuple[PortfolioCoverageState, PortfolioSnapshotRef | None, PortfolioView | None]:
+        require_feature(self._repo, Feature.PORTFOLIO_VIEW)
+        tenant = require_tenant()
+        require_server_owned_scope(tenant_id=tenant.tenant_id, project_id=project_id)
+        require_human_approver(actor_id)
+        plans = self._store.list_plans(tenant_id=tenant.tenant_id, project_id=project_id)
+        approved = [
+            plan
+            for plan in plans
+            if plan.status is InvestmentPlanStatus.APPROVED
+            and (fiscal_year is None or plan.fiscal_year == fiscal_year)
+        ]
+        plan = max(approved, key=lambda item: item.updated_at) if approved else None
+        has_plan = plan is not None and plan.active_source_version_id is not None
+        state = coverage_state(has_plan=has_plan, has_actuals=False)
+        if plan is None or not has_plan:
+            return state, None, None
+        source = self._store.get_source(plan.active_source_version_id or "")
+        mapping = (
+            self._store.mapping_for_source(plan.active_source_version_id)
+            if plan.active_source_version_id
+            else None
+        )
+        if source is None or mapping is None:
+            return PortfolioCoverageState.NEITHER, None, None
+        binding = self._live_binding(plan.project_id)
+        token = self._access_token(binding.connection_id)
+        data = self._drive.download_file(access_token=token, file_id=source.drive_file_id)
+        table = parse_budget_bytes(data=data, mime_type=source.mime_type, file_name=source.file_name)
+        allocations = allocations_from_plan_table(
+            table=table,
+            mapping=mapping,
+            fiscal_year=plan.fiscal_year,
+            amount_kind=AmountKind.APPROVED,
+        )
+        now = datetime.now(UTC)
+        snapshot = PortfolioSnapshotRef(
+            snapshot_id=new_snapshot_ref_id(),
+            tenant_id=plan.tenant_id,
+            project_id=plan.project_id,
+            workspace_id=plan.workspace_id,
+            fiscal_year=plan.fiscal_year,
+            baseline_kind=PortfolioBaselineKind.APPROVED_PLAN,
+            investment_plan_id=plan.plan_id,
+            source_version_id=source.source_version_id,
+            business_profile_snapshot_id=plan.business_profile_snapshot_id,
+            fingerprint=metadata_fingerprint(
+                {
+                    "plan_id": plan.plan_id,
+                    "source_version_id": source.source_version_id,
+                    "fiscal_year": plan.fiscal_year,
+                    "baseline_kind": "APPROVED_PLAN",
+                }
+            ),
+            created_at=now,
+            created_by=actor_id,
+        )
+        stored = self._store.put(snapshot)
+        assert isinstance(stored, PortfolioSnapshotRef)
+        view = assemble_portfolio_view(
+            snapshot_id=stored.snapshot_id,
+            tenant_id=stored.tenant_id,
+            project_id=stored.project_id,
+            fiscal_year=stored.fiscal_year,
+            currency=plan.currency,
+            baseline_kind=stored.baseline_kind,
+            allocations=allocations,
+            coverage=PortfolioEvidenceCoverage(),
+            freshness=PortfolioSourceFreshness(plan_source_as_of=source.created_at),
+        )
+        return state, stored, view
 
     def get_ready(
         self, *, plan_id: str, project_id: str

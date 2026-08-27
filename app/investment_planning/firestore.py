@@ -17,6 +17,7 @@ from app.investment_planning.contracts import (
     BudgetDriveSourceVersion,
     InvestmentPlan,
     InvestmentPlanValidationReceipt,
+    PortfolioSnapshotRef,
 )
 from app.investment_planning.store import (
     InvestmentPlanningMetadata,
@@ -31,6 +32,7 @@ COL_PLANS = "investment_plans"
 COL_SOURCES = "budget_source_versions"
 COL_MAPPINGS = "budget_column_mappings"
 COL_RECEIPTS = "investment_plan_receipts"
+COL_SNAPSHOTS = "portfolio_snapshot_refs"
 COL_INDEX = "investment_planning_index"
 
 T = TypeVar("T", bound=BaseModel)
@@ -178,6 +180,16 @@ class FirestoreInvestmentPlanningStore:
                 workspace_id=plan.workspace_id,
                 extra={"receipt_id": safe.receipt_id},
             )
+        elif isinstance(safe, PortfolioSnapshotRef):
+            self._workspace(safe.tenant_id, safe.workspace_id).collection(COL_SNAPSHOTS).document(
+                safe.snapshot_id
+            ).set(_planning_to_document(safe))
+            self._put_index(
+                kind="snapshot",
+                resource_id=safe.snapshot_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.workspace_id,
+            )
         return safe
 
     def get_plan(self, plan_id: str) -> InvestmentPlan | None:
@@ -230,3 +242,24 @@ class FirestoreInvestmentPlanningStore:
         if not receipt_id:
             return None
         return self.get_receipt(receipt_id)
+
+    def get_snapshot(self, snapshot_id: str) -> PortfolioSnapshotRef | None:
+        return self._load(
+            PortfolioSnapshotRef,
+            kind="snapshot",
+            resource_id=snapshot_id,
+            collection=COL_SNAPSHOTS,
+        )
+
+    def latest_snapshot(
+        self, *, tenant_id: str, project_id: str, fiscal_year: int | None = None
+    ) -> PortfolioSnapshotRef | None:
+        docs = self._workspace(tenant_id, project_id).collection(COL_SNAPSHOTS).stream()
+        matches = [
+            _planning_from_document(PortfolioSnapshotRef, doc.to_dict()) for doc in docs
+        ]
+        if fiscal_year is not None:
+            matches = [item for item in matches if item.fiscal_year == fiscal_year]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)

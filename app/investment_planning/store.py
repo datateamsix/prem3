@@ -70,6 +70,12 @@ class InvestmentPlanningMetadataStore(Protocol):
 
     def latest_receipt(self, plan_id: str) -> InvestmentPlanValidationReceipt | None: ...
 
+    def get_snapshot(self, snapshot_id: str) -> PortfolioSnapshotRef | None: ...
+
+    def latest_snapshot(
+        self, *, tenant_id: str, project_id: str, fiscal_year: int | None = None
+    ) -> PortfolioSnapshotRef | None: ...
+
 
 class InMemoryInvestmentPlanningMetadataStore:
     """Process memory for contract tests. Not a production truth."""
@@ -79,6 +85,7 @@ class InMemoryInvestmentPlanningMetadataStore:
         self._sources: dict[str, BudgetDriveSourceVersion] = {}
         self._mappings: dict[str, BudgetColumnMapping] = {}
         self._receipts: dict[str, InvestmentPlanValidationReceipt] = {}
+        self._snapshots: dict[str, PortfolioSnapshotRef] = {}
         self._rows: list[FrozenModel] = []
 
     def put(self, value: InvestmentPlanningMetadata) -> InvestmentPlanningMetadata:
@@ -92,6 +99,8 @@ class InMemoryInvestmentPlanningMetadataStore:
             self._mappings[safe.mapping_id] = safe
         elif isinstance(safe, InvestmentPlanValidationReceipt):
             self._receipts[safe.receipt_id] = safe
+        elif isinstance(safe, PortfolioSnapshotRef):
+            self._snapshots[safe.snapshot_id] = safe
         return safe
 
     def get_plan(self, plan_id: str) -> InvestmentPlan | None:
@@ -125,6 +134,23 @@ class InMemoryInvestmentPlanningMetadataStore:
 
     def latest_receipt(self, plan_id: str) -> InvestmentPlanValidationReceipt | None:
         matches = [receipt for receipt in self._receipts.values() if receipt.plan_id == plan_id]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def get_snapshot(self, snapshot_id: str) -> PortfolioSnapshotRef | None:
+        return self._snapshots.get(snapshot_id)
+
+    def latest_snapshot(
+        self, *, tenant_id: str, project_id: str, fiscal_year: int | None = None
+    ) -> PortfolioSnapshotRef | None:
+        matches = [
+            snapshot
+            for snapshot in self._snapshots.values()
+            if snapshot.tenant_id == tenant_id
+            and snapshot.project_id == project_id
+            and (fiscal_year is None or snapshot.fiscal_year == fiscal_year)
+        ]
         if not matches:
             return None
         return max(matches, key=lambda item: item.created_at)

@@ -2397,6 +2397,82 @@ components:
       - status
       title: InvestmentPlanValidationResponse
       type: object
+    InvestmentPortfolioResponse:
+      additionalProperties: false
+      properties:
+        allocations:
+          default: []
+          items:
+            $ref: '#/components/schemas/PortfolioAllocationResponse'
+          title: Allocations
+          type: array
+        baseline_kind:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Baseline Kind
+        channel_allocation:
+          default: []
+          items:
+            $ref: '#/components/schemas/PortfolioDimensionTotalResponse'
+          title: Channel Allocation
+          type: array
+        coverage_state:
+          title: Coverage State
+          type: string
+        currency:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Currency
+        fiscal_year:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Fiscal Year
+        freshness:
+          anyOf:
+          - $ref: '#/components/schemas/PortfolioFreshnessResponse'
+          - type: 'null'
+        market_allocation:
+          default: []
+          items:
+            $ref: '#/components/schemas/PortfolioDimensionTotalResponse'
+          title: Market Allocation
+          type: array
+        project_id:
+          title: Project Id
+          type: string
+        quarterly:
+          default: []
+          items:
+            $ref: '#/components/schemas/QuarterlyPortfolioResponse'
+          title: Quarterly
+          type: array
+        remaining:
+          anyOf:
+          - $ref: '#/components/schemas/MoneyAmountResponse'
+          - type: 'null'
+        snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+        summary:
+          default: []
+          items:
+            $ref: '#/components/schemas/MoneyAmountResponse'
+          title: Summary
+          type: array
+        workspace_id:
+          title: Workspace Id
+          type: string
+      required:
+      - coverage_state
+      - project_id
+      - workspace_id
+      title: InvestmentPortfolioResponse
+      type: object
     IterateModelRequest:
       additionalProperties: false
       properties:
@@ -3141,6 +3217,29 @@ components:
       - created_at
       title: ModelVersionResponse
       type: object
+    MoneyAmountResponse:
+      additionalProperties: false
+      properties:
+        currency:
+          title: Currency
+          type: string
+        kind:
+          title: Kind
+          type: string
+        missing:
+          default: false
+          title: Missing
+          type: boolean
+        value:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Value
+      required:
+      - kind
+      - currency
+      title: MoneyAmountResponse
+      type: object
     NextAction:
       additionalProperties: false
       properties:
@@ -3417,6 +3516,80 @@ components:
           - type: 'null'
           title: Return Path
       title: PortalSessionRequest
+      type: object
+    PortfolioAllocationResponse:
+      additionalProperties: false
+      properties:
+        amounts:
+          default: []
+          items:
+            $ref: '#/components/schemas/MoneyAmountResponse'
+          title: Amounts
+          type: array
+        channel_id:
+          title: Channel Id
+          type: string
+        channel_registry_version:
+          title: Channel Registry Version
+          type: integer
+        fiscal_year:
+          title: Fiscal Year
+          type: integer
+        market_id:
+          title: Market Id
+          type: string
+        quarter:
+          title: Quarter
+          type: integer
+      required:
+      - fiscal_year
+      - quarter
+      - market_id
+      - channel_id
+      - channel_registry_version
+      title: PortfolioAllocationResponse
+      type: object
+    PortfolioDimensionTotalResponse:
+      additionalProperties: false
+      properties:
+        amount:
+          $ref: '#/components/schemas/MoneyAmountResponse'
+        channel_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Id
+        market_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+      required:
+      - amount
+      title: PortfolioDimensionTotalResponse
+      type: object
+    PortfolioFreshnessResponse:
+      additionalProperties: false
+      properties:
+        actuals_as_of:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Actuals As Of
+        measurement_as_of:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Measurement As Of
+        plan_source_as_of:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Plan Source As Of
+      title: PortfolioFreshnessResponse
       type: object
     ProblemDetail:
       $defs:
@@ -3997,6 +4170,22 @@ components:
       - name
       - identity
       title: PublishedArtifactResponse
+      type: object
+    QuarterlyPortfolioResponse:
+      additionalProperties: false
+      properties:
+        quarter:
+          title: Quarter
+          type: integer
+        summary:
+          default: []
+          items:
+            $ref: '#/components/schemas/MoneyAmountResponse'
+          title: Summary
+          type: array
+      required:
+      - quarter
+      title: QuarterlyPortfolioResponse
       type: object
     ReadyProviderStatus:
       additionalProperties: false
@@ -5909,6 +6098,36 @@ paths:
       summary: Validate Plan
       tags:
       - investment-plans
+  /v1/projects/{project_id}/investment-portfolio:
+    get:
+      operationId: getInvestmentPortfolio
+      parameters:
+      - in: query
+        name: fiscal_year
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Fiscal Year
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentPortfolioResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Portfolio
+      tags:
+      - investment-portfolio
   /v1/projects/{project_id}/measurement-home:
     get:
       operationId: getProjectMeasurementHome

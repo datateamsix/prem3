@@ -111,6 +111,7 @@ from app.service.routers import (
     import_governance,
     internal_dispatch,
     investment_planning,
+    investment_portfolio,
     materializations,
     mmm,
     mta,
@@ -341,6 +342,8 @@ def create_app(
     app.include_router(data_foundation.router)
     app.include_router(investment_planning.canonical_router)
     app.include_router(investment_planning.workspace_alias_router)
+    app.include_router(investment_portfolio.canonical_portfolio_router)
+    app.include_router(investment_portfolio.workspace_alias_portfolio_router)
     app.include_router(materializations.router)
     app.include_router(publishes.router)
     app.include_router(mmm.router)

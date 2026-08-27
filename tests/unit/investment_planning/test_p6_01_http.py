@@ -394,19 +394,21 @@ def test_investment_plan_http_requires_auth() -> None:
     assert response.status_code in {401, 403, 503}
 
 
-def test_portfolio_and_optimization_routes_remain_absent() -> None:
+def test_optimization_and_view_routes_remain_absent() -> None:
     harness = google_harness()
     project_id = harness["workspace"]["workspace_id"]
     client = harness["client"]
     for path in (
-        f"/v1/projects/{project_id}/investment-portfolio",
         f"/v1/projects/{project_id}/investment-optimizations",
         f"/v1/projects/{project_id}/investment-plans/ipln_aaaaaaaaaaaaaaaaaaaa/view",
-        f"/v1/workspaces/{project_id}/investment-portfolio",
     ):
         response = client.get(path, headers=auth_header())
         assert response.status_code == 404
+    empty = client.get(
+        f"/v1/projects/{project_id}/investment-portfolio",
+        headers=auth_header(),
+    )
+    assert empty.status_code == 403
     schema = client.app.openapi()
     for route in schema.get("paths", {}):
-        assert "investment-portfolio" not in route
         assert "investment-optimization" not in route
