@@ -1126,6 +1126,31 @@ components:
     DriveBindingResponse:
       additionalProperties: false
       properties:
+        budget_plans_folder_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Budget Plans Folder Id
+        budget_proposals_folder_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Budget Proposals Folder Id
+        budget_scenarios_folder_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Budget Scenarios Folder Id
+        budget_templates_folder_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Budget Templates Folder Id
+        budgets_folder_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Budgets Folder Id
         connection_id:
           title: Connection Id
           type: string

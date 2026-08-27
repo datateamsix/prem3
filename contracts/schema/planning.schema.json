@@ -1,0 +1,1119 @@
+{
+  "$defs": {
+    "app_investment_optimization_contracts__OptimizationObjectiveKind": {
+      "enum": [
+        "EXPECTED_KPI",
+        "EXPECTED_REVENUE",
+        "TARGET_ROI",
+        "MARGINAL_ROI",
+        "PREM3_CVAR"
+      ],
+      "title": "OptimizationObjectiveKind",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationProposalRef": {
+      "additionalProperties": false,
+      "description": "Durable metadata. Recommended amounts live on the customer Drive artifact.",
+      "properties": {
+        "accepted_mmm_result_ref": {
+          "title": "Accepted Mmm Result Ref",
+          "type": "string"
+        },
+        "approved_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved At"
+        },
+        "approved_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved By"
+        },
+        "assumption_set_fingerprint": {
+          "title": "Assumption Set Fingerprint",
+          "type": "string"
+        },
+        "baseline_snapshot_id": {
+          "title": "Baseline Snapshot Id",
+          "type": "string"
+        },
+        "constraint_set_fingerprint": {
+          "title": "Constraint Set Fingerprint",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "title": "Created By",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "objective_kind": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationObjectiveKind"
+        },
+        "predecessor_proposal_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predecessor Proposal Id"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "proposal_id": {
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "result_drive_file_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Drive File Id"
+        },
+        "solver_kind": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationSolverKind"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationProposalStatus"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "tenant_id",
+        "project_id",
+        "workspace_id",
+        "baseline_snapshot_id",
+        "status",
+        "solver_kind",
+        "objective_kind",
+        "accepted_mmm_result_ref",
+        "constraint_set_fingerprint",
+        "assumption_set_fingerprint",
+        "fingerprint",
+        "created_at",
+        "created_by"
+      ],
+      "title": "OptimizationProposalRef",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__OptimizationProposalStatus": {
+      "enum": [
+        "DRAFT",
+        "READY",
+        "SCENARIO",
+        "RECOMMENDED",
+        "APPROVED",
+        "REJECTED",
+        "MODIFIED",
+        "SUPERSEDED",
+        "FAILED"
+      ],
+      "title": "OptimizationProposalStatus",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationSolverKind": {
+      "enum": [
+        "MERIDIAN_NATIVE_FIXED_BUDGET",
+        "MERIDIAN_NATIVE_FLEXIBLE_BUDGET",
+        "PREM3_RISK_AWARE_FRONTIER"
+      ],
+      "title": "OptimizationSolverKind",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__AmountKind": {
+      "enum": [
+        "PLANNED",
+        "APPROVED",
+        "COMMITTED",
+        "FLEXIBLE",
+        "ACTUAL",
+        "FORECAST_AT_COMPLETION",
+        "REMAINING",
+        "RECOMMENDED"
+      ],
+      "title": "AmountKind",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__BudgetDriveSourceVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "budgets_folder_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budgets Folder Id"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "title": "Created By",
+          "type": "string"
+        },
+        "drive_connection_id": {
+          "title": "Drive Connection Id",
+          "type": "string"
+        },
+        "drive_file_id": {
+          "title": "Drive File Id",
+          "type": "string"
+        },
+        "drive_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drive Version"
+        },
+        "file_name": {
+          "title": "File Name",
+          "type": "string"
+        },
+        "head_revision_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Head Revision Id"
+        },
+        "mapping_version": {
+          "title": "Mapping Version",
+          "type": "string"
+        },
+        "md5_checksum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Md5 Checksum"
+        },
+        "mime_type": {
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "modified_time": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Modified Time"
+        },
+        "plan_id": {
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "predecessor_source_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predecessor Source Version Id"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_grain": {
+          "$ref": "#/$defs/app_investment_planning_contracts__BudgetSourceGrain"
+        },
+        "source_version_id": {
+          "title": "Source Version Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_version_id",
+        "plan_id",
+        "tenant_id",
+        "project_id",
+        "workspace_id",
+        "drive_connection_id",
+        "drive_file_id",
+        "file_name",
+        "mime_type",
+        "schema_version",
+        "mapping_version",
+        "source_grain",
+        "created_at",
+        "created_by"
+      ],
+      "title": "BudgetDriveSourceVersion",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__BudgetScope": {
+      "enum": [
+        "PAID_MEDIA_ONLY",
+        "PAID_MEDIA_PLUS_CREATIVE",
+        "FULLY_LOADED_MARKETING_INVESTMENT",
+        "CUSTOM"
+      ],
+      "title": "BudgetScope",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__BudgetSourceGrain": {
+      "enum": [
+        "MARKET_CHANNEL_QUARTER",
+        "INITIATIVE_DETAIL",
+        "MIXED"
+      ],
+      "title": "BudgetSourceGrain",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__EvidenceCoverageLabel": {
+      "enum": [
+        "MMM",
+        "MTA",
+        "EXPERIMENT",
+        "BRAND",
+        "EXPOSURE_INTEGRITY",
+        "NONE"
+      ],
+      "title": "EvidenceCoverageLabel",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__InvestmentPlan": {
+      "additionalProperties": false,
+      "description": "Metadata only. Declared annual budget and allocation rows stay in Drive.",
+      "properties": {
+        "active_source_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active Source Version Id"
+        },
+        "approved_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved At"
+        },
+        "approved_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved By"
+        },
+        "budget_scope": {
+          "$ref": "#/$defs/app_investment_planning_contracts__BudgetScope"
+        },
+        "budget_scope_custom_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budget Scope Custom Text"
+        },
+        "business_profile_fingerprint": {
+          "title": "Business Profile Fingerprint",
+          "type": "string"
+        },
+        "business_profile_snapshot_id": {
+          "title": "Business Profile Snapshot Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "title": "Created By",
+          "type": "string"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "fiscal_start_month": {
+          "title": "Fiscal Start Month",
+          "type": "integer"
+        },
+        "fiscal_year": {
+          "title": "Fiscal Year",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "plan_id": {
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "predecessor_plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predecessor Plan Id"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_planning_contracts__InvestmentPlanStatus"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan_id",
+        "tenant_id",
+        "project_id",
+        "workspace_id",
+        "name",
+        "fiscal_year",
+        "fiscal_start_month",
+        "currency",
+        "budget_scope",
+        "business_profile_snapshot_id",
+        "business_profile_fingerprint",
+        "status",
+        "revision",
+        "created_at",
+        "updated_at",
+        "created_by"
+      ],
+      "title": "InvestmentPlan",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__InvestmentPlanReadyStatus": {
+      "enum": [
+        "NOT_SET",
+        "PENDING",
+        "INVESTMENT_PLAN_READY",
+        "SOURCE_STALE"
+      ],
+      "title": "InvestmentPlanReadyStatus",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__InvestmentPlanStatus": {
+      "enum": [
+        "DRAFT",
+        "VALIDATED",
+        "APPROVED",
+        "SUPERSEDED",
+        "SOURCE_STALE",
+        "SOURCE_UNAVAILABLE"
+      ],
+      "title": "InvestmentPlanStatus",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__InvestmentPlanValidationReceipt": {
+      "additionalProperties": false,
+      "description": "Safe row/header references only. Never cell contents or amounts.",
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "error_codes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Error Codes",
+          "type": "array"
+        },
+        "flagged_headers": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Flagged Headers",
+          "type": "array"
+        },
+        "flagged_row_indexes": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Flagged Row Indexes",
+          "type": "array"
+        },
+        "plan_id": {
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "source_version_id": {
+          "title": "Source Version Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_planning_contracts__InvestmentPlanReadyStatus"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "plan_id",
+        "source_version_id",
+        "status"
+      ],
+      "title": "InvestmentPlanValidationReceipt",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__MoneyAmount": {
+      "additionalProperties": false,
+      "description": "Transient Decimal amount. Missing is distinct from zero.",
+      "properties": {
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/app_investment_planning_contracts__AmountKind"
+        },
+        "missing": {
+          "default": false,
+          "title": "Missing",
+          "type": "boolean"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "kind",
+        "currency",
+        "value"
+      ],
+      "title": "MoneyAmount",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__PortfolioAllocationView": {
+      "additionalProperties": false,
+      "properties": {
+        "amounts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_contracts__MoneyAmount"
+          },
+          "title": "Amounts",
+          "type": "array"
+        },
+        "channel_id": {
+          "title": "Channel Id",
+          "type": "string"
+        },
+        "channel_registry_version": {
+          "title": "Channel Registry Version",
+          "type": "integer"
+        },
+        "fiscal_year": {
+          "title": "Fiscal Year",
+          "type": "integer"
+        },
+        "market_id": {
+          "title": "Market Id",
+          "type": "string"
+        },
+        "quarter": {
+          "enum": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "title": "Quarter",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fiscal_year",
+        "quarter",
+        "market_id",
+        "channel_id",
+        "channel_registry_version"
+      ],
+      "title": "PortfolioAllocationView",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__PortfolioBaselineKind": {
+      "enum": [
+        "APPROVED_PLAN",
+        "ACTUAL_YTD",
+        "FORECAST_AT_COMPLETION",
+        "TRANSIENT_SCENARIO",
+        "GOVERNED_ACTUALS"
+      ],
+      "title": "PortfolioBaselineKind",
+      "type": "string"
+    },
+    "app_investment_planning_contracts__PortfolioEvidenceCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted_mmm": {
+          "default": false,
+          "title": "Accepted Mmm",
+          "type": "boolean"
+        },
+        "exposure_integrity_available": {
+          "default": false,
+          "title": "Exposure Integrity Available",
+          "type": "boolean"
+        },
+        "labels": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_contracts__EvidenceCoverageLabel"
+          },
+          "title": "Labels",
+          "type": "array"
+        },
+        "mta_available": {
+          "default": false,
+          "title": "Mta Available",
+          "type": "boolean"
+        },
+        "stale": {
+          "default": false,
+          "title": "Stale",
+          "type": "boolean"
+        }
+      },
+      "title": "PortfolioEvidenceCoverage",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__PortfolioObservation": {
+      "additionalProperties": false,
+      "description": "Deterministic observation code. Gemini may explain later; it does not own truth.",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "fiscal_year": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fiscal Year"
+        },
+        "quarter": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quarter"
+        },
+        "subject_channel_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Channel Id"
+        },
+        "subject_market_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Market Id"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "PortfolioObservation",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__PortfolioSnapshotRef": {
+      "additionalProperties": false,
+      "description": "Durable metadata pointer. Amounts are never stored on this model.",
+      "properties": {
+        "accepted_mmm_result_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accepted Mmm Result Ref"
+        },
+        "baseline_kind": {
+          "$ref": "#/$defs/app_investment_planning_contracts__PortfolioBaselineKind"
+        },
+        "business_profile_snapshot_id": {
+          "title": "Business Profile Snapshot Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "title": "Created By",
+          "type": "string"
+        },
+        "drive_artifact_file_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drive Artifact File Id"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "fiscal_year": {
+          "title": "Fiscal Year",
+          "type": "integer"
+        },
+        "investment_plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Investment Plan Id"
+        },
+        "measurement_cycle_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measurement Cycle Id"
+        },
+        "mta_result_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mta Result Ref"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Version Id"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "tenant_id",
+        "project_id",
+        "workspace_id",
+        "fiscal_year",
+        "baseline_kind",
+        "business_profile_snapshot_id",
+        "fingerprint",
+        "created_at",
+        "created_by"
+      ],
+      "title": "PortfolioSnapshotRef",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__PortfolioSourceFreshness": {
+      "additionalProperties": false,
+      "properties": {
+        "actuals_as_of": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actuals As Of"
+        },
+        "measurement_as_of": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measurement As Of"
+        },
+        "plan_source_as_of": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Source As Of"
+        }
+      },
+      "title": "PortfolioSourceFreshness",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__PortfolioSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "totals": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_contracts__MoneyAmount"
+          },
+          "title": "Totals",
+          "type": "array"
+        }
+      },
+      "required": [
+        "currency"
+      ],
+      "title": "PortfolioSummary",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__PortfolioView": {
+      "additionalProperties": false,
+      "description": "Transient assembled portfolio. Never persisted to Firestore or PreM3 GCS.",
+      "properties": {
+        "allocations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_contracts__PortfolioAllocationView"
+          },
+          "title": "Allocations",
+          "type": "array"
+        },
+        "baseline_kind": {
+          "$ref": "#/$defs/app_investment_planning_contracts__PortfolioBaselineKind"
+        },
+        "coverage": {
+          "$ref": "#/$defs/app_investment_planning_contracts__PortfolioEvidenceCoverage"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "fiscal_year": {
+          "title": "Fiscal Year",
+          "type": "integer"
+        },
+        "freshness": {
+          "$ref": "#/$defs/app_investment_planning_contracts__PortfolioSourceFreshness"
+        },
+        "observations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_contracts__PortfolioObservation"
+          },
+          "title": "Observations",
+          "type": "array"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "quarterly": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_contracts__QuarterlyPortfolioView"
+          },
+          "title": "Quarterly",
+          "type": "array"
+        },
+        "snapshot_id": {
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/app_investment_planning_contracts__PortfolioSummary"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "tenant_id",
+        "project_id",
+        "fiscal_year",
+        "currency",
+        "baseline_kind",
+        "summary",
+        "coverage",
+        "freshness"
+      ],
+      "title": "PortfolioView",
+      "type": "object"
+    },
+    "app_investment_planning_contracts__QuarterlyPortfolioView": {
+      "additionalProperties": false,
+      "properties": {
+        "allocations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_contracts__PortfolioAllocationView"
+          },
+          "title": "Allocations",
+          "type": "array"
+        },
+        "fiscal_year": {
+          "title": "Fiscal Year",
+          "type": "integer"
+        },
+        "quarter": {
+          "enum": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "title": "Quarter",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fiscal_year",
+        "quarter"
+      ],
+      "title": "QuarterlyPortfolioView",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "P6-00 architecture freeze. InvestmentPlan and PortfolioSnapshotRef are control-plane metadata. PortfolioView is CUSTOMER_AMOUNT_TRANSIENT and must not be persisted to Firestore or PreM3 GCS. OptimizationProposalRef is metadata; recommended amounts belong on the customer Drive artifact.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/app_investment_planning_contracts__InvestmentPlan"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_contracts__BudgetDriveSourceVersion"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_contracts__InvestmentPlanValidationReceipt"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_contracts__PortfolioSnapshotRef"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_contracts__PortfolioView"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationProposalRef"
+    }
+  ],
+  "title": "PreM3 investment planning and portfolio contracts"
+}

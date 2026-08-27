@@ -270,6 +270,11 @@ class DriveBindingResponse(ApiModel):
     imports_folder_id: str
     exports_folder_id: str
     reports_folder_id: str
+    budgets_folder_id: str | None = None
+    budget_templates_folder_id: str | None = None
+    budget_plans_folder_id: str | None = None
+    budget_scenarios_folder_id: str | None = None
+    budget_proposals_folder_id: str | None = None
     status: str
     import_enabled: bool
     export_enabled: bool

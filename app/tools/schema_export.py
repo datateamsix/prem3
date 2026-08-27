@@ -30,6 +30,14 @@ from app.intelligence.contracts import (
     Prem3PreEdaFinding,
     SemanticQuestion,
 )
+from app.investment_optimization.contracts import OptimizationProposalRef
+from app.investment_planning.contracts import (
+    BudgetDriveSourceVersion,
+    InvestmentPlan,
+    InvestmentPlanValidationReceipt,
+    PortfolioSnapshotRef,
+    PortfolioView,
+)
 from app.mel.models import (
     ExperienceApplication,
     ExperienceEpisode,
@@ -45,12 +53,6 @@ from app.service.mmm_models import (
     IdentifiabilityReviewResponse,
     MMMSummaryResponse,
     ModelVersionResponse,
-)
-from app.service.mta_models import (
-    MTAOverviewResponse,
-    MTAReadinessResponse,
-    MTARunReceiptResponse,
-    MTARunResponse,
 )
 from app.service.models import (
     BigQueryBindingResponse,
@@ -78,6 +80,12 @@ from app.service.models import (
     WebhookAckResponse,
     WorkspaceListResponse,
     WorkspaceResponse,
+)
+from app.service.mta_models import (
+    MTAOverviewResponse,
+    MTAReadinessResponse,
+    MTARunReceiptResponse,
+    MTARunResponse,
 )
 from app.service.project_models import (
     BusinessIqOverviewReadModel,
@@ -247,6 +255,27 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             MTAReadinessResponse,
             MTARunResponse,
             MTARunReceiptResponse,
+        ),
+        composition="catalog",
+    ),
+    SchemaFamily(
+        artifact="planning.schema.json",
+        family="planning",
+        title="PreM3 investment planning and portfolio contracts",
+        description=(
+            "P6-00 architecture freeze. InvestmentPlan and PortfolioSnapshotRef are "
+            "control-plane metadata. PortfolioView is CUSTOMER_AMOUNT_TRANSIENT and "
+            "must not be persisted to Firestore or PreM3 GCS. OptimizationProposalRef "
+            "is metadata; recommended amounts belong on the customer Drive artifact."
+        ),
+        python_module="app.investment_planning.contracts",
+        roots=(
+            InvestmentPlan,
+            BudgetDriveSourceVersion,
+            InvestmentPlanValidationReceipt,
+            PortfolioSnapshotRef,
+            PortfolioView,
+            OptimizationProposalRef,
         ),
         composition="catalog",
     ),

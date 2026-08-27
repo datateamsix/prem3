@@ -77,6 +77,7 @@ NEXT_ACTION_LABELS: dict[NextActionType, str] = {
     NextActionType.SELECT_MTA_KEY_EVENT: "Select MTA key event",
     NextActionType.OPEN_MTA: "Open MTA",
     NextActionType.SETUP_FORECAST: "Set up Forecast",
+    NextActionType.START_INVESTMENT_PLAN: "Start Investment Plan",
     NextActionType.VIEW_SCENARIO_REQUIREMENTS: "View scenario requirements",
     NextActionType.VIEW_OPTIMIZATION_REQUIREMENTS: "View optimization requirements",
     NextActionType.REVIEW_SOURCE: "Review source",
@@ -738,6 +739,7 @@ class ProjectHomeAssembler:
             )
         rows: list[PlanningCapabilitySummary] = []
         for capability in (
+            CapabilityFamily.INVESTMENT_PLAN,
             CapabilityFamily.FORECASTING,
             CapabilityFamily.SCENARIO_SIMULATION,
             CapabilityFamily.BUDGET_OPTIMIZATION,

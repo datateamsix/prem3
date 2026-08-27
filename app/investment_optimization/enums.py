@@ -1,0 +1,38 @@
+"""Optimization vocabulary. Native Meridian first; CVaR later."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+
+class OptimizationProposalStatus(StrEnum):
+    DRAFT = "DRAFT"
+    READY = "READY"
+    SCENARIO = "SCENARIO"
+    RECOMMENDED = "RECOMMENDED"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    MODIFIED = "MODIFIED"
+    SUPERSEDED = "SUPERSEDED"
+    FAILED = "FAILED"
+
+
+class OptimizationSolverKind(StrEnum):
+    MERIDIAN_NATIVE_FIXED_BUDGET = "MERIDIAN_NATIVE_FIXED_BUDGET"
+    MERIDIAN_NATIVE_FLEXIBLE_BUDGET = "MERIDIAN_NATIVE_FLEXIBLE_BUDGET"
+    PREM3_RISK_AWARE_FRONTIER = "PREM3_RISK_AWARE_FRONTIER"
+
+
+class OptimizationReadinessStatus(StrEnum):
+    NOT_READY = "NOT_READY"
+    OPTIMIZATION_READY = "OPTIMIZATION_READY"
+    REQUIRES_ACCEPTED_MMM = "REQUIRES_ACCEPTED_MMM"
+    REQUIRES_SUPPORTED_MAPPING = "REQUIRES_SUPPORTED_MAPPING"
+
+
+class OptimizationObjectiveKind(StrEnum):
+    EXPECTED_KPI = "EXPECTED_KPI"
+    EXPECTED_REVENUE = "EXPECTED_REVENUE"
+    TARGET_ROI = "TARGET_ROI"
+    MARGINAL_ROI = "MARGINAL_ROI"
+    PREM3_CVAR = "PREM3_CVAR"

@@ -358,6 +358,11 @@ def planning_availability(
         )
     if capability is CapabilityFamily.FORECASTING:
         return CapabilityAvailability.AVAILABLE_TO_CONFIGURE, NextActionType.SETUP_FORECAST
+    if capability is CapabilityFamily.INVESTMENT_PLAN:
+        return (
+            CapabilityAvailability.AVAILABLE_TO_CONFIGURE,
+            NextActionType.START_INVESTMENT_PLAN,
+        )
     del model_ready
     if model_accepted:
         return CapabilityAvailability.AVAILABLE_TO_CONFIGURE, NextActionType.RETURN_PROJECT_HOME

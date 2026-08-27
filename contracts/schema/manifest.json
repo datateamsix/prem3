@@ -174,7 +174,30 @@
         "app.service.mta_models.MTARunResponse",
         "app.service.mta_models.MTARunReceiptResponse"
       ],
-      "sha256": "dc2b63f2dd6742d474b66aca43e7f36af07adbf08c96354f1bfb1339c6ea847d"
+      "sha256": "8f7d98f9724edc42a9dd829728337023102e69a3e4038130ce8e5191b5329628"
+    },
+    {
+      "artifact": "planning.schema.json",
+      "composition": "catalog",
+      "family": "planning",
+      "public_roots": [
+        "InvestmentPlan",
+        "BudgetDriveSourceVersion",
+        "InvestmentPlanValidationReceipt",
+        "PortfolioSnapshotRef",
+        "PortfolioView",
+        "OptimizationProposalRef"
+      ],
+      "python_module": "app.investment_planning.contracts",
+      "python_qualnames": [
+        "app.investment_planning.contracts.InvestmentPlan",
+        "app.investment_planning.contracts.BudgetDriveSourceVersion",
+        "app.investment_planning.contracts.InvestmentPlanValidationReceipt",
+        "app.investment_planning.contracts.PortfolioSnapshotRef",
+        "app.investment_planning.contracts.PortfolioView",
+        "app.investment_optimization.contracts.OptimizationProposalRef"
+      ],
+      "sha256": "51a1bb4deafd558135e4ba72bdd7fca25d335f783508423fd130cb1b58a9038f"
     }
   ],
   "hash_algorithm": "sha256",
