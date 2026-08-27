@@ -65,6 +65,15 @@ def new_topology_id() -> str:
     return _opaque("igto")
 
 
+def compilation_id_from_fingerprint(fingerprint: str) -> str:
+    """Deterministic compilation_id. Same fingerprints reuse the same artifact."""
+    return validate_resource_identifier(f"iga_{fingerprint[:20]}", field="compilation_id")
+
+
+def new_artifact_id() -> str:
+    return _opaque("igaf")
+
+
 def new_policy_id() -> str:
     return _opaque("igp")
 

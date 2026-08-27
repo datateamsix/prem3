@@ -1,0 +1,6 @@
+-- Disjoint union of selected same-location properties. Not a silent overlap UNION.
+-- Include only rows from ExplicitSourceSelection. No cross-property person stitch.
+SELECT
+  {{ session_select }}
+FROM session_compiled
+WHERE ga4_source_binding_id IN UNNEST(@selected_source_binding_ids)

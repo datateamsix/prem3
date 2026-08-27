@@ -233,3 +233,14 @@ class ResolveTrackingRequest(ApiModel):
 class VerifyTrackingRequest(ApiModel):
     campaign_id: str
     observation_id: str | None = None
+
+
+class CompileIdentityGraphAnalyticsRequest(ApiModel):
+    selected_source_binding_ids: list[str]
+    period_start: str
+    period_end: str
+    session_traffic_source_policy: str | None = None
+    settlement_policy: str | None = None
+    identity_strategy: str | None = None
+    direct_treatment_policy: str | None = None
+    campaign_slice_required: bool = False

@@ -1,0 +1,12 @@
+-- MTA-compatible journey grain. journey_id is project-scoped, not a person ID.
+SELECT
+  journey_id,
+  ARRAY_AGG(session_id ORDER BY session_start_ts) AS session_ids,
+  ARRAY_AGG(DISTINCT market_id IGNORE NULLS) AS market_ids,
+  ARRAY_AGG(DISTINCT channel_id IGNORE NULLS) AS channel_ids,
+  ARRAY_AGG(DISTINCT campaign_id IGNORE NULLS) AS campaign_ids,
+  COUNTIF(ARRAY_LENGTH(ARRAY_AGG(DISTINCT market_id IGNORE NULLS)) > 1) > 0 AS multi_market,
+  COUNTIF(key_event) AS key_event_count,
+  COUNT(*) AS touchpoint_count
+FROM `{{ destination_project }}.{{ destination_dataset }}.mta_session_touchpoints_{{ compilation_id }}`
+GROUP BY journey_id

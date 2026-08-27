@@ -1,0 +1,18 @@
+-- Regional properties are authoritative. Exclude master rows that overlap a
+-- regional property-scoped session key. No person stitching.
+WITH regional AS (
+  SELECT * FROM session_compiled
+  WHERE ga4_source_binding_id != @master_source_binding_id
+),
+master AS (
+  SELECT m.*
+  FROM session_compiled m
+  LEFT JOIN regional r
+    ON m.subject_key = r.subject_key
+   AND m.ga_session_id = r.ga_session_id
+  WHERE m.ga4_source_binding_id = @master_source_binding_id
+    AND r.session_id IS NULL
+)
+SELECT * FROM regional
+UNION ALL
+SELECT * FROM master

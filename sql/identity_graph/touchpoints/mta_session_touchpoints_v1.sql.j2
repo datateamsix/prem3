@@ -1,0 +1,15 @@
+-- MTA-compatible touchpoint grain. Compilation-scoped. No attribution credit.
+SELECT
+  session_id,
+  ROW_NUMBER() OVER (PARTITION BY journey_id ORDER BY session_start_ts, session_id) AS touchpoint_order,
+  ga4_property_id,
+  ga4_source_binding_id,
+  market_id,
+  channel_id,
+  campaign_id,
+  parent_campaign_id,
+  audience_id,
+  provider_id,
+  session_start_ts,
+  key_event
+FROM `{{ destination_project }}.{{ destination_dataset }}.ga4_sessions_unified_{{ compilation_id }}`

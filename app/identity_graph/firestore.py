@@ -5,6 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from app.control_plane.serialization import document_to_model, model_to_document
+from app.identity_graph.analytics.contracts import (
+    AnalyticalArtifactRef,
+    UnifiedAnalyticsCompilation,
+    UnifiedAnalyticsReadinessReceipt,
+)
 from app.identity_graph.contracts import (
     AudienceExternalBinding,
     AudienceLedgerValidationReceipt,
@@ -57,6 +62,9 @@ COL_PERSONAS = "personas"
 COL_AUDIENCES = "audiences"
 COL_PERSONA_RECEIPTS = "persona_receipts"
 COL_AUDIENCE_RECEIPTS = "audience_receipts"
+COL_COMPILATIONS = "analytics_compilations"
+COL_ANALYTICS_RECEIPTS = "analytics_receipts"
+COL_ANALYTICS_ARTIFACTS = "analytics_artifacts"
 
 
 class FirestoreIdentityGraphStore:
@@ -606,3 +614,88 @@ class FirestoreIdentityGraphStore:
         return self._get(
             tenant_id, project_id, COL_TOPOLOGY_RECEIPTS, "current", GA4TopologyReadinessReceipt
         )
+
+    def put_compilation(
+        self, value: UnifiedAnalyticsCompilation
+    ) -> UnifiedAnalyticsCompilation:
+        self._put(
+            value.tenant_id,
+            value.project_id,
+            COL_COMPILATIONS,
+            value.compilation_id,
+            value,
+        )
+        return value
+
+    def get_compilation(
+        self, *, tenant_id: str, project_id: str, compilation_id: str
+    ) -> UnifiedAnalyticsCompilation | None:
+        return self._get(
+            tenant_id, project_id, COL_COMPILATIONS, compilation_id, UnifiedAnalyticsCompilation
+        )
+
+    def get_compilation_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, fingerprint: str
+    ) -> UnifiedAnalyticsCompilation | None:
+        for item in self.list_compilations(tenant_id=tenant_id, project_id=project_id):
+            if item.fingerprint == fingerprint:
+                return item
+        return None
+
+    def list_compilations(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[UnifiedAnalyticsCompilation]:
+        return self._list(tenant_id, project_id, COL_COMPILATIONS, UnifiedAnalyticsCompilation)
+
+    def put_analytics_receipt(
+        self, value: UnifiedAnalyticsReadinessReceipt
+    ) -> UnifiedAnalyticsReadinessReceipt:
+        self._put(
+            value.tenant_id,
+            value.project_id,
+            COL_ANALYTICS_RECEIPTS,
+            value.receipt_id,
+            value,
+        )
+        self._put(
+            value.tenant_id,
+            value.project_id,
+            COL_ANALYTICS_RECEIPTS,
+            "current",
+            value,
+        )
+        return value
+
+    def get_analytics_receipt(
+        self, *, tenant_id: str, project_id: str, receipt_id: str | None = None
+    ) -> UnifiedAnalyticsReadinessReceipt | None:
+        doc_id = receipt_id or "current"
+        return self._get(
+            tenant_id, project_id, COL_ANALYTICS_RECEIPTS, doc_id, UnifiedAnalyticsReadinessReceipt
+        )
+
+    def list_analytics_receipts(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[UnifiedAnalyticsReadinessReceipt]:
+        rows = self._list(
+            tenant_id, project_id, COL_ANALYTICS_RECEIPTS, UnifiedAnalyticsReadinessReceipt
+        )
+        return [item for item in rows if item.receipt_id]
+
+    def put_analytics_artifact(self, value: AnalyticalArtifactRef) -> AnalyticalArtifactRef:
+        self._put(
+            value.tenant_id,
+            value.project_id,
+            COL_ANALYTICS_ARTIFACTS,
+            value.artifact_id,
+            value,
+        )
+        return value
+
+    def list_analytics_artifacts(
+        self, *, tenant_id: str, project_id: str, compilation_id: str | None = None
+    ) -> list[AnalyticalArtifactRef]:
+        rows = self._list(tenant_id, project_id, COL_ANALYTICS_ARTIFACTS, AnalyticalArtifactRef)
+        if compilation_id is not None:
+            return [item for item in rows if item.compilation_id == compilation_id]
+        return rows

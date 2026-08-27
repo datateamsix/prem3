@@ -10,6 +10,17 @@ from app.core.errors import InvalidResourceIdentifierError
 from app.core.tenancy import require_tenant
 from app.domain.channels.registry import cached_channel_registry
 from app.domain.channels.validation import ChannelValidationError, assert_channel_id_in_registry
+from app.identity_graph.analytics.adapter import InMemoryAnalyticalAdapter
+from app.identity_graph.analytics.compiler import CompileContext, compile_unified_analytics
+from app.identity_graph.analytics.contracts import (
+    UNIFIED_ANALYTICS_DATASET,
+    AnalyticalSourceSelection,
+    ApprovedSourceMediumBinding,
+    M5_03AnalyticalHandoff,
+    UnifiedAnalyticsCompilation,
+    UnifiedAnalyticsOverview,
+    UnifiedAnalyticsReadinessReceipt,
+)
 from app.identity_graph.contracts import (
     AudienceBindingCoverage,
     AudienceExternalBinding,
@@ -80,6 +91,7 @@ from app.identity_graph.enums import (
     TrackingImplementationStatus,
     TrackingInstructionProvenance,
     TrackingKind,
+    UnifiedAnalyticsReadinessState,
     VerificationStatus,
 )
 from app.identity_graph.errors import IdentityGraphError
@@ -118,7 +130,13 @@ from app.identity_graph.resolution import (
     would_create_cycle,
 )
 from app.identity_graph.store import IdentityGraphStore, InMemoryIdentityGraphStore
-from app.registry.loader import load_registry
+from app.modeling.mta.contracts import (
+    DirectTreatmentPolicy,
+    GA4SettlementPolicy,
+    IdentityStrategy,
+    SessionTrafficSourcePolicy,
+)
+from app.registry import load_registry
 
 
 def require_canonical_provider_id(provider_id: str) -> None:
@@ -212,11 +230,13 @@ class CampaignIdentityService:
         store: IdentityGraphStore | None = None,
         business_iq_store: BusinessIqStore | None = None,
         provider_discovery: ProviderDiscovery | None = None,
+        analytical_adapter: InMemoryAnalyticalAdapter | None = None,
     ) -> None:
         self.store = store or InMemoryIdentityGraphStore()
         self.business_iq_store = business_iq_store
         self.resolver = CampaignIdentityResolver()
         self.provider_discovery = provider_discovery or UnconfiguredProviderDiscovery()
+        self.analytical_adapter = analytical_adapter or InMemoryAnalyticalAdapter()
 
     def create_campaign(
         self,
@@ -3367,3 +3387,231 @@ class CampaignIdentityService:
         else:
             status = TopologyStatus.READY
         return tuple(issues), status, direct_union_ready, location_class
+
+    def compile_analytics(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        selected_source_binding_ids: tuple[str, ...],
+        period_start: str,
+        period_end: str,
+        session_traffic_source_policy: SessionTrafficSourcePolicy = (
+            SessionTrafficSourcePolicy.GA4_SESSION_LAST_CLICK_V1
+        ),
+        settlement_policy: GA4SettlementPolicy = GA4SettlementPolicy.DAILY_SETTLED,
+        identity_strategy: IdentityStrategy = IdentityStrategy.PSEUDO_ID_ONLY,
+        direct_treatment_policy: DirectTreatmentPolicy = DirectTreatmentPolicy.KEEP_DIRECT,
+        campaign_slice_required: bool = False,
+        approved_source_medium_bindings: tuple[ApprovedSourceMediumBinding, ...] = (),
+    ) -> UnifiedAnalyticsCompilation:
+        self._authorize(tenant_id)
+        selection = AnalyticalSourceSelection(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            selected_source_binding_ids=selected_source_binding_ids,
+            period_start=period_start,
+            period_end=period_end,
+            session_traffic_source_policy=session_traffic_source_policy,
+            settlement_policy=settlement_policy,
+            identity_strategy=identity_strategy,
+            direct_treatment_policy=direct_treatment_policy,
+            campaign_slice_required=campaign_slice_required,
+            approved_source_medium_bindings=approved_source_medium_bindings,
+            destination_dataset=UNIFIED_ANALYTICS_DATASET,
+        )
+        selection = selection.model_copy(
+            update={"fingerprint": identity_fingerprint(selection)}
+        )
+
+        def resolve_campaign(signals: ObservedCampaignSignals) -> CampaignIdentityHandoff:
+            resolved = self.resolver.resolve(
+                campaigns=self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id),
+                tracking=self.store.list_tracking(tenant_id=tenant_id, project_id=project_id),
+                external=self.store.list_external(tenant_id=tenant_id, project_id=project_id),
+                signals=signals,
+                custom_rules=self.store.list_custom_rules(
+                    tenant_id=tenant_id, project_id=project_id
+                ),
+                tenant_id=tenant_id,
+                project_id=project_id,
+            )
+            campaign = None
+            if resolved.campaign_id is not None:
+                campaign = self.store.get_campaign(
+                    tenant_id=tenant_id,
+                    project_id=project_id,
+                    campaign_id=resolved.campaign_id,
+                )
+            return self.resolver.handoff(
+                resolution=resolved,
+                campaign=campaign,
+                signals=signals,
+            )
+
+        ctx = CompileContext(
+            selection=selection,
+            topology=self.store.get_topology(tenant_id=tenant_id, project_id=project_id),
+            topology_receipt=self.store.get_topology_receipt(
+                tenant_id=tenant_id, project_id=project_id
+            ),
+            sources=tuple(self.store.list_sources(tenant_id=tenant_id, project_id=project_id)),
+            seeds=self.analytical_adapter.seeds(tenant_id=tenant_id, project_id=project_id),
+            resolver=self.resolver,
+            resolve_market=self.resolve_market,
+            resolve_campaign=resolve_campaign,
+            audience_bindings=tuple(
+                self.store.list_audience_external(tenant_id=tenant_id, project_id=project_id)
+            ),
+            adapter=self.analytical_adapter,
+            identity_rules_fingerprint=self._identity_rules_fingerprint(
+                tenant_id=tenant_id, project_id=project_id
+            ),
+        )
+        compilation, receipt, _handoff = compile_unified_analytics(ctx)
+        existing = self.store.get_compilation(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            compilation_id=compilation.compilation_id,
+        )
+        if existing is not None:
+            return existing
+        self.store.put_compilation(compilation)
+        self.store.put_analytics_receipt(receipt)
+        for artifact in compilation.artifact_refs:
+            self.store.put_analytics_artifact(artifact)
+        return compilation
+
+    def analytics_overview(
+        self, *, tenant_id: str, project_id: str
+    ) -> UnifiedAnalyticsOverview:
+        self._authorize(tenant_id)
+        receipt = self.store.get_analytics_receipt(tenant_id=tenant_id, project_id=project_id)
+        topology = self.store.get_topology(tenant_id=tenant_id, project_id=project_id)
+        if receipt is None:
+            return UnifiedAnalyticsOverview(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                status=UnifiedAnalyticsReadinessState.NOT_CONFIGURED,
+                issue_summary=("UNIFIED_ANALYTICS_NOT_CONFIGURED",),
+                destination_dataset=UNIFIED_ANALYTICS_DATASET,
+                topology_id=topology.topology_id if topology else None,
+            )
+        compilation = None
+        if receipt.compilation_id:
+            compilation = self.store.get_compilation(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                compilation_id=receipt.compilation_id,
+            )
+        return UnifiedAnalyticsOverview(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            compilation_id=receipt.compilation_id,
+            status=receipt.state,
+            receipt_id=receipt.receipt_id,
+            artifact_refs=receipt.artifact_refs,
+            issue_summary=receipt.issues,
+            fingerprint=compilation.fingerprint if compilation else receipt.fingerprint,
+            destination_dataset=UNIFIED_ANALYTICS_DATASET,
+            topology_id=topology.topology_id if topology else None,
+        )
+
+    def analytics_readiness(
+        self, *, tenant_id: str, project_id: str
+    ) -> UnifiedAnalyticsReadinessReceipt:
+        self._authorize(tenant_id)
+        receipt = self.store.get_analytics_receipt(tenant_id=tenant_id, project_id=project_id)
+        if receipt is None:
+            return UnifiedAnalyticsReadinessReceipt(
+                receipt_id="igv_notconfigured000000",
+                tenant_id=tenant_id,
+                project_id=project_id,
+                state=UnifiedAnalyticsReadinessState.NOT_CONFIGURED,
+                issues=("UNIFIED_ANALYTICS_NOT_CONFIGURED",),
+            )
+        return receipt
+
+    def analytics_artifacts(self, *, tenant_id: str, project_id: str) -> dict[str, Any]:
+        self._authorize(tenant_id)
+        overview = self.analytics_overview(tenant_id=tenant_id, project_id=project_id)
+        artifacts = self.store.list_analytics_artifacts(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            compilation_id=overview.compilation_id,
+        )
+        return {
+            "compilation_id": overview.compilation_id,
+            "status": overview.status.value,
+            "artifact_refs": [item.model_dump(mode="json") for item in artifacts],
+            "receipt_id": overview.receipt_id,
+            "fingerprint": overview.fingerprint,
+        }
+
+    def analytics_issues(self, *, tenant_id: str, project_id: str) -> dict[str, Any]:
+        self._authorize(tenant_id)
+        overview = self.analytics_overview(tenant_id=tenant_id, project_id=project_id)
+        return {
+            "compilation_id": overview.compilation_id,
+            "status": overview.status.value,
+            "issue_summary": list(overview.issue_summary),
+            "receipt_id": overview.receipt_id,
+            "fingerprint": overview.fingerprint,
+        }
+
+    def analytics_handoff(self, *, tenant_id: str, project_id: str) -> M5_03AnalyticalHandoff:
+        self._authorize(tenant_id)
+        overview = self.analytics_overview(tenant_id=tenant_id, project_id=project_id)
+        receipt = self.store.get_analytics_receipt(tenant_id=tenant_id, project_id=project_id)
+        compilation = None
+        if overview.compilation_id:
+            compilation = self.store.get_compilation(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                compilation_id=overview.compilation_id,
+            )
+        sessions = (
+            self.analytical_adapter.read_back_sessions(overview.compilation_id)
+            if overview.compilation_id
+            else ()
+        )
+        return M5_03AnalyticalHandoff(
+            compilation_id=overview.compilation_id,
+            topology_id=overview.topology_id,
+            topology_fingerprint=compilation.topology_fingerprint if compilation else "",
+            identity_rules_fingerprint=(
+                compilation.identity_rules_fingerprint if compilation else ""
+            ),
+            sql_fingerprint=compilation.sql_fingerprint if compilation else "",
+            artifact_refs=tuple(overview.artifact_refs),
+            available_market_ids=tuple(
+                sorted({row.market_id for row in sessions if row.market_id})
+            ),
+            available_channel_ids=tuple(
+                sorted({row.channel_id for row in sessions if row.channel_id})
+            ),
+            available_campaign_ids=tuple(
+                sorted({row.campaign_id for row in sessions if row.campaign_id})
+            ),
+            session_count=receipt.session_count if receipt else 0,
+            touchpoint_count=receipt.touchpoint_count if receipt else 0,
+            journey_count=receipt.journey_count if receipt else 0,
+            issues=overview.issue_summary,
+            mta_result_ready=False,
+        )
+
+    def _identity_rules_fingerprint(self, *, tenant_id: str, project_id: str) -> str:
+        tracking = self.store.list_tracking(tenant_id=tenant_id, project_id=project_id)
+        external = self.store.list_external(tenant_id=tenant_id, project_id=project_id)
+        custom = self.store.list_custom_rules(tenant_id=tenant_id, project_id=project_id)
+        audiences = self.store.list_audience_external(tenant_id=tenant_id, project_id=project_id)
+        policy = self.store.get_policy(tenant_id=tenant_id, project_id=project_id)
+        return identity_fingerprint(
+            {
+                "tracking": [item.fingerprint for item in tracking],
+                "external": [item.fingerprint for item in external],
+                "custom": [item.fingerprint for item in custom],
+                "audience_external": [item.fingerprint for item in audiences],
+                "market_policy": policy.fingerprint if policy else "",
+            }
+        )

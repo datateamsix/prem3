@@ -1,0 +1,22 @@
+-- Collected-traffic fallback. Same property-scoped session key. No intraday mix-in.
+WITH e AS (
+  SELECT
+    event_date,
+    event_timestamp,
+    user_pseudo_id,
+    user_id,
+    '{{ ga4_property_id }}' AS ga4_property_id,
+    '{{ ga4_source_binding_id }}' AS ga4_source_binding_id,
+    (SELECT value.int_value FROM UNNEST(event_params) WHERE key='ga_session_id') AS ga_session_id,
+    collected_traffic_source.manual_source AS source,
+    collected_traffic_source.manual_medium AS medium,
+    collected_traffic_source.manual_campaign_name AS campaign,
+    (SELECT value.string_value FROM UNNEST(event_params) WHERE key='utm_id') AS utm_id
+  FROM `{{ ga4_project_id }}.{{ ga4_dataset_id }}.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', @source_start_date)
+                          AND FORMAT_DATE('%Y%m%d', @source_end_date)
+    AND _TABLE_SUFFIX NOT LIKE 'intraday%'
+)
+SELECT * FROM e
+-- Compiler wraps this into the canonical session-grain aggregation with
+-- SHA256(ga4_property_id | subject_key | ga_session_id).

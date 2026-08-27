@@ -29,9 +29,16 @@ from app.identity_graph.enums import (
 from app.identity_graph.errors import IdentityGraphError
 from app.identity_graph.privacy import reject_identity_graph_payload
 from app.identity_graph.service import CampaignIdentityService
+from app.modeling.mta.contracts import (
+    DirectTreatmentPolicy,
+    GA4SettlementPolicy,
+    IdentityStrategy,
+    SessionTrafficSourcePolicy,
+)
 from app.service.dependencies import authenticated_tenant, get_control_plane
 from app.service.errors import ProblemFieldError, resource_not_found, validation_error
 from app.service.identity_graph_models import (
+    CompileIdentityGraphAnalyticsRequest,
     CreateIdentityGraphAudienceBindingRequest,
     CreateIdentityGraphAudienceRequest,
     CreateIdentityGraphCampaignBindingRequest,
@@ -1374,3 +1381,139 @@ async def get_audience_binding_coverage(
         _raise_identity_graph_error(extra)
         raise
     return coverage.model_dump(mode="json")
+
+
+def _analytics_payload(compilation) -> dict[str, Any]:
+    return {
+        "compilation_id": compilation.compilation_id,
+        "status": compilation.status.value,
+        "phase": compilation.phase.value,
+        "artifact_refs": [item.model_dump(mode="json") for item in compilation.artifact_refs],
+        "receipt_id": compilation.receipt_id,
+        "issue_summary": list(compilation.issues),
+        "fingerprint": compilation.fingerprint,
+        "destination_dataset": compilation.destination_dataset,
+        "topology_id": compilation.topology_id,
+    }
+
+
+@router.get("/analytics", operation_id="getIdentityGraphAnalytics")
+async def get_analytics(
+    project_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    overview = service.analytics_overview(
+        tenant_id=tenant.tenant_id, project_id=project_id
+    )
+    payload = overview.model_dump(mode="json")
+    reject_identity_graph_payload(payload)
+    return payload
+
+
+@router.post(
+    "/analytics/compile",
+    status_code=status.HTTP_201_CREATED,
+    operation_id="compileIdentityGraphAnalytics",
+)
+async def compile_analytics(
+    project_id: str,
+    body: CompileIdentityGraphAnalyticsRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    reject_identity_graph_payload(body.model_dump())
+    try:
+        compilation = service.compile_analytics(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            selected_source_binding_ids=tuple(body.selected_source_binding_ids),
+            period_start=body.period_start,
+            period_end=body.period_end,
+            session_traffic_source_policy=(
+                SessionTrafficSourcePolicy(body.session_traffic_source_policy)
+                if body.session_traffic_source_policy
+                else SessionTrafficSourcePolicy.GA4_SESSION_LAST_CLICK_V1
+            ),
+            settlement_policy=(
+                GA4SettlementPolicy(body.settlement_policy)
+                if body.settlement_policy
+                else GA4SettlementPolicy.DAILY_SETTLED
+            ),
+            identity_strategy=(
+                IdentityStrategy(body.identity_strategy)
+                if body.identity_strategy
+                else IdentityStrategy.PSEUDO_ID_ONLY
+            ),
+            direct_treatment_policy=(
+                DirectTreatmentPolicy(body.direct_treatment_policy)
+                if body.direct_treatment_policy
+                else DirectTreatmentPolicy.KEEP_DIRECT
+            ),
+            campaign_slice_required=body.campaign_slice_required,
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    except ValueError as extra:
+        raise validation_error(
+            [ProblemFieldError(field="analytics", message=str(extra))]
+        ) from extra
+    payload = _analytics_payload(compilation)
+    reject_identity_graph_payload(payload)
+    return payload
+
+
+@router.get("/analytics/readiness", operation_id="getIdentityGraphAnalyticsReadiness")
+async def get_analytics_readiness(
+    project_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    receipt = service.analytics_readiness(
+        tenant_id=tenant.tenant_id, project_id=project_id
+    )
+    payload = receipt.model_dump(mode="json")
+    reject_identity_graph_payload(payload)
+    return payload
+
+
+@router.get("/analytics/artifacts", operation_id="getIdentityGraphAnalyticsArtifacts")
+async def get_analytics_artifacts(
+    project_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    payload = service.analytics_artifacts(
+        tenant_id=tenant.tenant_id, project_id=project_id
+    )
+    reject_identity_graph_payload(payload)
+    return payload
+
+
+@router.get("/analytics/issues", operation_id="getIdentityGraphAnalyticsIssues")
+async def get_analytics_issues(
+    project_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    payload = service.analytics_issues(
+        tenant_id=tenant.tenant_id, project_id=project_id
+    )
+    reject_identity_graph_payload(payload)
+    return payload

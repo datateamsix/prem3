@@ -1,0 +1,49 @@
+-- Compilation-scoped tables. Never overwrite M5-01 operational mta_touchpoints / mta_sessions.
+CREATE TABLE IF NOT EXISTS `{{ destination_project }}.{{ destination_dataset }}.ga4_sessions_unified_{{ compilation_id }}`
+(
+  session_id STRING NOT NULL,
+  ga4_property_id STRING NOT NULL,
+  ga4_source_binding_id STRING NOT NULL,
+  source STRING,
+  medium STRING,
+  campaign_name STRING,
+  market_id STRING,
+  market_status STRING,
+  channel_id STRING,
+  channel_status STRING,
+  campaign_id STRING,
+  campaign_status STRING,
+  parent_campaign_id STRING,
+  audience_id STRING,
+  provider_id STRING,
+  session_start_ts TIMESTAMP,
+  key_event BOOL
+);
+
+CREATE TABLE IF NOT EXISTS `{{ destination_project }}.{{ destination_dataset }}.mta_session_touchpoints_{{ compilation_id }}`
+(
+  session_id STRING NOT NULL,
+  touchpoint_order INT64 NOT NULL,
+  ga4_property_id STRING NOT NULL,
+  ga4_source_binding_id STRING NOT NULL,
+  market_id STRING,
+  channel_id STRING,
+  campaign_id STRING,
+  parent_campaign_id STRING,
+  audience_id STRING,
+  provider_id STRING,
+  session_start_ts TIMESTAMP,
+  key_event BOOL
+);
+
+CREATE TABLE IF NOT EXISTS `{{ destination_project }}.{{ destination_dataset }}.mta_journeys_{{ compilation_id }}`
+(
+  journey_id STRING NOT NULL,
+  session_ids ARRAY<STRING>,
+  market_ids ARRAY<STRING>,
+  channel_ids ARRAY<STRING>,
+  campaign_ids ARRAY<STRING>,
+  multi_market BOOL,
+  key_event_count INT64,
+  touchpoint_count INT64
+);

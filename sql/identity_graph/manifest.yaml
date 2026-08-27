@@ -1,0 +1,18 @@
+contract: PREM3_IDENTITY_GRAPH_UNIFIED_ANALYTICS_SQL
+version: 1
+dataset: prem3_modeling
+notes:
+  - Compilation-scoped tables only. Do not mutate sql/mta or M5-01 operational MERGE.
+  - Session key: SHA256(ga4_property_id | subject_key | ga_session_id)
+  - user_pseudo_id / user_id are BQ analytical keys only.
+templates:
+  sessions_last_click: sessions/ga4_sessions_unified_last_click_v1.sql.j2
+  sessions_collected_fallback: sessions/ga4_sessions_unified_collected_fallback_v1.sql.j2
+  touchpoints: touchpoints/mta_session_touchpoints_v1.sql.j2
+  journeys: journeys/mta_journeys_v1.sql.j2
+  ddl: ddl/create_compilation_tables_v1.sql.j2
+  overlap:
+    disjoint: overlap/disjoint_union.sql.j2
+    master_authoritative: overlap/master_authoritative.sql.j2
+    regional_authoritative: overlap/regional_authoritative.sql.j2
+    partitioned_by_market: overlap/partitioned_by_market.sql.j2

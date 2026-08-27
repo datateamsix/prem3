@@ -600,3 +600,7 @@ class CampaignIdentityHandoff(IdentityGraphModel):
     audience_id: str | None = None
     audience_binding_id: str | None = None
     source_ref: str | None = None
+
+
+# IG-04 analytical-plane contracts live in app.identity_graph.analytics.contracts
+# (imported by the compiler and HTTP service; not duplicated here to avoid a cycle).

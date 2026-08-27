@@ -26,4 +26,6 @@ Multiple distinct canonical IDs → `REVIEW_REQUIRED` with `CONFLICTING_EXACT_BI
 
 ## IG-04 handoff
 
-`CampaignIdentityHandoff` is additive: `campaign_id`, optional `parent_campaign_id`, source, binding/tracking ids, resolution status/fingerprint, optional provider/utm/custom provenance, `audience_id` only when a binding proves it. IG-03 does not materialize unified GA4 sessions.
+`CampaignIdentityHandoff` is additive: `campaign_id`, optional `parent_campaign_id`, source, binding/tracking ids, resolution status/fingerprint, optional provider/utm/custom provenance, `audience_id` only when a binding proves it.
+
+IG-04 calls this resolver during unified compile. It does not fork matching. Unresolved campaign does not globally block analytical `READY` unless `campaign_slice_required`. See [CANONICAL_ANALYTICAL_IDENTITY_RESOLUTION.md](CANONICAL_ANALYTICAL_IDENTITY_RESOLUTION.md).

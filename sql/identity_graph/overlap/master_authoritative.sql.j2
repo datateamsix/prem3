@@ -1,0 +1,18 @@
+-- Master property is authoritative. Exclude regional rows that share the
+-- property-scoped session key already present on master. No person stitching.
+WITH master AS (
+  SELECT * FROM session_compiled
+  WHERE ga4_source_binding_id = @master_source_binding_id
+),
+regional AS (
+  SELECT r.*
+  FROM session_compiled r
+  LEFT JOIN master m
+    ON r.subject_key = m.subject_key
+   AND r.ga_session_id = m.ga_session_id
+  WHERE r.ga4_source_binding_id != @master_source_binding_id
+    AND m.session_id IS NULL
+)
+SELECT * FROM master
+UNION ALL
+SELECT * FROM regional

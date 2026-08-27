@@ -1,6 +1,6 @@
 # Marketing Identity Graph architecture
 
-**Mission:** IG-00 architecture freeze + IG-01 canonical market identity and GA4 topology + IG-02 Campaign Ledger + IG-02A Audience + Persona Ledger + IG-03 external bindings, observation, and verification  
+**Mission:** IG-00 architecture freeze + IG-01 canonical market identity and GA4 topology + IG-02 Campaign Ledger + IG-02A Audience + Persona Ledger + IG-03 external bindings, observation, and verification + IG-04 unified GA4 analytical plane  
 **Domain:** `app/identity_graph/`
 
 ```text
@@ -114,7 +114,7 @@ Firestore path:
 
 `tenants/{tenant_id}/workspaces/{workspace_id}/identity_graph/...`
 
-Subcollections include `campaigns`, `personas`, `audiences`, receipts, tracking, plus IG-01 market/source/topology metadata. CI/local uses `InMemoryIdentityGraphStore`. Cloud runtime selects `FirestoreIdentityGraphStore`. Store metadata only. No event-scale GA4 rows, budget values, performance metrics, member lists, or person identifiers.
+Subcollections include `campaigns`, `personas`, `audiences`, receipts, tracking, IG-01 market/source/topology metadata, plus IG-04 `analytics_compilations`, `analytics_receipts`, and `analytics_artifacts`. CI/local uses `InMemoryIdentityGraphStore`. Cloud runtime selects `FirestoreIdentityGraphStore`. Store metadata only. No event-scale GA4 rows, budget values, performance metrics, member lists, or person identifiers.
 
 ## Architecture decisions
 
@@ -357,5 +357,65 @@ Firestore holds metadata, refs, and fingerprints. Event rows are rejected.
 ### IG-ADR-060 — IG-03 produces identity evidence for IG-04; it does not materialize the unified analytical plane
 
 Resolution fields and `source_ref` hand off. Unified GA4 sessions are IG-04.
+
+### IG-ADR-061 — IG-04 compiles proven identity and does not invent IDs
+
+`market_id` / `channel_id` / `campaign_id` come from Identity Graph + Channel Registry. Display strings never mint identity.
+
+### IG-ADR-062 — compilation consumes the IG-01 topology receipt
+
+If `GA4TopologyReadinessReceipt` is not `GA4_TOPOLOGY_READY`, compilation fails closed. Pin `topology_id` and topology fingerprint.
+
+### IG-ADR-063 — cross-location compilation is blocked
+
+No governed copy/replication. `CROSS_LOCATION` / `UNKNOWN_LOCATION` → `CROSS_LOCATION_REVIEW_REQUIRED` / `BQ_LOCATION_INCOMPATIBLE`.
+
+### IG-ADR-064 — overlap is never a silent UNION
+
+`MASTER_PLUS_REGIONAL` requires policy. `DEDUPE_REQUIRED` stays blocked in V1. Exclusion SQL is documented; person stitching is not invented.
+
+### IG-ADR-065 — campaign resolution delegates to IG-03 only
+
+`CampaignIdentityResolver` is the matcher. `utm_campaign` never resolves. Conflicts stay `campaign_id=NULL` + `REVIEW_REQUIRED`. `parent_campaign_id` is metadata.
+
+### IG-ADR-066 — audience_id is evidence-only
+
+Set only when `AudienceExternalBinding` matches a proven provider audience identifier. Multi-provider ≠ membership.
+
+### IG-ADR-067 — Channel Registry is compile-time channel authority
+
+Exact approved source/medium binding → grouping-rule predicates → Direct preserved → `UNRESOLVED`. Provider is not channel.
+
+### IG-ADR-068 — session, settlement, identity, and Direct policies are imported
+
+Reuse MTA `SessionTrafficSourcePolicy`, `GA4SettlementPolicy`, `IdentityStrategy`, `DirectTreatmentPolicy`. Do not fork. Do not mix intraday into settled artifacts.
+
+### IG-ADR-069 — analytical artifacts are compilation-scoped
+
+`ga4_sessions_unified_{compilation_id}`, `mta_session_touchpoints_{compilation_id}`, `mta_journeys_{compilation_id}` in `prem3_modeling`. Do not overwrite M5-01 operational tables. `_current` only after schema + read-back.
+
+### IG-ADR-070 — session key is property-scoped
+
+`SHA256(ga4_property_id | subject_key | ga_session_id)` in BQ only. Journey identity key is project-scoped, not a person ID, not Firestore, not API person fields.
+
+### IG-ADR-071 — analytics APIs live under Identity Graph
+
+`/v1/projects/{project_id}/identity-graph/analytics/*` is the owner. Not Data Foundation compile. Not MTA run APIs. Not `SHARED_ANALYTICAL_PLANE_NAMESPACE_REQUEST`.
+
+### IG-ADR-072 — V1 execution is in-process plus a fake analytical adapter
+
+Fingerprinted SQL/plan + in-memory schema/overlap/read-back. No new Cloud Run Job. No fabricated live BQ success. No row-scale HTTP ingest.
+
+### IG-ADR-073 — IG-04 does not mutate MTA, DP6, P6, or Meridian runtimes
+
+New SQL lives under `sql/identity_graph/`. Shared-surface mutation would be `SHARED_SURFACE_CHANGE_REQUEST`.
+
+### IG-ADR-074 — unresolved campaign does not globally block READY
+
+Unless the compile request flags `campaign_slice_required`.
+
+### IG-ADR-075 — M5-03 consumes artifact refs, fingerprints, and available IDs
+
+Handoff does not emit `MTA_RESULT_READY`. Campaign-level Markov validity remains M5-03 preflight.
 
 

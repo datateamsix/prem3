@@ -3,13 +3,9 @@
 **Mission:** IG-01 Phase B  
 **Contracts:** `GA4SourceTopology`, `GA4PropertySourceBinding`, `GA4TopologyDiscoveryResult`
 
-Identity Graph stores governed source identity. Data Foundation owns BigQuery authorization, discovery, and quality evidence. IG-01 does not create a second OAuth/BigQuery connection system and does not copy event rows.
+Identity Graph stores governed source identity. Data Foundation owns BigQuery authorization, discovery, and quality evidence. IG-01 does not create a second OAuth/BigQuery connection system and does not copy event rows. A discovered dataset is not a confirmed business-market mapping (`DATA_FOUNDATION_DISCOVERED` ≠ `SYSTEM_VERIFIED`).
 
-A discovered dataset is not a confirmed business-market mapping (`DATA_FOUNDATION_DISCOVERED` ≠ `SYSTEM_VERIFIED`).
-
-## One governed analytical view
-
-PreM3 requires one governed analytical view of selected markets, not one raw GA4 dataset or property. IG-01 discovers/configures topology. IG-04 materializes the unified plane. Do not build `ga4_sessions_unified` here.
+PreM3 requires one governed analytical view of selected markets. IG-01 discovers/configures topology. IG-04 materializes the unified plane as compilation-scoped `ga4_sessions_unified_{compilation_id}` (see [UNIFIED_GA4_ANALYTICAL_PLANE.md](UNIFIED_GA4_ANALYTICAL_PLANE.md)).
 
 ## Representable topologies
 

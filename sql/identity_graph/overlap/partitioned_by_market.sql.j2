@@ -1,0 +1,7 @@
+-- Keep a source row only when resolved market_id is in that source's declared markets.
+SELECT s.*
+FROM session_compiled s
+JOIN source_declared_markets d
+  ON s.ga4_source_binding_id = d.ga4_source_binding_id
+ AND s.market_id = d.market_id
+WHERE s.market_id IS NOT NULL

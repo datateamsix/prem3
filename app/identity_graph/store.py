@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from app.identity_graph.analytics.contracts import (
+    AnalyticalArtifactRef,
+    UnifiedAnalyticsCompilation,
+    UnifiedAnalyticsReadinessReceipt,
+)
 from app.identity_graph.contracts import (
     AudienceExternalBinding,
     AudienceLedgerValidationReceipt,
@@ -249,6 +254,40 @@ class IdentityGraphStore(Protocol):
         self, *, tenant_id: str, project_id: str
     ) -> GA4TopologyReadinessReceipt | None: ...
 
+    def put_compilation(
+        self, value: UnifiedAnalyticsCompilation
+    ) -> UnifiedAnalyticsCompilation: ...
+
+    def get_compilation(
+        self, *, tenant_id: str, project_id: str, compilation_id: str
+    ) -> UnifiedAnalyticsCompilation | None: ...
+
+    def get_compilation_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, fingerprint: str
+    ) -> UnifiedAnalyticsCompilation | None: ...
+
+    def list_compilations(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[UnifiedAnalyticsCompilation]: ...
+
+    def put_analytics_receipt(
+        self, value: UnifiedAnalyticsReadinessReceipt
+    ) -> UnifiedAnalyticsReadinessReceipt: ...
+
+    def get_analytics_receipt(
+        self, *, tenant_id: str, project_id: str, receipt_id: str | None = None
+    ) -> UnifiedAnalyticsReadinessReceipt | None: ...
+
+    def list_analytics_receipts(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[UnifiedAnalyticsReadinessReceipt]: ...
+
+    def put_analytics_artifact(self, value: AnalyticalArtifactRef) -> AnalyticalArtifactRef: ...
+
+    def list_analytics_artifacts(
+        self, *, tenant_id: str, project_id: str, compilation_id: str | None = None
+    ) -> list[AnalyticalArtifactRef]: ...
+
 
 class InMemoryIdentityGraphStore:
     """Test/local store. Cloud persistence is FirestoreIdentityGraphStore."""
@@ -283,6 +322,13 @@ class InMemoryIdentityGraphStore:
         self.policies: dict[tuple[str, str], dict[str, MarketResolutionPolicy]] = {}
         self.edges: dict[tuple[str, str], list[MarketingIdentityEdge]] = {}
         self.campaign_scope: dict[str, tuple[str, str]] = {}
+        self.compilations: dict[tuple[str, str], dict[str, UnifiedAnalyticsCompilation]] = {}
+        self.analytics_receipts: dict[
+            tuple[str, str], dict[str, UnifiedAnalyticsReadinessReceipt]
+        ] = {}
+        self.analytics_current_receipt: dict[tuple[str, str], str] = {}
+        self.analytics_artifacts: dict[tuple[str, str], dict[str, AnalyticalArtifactRef]] = {}
+        self.compilation_fingerprints: dict[tuple[str, str, str], str] = {}
 
     def issued_campaign_ids(self) -> set[str]:
         return set(self._issued_campaign_ids)
@@ -742,3 +788,72 @@ class InMemoryIdentityGraphStore:
         self, *, tenant_id: str, project_id: str
     ) -> GA4TopologyReadinessReceipt | None:
         return self.receipts.get(_scope(tenant_id, project_id))
+
+    def put_compilation(
+        self, value: UnifiedAnalyticsCompilation
+    ) -> UnifiedAnalyticsCompilation:
+        bucket = self.compilations.setdefault(_scope(value.tenant_id, value.project_id), {})
+        bucket[value.compilation_id] = value
+        self.compilation_fingerprints[
+            (value.tenant_id, value.project_id, value.fingerprint)
+        ] = value.compilation_id
+        return value
+
+    def get_compilation(
+        self, *, tenant_id: str, project_id: str, compilation_id: str
+    ) -> UnifiedAnalyticsCompilation | None:
+        return self.compilations.get(_scope(tenant_id, project_id), {}).get(compilation_id)
+
+    def get_compilation_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, fingerprint: str
+    ) -> UnifiedAnalyticsCompilation | None:
+        compilation_id = self.compilation_fingerprints.get((tenant_id, project_id, fingerprint))
+        if compilation_id is None:
+            return None
+        return self.get_compilation(
+            tenant_id=tenant_id, project_id=project_id, compilation_id=compilation_id
+        )
+
+    def list_compilations(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[UnifiedAnalyticsCompilation]:
+        return list(self.compilations.get(_scope(tenant_id, project_id), {}).values())
+
+    def put_analytics_receipt(
+        self, value: UnifiedAnalyticsReadinessReceipt
+    ) -> UnifiedAnalyticsReadinessReceipt:
+        scope = _scope(value.tenant_id, value.project_id)
+        bucket = self.analytics_receipts.setdefault(scope, {})
+        bucket[value.receipt_id] = value
+        self.analytics_current_receipt[scope] = value.receipt_id
+        return value
+
+    def get_analytics_receipt(
+        self, *, tenant_id: str, project_id: str, receipt_id: str | None = None
+    ) -> UnifiedAnalyticsReadinessReceipt | None:
+        scope = _scope(tenant_id, project_id)
+        bucket = self.analytics_receipts.get(scope, {})
+        if receipt_id is not None:
+            return bucket.get(receipt_id)
+        current = self.analytics_current_receipt.get(scope)
+        if current is None:
+            return None
+        return bucket.get(current)
+
+    def list_analytics_receipts(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[UnifiedAnalyticsReadinessReceipt]:
+        return list(self.analytics_receipts.get(_scope(tenant_id, project_id), {}).values())
+
+    def put_analytics_artifact(self, value: AnalyticalArtifactRef) -> AnalyticalArtifactRef:
+        bucket = self.analytics_artifacts.setdefault(_scope(value.tenant_id, value.project_id), {})
+        bucket[value.artifact_id] = value
+        return value
+
+    def list_analytics_artifacts(
+        self, *, tenant_id: str, project_id: str, compilation_id: str | None = None
+    ) -> list[AnalyticalArtifactRef]:
+        rows = list(self.analytics_artifacts.get(_scope(tenant_id, project_id), {}).values())
+        if compilation_id is not None:
+            return [item for item in rows if item.compilation_id == compilation_id]
+        return rows

@@ -5,7 +5,13 @@ import pytest
 from app.business_iq.service import BusinessIqService
 from app.business_iq.store import InMemoryBusinessIqStore
 from app.core.tenancy import AuthState, TenantContext, bind_tenant
-from app.identity_graph.enums import MarketKind
+from app.identity_graph.enums import (
+    GA4TopologyKind,
+    GA4TopologyReadinessState,
+    MarketKind,
+    MarketResolutionMethod,
+    SourceOverlapPolicy,
+)
 from app.identity_graph.service import CampaignIdentityService
 from app.identity_graph.store import InMemoryIdentityGraphStore
 from tests.unit.business_iq.conftest import ready_payload
@@ -90,3 +96,50 @@ def make_canonical_market(
         country_codes=country_codes,
         region_codes=region_codes,
     )
+
+
+def seed_ready_property_per_market(graph):
+    us_market = make_canonical_market(graph, name="United States")
+    ca_market = make_canonical_market(graph, name="Canada")
+    policy = graph.upsert_market_policy(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        allowed_methods=(MarketResolutionMethod.PROPERTY_BOUND,),
+    )
+    us_source = graph.upsert_ga4_source(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        ga4_property_id="analytics_us",
+        bq_project_id="modelready-m3",
+        bq_dataset_id="analytics_us",
+        bq_location="US",
+        declared_market_ids=(us_market.market_id,),
+        overlap_policy=SourceOverlapPolicy.DISJOINT,
+    )
+    ca_source = graph.upsert_ga4_source(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        ga4_property_id="analytics_ca",
+        bq_project_id="modelready-m3",
+        bq_dataset_id="analytics_ca",
+        bq_location="US",
+        declared_market_ids=(ca_market.market_id,),
+        overlap_policy=SourceOverlapPolicy.DISJOINT,
+    )
+    graph.upsert_topology(
+        tenant_id=TENANT_ID,
+        project_id=PROJECT_ID,
+        topology_kind=GA4TopologyKind.PROPERTY_PER_MARKET,
+        source_binding_ids=(us_source.ga4_source_binding_id, ca_source.ga4_source_binding_id),
+        overlap_policy=SourceOverlapPolicy.DISJOINT,
+        market_resolution_policy_id=policy.policy_id,
+    )
+    receipt = graph.validate_ga4_topology(tenant_id=TENANT_ID, project_id=PROJECT_ID)
+    assert receipt.state == GA4TopologyReadinessState.GA4_TOPOLOGY_READY
+    return {
+        "us_market": us_market,
+        "ca_market": ca_market,
+        "us_source": us_source,
+        "ca_source": ca_source,
+        "policy": policy,
+    }

@@ -589,6 +589,50 @@ components:
           type: boolean
       title: CompileFoundationPlanRequest
       type: object
+    CompileIdentityGraphAnalyticsRequest:
+      additionalProperties: false
+      properties:
+        campaign_slice_required:
+          default: false
+          title: Campaign Slice Required
+          type: boolean
+        direct_treatment_policy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Direct Treatment Policy
+        identity_strategy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Identity Strategy
+        period_end:
+          title: Period End
+          type: string
+        period_start:
+          title: Period Start
+          type: string
+        selected_source_binding_ids:
+          items:
+            type: string
+          title: Selected Source Binding Ids
+          type: array
+        session_traffic_source_policy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Session Traffic Source Policy
+        settlement_policy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Settlement Policy
+      required:
+      - selected_source_binding_ids
+      - period_start
+      - period_end
+      title: CompileIdentityGraphAnalyticsRequest
+      type: object
     CompileTransformRequest:
       additionalProperties: false
       properties:
@@ -6650,6 +6694,162 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Identity Graph Overview
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/analytics:
+    get:
+      operationId: getIdentityGraphAnalytics
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphanalytics
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Analytics
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/analytics/artifacts:
+    get:
+      operationId: getIdentityGraphAnalyticsArtifacts
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphanalyticsartifacts
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Analytics Artifacts
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/analytics/compile:
+    post:
+      operationId: compileIdentityGraphAnalytics
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompileIdentityGraphAnalyticsRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Compileidentitygraphanalytics
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Compile Analytics
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/analytics/issues:
+    get:
+      operationId: getIdentityGraphAnalyticsIssues
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphanalyticsissues
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Analytics Issues
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/analytics/readiness:
+    get:
+      operationId: getIdentityGraphAnalyticsReadiness
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphanalyticsreadiness
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Analytics Readiness
       tags:
       - identity-graph
   /v1/projects/{project_id}/identity-graph/audience-bindings/{binding_id}:
