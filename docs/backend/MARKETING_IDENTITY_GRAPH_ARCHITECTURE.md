@@ -1,6 +1,6 @@
 # Marketing Identity Graph architecture
 
-**Mission:** IG-00 architecture freeze + IG-01 canonical market identity and GA4 topology + IG-02 Campaign Ledger + IG-02A Audience + Persona Ledger  
+**Mission:** IG-00 architecture freeze + IG-01 canonical market identity and GA4 topology + IG-02 Campaign Ledger + IG-02A Audience + Persona Ledger + IG-03 external bindings, observation, and verification  
 **Domain:** `app/identity_graph/`
 
 ```text
@@ -248,7 +248,7 @@ Hard delete is allowed only for never-referenced `PLANNED` drafts. Tracking beyo
 
 ### IG-ADR-033 — provider campaign IDs never replace `campaign_id`
 
-`CampaignExternalBinding` is a read-only seam in IG-02. IG-03 may add provider bindings and observed/verified tracking with evidence. The provider ID is provenance, not PreM3 identity.
+`CampaignExternalBinding` is persisted. IG-03 adds observation, resolution, verification, and coverage. The provider ID is provenance, not PreM3 identity.
 
 ### IG-ADR-034 — intended vs observed tracking is IG-03 / IG-04 QA
 
@@ -300,5 +300,62 @@ Empty `persona_ids[]` / `audience_ids[]` are valid. Known same-project IDs are a
 
 ### IG-ADR-046 — provider audience IDs never replace `audience_id`
 
-`AudienceExternalBinding` is an IG-03 seam. The same canonical audience on multiple providers does not mean identical membership.
+`AudienceExternalBinding` is persisted in IG-03. The same canonical audience on multiple providers does not mean identical membership.
+
+### IG-ADR-047 — External provider IDs enrich but never replace canonical PreM3 identity
+
+Provider campaign and audience IDs are provenance. Canonical `campaign_id` / `audience_id` remain the durable keys.
+
+### IG-ADR-048 — provider/account/entity tuple defines external identity namespace
+
+Uniqueness is `(provider_id, external_account_id or "", external campaign or audience id)`. Platform IDs are not globally unique.
+
+### IG-ADR-049 — exact PreM3 utm_id is preferred campaign resolution path
+
+`utm_id=<campaign_id>` is the preferred tracking bridge. It outranks other exact methods when they agree.
+
+### IG-ADR-050 — campaign names/utm_campaign are never deterministic identity authority
+
+Names help humans. Fuzzy match, substring, and `utm_campaign` never produce `RESOLVED` or `VERIFIED`.
+
+### IG-ADR-051 — external campaign binding conflicts fail closed
+
+Two live exact bindings to different canonical campaigns return `REVIEW_REQUIRED`. The resolver does not pick a winner.
+
+### IG-ADR-052 — external audience bindings do not imply equivalent provider membership
+
+Many provider bindings per `audience_id` are allowed. There is no membership-equivalence claim.
+
+### IG-ADR-053 — declared, observed, and verified tracking states are distinct
+
+Configuration is not observation. Observation is not unique resolution.
+
+### IG-ADR-054 — verified tracking requires governed observation + unique resolution
+
+No `source_ref` → not observed. No unique match → not verified.
+
+### IG-ADR-055 — custom campaign identifiers require explicit approved rules
+
+`APPROVED` `CustomCampaignIdentifierRule` plus mapping. Unapproved custom IDs cannot resolve authoritatively.
+
+### IG-ADR-056 — observation never mutates Campaign Ledger declared truth
+
+Markets, channels, flight dates, persona/audience targets, and names stay as declared.
+
+### IG-ADR-057 — provider discovery is not canonical confirmation
+
+`discover_campaigns` / `discover_audiences` return `DISCOVERY_NOT_CONFIGURED` until an authorized seam exists. Discovery alone does not confirm identity.
+
+### IG-ADR-058 — provider writes/activation are outside IG-03 authority
+
+No create/edit/activate/upload/pause/budget routes.
+
+### IG-ADR-059 — event-scale observation data does not belong in Firestore
+
+Firestore holds metadata, refs, and fingerprints. Event rows are rejected.
+
+### IG-ADR-060 — IG-03 produces identity evidence for IG-04; it does not materialize the unified analytical plane
+
+Resolution fields and `source_ref` hand off. Unified GA4 sessions are IG-04.
+
 

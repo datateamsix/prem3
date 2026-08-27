@@ -41,6 +41,22 @@ def new_tracking_binding_id() -> str:
     return _opaque("igt")
 
 
+def new_observation_id() -> str:
+    return _opaque("igo")
+
+
+def new_resolution_id() -> str:
+    return _opaque("igr")
+
+
+def new_receipt_id() -> str:
+    return _opaque("igv")
+
+
+def new_rule_id() -> str:
+    return _opaque("igc")
+
+
 def new_ga4_source_binding_id() -> str:
     return _opaque("igs")
 

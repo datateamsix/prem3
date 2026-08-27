@@ -145,3 +145,91 @@ class DiscoverGa4SourceTable(ApiModel):
 
 class DiscoverIdentityGraphSourcesRequest(ApiModel):
     tables: list[DiscoverGa4SourceTable] = []
+
+
+class CreateIdentityGraphCampaignBindingRequest(ApiModel):
+    provider_id: str
+    external_campaign_id: str
+    external_account_id: str | None = None
+    external_campaign_name: str | None = None
+    mapping_method: str | None = None
+    status: str | None = None
+    effective_start: str | None = None
+    effective_end: str | None = None
+    source_ref: str | None = None
+    external_parent_id: str | None = None
+    external_campaign_status: str | None = None
+
+
+class PatchIdentityGraphCampaignBindingRequest(ApiModel):
+    external_campaign_name: str | None = None
+    external_campaign_status: str | None = None
+    effective_start: str | None = None
+    effective_end: str | None = None
+    status: str | None = None
+    source_ref: str | None = None
+
+
+class CreateIdentityGraphAudienceBindingRequest(ApiModel):
+    provider_id: str
+    external_audience_id: str
+    external_account_id: str | None = None
+    external_audience_name: str | None = None
+    audience_implementation_type: str | None = None
+    mapping_method: str | None = None
+    status: str | None = None
+    effective_start: str | None = None
+    effective_end: str | None = None
+    source_ref: str | None = None
+
+
+class PatchIdentityGraphAudienceBindingRequest(ApiModel):
+    external_audience_name: str | None = None
+    audience_implementation_type: str | None = None
+    effective_start: str | None = None
+    effective_end: str | None = None
+    status: str | None = None
+    source_ref: str | None = None
+
+
+class CreateIdentityGraphTrackingBindingRequest(ApiModel):
+    tracking_kind: str
+    parameter_name: str
+    parameter_value: str
+    status: str | None = None
+    effective_start: str | None = None
+    effective_end: str | None = None
+
+
+class ObserveTrackingRequest(ApiModel):
+    source_ref: str
+    source_kind: str
+    observed_at: str
+    identifier_kind: str
+    parameter_value: str
+    parameter_name: str | None = None
+    observation_window_start: str | None = None
+    observation_window_end: str | None = None
+    external_provider_id: str | None = None
+    external_account_id: str | None = None
+    external_campaign_id: str | None = None
+    candidate_campaign_id: str | None = None
+
+
+class ResolveTrackingRequest(ApiModel):
+    observation_id: str | None = None
+    utm_id: str | None = None
+    utm_campaign: str | None = None
+    provider_id: str | None = None
+    external_account_id: str | None = None
+    external_campaign_id: str | None = None
+    custom_parameter_name: str | None = None
+    custom_parameter_value: str | None = None
+    user_confirmed_campaign_id: str | None = None
+    fuzzy_name: str | None = None
+    observed_at: str | None = None
+
+
+class VerifyTrackingRequest(ApiModel):
+    campaign_id: str
+    observation_id: str | None = None

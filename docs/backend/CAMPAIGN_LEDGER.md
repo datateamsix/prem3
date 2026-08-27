@@ -59,6 +59,8 @@ BIQ objectives are profile-local statements, not a governed ontology. Do not tre
 
 ## Persistence
 
-`tenants/{tenant_id}/workspaces/{workspace_id}/identity_graph/current/{campaigns,campaign_tracking,campaign_tracking_instructions,campaign_receipts}/...`
+`tenants/{tenant_id}/workspaces/{workspace_id}/identity_graph/current/{campaigns,campaign_tracking,campaign_tracking_instructions,campaign_receipts,campaign_external,...}/...`
+
+External campaign bindings, tracking observation metadata, resolutions, and verification receipts are IG-03. See [EXTERNAL_CAMPAIGN_BINDINGS.md](EXTERNAL_CAMPAIGN_BINDINGS.md) and [CAMPAIGN_IDENTITY_RESOLUTION.md](CAMPAIGN_IDENTITY_RESOLUTION.md).
 
 `FirestoreIdentityGraphStore` in cloud; `InMemoryIdentityGraphStore` in CI/local.

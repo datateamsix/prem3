@@ -11,11 +11,14 @@ from app.core.tenancy import require_tenant
 from app.domain.channels.registry import cached_channel_registry
 from app.domain.channels.validation import ChannelValidationError, assert_channel_id_in_registry
 from app.identity_graph.contracts import (
+    AudienceBindingCoverage,
+    AudienceExternalBinding,
     AudienceLedgerValidationReceipt,
     AudienceLineage,
     BusinessMarketBinding,
     CampaignCreateResult,
     CampaignExternalBinding,
+    CampaignIdentityHandoff,
     CampaignIdentityResolution,
     CampaignLedgerValidationReceipt,
     CampaignLineage,
@@ -25,18 +28,23 @@ from app.identity_graph.contracts import (
     CanonicalCampaign,
     CanonicalMarket,
     CanonicalPersona,
+    CustomCampaignIdentifierRule,
     GA4MarketCoverage,
     GA4PropertySourceBinding,
     GA4SourceTopology,
     GA4TopologyDiscoveryResult,
     GA4TopologyReadinessReceipt,
+    IdentityCoverageReadModel,
     IdentityGraphOverview,
     MarketResolutionEvidence,
     MarketResolutionPolicy,
     MTAIdentityTouchpointRefs,
     ObservedCampaignSignals,
     PersonaLedgerValidationReceipt,
+    TrackingObservation,
+    TrackingVerificationReceipt,
 )
+from app.identity_graph.discovery import ProviderDiscovery, UnconfiguredProviderDiscovery
 from app.identity_graph.enums import (
     AudienceRefreshCadence,
     AudienceSourceKind,
@@ -47,6 +55,8 @@ from app.identity_graph.enums import (
     CampaignIdentitySource,
     CampaignOwnerType,
     CampaignStatus,
+    CustomIdentifierCanonicalRole,
+    CustomIdentifierScope,
     GA4TopologyKind,
     GA4TopologyReadinessState,
     IdentityGraphCapabilityState,
@@ -60,6 +70,9 @@ from app.identity_graph.enums import (
     MarketMappingMethod,
     MarketResolutionMethod,
     MarketStatus,
+    ObservationSourceKind,
+    ObservationStatus,
+    ObservedIdentifierKind,
     PersonaStatus,
     ResolutionAuthority,
     SourceOverlapPolicy,
@@ -67,6 +80,7 @@ from app.identity_graph.enums import (
     TrackingImplementationStatus,
     TrackingInstructionProvenance,
     TrackingKind,
+    VerificationStatus,
 )
 from app.identity_graph.errors import IdentityGraphError
 from app.identity_graph.fingerprint import identity_fingerprint
@@ -81,8 +95,11 @@ from app.identity_graph.ids import (
     new_edge_id,
     new_ga4_source_binding_id,
     new_market_id,
+    new_observation_id,
     new_persona_id,
     new_policy_id,
+    new_receipt_id,
+    new_rule_id,
     new_topology_id,
     new_tracking_binding_id,
 )
@@ -95,9 +112,9 @@ from app.identity_graph.ledgers import (
 )
 from app.identity_graph.relationships import MarketingIdentityEdge
 from app.identity_graph.resolution import (
+    CampaignIdentityResolver,
     assert_not_self_parent,
     assert_parent_same_project,
-    resolve_campaign_identity,
     would_create_cycle,
 )
 from app.identity_graph.store import IdentityGraphStore, InMemoryIdentityGraphStore
@@ -194,9 +211,12 @@ class CampaignIdentityService:
         *,
         store: IdentityGraphStore | None = None,
         business_iq_store: BusinessIqStore | None = None,
+        provider_discovery: ProviderDiscovery | None = None,
     ) -> None:
         self.store = store or InMemoryIdentityGraphStore()
         self.business_iq_store = business_iq_store
+        self.resolver = CampaignIdentityResolver()
+        self.provider_discovery = provider_discovery or UnconfiguredProviderDiscovery()
 
     def create_campaign(
         self,
@@ -425,10 +445,16 @@ class CampaignIdentityService:
                 code="TRACKING_MISSING",
             )
         if found.implementation_status in _UNEVIDENCED_TRACKING:
-            raise IdentityGraphError(
-                "Observed or verified tracking requires IG-03 evidence.",
-                code="TRACKING_STATUS_UNEVIDENCED",
-            )
+            if not self._tracking_status_evidenced(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                campaign_id=campaign_id,
+                status=found.implementation_status,
+            ):
+                raise IdentityGraphError(
+                    "Observed or verified tracking requires IG-03 evidence.",
+                    code="TRACKING_STATUS_UNEVIDENCED",
+                )
         return found
 
     def children(
@@ -533,6 +559,12 @@ class CampaignIdentityService:
         if (
             instructions is not None
             and instructions.implementation_status in _UNEVIDENCED_TRACKING
+            and not self._tracking_status_evidenced(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                campaign_id=campaign_id,
+                status=instructions.implementation_status,
+            )
         ):
             issues.append("TRACKING_STATUS_UNEVIDENCED")
         if issues:
@@ -1380,21 +1412,42 @@ class CampaignIdentityService:
         mapping_method: MappingMethod = MappingMethod.PROVIDER_ID_EXACT,
         status: BindingStatus = BindingStatus.CONFIRMED,
         actor_id: str = "",
+        effective_start: str | None = None,
+        effective_end: str | None = None,
+        source_ref: str | None = None,
+        external_parent_id: str | None = None,
+        external_campaign_status: str | None = None,
+        authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_CONFIRMED,
     ) -> CampaignExternalBinding:
         self._authorize(tenant_id)
         campaign = self._require_campaign(tenant_id, project_id, campaign_id)
         require_canonical_provider_id(provider_id)
+        self._assert_live_target_not_archived(
+            entity_status=campaign.status.value,
+            binding_status=status,
+        )
+        now = datetime.now(UTC)
         binding = CampaignExternalBinding(
             binding_id=new_binding_id(),
+            tenant_id=tenant_id,
+            project_id=project_id,
             campaign_id=campaign.campaign_id,
             provider_id=provider_id,
             external_account_id=external_account_id,
             external_campaign_id=external_campaign_id,
             external_campaign_name=external_campaign_name,
+            external_parent_id=external_parent_id,
+            external_campaign_status=external_campaign_status,
+            effective_start=effective_start,
+            effective_end=effective_end,
             mapping_method=mapping_method,
             status=status,
+            authority=authority,
             confirmed_by=actor_id or None,
-            confirmed_at=datetime.now(UTC) if status == BindingStatus.CONFIRMED else None,
+            confirmed_at=now if status == BindingStatus.CONFIRMED else None,
+            source_ref=source_ref,
+            created_at=now,
+            updated_at=now,
         )
         binding = binding.model_copy(update={"fingerprint": identity_fingerprint(binding)})
         self.store.put_external(binding)
@@ -1412,6 +1465,63 @@ class CampaignIdentityService:
         )
         return binding
 
+    def get_external_binding(
+        self, *, tenant_id: str, project_id: str, binding_id: str
+    ) -> CampaignExternalBinding:
+        self._authorize(tenant_id)
+        found = self.store.get_external(
+            tenant_id=tenant_id, project_id=project_id, binding_id=binding_id
+        )
+        if found is None:
+            raise IdentityGraphError("External binding not found.", code="UNKNOWN_BINDING")
+        return found
+
+    def list_campaign_bindings(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> list[CampaignExternalBinding]:
+        self._authorize(tenant_id)
+        self._require_campaign(tenant_id, project_id, campaign_id)
+        return self.store.list_external(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+
+    def update_external_binding(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        binding_id: str,
+        updates: dict[str, Any],
+    ) -> CampaignExternalBinding:
+        self._authorize(tenant_id)
+        binding = self.get_external_binding(
+            tenant_id=tenant_id, project_id=project_id, binding_id=binding_id
+        )
+        allowed = {
+            "external_campaign_name",
+            "external_campaign_status",
+            "effective_start",
+            "effective_end",
+            "status",
+            "source_ref",
+            "authority",
+        }
+        payload = {key: value for key, value in updates.items() if key in allowed}
+        if "status" in payload and payload["status"] is not None:
+            if not isinstance(payload["status"], BindingStatus):
+                payload["status"] = BindingStatus(payload["status"])
+            campaign = self._require_campaign(tenant_id, project_id, binding.campaign_id)
+            self._assert_live_target_not_archived(
+                entity_status=campaign.status.value,
+                binding_status=payload["status"],
+            )
+        updated = binding.model_copy(
+            update={**payload, "updated_at": datetime.now(UTC)}
+        )
+        updated = updated.model_copy(update={"fingerprint": identity_fingerprint(updated)})
+        self.store.put_external(updated)
+        return updated
+
     def update_external_name(
         self,
         *,
@@ -1420,17 +1530,134 @@ class CampaignIdentityService:
         binding_id: str,
         external_campaign_name: str,
     ) -> CampaignExternalBinding:
+        return self.update_external_binding(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            binding_id=binding_id,
+            updates={"external_campaign_name": external_campaign_name},
+        )
+
+    def bind_audience_external(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        audience_id: str,
+        provider_id: str,
+        external_audience_id: str,
+        external_account_id: str | None = None,
+        external_audience_name: str | None = None,
+        audience_implementation_type: str | None = None,
+        mapping_method: MappingMethod = MappingMethod.PROVIDER_ID_EXACT,
+        status: BindingStatus = BindingStatus.CONFIRMED,
+        actor_id: str = "",
+        effective_start: str | None = None,
+        effective_end: str | None = None,
+        source_ref: str | None = None,
+        authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_CONFIRMED,
+    ) -> AudienceExternalBinding:
         self._authorize(tenant_id)
-        for binding in self.store.list_external(tenant_id=tenant_id, project_id=project_id):
-            if binding.binding_id != binding_id:
-                continue
-            updated = binding.model_copy(
-                update={"external_campaign_name": external_campaign_name}
+        audience = self._require_audience(tenant_id, project_id, audience_id)
+        require_canonical_provider_id(provider_id)
+        self._assert_live_target_not_archived(
+            entity_status=audience.status.value,
+            binding_status=status,
+        )
+        now = datetime.now(UTC)
+        binding = AudienceExternalBinding(
+            binding_id=new_binding_id(),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            audience_id=audience.audience_id,
+            provider_id=provider_id,
+            external_account_id=external_account_id,
+            external_audience_id=external_audience_id,
+            external_audience_name=external_audience_name,
+            audience_implementation_type=audience_implementation_type,
+            effective_start=effective_start,
+            effective_end=effective_end,
+            mapping_method=mapping_method,
+            status=status,
+            authority=authority,
+            confirmed_by=actor_id or None,
+            confirmed_at=now if status == BindingStatus.CONFIRMED else None,
+            source_ref=source_ref,
+            created_at=now,
+            updated_at=now,
+        )
+        binding = binding.model_copy(update={"fingerprint": identity_fingerprint(binding)})
+        self.store.put_audience_external(binding)
+        self.store.put_edge(
+            MarketingIdentityEdge(
+                edge_id=new_edge_id(),
+                tenant_id=tenant_id,
+                project_id=project_id,
+                edge_type=MarketingIdentityEdgeType.AUDIENCE_BOUND_TO_EXTERNAL,
+                from_node_type=MarketingIdentityNodeType.AUDIENCE,
+                from_node_id=audience_id,
+                to_node_type=MarketingIdentityNodeType.EXTERNAL_AUDIENCE,
+                to_node_id=external_audience_id,
             )
-            updated = updated.model_copy(update={"fingerprint": identity_fingerprint(updated)})
-            self.store.put_external(updated)
-            return updated
-        raise IdentityGraphError("External binding not found.", code="UNKNOWN_BINDING")
+        )
+        return binding
+
+    def create_audience_external_binding(self, **kwargs: Any) -> AudienceExternalBinding:
+        return self.bind_audience_external(**kwargs)
+
+    def get_audience_external_binding(
+        self, *, tenant_id: str, project_id: str, binding_id: str
+    ) -> AudienceExternalBinding:
+        self._authorize(tenant_id)
+        found = self.store.get_audience_external(
+            tenant_id=tenant_id, project_id=project_id, binding_id=binding_id
+        )
+        if found is None:
+            raise IdentityGraphError("External binding not found.", code="UNKNOWN_BINDING")
+        return found
+
+    def list_audience_external_bindings(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> list[AudienceExternalBinding]:
+        self._authorize(tenant_id)
+        self._require_audience(tenant_id, project_id, audience_id)
+        return self.store.list_audience_external(
+            tenant_id=tenant_id, project_id=project_id, audience_id=audience_id
+        )
+
+    def update_audience_external_binding(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        binding_id: str,
+        updates: dict[str, Any],
+    ) -> AudienceExternalBinding:
+        self._authorize(tenant_id)
+        binding = self.get_audience_external_binding(
+            tenant_id=tenant_id, project_id=project_id, binding_id=binding_id
+        )
+        allowed = {
+            "external_audience_name",
+            "effective_start",
+            "effective_end",
+            "status",
+            "source_ref",
+            "authority",
+            "audience_implementation_type",
+        }
+        payload = {key: value for key, value in updates.items() if key in allowed}
+        if "status" in payload and payload["status"] is not None:
+            if not isinstance(payload["status"], BindingStatus):
+                payload["status"] = BindingStatus(payload["status"])
+            audience = self._require_audience(tenant_id, project_id, binding.audience_id)
+            self._assert_live_target_not_archived(
+                entity_status=audience.status.value,
+                binding_status=payload["status"],
+            )
+        updated = binding.model_copy(update={**payload, "updated_at": datetime.now(UTC)})
+        updated = updated.model_copy(update={"fingerprint": identity_fingerprint(updated)})
+        self.store.put_audience_external(updated)
+        return updated
 
     def bind_custom_identifier(
         self,
@@ -1450,13 +1677,24 @@ class CampaignIdentityService:
                 "Custom identifier bindings require an explicit APPROVED rule.",
                 code="CUSTOM_IDENTIFIER_NOT_APPROVED",
             )
+        self.create_custom_identifier_rule(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            parameter_name=parameter_name,
+            parameter_scope=CustomIdentifierScope.GA4_EVENT_PARAM,
+            actor_id=actor_id,
+            status=BindingStatus.APPROVED,
+        )
         binding = CampaignTrackingBinding(
             tracking_binding_id=new_tracking_binding_id(),
+            tenant_id=tenant_id,
+            project_id=project_id,
             campaign_id=campaign.campaign_id,
             parameter_name=parameter_name,
             parameter_value=parameter_value,
             tracking_kind=TrackingKind.CUSTOM_EVENT_PARAM,
             status=status,
+            authority=IdentitySourceAuthority.USER_CONFIRMED,
             created_by=actor_id,
         )
         binding = binding.model_copy(update={"fingerprint": identity_fingerprint(binding)})
@@ -1475,11 +1713,14 @@ class CampaignIdentityService:
         campaign = self._require_campaign(tenant_id, project_id, campaign_id)
         binding = CampaignTrackingBinding(
             tracking_binding_id=new_tracking_binding_id(),
+            tenant_id=tenant_id,
+            project_id=project_id,
             campaign_id=campaign.campaign_id,
             parameter_name="user_confirmed",
             parameter_value=campaign.campaign_id,
             tracking_kind=TrackingKind.MANUAL_MAPPING,
             status=BindingStatus.CONFIRMED,
+            authority=IdentitySourceAuthority.USER_CONFIRMED,
             created_by=actor_id,
         )
         binding = binding.model_copy(update={"fingerprint": identity_fingerprint(binding)})
@@ -1494,12 +1735,459 @@ class CampaignIdentityService:
         signals: ObservedCampaignSignals,
     ) -> CampaignIdentityResolution:
         self._authorize(tenant_id)
-        return resolve_campaign_identity(
+        resolved = self.resolver.resolve(
             campaigns=self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id),
             tracking=self.store.list_tracking(tenant_id=tenant_id, project_id=project_id),
             external=self.store.list_external(tenant_id=tenant_id, project_id=project_id),
             signals=signals,
+            custom_rules=self.store.list_custom_rules(tenant_id=tenant_id, project_id=project_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
         )
+        return self.store.put_resolution(resolved)
+
+    def create_custom_identifier_rule(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        parameter_name: str,
+        parameter_scope: CustomIdentifierScope,
+        actor_id: str = "",
+        status: BindingStatus = BindingStatus.APPROVED,
+        source_kind: IdentitySourceAuthority = IdentitySourceAuthority.USER_DECLARED,
+        effective_start: str | None = None,
+        effective_end: str | None = None,
+    ) -> CustomCampaignIdentifierRule:
+        del actor_id
+        self._authorize(tenant_id)
+        if status != BindingStatus.APPROVED:
+            raise IdentityGraphError(
+                "Custom identifier bindings require an explicit APPROVED rule.",
+                code="CUSTOM_IDENTIFIER_NOT_APPROVED",
+            )
+        now = datetime.now(UTC)
+        rule = CustomCampaignIdentifierRule(
+            rule_id=new_rule_id(),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            parameter_name=parameter_name,
+            parameter_scope=parameter_scope,
+            canonical_role=CustomIdentifierCanonicalRole.CAMPAIGN_ID,
+            source_kind=source_kind,
+            effective_start=effective_start,
+            effective_end=effective_end,
+            status=status,
+            authority=IdentitySourceAuthority.USER_CONFIRMED,
+            created_at=now,
+            updated_at=now,
+        )
+        rule = rule.model_copy(update={"fingerprint": identity_fingerprint(rule)})
+        return self.store.put_custom_rule(rule)
+
+    def bind_tracking(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        campaign_id: str,
+        tracking_kind: TrackingKind,
+        parameter_name: str,
+        parameter_value: str,
+        actor_id: str,
+        status: BindingStatus = BindingStatus.ACTIVE,
+        effective_start: str | None = None,
+        effective_end: str | None = None,
+    ) -> CampaignTrackingBinding:
+        self._authorize(tenant_id)
+        campaign = self._require_campaign(tenant_id, project_id, campaign_id)
+        if tracking_kind == TrackingKind.PREM3_UTM_ID and parameter_value != campaign.campaign_id:
+            raise IdentityGraphError(
+                "utm_id tracking value must equal campaign_id.",
+                code="TRACKING_VALUE_MISMATCH",
+            )
+        if tracking_kind in {
+            TrackingKind.CUSTOM_EVENT_PARAM,
+            TrackingKind.CUSTOM_QUERY_PARAM,
+        } and status != BindingStatus.APPROVED:
+            raise IdentityGraphError(
+                "Custom identifier bindings require an explicit APPROVED rule.",
+                code="CUSTOM_IDENTIFIER_NOT_APPROVED",
+            )
+        binding = CampaignTrackingBinding(
+            tracking_binding_id=new_tracking_binding_id(),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            campaign_id=campaign.campaign_id,
+            parameter_name=parameter_name,
+            parameter_value=parameter_value,
+            tracking_kind=tracking_kind,
+            status=status,
+            effective_start=effective_start,
+            effective_end=effective_end,
+            created_by=actor_id,
+        )
+        binding = binding.model_copy(update={"fingerprint": identity_fingerprint(binding)})
+        self.store.put_tracking(binding)
+        self.store.put_edge(
+            MarketingIdentityEdge(
+                edge_id=new_edge_id(),
+                tenant_id=tenant_id,
+                project_id=project_id,
+                edge_type=MarketingIdentityEdgeType.CAMPAIGN_TRACKED_BY,
+                from_node_type=MarketingIdentityNodeType.CAMPAIGN,
+                from_node_id=campaign_id,
+                to_node_type=MarketingIdentityNodeType.CAMPAIGN,
+                to_node_id=binding.tracking_binding_id,
+            )
+        )
+        return binding
+
+    def observe_tracking(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        source_ref: str,
+        source_kind: ObservationSourceKind,
+        observed_at: str,
+        identifier_kind: ObservedIdentifierKind,
+        parameter_value: str,
+        parameter_name: str | None = None,
+        observation_window_start: str | None = None,
+        observation_window_end: str | None = None,
+        external_provider_id: str | None = None,
+        external_account_id: str | None = None,
+        external_campaign_id: str | None = None,
+        candidate_campaign_id: str | None = None,
+    ) -> TrackingObservation:
+        self._authorize(tenant_id)
+        if not source_ref.strip():
+            raise IdentityGraphError(
+                "Tracking observation requires a governed source_ref.",
+                code="SOURCE_REF_REQUIRED",
+            )
+        observation = TrackingObservation(
+            observation_id=new_observation_id(),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            source_ref=source_ref,
+            source_kind=source_kind,
+            observed_at=observed_at,
+            identifier_kind=identifier_kind,
+            parameter_value=parameter_value,
+            parameter_name=parameter_name,
+            observation_window_start=observation_window_start,
+            observation_window_end=observation_window_end,
+            external_provider_id=external_provider_id,
+            external_account_id=external_account_id,
+            external_campaign_id=external_campaign_id,
+            candidate_campaign_id=candidate_campaign_id,
+            observation_status=ObservationStatus.RECORDED,
+        )
+        observation = observation.model_copy(
+            update={"evidence_fingerprint": identity_fingerprint(observation)}
+        )
+        return self.store.put_observation(observation)
+
+    def resolve_tracking(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        observation_id: str | None = None,
+        signals: ObservedCampaignSignals | None = None,
+    ) -> CampaignIdentityResolution:
+        self._authorize(tenant_id)
+        observation = None
+        if observation_id is not None:
+            observation = self.store.get_observation(
+                tenant_id=tenant_id, project_id=project_id, observation_id=observation_id
+            )
+            if observation is None:
+                raise IdentityGraphError(
+                    "Tracking observation not found.",
+                    code="UNKNOWN_OBSERVATION",
+                )
+            signals = self._signals_from_observation(observation)
+        if signals is None:
+            raise IdentityGraphError(
+                "Resolution requires an observation_id or signals.",
+                code="RESOLUTION_INPUT_REQUIRED",
+            )
+        resolved = self.resolver.resolve(
+            campaigns=self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id),
+            tracking=self.store.list_tracking(tenant_id=tenant_id, project_id=project_id),
+            external=self.store.list_external(tenant_id=tenant_id, project_id=project_id),
+            signals=signals,
+            custom_rules=self.store.list_custom_rules(tenant_id=tenant_id, project_id=project_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            observation_id=observation_id,
+        )
+        return self.store.put_resolution(resolved)
+
+    def verify_tracking(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        campaign_id: str,
+        observation_id: str | None = None,
+    ) -> TrackingVerificationReceipt:
+        self._authorize(tenant_id)
+        campaign = self._require_campaign(tenant_id, project_id, campaign_id)
+        instructions = self.store.get_tracking_instructions(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        expected = campaign.campaign_id
+        tracking_binding_id = None
+        tracking_rows = self.store.list_tracking(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        utm = next(
+            (item for item in tracking_rows if item.tracking_kind == TrackingKind.PREM3_UTM_ID),
+            None,
+        )
+        if utm is not None:
+            tracking_binding_id = utm.tracking_binding_id
+        observations = self.store.list_observations(tenant_id=tenant_id, project_id=project_id)
+        selected = None
+        if observation_id is not None:
+            selected = self.store.get_observation(
+                tenant_id=tenant_id, project_id=project_id, observation_id=observation_id
+            )
+            if selected is None:
+                raise IdentityGraphError(
+                    "Tracking observation not found.",
+                    code="UNKNOWN_OBSERVATION",
+                )
+        else:
+            matching = [
+                item
+                for item in observations
+                if item.candidate_campaign_id == campaign_id
+                or item.parameter_value == campaign_id
+            ]
+            selected = matching[-1] if matching else (observations[-1] if observations else None)
+        if selected is None:
+            receipt = self._verification_receipt(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                campaign_id=campaign_id,
+                source_ref="",
+                status=VerificationStatus.NOT_OBSERVED,
+                observed_identifier="",
+                expected_identifier=expected,
+                observation_id="",
+                resolution_id="",
+                tracking_binding_id=tracking_binding_id,
+                issues=("NOT_OBSERVED",),
+            )
+            return self.store.put_verification_receipt(receipt)
+
+        resolved = self.resolve_tracking(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            observation_id=selected.observation_id,
+        )
+        observed_identifier = selected.parameter_value
+        issues: list[str] = list(resolved.issues)
+        if resolved.status == ResolutionAuthority.REVIEW_REQUIRED:
+            status = VerificationStatus.REVIEW_REQUIRED
+            issues.append("REVIEW_REQUIRED")
+        elif resolved.status != ResolutionAuthority.RESOLVED or resolved.campaign_id is None:
+            status = VerificationStatus.OBSERVED_UNVERIFIED
+            issues.append("UNRESOLVED")
+        elif resolved.campaign_id != campaign_id or observed_identifier != expected:
+            status = VerificationStatus.REVIEW_REQUIRED
+            issues.append("EXPECTED_IDENTIFIER_MISMATCH")
+        else:
+            status = VerificationStatus.VERIFIED
+        receipt = self._verification_receipt(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            campaign_id=campaign_id,
+            source_ref=selected.source_ref,
+            status=status,
+            observed_identifier=observed_identifier,
+            expected_identifier=expected,
+            observation_id=selected.observation_id,
+            resolution_id=resolved.resolution_id,
+            tracking_binding_id=tracking_binding_id,
+            verification_method=resolved.source,
+            issues=tuple(dict.fromkeys(issues)),
+            verified_at=datetime.now(UTC) if status == VerificationStatus.VERIFIED else None,
+        )
+        stored = self.store.put_verification_receipt(receipt)
+        if instructions is not None:
+            next_status = instructions.implementation_status
+            if status == VerificationStatus.VERIFIED:
+                next_status = TrackingImplementationStatus.VERIFIED
+            elif status in {
+                VerificationStatus.OBSERVED_UNVERIFIED,
+                VerificationStatus.REVIEW_REQUIRED,
+            }:
+                next_status = TrackingImplementationStatus.OBSERVED
+            refreshed = instructions.model_copy(update={"implementation_status": next_status})
+            refreshed = refreshed.model_copy(
+                update={"fingerprint": identity_fingerprint(refreshed)}
+            )
+            self.store.put_tracking_instructions(refreshed)
+        return stored
+
+    def campaign_verification(
+        self, *, tenant_id: str, project_id: str, campaign_id: str
+    ) -> TrackingVerificationReceipt:
+        self._authorize(tenant_id)
+        self._require_campaign(tenant_id, project_id, campaign_id)
+        rows = self.store.list_verification_receipts(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        if rows:
+            return rows[-1]
+        return self.verify_tracking(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+
+    def tracking_coverage(
+        self, *, tenant_id: str, project_id: str
+    ) -> IdentityCoverageReadModel:
+        self._authorize(tenant_id)
+        observations = self.store.list_observations(tenant_id=tenant_id, project_id=project_id)
+        resolutions = self.store.list_resolutions(tenant_id=tenant_id, project_id=project_id)
+        campaigns = self.store.list_campaigns(tenant_id=tenant_id, project_id=project_id)
+        receipts = self.store.list_verification_receipts(
+            tenant_id=tenant_id, project_id=project_id
+        )
+        resolved_count = sum(
+            1 for item in resolutions if item.status == ResolutionAuthority.RESOLVED
+        )
+        review_count = sum(
+            1 for item in resolutions if item.status == ResolutionAuthority.REVIEW_REQUIRED
+        )
+        unresolved_count = sum(
+            1 for item in resolutions if item.status == ResolutionAuthority.UNRESOLVED
+        )
+        observed_campaigns = {
+            item.candidate_campaign_id
+            for item in observations
+            if item.candidate_campaign_id
+        }
+        observed_campaigns.update(
+            item.campaign_id for item in resolutions if item.campaign_id
+        )
+        verified_campaigns = {
+            item.campaign_id for item in receipts if item.status == VerificationStatus.VERIFIED
+        }
+        declared = 0
+        for campaign in campaigns:
+            instructions = self.store.get_tracking_instructions(
+                tenant_id=tenant_id, project_id=project_id, campaign_id=campaign.campaign_id
+            )
+            if instructions is not None:
+                declared += 1
+        issues: list[str] = []
+        if not observations:
+            coverage_status = IdentityGraphCapabilityState.NOT_CONFIGURED
+        elif review_count:
+            coverage_status = IdentityGraphCapabilityState.REVIEW_REQUIRED
+            issues.append("REVIEW_REQUIRED")
+        elif unresolved_count:
+            coverage_status = IdentityGraphCapabilityState.PARTIAL
+            issues.append("UNRESOLVED")
+        else:
+            coverage_status = IdentityGraphCapabilityState.READY
+        model = IdentityCoverageReadModel(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            observed_identifier_count=len(observations),
+            resolved_identifier_count=resolved_count,
+            unresolved_identifier_count=unresolved_count,
+            review_required_count=review_count,
+            campaigns_total=len(campaigns),
+            campaigns_with_tracking_declared=declared,
+            campaigns_observed=len(observed_campaigns),
+            campaigns_verified=len(verified_campaigns),
+            coverage_status=coverage_status,
+            issues=tuple(issues),
+        )
+        model = model.model_copy(update={"fingerprint": identity_fingerprint(model)})
+        return self.store.put_coverage(model)
+
+    def audience_binding_coverage(
+        self, *, tenant_id: str, project_id: str, audience_id: str
+    ) -> AudienceBindingCoverage:
+        self._authorize(tenant_id)
+        self._require_audience(tenant_id, project_id, audience_id)
+        rows = self.store.list_audience_external(
+            tenant_id=tenant_id, project_id=project_id, audience_id=audience_id
+        )
+        live = {
+            BindingStatus.CONFIRMED,
+            BindingStatus.ACTIVE,
+            BindingStatus.APPROVED,
+        }
+        active = [item for item in rows if item.status in live]
+        providers = tuple(dict.fromkeys(item.provider_id for item in rows))
+        if not rows:
+            status = IdentityGraphCapabilityState.NOT_CONFIGURED
+        elif any(item.status == BindingStatus.REVIEW_REQUIRED for item in rows):
+            status = IdentityGraphCapabilityState.REVIEW_REQUIRED
+        else:
+            status = IdentityGraphCapabilityState.READY
+        return AudienceBindingCoverage(
+            audience_id=audience_id,
+            tenant_id=tenant_id,
+            project_id=project_id,
+            provider_binding_count=len(rows),
+            active_provider_binding_count=len(active),
+            providers=providers,
+            status=status,
+            issues=(),
+        )
+
+    def identity_handoff(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        resolution: CampaignIdentityResolution,
+        signals: ObservedCampaignSignals,
+        source_ref: str | None = None,
+        audience_id: str | None = None,
+        audience_binding_id: str | None = None,
+    ) -> CampaignIdentityHandoff:
+        self._authorize(tenant_id)
+        campaign = None
+        if resolution.campaign_id is not None:
+            campaign = self.store.get_campaign(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                campaign_id=resolution.campaign_id,
+            )
+        return self.resolver.handoff(
+            resolution=resolution,
+            campaign=campaign,
+            signals=signals,
+            audience_id=audience_id,
+            audience_binding_id=audience_binding_id,
+            source_ref=source_ref,
+        )
+
+    def discover_campaigns(
+        self, *, tenant_id: str, project_id: str, provider_account_ref: str
+    ) -> list[dict[str, str]]:
+        self._authorize(tenant_id)
+        del project_id
+        return self.provider_discovery.discover_campaigns(provider_account_ref)
+
+    def discover_audiences(
+        self, *, tenant_id: str, project_id: str, provider_account_ref: str
+    ) -> list[dict[str, str]]:
+        self._authorize(tenant_id)
+        del project_id
+        return self.provider_discovery.discover_audiences(provider_account_ref)
 
     def upsert_ga4_source(
         self,
@@ -2014,6 +2702,104 @@ class CampaignIdentityService:
                 code="TENANT_MISMATCH",
             )
 
+    def _assert_live_target_not_archived(
+        self, *, entity_status: str, binding_status: BindingStatus
+    ) -> None:
+        if (
+            entity_status == "ARCHIVED"
+            and binding_status in {BindingStatus.CONFIRMED, BindingStatus.ACTIVE}
+        ):
+            raise IdentityGraphError(
+                "Live bindings cannot target an archived campaign or audience.",
+                code="ARCHIVED_TARGET",
+            )
+
+    def _tracking_status_evidenced(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        campaign_id: str,
+        status: TrackingImplementationStatus,
+    ) -> bool:
+        receipts = self.store.list_verification_receipts(
+            tenant_id=tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+        if status == TrackingImplementationStatus.VERIFIED:
+            return any(item.status == VerificationStatus.VERIFIED for item in receipts)
+        observations = self.store.list_observations(tenant_id=tenant_id, project_id=project_id)
+        related = [
+            item
+            for item in observations
+            if item.candidate_campaign_id == campaign_id or item.parameter_value == campaign_id
+        ]
+        if related:
+            return True
+        return any(item.status != VerificationStatus.NOT_OBSERVED for item in receipts)
+
+    def _signals_from_observation(
+        self, observation: TrackingObservation
+    ) -> ObservedCampaignSignals:
+        utm_id = None
+        custom_name = None
+        custom_value = None
+        if observation.identifier_kind == ObservedIdentifierKind.UTM_ID:
+            utm_id = observation.parameter_value
+        elif observation.identifier_kind == ObservedIdentifierKind.CUSTOM_PARAM:
+            custom_name = observation.parameter_name
+            custom_value = observation.parameter_value
+        return ObservedCampaignSignals(
+            utm_id=utm_id,
+            utm_campaign=(
+                observation.parameter_value
+                if observation.identifier_kind == ObservedIdentifierKind.UTM_CAMPAIGN
+                else None
+            ),
+            provider_id=observation.external_provider_id,
+            external_account_id=observation.external_account_id,
+            external_campaign_id=observation.external_campaign_id,
+            custom_parameter_name=custom_name,
+            custom_parameter_value=custom_value,
+            observed_at=observation.observed_at,
+        )
+
+    def _verification_receipt(
+        self,
+        *,
+        tenant_id: str,
+        project_id: str,
+        campaign_id: str,
+        source_ref: str,
+        status: VerificationStatus,
+        observed_identifier: str,
+        expected_identifier: str,
+        observation_id: str,
+        resolution_id: str,
+        tracking_binding_id: str | None,
+        issues: tuple[str, ...] = (),
+        verification_method: CampaignIdentitySource | None = None,
+        verified_at: datetime | None = None,
+    ) -> TrackingVerificationReceipt:
+        receipt = TrackingVerificationReceipt(
+            receipt_id=new_receipt_id(),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            campaign_id=campaign_id,
+            source_ref=source_ref,
+            status=status,
+            observed_identifier=observed_identifier,
+            expected_identifier=expected_identifier,
+            observation_id=observation_id,
+            resolution_id=resolution_id,
+            tracking_binding_id=tracking_binding_id,
+            verification_method=verification_method,
+            issues=issues,
+            verified_at=verified_at,
+        )
+        return receipt.model_copy(
+            update={"evidence_fingerprint": identity_fingerprint(receipt)}
+        )
+
     def _require_campaign(
         self, tenant_id: str, project_id: str, campaign_id: str
     ) -> CanonicalCampaign:
@@ -2455,11 +3241,14 @@ class CampaignIdentityService:
     ) -> CampaignTrackingBinding:
         binding = CampaignTrackingBinding(
             tracking_binding_id=new_tracking_binding_id(),
+            tenant_id=campaign.tenant_id,
+            project_id=campaign.project_id,
             campaign_id=campaign.campaign_id,
             parameter_name="utm_id",
             parameter_value=campaign.campaign_id,
             tracking_kind=TrackingKind.PREM3_UTM_ID,
             status=BindingStatus.ACTIVE,
+            authority=IdentitySourceAuthority.PREM3_GENERATED,
             created_by=actor_id,
         )
         return binding.model_copy(update={"fingerprint": identity_fingerprint(binding)})

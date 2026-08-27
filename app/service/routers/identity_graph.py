@@ -8,32 +8,47 @@ from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.control_plane.repository import ControlPlaneRepository
 from app.core.tenancy import TenantContext, require_tenant
+from app.identity_graph.contracts import ObservedCampaignSignals
 from app.identity_graph.enums import (
     AudienceRefreshCadence,
     AudienceSourceKind,
     AudienceStatus,
     AudienceType,
+    BindingStatus,
     CampaignOwnerType,
     CampaignStatus,
     GA4TopologyKind,
+    MappingMethod,
     MarketKind,
+    ObservationSourceKind,
+    ObservedIdentifierKind,
     PersonaStatus,
     SourceOverlapPolicy,
+    TrackingKind,
 )
 from app.identity_graph.errors import IdentityGraphError
+from app.identity_graph.privacy import reject_identity_graph_payload
 from app.identity_graph.service import CampaignIdentityService
 from app.service.dependencies import authenticated_tenant, get_control_plane
 from app.service.errors import ProblemFieldError, resource_not_found, validation_error
 from app.service.identity_graph_models import (
+    CreateIdentityGraphAudienceBindingRequest,
     CreateIdentityGraphAudienceRequest,
+    CreateIdentityGraphCampaignBindingRequest,
     CreateIdentityGraphCampaignRequest,
     CreateIdentityGraphMarketRequest,
     CreateIdentityGraphPersonaRequest,
     CreateIdentityGraphSourceRequest,
+    CreateIdentityGraphTrackingBindingRequest,
     DiscoverIdentityGraphSourcesRequest,
+    ObserveTrackingRequest,
+    PatchIdentityGraphAudienceBindingRequest,
     PatchIdentityGraphAudienceRequest,
+    PatchIdentityGraphCampaignBindingRequest,
     PatchIdentityGraphCampaignRequest,
     PatchIdentityGraphPersonaRequest,
+    ResolveTrackingRequest,
+    VerifyTrackingRequest,
 )
 
 router = APIRouter(
@@ -68,6 +83,7 @@ def _raise_identity_graph_error(exc: IdentityGraphError) -> None:
         "UNKNOWN_BINDING",
         "UNKNOWN_PERSONA",
         "UNKNOWN_AUDIENCE",
+        "UNKNOWN_OBSERVATION",
     }:
         raise resource_not_found() from exc
     raise validation_error(
@@ -248,6 +264,173 @@ async def get_campaign_tracking(
         _raise_identity_graph_error(exc)
         raise
     return instructions.model_dump(mode="json")
+
+
+@router.get(
+    "/campaigns/{campaign_id}/bindings",
+    operation_id="listIdentityGraphCampaignBindings",
+)
+async def list_campaign_bindings(
+    project_id: str,
+    campaign_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        rows = service.list_campaign_bindings(
+            tenant_id=tenant.tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+    except IdentityGraphError as exc:
+        _raise_identity_graph_error(exc)
+        raise
+    return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.post(
+    "/campaigns/{campaign_id}/bindings",
+    operation_id="createIdentityGraphCampaignBinding",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_campaign_binding(
+    project_id: str,
+    campaign_id: str,
+    body: CreateIdentityGraphCampaignBindingRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    reject_identity_graph_payload(body.model_dump())
+    try:
+        mapping_method = (
+            MappingMethod(body.mapping_method)
+            if body.mapping_method is not None
+            else MappingMethod.PROVIDER_ID_EXACT
+        )
+        binding_status = (
+            BindingStatus(body.status) if body.status is not None else BindingStatus.CONFIRMED
+        )
+        binding = service.bind_external(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            campaign_id=campaign_id,
+            provider_id=body.provider_id,
+            external_campaign_id=body.external_campaign_id,
+            external_account_id=body.external_account_id,
+            external_campaign_name=body.external_campaign_name,
+            mapping_method=mapping_method,
+            status=binding_status,
+            actor_id=ctx.user_id or "unknown",
+            effective_start=body.effective_start,
+            effective_end=body.effective_end,
+            source_ref=body.source_ref,
+            external_parent_id=body.external_parent_id,
+            external_campaign_status=body.external_campaign_status,
+        )
+    except (IdentityGraphError, ValueError) as exc:
+        if isinstance(exc, IdentityGraphError):
+            _raise_identity_graph_error(exc)
+        raise validation_error(
+            [ProblemFieldError(field="binding", message=str(exc))]
+        ) from exc
+    return binding.model_dump(mode="json")
+
+
+@router.get(
+    "/campaign-bindings/{binding_id}",
+    operation_id="getIdentityGraphCampaignBinding",
+)
+async def get_campaign_binding(
+    project_id: str,
+    binding_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        binding = service.get_external_binding(
+            tenant_id=tenant.tenant_id, project_id=project_id, binding_id=binding_id
+        )
+    except IdentityGraphError as exc:
+        _raise_identity_graph_error(exc)
+        raise
+    return binding.model_dump(mode="json")
+
+
+@router.patch(
+    "/campaign-bindings/{binding_id}",
+    operation_id="patchIdentityGraphCampaignBinding",
+)
+async def patch_campaign_binding(
+    project_id: str,
+    binding_id: str,
+    body: PatchIdentityGraphCampaignBindingRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    reject_identity_graph_payload(body.model_dump())
+    try:
+        binding = service.update_external_binding(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            binding_id=binding_id,
+            updates=body.model_dump(exclude_unset=True),
+        )
+    except IdentityGraphError as exc:
+        _raise_identity_graph_error(exc)
+        raise
+    return binding.model_dump(mode="json")
+
+
+@router.post(
+    "/campaigns/{campaign_id}/tracking/bindings",
+    operation_id="createIdentityGraphTrackingBinding",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_tracking_binding(
+    project_id: str,
+    campaign_id: str,
+    body: CreateIdentityGraphTrackingBindingRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    reject_identity_graph_payload(body.model_dump())
+    try:
+        kind = TrackingKind(body.tracking_kind)
+        binding_status = (
+            BindingStatus(body.status) if body.status is not None else BindingStatus.ACTIVE
+        )
+        binding = service.bind_tracking(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            campaign_id=campaign_id,
+            tracking_kind=kind,
+            parameter_name=body.parameter_name,
+            parameter_value=body.parameter_value,
+            actor_id=ctx.user_id or "unknown",
+            status=binding_status,
+            effective_start=body.effective_start,
+            effective_end=body.effective_end,
+        )
+    except (IdentityGraphError, ValueError) as exc:
+        if isinstance(exc, IdentityGraphError):
+            _raise_identity_graph_error(exc)
+        raise validation_error(
+            [ProblemFieldError(field="tracking", message=str(exc))]
+        ) from exc
+    return binding.model_dump(mode="json")
 
 
 @router.get("/campaigns/{campaign_id}/children", operation_id="getIdentityGraphCampaignChildren")
@@ -479,6 +662,143 @@ async def list_mappings(
     _require_project(tenant=tenant, repo=repo, project_id=project_id)
     rows = service.list_mappings(tenant_id=tenant.tenant_id, project_id=project_id)
     return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.post("/tracking/observe", operation_id="observeIdentityGraphTracking")
+async def observe_tracking(
+    project_id: str,
+    body: ObserveTrackingRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    reject_identity_graph_payload(body.model_dump())
+    try:
+        observation = service.observe_tracking(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            source_ref=body.source_ref,
+            source_kind=ObservationSourceKind(body.source_kind),
+            observed_at=body.observed_at,
+            identifier_kind=ObservedIdentifierKind(body.identifier_kind),
+            parameter_value=body.parameter_value,
+            parameter_name=body.parameter_name,
+            observation_window_start=body.observation_window_start,
+            observation_window_end=body.observation_window_end,
+            external_provider_id=body.external_provider_id,
+            external_account_id=body.external_account_id,
+            external_campaign_id=body.external_campaign_id,
+            candidate_campaign_id=body.candidate_campaign_id,
+        )
+    except (IdentityGraphError, ValueError) as exc:
+        if isinstance(exc, IdentityGraphError):
+            _raise_identity_graph_error(exc)
+        raise validation_error(
+            [ProblemFieldError(field="observation", message=str(exc))]
+        ) from exc
+    return observation.model_dump(mode="json")
+
+
+@router.post("/tracking/resolve", operation_id="resolveIdentityGraphTracking")
+async def resolve_tracking(
+    project_id: str,
+    body: ResolveTrackingRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    reject_identity_graph_payload(body.model_dump())
+    try:
+        signals = None
+        if body.observation_id is None:
+            signals = ObservedCampaignSignals(
+                utm_id=body.utm_id,
+                utm_campaign=body.utm_campaign,
+                provider_id=body.provider_id,
+                external_account_id=body.external_account_id,
+                external_campaign_id=body.external_campaign_id,
+                custom_parameter_name=body.custom_parameter_name,
+                custom_parameter_value=body.custom_parameter_value,
+                user_confirmed_campaign_id=body.user_confirmed_campaign_id,
+                fuzzy_name=body.fuzzy_name,
+                observed_at=body.observed_at,
+            )
+        resolved = service.resolve_tracking(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            observation_id=body.observation_id,
+            signals=signals,
+        )
+    except IdentityGraphError as exc:
+        _raise_identity_graph_error(exc)
+        raise
+    return resolved.model_dump(mode="json")
+
+
+@router.post("/tracking/verify", operation_id="verifyIdentityGraphTracking")
+async def verify_tracking(
+    project_id: str,
+    body: VerifyTrackingRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    reject_identity_graph_payload(body.model_dump())
+    try:
+        receipt = service.verify_tracking(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            campaign_id=body.campaign_id,
+            observation_id=body.observation_id,
+        )
+    except IdentityGraphError as exc:
+        _raise_identity_graph_error(exc)
+        raise
+    return receipt.model_dump(mode="json")
+
+
+@router.get("/tracking/coverage", operation_id="getIdentityGraphTrackingCoverage")
+async def get_tracking_coverage(
+    project_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    coverage = service.tracking_coverage(
+        tenant_id=tenant.tenant_id, project_id=project_id
+    )
+    return coverage.model_dump(mode="json")
+
+
+@router.get(
+    "/campaigns/{campaign_id}/verification",
+    operation_id="getIdentityGraphCampaignVerification",
+)
+async def get_campaign_verification(
+    project_id: str,
+    campaign_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        receipt = service.campaign_verification(
+            tenant_id=tenant.tenant_id, project_id=project_id, campaign_id=campaign_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return receipt.model_dump(mode="json")
 
 
 def _parse_owner_type(value: str | None) -> CampaignOwnerType | None:
@@ -907,3 +1227,150 @@ async def get_audience_lineage(
         _raise_identity_graph_error(extra)
         raise
     return lineage.model_dump(mode="json")
+
+
+@router.get(
+    "/audiences/{audience_id}/bindings",
+    operation_id="listIdentityGraphAudienceBindings",
+)
+async def list_audience_bindings(
+    project_id: str,
+    audience_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        rows = service.list_audience_external_bindings(
+            tenant_id=tenant.tenant_id, project_id=project_id, audience_id=audience_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return {"items": [item.model_dump(mode="json") for item in rows]}
+
+
+@router.post(
+    "/audiences/{audience_id}/bindings",
+    operation_id="createIdentityGraphAudienceBinding",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_audience_binding(
+    project_id: str,
+    audience_id: str,
+    body: CreateIdentityGraphAudienceBindingRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    reject_identity_graph_payload(body.model_dump())
+    try:
+        mapping_method = (
+            MappingMethod(body.mapping_method)
+            if body.mapping_method is not None
+            else MappingMethod.PROVIDER_ID_EXACT
+        )
+        binding_status = (
+            BindingStatus(body.status) if body.status is not None else BindingStatus.CONFIRMED
+        )
+        binding = service.bind_audience_external(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            audience_id=audience_id,
+            provider_id=body.provider_id,
+            external_audience_id=body.external_audience_id,
+            external_account_id=body.external_account_id,
+            external_audience_name=body.external_audience_name,
+            audience_implementation_type=body.audience_implementation_type,
+            mapping_method=mapping_method,
+            status=binding_status,
+            actor_id=ctx.user_id or "unknown",
+            effective_start=body.effective_start,
+            effective_end=body.effective_end,
+            source_ref=body.source_ref,
+        )
+    except (IdentityGraphError, ValueError) as exc:
+        if isinstance(exc, IdentityGraphError):
+            _raise_identity_graph_error(exc)
+        raise validation_error(
+            [ProblemFieldError(field="binding", message=str(exc))]
+        ) from exc
+    return binding.model_dump(mode="json")
+
+
+@router.get(
+    "/audience-bindings/{binding_id}",
+    operation_id="getIdentityGraphAudienceBinding",
+)
+async def get_audience_binding(
+    project_id: str,
+    binding_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        binding = service.get_audience_external_binding(
+            tenant_id=tenant.tenant_id, project_id=project_id, binding_id=binding_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return binding.model_dump(mode="json")
+
+
+@router.patch(
+    "/audience-bindings/{binding_id}",
+    operation_id="patchIdentityGraphAudienceBinding",
+)
+async def patch_audience_binding(
+    project_id: str,
+    binding_id: str,
+    body: PatchIdentityGraphAudienceBindingRequest,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    ctx = require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    reject_identity_graph_payload(body.model_dump())
+    try:
+        binding = service.update_audience_external_binding(
+            tenant_id=ctx.tenant_id,
+            project_id=project_id,
+            binding_id=binding_id,
+            updates=body.model_dump(exclude_unset=True),
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return binding.model_dump(mode="json")
+
+
+@router.get(
+    "/audiences/{audience_id}/binding-coverage",
+    operation_id="getIdentityGraphAudienceBindingCoverage",
+)
+async def get_audience_binding_coverage(
+    project_id: str,
+    audience_id: str,
+    tenant: Annotated[TenantContext, Depends(authenticated_tenant)],
+    repo: Annotated[ControlPlaneRepository, Depends(get_control_plane)],
+    service: Annotated[CampaignIdentityService, Depends(get_identity_graph)],
+) -> dict[str, Any]:
+    require_tenant()
+    _require_project(tenant=tenant, repo=repo, project_id=project_id)
+    try:
+        coverage = service.audience_binding_coverage(
+            tenant_id=tenant.tenant_id, project_id=project_id, audience_id=audience_id
+        )
+    except IdentityGraphError as extra:
+        _raise_identity_graph_error(extra)
+        raise
+    return coverage.model_dump(mode="json")

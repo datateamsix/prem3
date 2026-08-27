@@ -65,6 +65,8 @@ PROHIBITED_PERFORMANCE_FIELDS = frozenset(
         "member_count",
         "eligible_size",
         "reach",
+        "tracking_score",
+        "membership_identical",
     }
 )
 

@@ -22,6 +22,8 @@ Default create status is `DRAFT`. Prefer archive. Hard delete is only for never-
 
 Members, hashed member lists, membership snapshots, advertising IDs, estimated size, match rate, reach, budget, performance, or event rows.
 
+Provider audience IDs may bind as provenance (`AudienceExternalBinding`). They never replace `audience_id`. Multiple providers do not imply identical membership. See [EXTERNAL_AUDIENCE_BINDINGS.md](EXTERNAL_AUDIENCE_BINDINGS.md).
+
 ## Hierarchy
 
 Optional `parent_audience_id` uses campaign-style guards. A child does **not** imply a membership subset. `AUDIENCE_DERIVED_FROM` is reserved in the edge enum only; derivation graphs are not implemented.

@@ -6,9 +6,11 @@ from typing import Any
 
 from app.control_plane.serialization import document_to_model, model_to_document
 from app.identity_graph.contracts import (
+    AudienceExternalBinding,
     AudienceLedgerValidationReceipt,
     BusinessMarketBinding,
     CampaignExternalBinding,
+    CampaignIdentityResolution,
     CampaignLedgerValidationReceipt,
     CampaignTrackingBinding,
     CampaignTrackingInstructions,
@@ -16,11 +18,15 @@ from app.identity_graph.contracts import (
     CanonicalCampaign,
     CanonicalMarket,
     CanonicalPersona,
+    CustomCampaignIdentifierRule,
     GA4PropertySourceBinding,
     GA4SourceTopology,
     GA4TopologyReadinessReceipt,
+    IdentityCoverageReadModel,
     MarketResolutionPolicy,
     PersonaLedgerValidationReceipt,
+    TrackingObservation,
+    TrackingVerificationReceipt,
 )
 from app.identity_graph.errors import IdentityGraphError
 from app.identity_graph.relationships import MarketingIdentityEdge
@@ -36,6 +42,12 @@ COL_TRACKING = "campaign_tracking"
 COL_INSTRUCTIONS = "campaign_tracking_instructions"
 COL_RECEIPTS = "campaign_receipts"
 COL_EXTERNAL = "campaign_external"
+COL_AUDIENCE_EXTERNAL = "audience_external"
+COL_CUSTOM_RULES = "custom_identifier_rules"
+COL_OBSERVATIONS = "tracking_observations"
+COL_RESOLUTIONS = "identity_resolutions"
+COL_VERIFICATION = "tracking_verification_receipts"
+COL_COVERAGE = "identity_coverage"
 COL_SOURCES = "ga4_sources"
 COL_TOPOLOGY = "ga4_topology"
 COL_TOPOLOGY_RECEIPTS = "ga4_topology_receipts"
@@ -85,6 +97,16 @@ class FirestoreIdentityGraphStore:
     def _index_audience(self, audience_id: str, tenant_id: str, project_id: str) -> None:
         self._db.collection(COL_INDEX).document(f"audience__{audience_id}").set(
             {"tenant_id": tenant_id, "workspace_id": project_id, "kind": "audience"}
+        )
+
+    def _index_campaign_binding(self, binding_id: str, tenant_id: str, project_id: str) -> None:
+        self._db.collection(COL_INDEX).document(f"campaign_binding__{binding_id}").set(
+            {"tenant_id": tenant_id, "workspace_id": project_id, "kind": "campaign_binding"}
+        )
+
+    def _index_audience_binding(self, binding_id: str, tenant_id: str, project_id: str) -> None:
+        self._db.collection(COL_INDEX).document(f"audience_binding__{binding_id}").set(
+            {"tenant_id": tenant_id, "workspace_id": project_id, "kind": "audience_binding"}
         )
 
     def _lookup(self, kind: str, key: str) -> tuple[str, str] | None:
@@ -397,7 +419,13 @@ class FirestoreIdentityGraphStore:
                 code="UNKNOWN_CAMPAIGN",
             )
         self._put(loc[0], loc[1], COL_EXTERNAL, value.binding_id, value)
+        self._index_campaign_binding(value.binding_id, loc[0], loc[1])
         return value
+
+    def get_external(
+        self, *, tenant_id: str, project_id: str, binding_id: str
+    ) -> CampaignExternalBinding | None:
+        return self._get(tenant_id, project_id, COL_EXTERNAL, binding_id, CampaignExternalBinding)
 
     def list_external(
         self, *, tenant_id: str, project_id: str, campaign_id: str | None = None
@@ -406,6 +434,114 @@ class FirestoreIdentityGraphStore:
         if campaign_id is not None:
             return [item for item in rows if item.campaign_id == campaign_id]
         return rows
+
+    def put_audience_external(self, value: AudienceExternalBinding) -> AudienceExternalBinding:
+        loc = self._lookup("audience", value.audience_id)
+        if loc is None:
+            raise IdentityGraphError(
+                f"Unknown audience_id {value.audience_id}.",
+                code="UNKNOWN_AUDIENCE",
+            )
+        self._put(loc[0], loc[1], COL_AUDIENCE_EXTERNAL, value.binding_id, value)
+        self._index_audience_binding(value.binding_id, loc[0], loc[1])
+        return value
+
+    def get_audience_external(
+        self, *, tenant_id: str, project_id: str, binding_id: str
+    ) -> AudienceExternalBinding | None:
+        return self._get(
+            tenant_id, project_id, COL_AUDIENCE_EXTERNAL, binding_id, AudienceExternalBinding
+        )
+
+    def list_audience_external(
+        self, *, tenant_id: str, project_id: str, audience_id: str | None = None
+    ) -> list[AudienceExternalBinding]:
+        rows = self._list(tenant_id, project_id, COL_AUDIENCE_EXTERNAL, AudienceExternalBinding)
+        if audience_id is not None:
+            return [item for item in rows if item.audience_id == audience_id]
+        return rows
+
+    def put_custom_rule(self, value: CustomCampaignIdentifierRule) -> CustomCampaignIdentifierRule:
+        self._put(value.tenant_id, value.project_id, COL_CUSTOM_RULES, value.rule_id, value)
+        return value
+
+    def get_custom_rule(
+        self, *, tenant_id: str, project_id: str, rule_id: str
+    ) -> CustomCampaignIdentifierRule | None:
+        return self._get(
+            tenant_id,
+            project_id,
+            COL_CUSTOM_RULES,
+            rule_id,
+            CustomCampaignIdentifierRule,
+        )
+
+    def list_custom_rules(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[CustomCampaignIdentifierRule]:
+        return self._list(tenant_id, project_id, COL_CUSTOM_RULES, CustomCampaignIdentifierRule)
+
+    def put_observation(self, value: TrackingObservation) -> TrackingObservation:
+        self._put(value.tenant_id, value.project_id, COL_OBSERVATIONS, value.observation_id, value)
+        return value
+
+    def get_observation(
+        self, *, tenant_id: str, project_id: str, observation_id: str
+    ) -> TrackingObservation | None:
+        return self._get(
+            tenant_id, project_id, COL_OBSERVATIONS, observation_id, TrackingObservation
+        )
+
+    def list_observations(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[TrackingObservation]:
+        return self._list(tenant_id, project_id, COL_OBSERVATIONS, TrackingObservation)
+
+    def put_resolution(self, value: CampaignIdentityResolution) -> CampaignIdentityResolution:
+        self._put(value.tenant_id, value.project_id, COL_RESOLUTIONS, value.resolution_id, value)
+        return value
+
+    def get_resolution(
+        self, *, tenant_id: str, project_id: str, resolution_id: str
+    ) -> CampaignIdentityResolution | None:
+        return self._get(
+            tenant_id, project_id, COL_RESOLUTIONS, resolution_id, CampaignIdentityResolution
+        )
+
+    def list_resolutions(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[CampaignIdentityResolution]:
+        return self._list(tenant_id, project_id, COL_RESOLUTIONS, CampaignIdentityResolution)
+
+    def put_verification_receipt(
+        self, value: TrackingVerificationReceipt
+    ) -> TrackingVerificationReceipt:
+        self._put(value.tenant_id, value.project_id, COL_VERIFICATION, value.receipt_id, value)
+        return value
+
+    def get_verification_receipt(
+        self, *, tenant_id: str, project_id: str, receipt_id: str
+    ) -> TrackingVerificationReceipt | None:
+        return self._get(
+            tenant_id, project_id, COL_VERIFICATION, receipt_id, TrackingVerificationReceipt
+        )
+
+    def list_verification_receipts(
+        self, *, tenant_id: str, project_id: str, campaign_id: str | None = None
+    ) -> list[TrackingVerificationReceipt]:
+        rows = self._list(tenant_id, project_id, COL_VERIFICATION, TrackingVerificationReceipt)
+        if campaign_id is not None:
+            return [item for item in rows if item.campaign_id == campaign_id]
+        return rows
+
+    def put_coverage(self, value: IdentityCoverageReadModel) -> IdentityCoverageReadModel:
+        self._put(value.tenant_id, value.project_id, COL_COVERAGE, "current", value)
+        return value
+
+    def get_coverage(
+        self, *, tenant_id: str, project_id: str
+    ) -> IdentityCoverageReadModel | None:
+        return self._get(tenant_id, project_id, COL_COVERAGE, "current", IdentityCoverageReadModel)
 
     def put_source(self, value: GA4PropertySourceBinding) -> GA4PropertySourceBinding:
         self._put(

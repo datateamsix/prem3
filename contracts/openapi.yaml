@@ -759,6 +759,60 @@ components:
       - upload_id
       title: CreateEvaluationRequest
       type: object
+    CreateIdentityGraphAudienceBindingRequest:
+      additionalProperties: false
+      properties:
+        audience_implementation_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Audience Implementation Type
+        effective_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective End
+        effective_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective Start
+        external_account_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Account Id
+        external_audience_id:
+          title: External Audience Id
+          type: string
+        external_audience_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Audience Name
+        mapping_method:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Mapping Method
+        provider_id:
+          title: Provider Id
+          type: string
+        source_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Ref
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      required:
+      - provider_id
+      - external_audience_id
+      title: CreateIdentityGraphAudienceBindingRequest
+      type: object
     CreateIdentityGraphAudienceRequest:
       additionalProperties: false
       properties:
@@ -848,6 +902,65 @@ components:
       - audience_type
       - source_kind
       title: CreateIdentityGraphAudienceRequest
+      type: object
+    CreateIdentityGraphCampaignBindingRequest:
+      additionalProperties: false
+      properties:
+        effective_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective End
+        effective_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective Start
+        external_account_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Account Id
+        external_campaign_id:
+          title: External Campaign Id
+          type: string
+        external_campaign_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Campaign Name
+        external_campaign_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Campaign Status
+        external_parent_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Parent Id
+        mapping_method:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Mapping Method
+        provider_id:
+          title: Provider Id
+          type: string
+        source_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Ref
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      required:
+      - provider_id
+      - external_campaign_id
+      title: CreateIdentityGraphCampaignBindingRequest
       type: object
     CreateIdentityGraphCampaignRequest:
       additionalProperties: false
@@ -1090,6 +1203,39 @@ components:
       - bq_project_id
       - bq_dataset_id
       title: CreateIdentityGraphSourceRequest
+      type: object
+    CreateIdentityGraphTrackingBindingRequest:
+      additionalProperties: false
+      properties:
+        effective_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective End
+        effective_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective Start
+        parameter_name:
+          title: Parameter Name
+          type: string
+        parameter_value:
+          title: Parameter Value
+          type: string
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        tracking_kind:
+          title: Tracking Kind
+          type: string
+      required:
+      - tracking_kind
+      - parameter_name
+      - parameter_value
+      title: CreateIdentityGraphTrackingBindingRequest
       type: object
     CreateMTARunRequest:
       additionalProperties: false
@@ -3286,6 +3432,67 @@ components:
       - capability
       title: NextAction
       type: object
+    ObserveTrackingRequest:
+      additionalProperties: false
+      properties:
+        candidate_campaign_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Candidate Campaign Id
+        external_account_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Account Id
+        external_campaign_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Campaign Id
+        external_provider_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Provider Id
+        identifier_kind:
+          title: Identifier Kind
+          type: string
+        observation_window_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observation Window End
+        observation_window_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observation Window Start
+        observed_at:
+          title: Observed At
+          type: string
+        parameter_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parameter Name
+        parameter_value:
+          title: Parameter Value
+          type: string
+        source_kind:
+          title: Source Kind
+          type: string
+        source_ref:
+          title: Source Ref
+          type: string
+      required:
+      - source_ref
+      - source_kind
+      - observed_at
+      - identifier_kind
+      - parameter_value
+      title: ObserveTrackingRequest
+      type: object
     OfficialEdaReportView:
       additionalProperties: false
       properties:
@@ -3366,6 +3573,41 @@ components:
           title: Models
           type: array
       title: ParameterExplanationsView
+      type: object
+    PatchIdentityGraphAudienceBindingRequest:
+      additionalProperties: false
+      properties:
+        audience_implementation_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Audience Implementation Type
+        effective_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective End
+        effective_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective Start
+        external_audience_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Audience Name
+        source_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Ref
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      title: PatchIdentityGraphAudienceBindingRequest
       type: object
     PatchIdentityGraphAudienceRequest:
       additionalProperties: false
@@ -3460,6 +3702,41 @@ components:
           - type: 'null'
           title: Status
       title: PatchIdentityGraphAudienceRequest
+      type: object
+    PatchIdentityGraphCampaignBindingRequest:
+      additionalProperties: false
+      properties:
+        effective_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective End
+        effective_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Effective Start
+        external_campaign_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Campaign Name
+        external_campaign_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Campaign Status
+        source_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Ref
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      title: PatchIdentityGraphCampaignBindingRequest
       type: object
     PatchIdentityGraphCampaignRequest:
       additionalProperties: false
@@ -4510,6 +4787,66 @@ components:
       - value
       title: ResolveDecisionRequest
       type: object
+    ResolveTrackingRequest:
+      additionalProperties: false
+      properties:
+        custom_parameter_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Parameter Name
+        custom_parameter_value:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Parameter Value
+        external_account_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Account Id
+        external_campaign_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Campaign Id
+        fuzzy_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Fuzzy Name
+        observation_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observation Id
+        observed_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observed At
+        provider_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Provider Id
+        user_confirmed_campaign_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: User Confirmed Campaign Id
+        utm_campaign:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Utm Campaign
+        utm_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Utm Id
+      title: ResolveTrackingRequest
+      type: object
     ReviseCycleRequest:
       additionalProperties: false
       properties:
@@ -5093,6 +5430,21 @@ components:
       - msg
       - type
       title: ValidationError
+      type: object
+    VerifyTrackingRequest:
+      additionalProperties: false
+      properties:
+        campaign_id:
+          title: Campaign Id
+          type: string
+        observation_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observation Id
+      required:
+      - campaign_id
+      title: VerifyTrackingRequest
       type: object
     WebhookAckResponse:
       additionalProperties: false
@@ -6300,6 +6652,83 @@ paths:
       summary: Get Identity Graph Overview
       tags:
       - identity-graph
+  /v1/projects/{project_id}/identity-graph/audience-bindings/{binding_id}:
+    get:
+      operationId: getIdentityGraphAudienceBinding
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: binding_id
+        required: true
+        schema:
+          title: Binding Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphaudiencebinding
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Audience Binding
+      tags:
+      - identity-graph
+    patch:
+      operationId: patchIdentityGraphAudienceBinding
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: binding_id
+        required: true
+        schema:
+          title: Binding Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchIdentityGraphAudienceBindingRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Patchidentitygraphaudiencebinding
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Patch Audience Binding
+      tags:
+      - identity-graph
   /v1/projects/{project_id}/identity-graph/audiences:
     get:
       operationId: listIdentityGraphAudiences
@@ -6514,6 +6943,119 @@ paths:
       summary: Patch Audience
       tags:
       - identity-graph
+  /v1/projects/{project_id}/identity-graph/audiences/{audience_id}/binding-coverage:
+    get:
+      operationId: getIdentityGraphAudienceBindingCoverage
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: audience_id
+        required: true
+        schema:
+          title: Audience Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphaudiencebindingcoverage
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Audience Binding Coverage
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/audiences/{audience_id}/bindings:
+    get:
+      operationId: listIdentityGraphAudienceBindings
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: audience_id
+        required: true
+        schema:
+          title: Audience Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphaudiencebindings
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Audience Bindings
+      tags:
+      - identity-graph
+    post:
+      operationId: createIdentityGraphAudienceBinding
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: audience_id
+        required: true
+        schema:
+          title: Audience Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentityGraphAudienceBindingRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createidentitygraphaudiencebinding
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Audience Binding
+      tags:
+      - identity-graph
   /v1/projects/{project_id}/identity-graph/audiences/{audience_id}/campaigns:
     get:
       operationId: listIdentityGraphAudienceCampaigns
@@ -6656,6 +7198,83 @@ paths:
       security:
       - HTTPBearer: []
       summary: List Audience Personas
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/campaign-bindings/{binding_id}:
+    get:
+      operationId: getIdentityGraphCampaignBinding
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: binding_id
+        required: true
+        schema:
+          title: Binding Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphcampaignbinding
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Campaign Binding
+      tags:
+      - identity-graph
+    patch:
+      operationId: patchIdentityGraphCampaignBinding
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: binding_id
+        required: true
+        schema:
+          title: Binding Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchIdentityGraphCampaignBindingRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Patchidentitygraphcampaignbinding
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Patch Campaign Binding
       tags:
       - identity-graph
   /v1/projects/{project_id}/identity-graph/campaigns:
@@ -6856,6 +7475,83 @@ paths:
       summary: Patch Campaign
       tags:
       - identity-graph
+  /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/bindings:
+    get:
+      operationId: listIdentityGraphCampaignBindings
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: campaign_id
+        required: true
+        schema:
+          title: Campaign Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Listidentitygraphcampaignbindings
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Campaign Bindings
+      tags:
+      - identity-graph
+    post:
+      operationId: createIdentityGraphCampaignBinding
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: campaign_id
+        required: true
+        schema:
+          title: Campaign Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentityGraphCampaignBindingRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createidentitygraphcampaignbinding
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Campaign Binding
+      tags:
+      - identity-graph
   /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/children:
     get:
       operationId: getIdentityGraphCampaignChildren
@@ -6962,6 +7658,84 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Campaign Tracking
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/tracking/bindings:
+    post:
+      operationId: createIdentityGraphTrackingBinding
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: campaign_id
+        required: true
+        schema:
+          title: Campaign Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentityGraphTrackingBindingRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createidentitygraphtrackingbinding
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Tracking Binding
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/campaigns/{campaign_id}/verification:
+    get:
+      operationId: getIdentityGraphCampaignVerification
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: campaign_id
+        required: true
+        schema:
+          title: Campaign Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphcampaignverification
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Campaign Verification
       tags:
       - identity-graph
   /v1/projects/{project_id}/identity-graph/ga4-topology:
@@ -7458,6 +8232,144 @@ paths:
       security:
       - HTTPBearer: []
       summary: Discover Sources
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/tracking/coverage:
+    get:
+      operationId: getIdentityGraphTrackingCoverage
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getidentitygraphtrackingcoverage
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Tracking Coverage
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/tracking/observe:
+    post:
+      operationId: observeIdentityGraphTracking
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObserveTrackingRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Observeidentitygraphtracking
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Observe Tracking
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/tracking/resolve:
+    post:
+      operationId: resolveIdentityGraphTracking
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveTrackingRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Resolveidentitygraphtracking
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Resolve Tracking
+      tags:
+      - identity-graph
+  /v1/projects/{project_id}/identity-graph/tracking/verify:
+    post:
+      operationId: verifyIdentityGraphTracking
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyTrackingRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Verifyidentitygraphtracking
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Verify Tracking
       tags:
       - identity-graph
   /v1/projects/{project_id}/measurement-home:

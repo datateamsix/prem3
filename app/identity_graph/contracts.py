@@ -18,6 +18,8 @@ from app.identity_graph.enums import (
     CampaignIdentitySource,
     CampaignOwnerType,
     CampaignStatus,
+    CustomIdentifierCanonicalRole,
+    CustomIdentifierScope,
     GA4TopologyKind,
     GA4TopologyReadinessState,
     IdentityGraphCapabilityState,
@@ -29,6 +31,9 @@ from app.identity_graph.enums import (
     MarketMappingMethod,
     MarketResolutionMethod,
     MarketStatus,
+    ObservationSourceKind,
+    ObservationStatus,
+    ObservedIdentifierKind,
     PersonaStatus,
     ResolutionAuthority,
     SourceOverlapPolicy,
@@ -36,6 +41,7 @@ from app.identity_graph.enums import (
     TrackingImplementationStatus,
     TrackingInstructionProvenance,
     TrackingKind,
+    VerificationStatus,
 )
 from app.identity_graph.privacy import reject_identity_graph_payload
 
@@ -139,18 +145,28 @@ class CanonicalAudience(IdentityGraphModel):
 
 
 class AudienceExternalBinding(IdentityGraphModel):
-    """IG-03 seam only. Provider IDs never replace audience_id. No CRUD in IG-02A."""
+    """Provider audience IDs are provenance. They never replace audience_id."""
 
     binding_id: str
     audience_id: str
     provider_id: str
+    tenant_id: str = ""
+    project_id: str = ""
     external_account_id: str | None = None
     external_audience_id: str
     external_audience_name: str | None = None
+    audience_implementation_type: str | None = None
+    effective_start: str | None = None
+    effective_end: str | None = None
     mapping_method: MappingMethod = MappingMethod.PROVIDER_ID_EXACT
     status: BindingStatus = BindingStatus.CONFIRMED
+    authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_CONFIRMED
+    confirmed_by: str | None = None
+    confirmed_at: datetime | None = None
+    source_ref: str | None = None
     fingerprint: str = ""
     created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class CanonicalCampaign(IdentityGraphModel):
@@ -186,17 +202,24 @@ class CampaignExternalBinding(IdentityGraphModel):
     binding_id: str
     campaign_id: str
     provider_id: str
+    tenant_id: str = ""
+    project_id: str = ""
     external_account_id: str | None = None
     external_campaign_id: str
     external_campaign_name: str | None = None
+    external_parent_id: str | None = None
+    external_campaign_status: str | None = None
     effective_start: str | None = None
     effective_end: str | None = None
     mapping_method: MappingMethod = MappingMethod.PROVIDER_ID_EXACT
     status: BindingStatus = BindingStatus.CONFIRMED
+    authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_CONFIRMED
     confirmed_by: str | None = None
     confirmed_at: datetime | None = None
+    source_ref: str | None = None
     fingerprint: str = ""
     created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class CampaignTrackingBinding(IdentityGraphModel):
@@ -205,11 +228,15 @@ class CampaignTrackingBinding(IdentityGraphModel):
     parameter_name: str
     parameter_value: str
     tracking_kind: TrackingKind
+    tenant_id: str = ""
+    project_id: str = ""
     status: BindingStatus = BindingStatus.ACTIVE
+    authority: IdentitySourceAuthority = IdentitySourceAuthority.PREM3_GENERATED
     effective_start: str | None = None
     effective_end: str | None = None
     fingerprint: str = ""
     created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
     created_by: str = ""
 
 
@@ -313,10 +340,19 @@ class CampaignIdentityResolution(IdentityGraphModel):
     campaign_id: str | None
     source: CampaignIdentitySource
     status: ResolutionAuthority
+    resolution_id: str = ""
+    tenant_id: str = ""
+    project_id: str = ""
+    observation_id: str | None = None
+    resolution_method: CampaignIdentitySource | None = None
+    matched_binding_ids: tuple[str, ...] = ()
+    conflicting_binding_ids: tuple[str, ...] = ()
     issues: tuple[str, ...] = ()
     campaign_name_raw: str | None = None
     external_campaign_name: str | None = None
     utm_campaign: str | None = None
+    resolved_at: datetime | None = None
+    fingerprint: str = ""
 
 
 class GA4PropertySourceBinding(IdentityGraphModel):
@@ -454,3 +490,113 @@ class ObservedCampaignSignals(IdentityGraphModel):
     custom_parameter_value: str | None = None
     user_confirmed_campaign_id: str | None = None
     fuzzy_name: str | None = None
+    observed_at: str | None = None
+
+
+class CustomCampaignIdentifierRule(IdentityGraphModel):
+    rule_id: str
+    tenant_id: str
+    project_id: str
+    parameter_name: str
+    parameter_scope: CustomIdentifierScope
+    canonical_role: CustomIdentifierCanonicalRole = CustomIdentifierCanonicalRole.CAMPAIGN_ID
+    source_kind: IdentitySourceAuthority = IdentitySourceAuthority.USER_DECLARED
+    effective_start: str | None = None
+    effective_end: str | None = None
+    status: BindingStatus = BindingStatus.APPROVED
+    authority: IdentitySourceAuthority = IdentitySourceAuthority.USER_CONFIRMED
+    fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+class TrackingObservation(IdentityGraphModel):
+    """Metadata only. No event/session rows."""
+
+    observation_id: str
+    tenant_id: str
+    project_id: str
+    source_ref: str
+    source_kind: ObservationSourceKind
+    observed_at: str
+    identifier_kind: ObservedIdentifierKind
+    parameter_value: str
+    observation_window_start: str | None = None
+    observation_window_end: str | None = None
+    parameter_name: str | None = None
+    external_provider_id: str | None = None
+    external_account_id: str | None = None
+    external_campaign_id: str | None = None
+    candidate_campaign_id: str | None = None
+    observation_status: ObservationStatus = ObservationStatus.RECORDED
+    evidence_fingerprint: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class TrackingVerificationReceipt(IdentityGraphModel):
+    receipt_id: str
+    tenant_id: str
+    project_id: str
+    campaign_id: str
+    source_ref: str
+    status: VerificationStatus
+    observed_identifier: str
+    expected_identifier: str
+    observation_id: str
+    resolution_id: str
+    tracking_binding_id: str | None = None
+    verification_method: CampaignIdentitySource | None = None
+    issues: tuple[str, ...] = ()
+    evidence_fingerprint: str = ""
+    verified_at: datetime | None = None
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class IdentityCoverageReadModel(IdentityGraphModel):
+    project_id: str
+    tenant_id: str = ""
+    source_ref: str | None = None
+    period: str | None = None
+    observed_identifier_count: int = 0
+    resolved_identifier_count: int = 0
+    unresolved_identifier_count: int = 0
+    review_required_count: int = 0
+    campaigns_total: int = 0
+    campaigns_with_tracking_declared: int = 0
+    campaigns_observed: int = 0
+    campaigns_verified: int = 0
+    coverage_status: IdentityGraphCapabilityState = IdentityGraphCapabilityState.NOT_CONFIGURED
+    issues: tuple[str, ...] = ()
+    fingerprint: str = ""
+
+
+class AudienceBindingCoverage(IdentityGraphModel):
+    audience_id: str
+    tenant_id: str = ""
+    project_id: str = ""
+    provider_binding_count: int = 0
+    active_provider_binding_count: int = 0
+    providers: tuple[str, ...] = ()
+    status: IdentityGraphCapabilityState = IdentityGraphCapabilityState.NOT_CONFIGURED
+    issues: tuple[str, ...] = ()
+
+
+class CampaignIdentityHandoff(IdentityGraphModel):
+    """IG-04 additive handoff. Does not mutate MTA contracts."""
+
+    campaign_id: str | None
+    campaign_identity_source: CampaignIdentitySource
+    resolution_status: ResolutionAuthority
+    parent_campaign_id: str | None = None
+    campaign_binding_id: str | None = None
+    tracking_binding_id: str | None = None
+    resolution_fingerprint: str = ""
+    provider_id: str | None = None
+    provider_account_id: str | None = None
+    external_campaign_id: str | None = None
+    utm_id: str | None = None
+    utm_campaign: str | None = None
+    custom_identifier: str | None = None
+    audience_id: str | None = None
+    audience_binding_id: str | None = None
+    source_ref: str | None = None

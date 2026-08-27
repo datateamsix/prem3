@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from app.identity_graph.contracts import (
+    AudienceExternalBinding,
     AudienceLedgerValidationReceipt,
     BusinessMarketBinding,
     CampaignExternalBinding,
+    CampaignIdentityResolution,
     CampaignLedgerValidationReceipt,
     CampaignTrackingBinding,
     CampaignTrackingInstructions,
@@ -15,11 +17,15 @@ from app.identity_graph.contracts import (
     CanonicalCampaign,
     CanonicalMarket,
     CanonicalPersona,
+    CustomCampaignIdentifierRule,
     GA4PropertySourceBinding,
     GA4SourceTopology,
     GA4TopologyReadinessReceipt,
+    IdentityCoverageReadModel,
     MarketResolutionPolicy,
     PersonaLedgerValidationReceipt,
+    TrackingObservation,
+    TrackingVerificationReceipt,
 )
 from app.identity_graph.errors import IdentityGraphError
 from app.identity_graph.relationships import MarketingIdentityEdge
@@ -141,9 +147,73 @@ class IdentityGraphStore(Protocol):
 
     def put_external(self, value: CampaignExternalBinding) -> CampaignExternalBinding: ...
 
+    def get_external(
+        self, *, tenant_id: str, project_id: str, binding_id: str
+    ) -> CampaignExternalBinding | None: ...
+
     def list_external(
         self, *, tenant_id: str, project_id: str, campaign_id: str | None = None
     ) -> list[CampaignExternalBinding]: ...
+
+    def put_audience_external(self, value: AudienceExternalBinding) -> AudienceExternalBinding: ...
+
+    def get_audience_external(
+        self, *, tenant_id: str, project_id: str, binding_id: str
+    ) -> AudienceExternalBinding | None: ...
+
+    def list_audience_external(
+        self, *, tenant_id: str, project_id: str, audience_id: str | None = None
+    ) -> list[AudienceExternalBinding]: ...
+
+    def put_custom_rule(
+        self, value: CustomCampaignIdentifierRule
+    ) -> CustomCampaignIdentifierRule: ...
+
+    def get_custom_rule(
+        self, *, tenant_id: str, project_id: str, rule_id: str
+    ) -> CustomCampaignIdentifierRule | None: ...
+
+    def list_custom_rules(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[CustomCampaignIdentifierRule]: ...
+
+    def put_observation(self, value: TrackingObservation) -> TrackingObservation: ...
+
+    def get_observation(
+        self, *, tenant_id: str, project_id: str, observation_id: str
+    ) -> TrackingObservation | None: ...
+
+    def list_observations(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[TrackingObservation]: ...
+
+    def put_resolution(self, value: CampaignIdentityResolution) -> CampaignIdentityResolution: ...
+
+    def get_resolution(
+        self, *, tenant_id: str, project_id: str, resolution_id: str
+    ) -> CampaignIdentityResolution | None: ...
+
+    def list_resolutions(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[CampaignIdentityResolution]: ...
+
+    def put_verification_receipt(
+        self, value: TrackingVerificationReceipt
+    ) -> TrackingVerificationReceipt: ...
+
+    def get_verification_receipt(
+        self, *, tenant_id: str, project_id: str, receipt_id: str
+    ) -> TrackingVerificationReceipt | None: ...
+
+    def list_verification_receipts(
+        self, *, tenant_id: str, project_id: str, campaign_id: str | None = None
+    ) -> list[TrackingVerificationReceipt]: ...
+
+    def put_coverage(self, value: IdentityCoverageReadModel) -> IdentityCoverageReadModel: ...
+
+    def get_coverage(
+        self, *, tenant_id: str, project_id: str
+    ) -> IdentityCoverageReadModel | None: ...
 
     def put_source(self, value: GA4PropertySourceBinding) -> GA4PropertySourceBinding: ...
 
@@ -199,6 +269,14 @@ class InMemoryIdentityGraphStore:
         self.tracking_instructions: dict[tuple[str, str, str], CampaignTrackingInstructions] = {}
         self.campaign_receipts: dict[tuple[str, str, str], CampaignLedgerValidationReceipt] = {}
         self.external: dict[tuple[str, str], list[CampaignExternalBinding]] = {}
+        self.audience_external: dict[tuple[str, str], list[AudienceExternalBinding]] = {}
+        self.custom_rules: dict[tuple[str, str], dict[str, CustomCampaignIdentifierRule]] = {}
+        self.observations: dict[tuple[str, str], dict[str, TrackingObservation]] = {}
+        self.resolutions: dict[tuple[str, str], dict[str, CampaignIdentityResolution]] = {}
+        self.verification_receipts: dict[
+            tuple[str, str], dict[str, TrackingVerificationReceipt]
+        ] = {}
+        self.coverage: dict[tuple[str, str], IdentityCoverageReadModel] = {}
         self.sources: dict[tuple[str, str], dict[str, GA4PropertySourceBinding]] = {}
         self.topologies: dict[tuple[str, str], GA4SourceTopology] = {}
         self.receipts: dict[tuple[str, str], GA4TopologyReadinessReceipt] = {}
@@ -383,6 +461,7 @@ class InMemoryIdentityGraphStore:
             )
         self._issued_audience_ids.add(value.audience_id)
         self.audiences[key] = value
+        self.campaign_scope[value.audience_id] = _scope(value.tenant_id, value.project_id)
         return value
 
     def get_audience(
@@ -484,6 +563,14 @@ class InMemoryIdentityGraphStore:
         bucket.append(value)
         return value
 
+    def get_external(
+        self, *, tenant_id: str, project_id: str, binding_id: str
+    ) -> CampaignExternalBinding | None:
+        for item in self.external.get(_scope(tenant_id, project_id), []):
+            if item.binding_id == binding_id:
+                return item
+        return None
+
     def list_external(
         self, *, tenant_id: str, project_id: str, campaign_id: str | None = None
     ) -> list[CampaignExternalBinding]:
@@ -491,6 +578,110 @@ class InMemoryIdentityGraphStore:
         if campaign_id is not None:
             return [item for item in rows if item.campaign_id == campaign_id]
         return rows
+
+    def put_audience_external(self, value: AudienceExternalBinding) -> AudienceExternalBinding:
+        scope = self.campaign_scope.get(value.audience_id)
+        if scope is None:
+            raise IdentityGraphError(
+                f"Unknown audience_id {value.audience_id}.",
+                code="UNKNOWN_AUDIENCE",
+            )
+        bucket = self.audience_external.setdefault(scope, [])
+        bucket[:] = [item for item in bucket if item.binding_id != value.binding_id]
+        bucket.append(value)
+        return value
+
+    def get_audience_external(
+        self, *, tenant_id: str, project_id: str, binding_id: str
+    ) -> AudienceExternalBinding | None:
+        for item in self.audience_external.get(_scope(tenant_id, project_id), []):
+            if item.binding_id == binding_id:
+                return item
+        return None
+
+    def list_audience_external(
+        self, *, tenant_id: str, project_id: str, audience_id: str | None = None
+    ) -> list[AudienceExternalBinding]:
+        rows = list(self.audience_external.get(_scope(tenant_id, project_id), []))
+        if audience_id is not None:
+            return [item for item in rows if item.audience_id == audience_id]
+        return rows
+
+    def put_custom_rule(self, value: CustomCampaignIdentifierRule) -> CustomCampaignIdentifierRule:
+        bucket = self.custom_rules.setdefault(_scope(value.tenant_id, value.project_id), {})
+        bucket[value.rule_id] = value
+        return value
+
+    def get_custom_rule(
+        self, *, tenant_id: str, project_id: str, rule_id: str
+    ) -> CustomCampaignIdentifierRule | None:
+        return self.custom_rules.get(_scope(tenant_id, project_id), {}).get(rule_id)
+
+    def list_custom_rules(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[CustomCampaignIdentifierRule]:
+        return list(self.custom_rules.get(_scope(tenant_id, project_id), {}).values())
+
+    def put_observation(self, value: TrackingObservation) -> TrackingObservation:
+        bucket = self.observations.setdefault(_scope(value.tenant_id, value.project_id), {})
+        bucket[value.observation_id] = value
+        return value
+
+    def get_observation(
+        self, *, tenant_id: str, project_id: str, observation_id: str
+    ) -> TrackingObservation | None:
+        return self.observations.get(_scope(tenant_id, project_id), {}).get(observation_id)
+
+    def list_observations(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[TrackingObservation]:
+        return list(self.observations.get(_scope(tenant_id, project_id), {}).values())
+
+    def put_resolution(self, value: CampaignIdentityResolution) -> CampaignIdentityResolution:
+        bucket = self.resolutions.setdefault(_scope(value.tenant_id, value.project_id), {})
+        bucket[value.resolution_id] = value
+        return value
+
+    def get_resolution(
+        self, *, tenant_id: str, project_id: str, resolution_id: str
+    ) -> CampaignIdentityResolution | None:
+        return self.resolutions.get(_scope(tenant_id, project_id), {}).get(resolution_id)
+
+    def list_resolutions(
+        self, *, tenant_id: str, project_id: str
+    ) -> list[CampaignIdentityResolution]:
+        return list(self.resolutions.get(_scope(tenant_id, project_id), {}).values())
+
+    def put_verification_receipt(
+        self, value: TrackingVerificationReceipt
+    ) -> TrackingVerificationReceipt:
+        bucket = self.verification_receipts.setdefault(
+            _scope(value.tenant_id, value.project_id), {}
+        )
+        bucket[value.receipt_id] = value
+        return value
+
+    def get_verification_receipt(
+        self, *, tenant_id: str, project_id: str, receipt_id: str
+    ) -> TrackingVerificationReceipt | None:
+        return self.verification_receipts.get(_scope(tenant_id, project_id), {}).get(receipt_id)
+
+    def list_verification_receipts(
+        self, *, tenant_id: str, project_id: str, campaign_id: str | None = None
+    ) -> list[TrackingVerificationReceipt]:
+        rows = list(self.verification_receipts.get(_scope(tenant_id, project_id), {}).values())
+        if campaign_id is not None:
+            return [item for item in rows if item.campaign_id == campaign_id]
+        return rows
+
+    def put_coverage(self, value: IdentityCoverageReadModel) -> IdentityCoverageReadModel:
+        self.coverage[_scope(value.tenant_id, value.project_id)] = value
+        return value
+
+    def get_coverage(
+        self, *, tenant_id: str, project_id: str
+    ) -> IdentityCoverageReadModel | None:
+        return self.coverage.get(_scope(tenant_id, project_id))
 
     def put_source(self, value: GA4PropertySourceBinding) -> GA4PropertySourceBinding:
         bucket = self.sources.setdefault(_scope(value.tenant_id, value.project_id), {})
