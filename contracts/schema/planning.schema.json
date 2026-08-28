@@ -1,10 +1,348 @@
 {
   "$defs": {
+    "app_investment_optimization_contracts__AdvancedOptimizationReadinessReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "assumption_set_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assumption Set Fingerprint"
+        },
+        "assumption_set_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assumption Set Id"
+        },
+        "base_readiness_fingerprint": {
+          "title": "Base Readiness Fingerprint",
+          "type": "string"
+        },
+        "base_readiness_receipt_id": {
+          "title": "Base Readiness Receipt Id",
+          "type": "string"
+        },
+        "budget_mode": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationBudgetMode"
+        },
+        "checks": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationReadinessCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "constraint_set_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraint Set Fingerprint"
+        },
+        "constraint_set_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraint Set Id"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "issues": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "objective_fingerprint": {
+          "title": "Objective Fingerprint",
+          "type": "string"
+        },
+        "objective_mode": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationObjectiveMode"
+        },
+        "optimizer_defaults_fingerprint": {
+          "title": "Optimizer Defaults Fingerprint",
+          "type": "string"
+        },
+        "policy_version": {
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "runtime_version": {
+          "title": "Runtime Version",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__AdvancedOptimizationReadinessStatus"
+        },
+        "target_hurdle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Hurdle"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "tenant_id",
+        "project_id",
+        "base_readiness_receipt_id",
+        "base_readiness_fingerprint",
+        "objective_mode",
+        "objective_fingerprint",
+        "budget_mode",
+        "runtime_version",
+        "optimizer_defaults_fingerprint",
+        "status",
+        "policy_version",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "AdvancedOptimizationReadinessReceipt",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__AdvancedOptimizationReadinessStatus": {
+      "enum": [
+        "NOT_READY",
+        "ADVANCED_OPTIMIZATION_READY",
+        "REVIEW_REQUIRED",
+        "STALE"
+      ],
+      "title": "AdvancedOptimizationReadinessStatus",
+      "type": "string"
+    },
     "app_investment_optimization_contracts__BudgetResolutionPath": {
       "enum": [
         "APPROVED_DRIVE_PLAN_TRANSIENT_VIEW"
       ],
       "title": "BudgetResolutionPath",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__ConstraintSetRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_bucket": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Bucket"
+        },
+        "artifact_generation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Generation"
+        },
+        "artifact_object_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Object Name"
+        },
+        "constraint_set_id": {
+          "title": "Constraint Set Id",
+          "type": "string"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
+        },
+        "tenant_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tenant Id"
+        }
+      },
+      "required": [
+        "constraint_set_id",
+        "fingerprint"
+      ],
+      "title": "ConstraintSetRef",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__ConstraintValidationCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "passed"
+      ],
+      "title": "ConstraintValidationCheck",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__ConstraintValidationReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_contracts__ConstraintValidationCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "conflicting_constraint_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Conflicting Constraint Ids",
+          "type": "array"
+        },
+        "constraint_set_fingerprint": {
+          "title": "Constraint Set Fingerprint",
+          "type": "string"
+        },
+        "constraint_set_id": {
+          "title": "Constraint Set Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_optimization_contracts__ConstraintValidationStatus"
+        },
+        "validation_id": {
+          "title": "Validation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "validation_id",
+        "constraint_set_id",
+        "constraint_set_fingerprint",
+        "status",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "ConstraintValidationReceipt",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__ConstraintValidationStatus": {
+      "enum": [
+        "VALID",
+        "INVALID",
+        "INFEASIBLE"
+      ],
+      "title": "ConstraintValidationStatus",
       "type": "string"
     },
     "app_investment_optimization_contracts__DecisionRecordType": {
@@ -100,6 +438,14 @@
       "title": "OptimizationAmountKind",
       "type": "string"
     },
+    "app_investment_optimization_contracts__OptimizationBudgetMode": {
+      "enum": [
+        "FIXED",
+        "FLEXIBLE"
+      ],
+      "title": "OptimizationBudgetMode",
+      "type": "string"
+    },
     "app_investment_optimization_contracts__OptimizationExecutionPhase": {
       "enum": [
         "REVALIDATE",
@@ -128,7 +474,17 @@
         "OPTIMIZER_RESULT_INVALID",
         "OPTIMIZER_BUDGET_INVARIANT_FAILED",
         "RESULT_READBACK_FAILED",
-        "FLEXIBLE_BUDGET_NOT_IMPLEMENTED"
+        "FLEXIBLE_BUDGET_NOT_IMPLEMENTED",
+        "FLEXIBLE_BUDGET_API_UNSUPPORTED",
+        "OBJECTIVE_NOT_SUPPORTED",
+        "FINANCIAL_VALUE_ASSUMPTION_REQUIRED",
+        "FUTURE_COST_ASSUMPTION_INVALID",
+        "FLIGHTING_ASSUMPTION_INVALID",
+        "CONSTRAINT_SET_INFEASIBLE",
+        "CONSTRAINT_REFERENCE_INVALID",
+        "CONSTRAINT_UNIT_MISMATCH",
+        "ADVANCED_READINESS_STALE",
+        "RESULT_CONSTRAINT_VIOLATION"
       ],
       "title": "OptimizationFailureClass",
       "type": "string"
@@ -399,6 +755,13 @@
         "OPTIMIZER_INPUT_ARTIFACT_MISSING",
         "MODEL_RUNTIME_INCOMPATIBLE",
         "STALE_READINESS_RECEIPT",
+        "FINANCIAL_VALUE_ASSUMPTION_REQUIRED",
+        "FUNNEL_MAPPING_REQUIRED",
+        "CONSTRAINT_SET_INFEASIBLE",
+        "CONSTRAINT_REFERENCE_INVALID",
+        "UNSUPPORTED_CHANNEL_POLICY_REQUIRED",
+        "PROXY_APPROVAL_REQUIRED",
+        "EXPOSURE_GUARDRAIL_NOT_IN_P6_07",
         "APPROVED_PLAN_REQUIRED",
         "ACTUALS_NEVER_REPLACE_APPROVED_BASELINE",
         "FUZZY_MAPPING_NOT_AUTHORITY",
@@ -421,6 +784,16 @@
         "PREM3_CVAR"
       ],
       "title": "OptimizationObjectiveKind",
+      "type": "string"
+    },
+    "app_investment_optimization_contracts__OptimizationObjectiveMode": {
+      "enum": [
+        "MAX_EXPECTED_OUTCOME_FIXED_BUDGET",
+        "TARGET_ROI_FLEXIBLE_BUDGET",
+        "TARGET_MROI_FLEXIBLE_BUDGET",
+        "MAX_INCREMENTAL_CONTRIBUTION_VALUE"
+      ],
+      "title": "OptimizationObjectiveMode",
       "type": "string"
     },
     "app_investment_optimization_contracts__OptimizationProposal": {
@@ -819,7 +1192,12 @@
         "SPEND_SEMANTICS_COMPATIBLE",
         "OPTIMIZABLE_VARIABLES_VALID",
         "NO_UNRESOLVED_MAPPING_CONFLICTS",
-        "INPUT_CONTRACT_FINGERPRINTED"
+        "INPUT_CONTRACT_FINGERPRINTED",
+        "ASSUMPTIONS_PINNED",
+        "CONSTRAINTS_FEASIBLE",
+        "OBJECTIVE_VALID",
+        "UNSUPPORTED_LINES_EXPLICIT",
+        "RUNTIME_PINNED"
       ],
       "title": "OptimizationReadinessCheckCode",
       "type": "string"
@@ -1109,6 +1487,30 @@
       "additionalProperties": false,
       "description": "Durable optimizer execution metadata. Never stores budget arrays.",
       "properties": {
+        "advanced_readiness_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Advanced Readiness Fingerprint"
+        },
+        "advanced_readiness_receipt_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Advanced Readiness Receipt Id"
+        },
         "artifact_generation": {
           "anyOf": [
             {
@@ -1133,6 +1535,41 @@
           "default": null,
           "title": "Artifact Object Name"
         },
+        "assumption_set_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assumption Set Fingerprint"
+        },
+        "assumption_set_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assumption Set Id"
+        },
+        "budget_mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationBudgetMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "completed_at": {
           "anyOf": [
             {
@@ -1145,6 +1582,30 @@
           ],
           "default": null,
           "title": "Completed At"
+        },
+        "constraint_set_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraint Set Fingerprint"
+        },
+        "constraint_set_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraint Set Id"
         },
         "created_at": {
           "format": "date-time",
@@ -1252,6 +1713,29 @@
           ],
           "default": null,
           "title": "Model Version Id"
+        },
+        "objective_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Objective Fingerprint"
+        },
+        "objective_mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationObjectiveMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "optimization_input_id": {
           "anyOf": [
@@ -1374,6 +1858,18 @@
         "status": {
           "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationRunStatus"
         },
+        "target_hurdle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Hurdle"
+        },
         "tenant_id": {
           "title": "Tenant Id",
           "type": "string"
@@ -1414,7 +1910,8 @@
     },
     "app_investment_optimization_contracts__OptimizationRunKind": {
       "enum": [
-        "FIXED_BUDGET"
+        "FIXED_BUDGET",
+        "FLEXIBLE_BUDGET"
       ],
       "title": "OptimizationRunKind",
       "type": "string"
@@ -1891,10 +2388,12 @@
       "enum": [
         "MODEL_ESTIMATE_NOT_GUARANTEE",
         "FIXED_BUDGET_ONLY",
+        "FLEXIBLE_BUDGET_HURDLE",
         "POSTERIOR_DEPENDENT",
         "SPEND_CONSTRAINT_APPLIED",
         "MODEL_SCOPE_LIMITED",
-        "UNMODELED_BUDGET_FIXED"
+        "UNMODELED_BUDGET_FIXED",
+        "FUTURE_ASSUMPTIONS_PINNED"
       ],
       "title": "ProposalLimitationCode",
       "type": "string"
@@ -2032,9 +2531,45 @@
           "title": "Artifact Object Name",
           "type": "string"
         },
+        "assumption_set_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assumption Set Id"
+        },
         "baseline_fingerprint": {
           "title": "Baseline Fingerprint",
           "type": "string"
+        },
+        "budget_mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budget Mode"
+        },
+        "constraint_set_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraint Set Id"
         },
         "created_at": {
           "format": "date-time",
@@ -2052,6 +2587,18 @@
         "fingerprint": {
           "title": "Fingerprint",
           "type": "string"
+        },
+        "objective_mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Objective Mode"
         },
         "optimization_result_ref": {
           "title": "Optimization Result Ref",
@@ -2123,6 +2670,98 @@
         "fingerprint"
       ],
       "title": "ScenarioArtifact",
+      "type": "object"
+    },
+    "app_investment_optimization_contracts__ScenarioAssumptionSetRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_bucket": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Bucket"
+        },
+        "artifact_generation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Generation"
+        },
+        "artifact_object_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Object Name"
+        },
+        "assumption_set_id": {
+          "title": "Assumption Set Id",
+          "type": "string"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
+        },
+        "tenant_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tenant Id"
+        }
+      },
+      "required": [
+        "assumption_set_id",
+        "fingerprint"
+      ],
+      "title": "ScenarioAssumptionSetRef",
       "type": "object"
     },
     "app_investment_optimization_contracts__ScenarioStatus": {
@@ -3688,6 +4327,18 @@
     },
     {
       "$ref": "#/$defs/app_investment_optimization_contracts__OptimizationResultRef"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__ConstraintSetRef"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__ScenarioAssumptionSetRef"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__ConstraintValidationReceipt"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_contracts__AdvancedOptimizationReadinessReceipt"
     },
     {
       "$ref": "#/$defs/app_investment_optimization_contracts__ScenarioArtifact"

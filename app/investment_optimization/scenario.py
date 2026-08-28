@@ -142,6 +142,10 @@ def build_scenario_artifact(
         "recommendation_fingerprint": payload.fingerprint,
         "artifact_fingerprint": artifact_fp,
         "amount_kind": OptimizationAmountKind.MODEL_RECOMMENDED.value,
+        "assumption_set_id": run.assumption_set_id or "",
+        "constraint_set_id": run.constraint_set_id or "",
+        "objective_mode": None if payload.objective_mode is None else payload.objective_mode.value,
+        "budget_mode": None if payload.budget_mode is None else payload.budget_mode.value,
     }
     now = datetime.now(UTC)
     return ScenarioArtifact(
@@ -166,6 +170,10 @@ def build_scenario_artifact(
         artifact_fingerprint=artifact_fp,
         created_at=now,
         created_by=actor_id,
+        assumption_set_id=run.assumption_set_id,
+        constraint_set_id=run.constraint_set_id,
+        objective_mode=None if payload.objective_mode is None else payload.objective_mode.value,
+        budget_mode=None if payload.budget_mode is None else payload.budget_mode.value,
         fingerprint=metadata_fingerprint(metadata),
     )
 

@@ -242,6 +242,42 @@ Comparison and change-summary payloads are transient and `Cache-Control: private
 
 `PlanningDecisionRecord` stores decision type, owner, evidence refs, and fingerprints without amounts.
 
+## ADR-P6-061 — Native Meridian is the only flexible-budget solver
+
+P6-07 calls `google-meridian==1.8.0` `BudgetOptimizer.optimize(fixed_budget=False, target_roi|target_mroi, ...)`. There is no PreM3 custom flexible-budget or group-sum solver. Unencodable hard constraints fail with `FLEXIBLE_BUDGET_API_UNSUPPORTED`.
+
+## ADR-P6-062 — Future assumptions are pinned, fingerprinted, and GCS-private
+
+`FutureScenarioAssumptions` amounts live on GCS. Firestore stores `ScenarioAssumptionSetRef` only. Changing the assumption fingerprint stales advanced readiness and the execution key.
+
+## ADR-P6-063 — Hard constraints require explicit non-LLM authority
+
+Every hard constraint carries source, `HUMAN_CONFIRMED` | `BUSINESS_IQ_GOVERNED` | `CONTRACTUAL` | `SYSTEM_DERIVED`, scope, period, reason, and fingerprint. LLM-proposed text is not authority.
+
+## ADR-P6-064 — Feasibility is proven before native dispatch
+
+`ConstraintValidationReceipt` plus interval feasibility run before `BudgetOptimizer.optimize`. Infeasible sets never dispatch. Native output is post-validated; violations are `RESULT_CONSTRAINT_VIOLATION`.
+
+## ADR-P6-065 — Advanced readiness wraps P6-04 and does not rewrite it
+
+`AdvancedOptimizationReadinessReceipt` (`oaready_`) wraps a non-stale `OPTIMIZATION_READY` receipt plus assumption, constraint, objective, and runtime fingerprints. P6-04 `evaluate_readiness` and the historical receipt shape stay frozen.
+
+## ADR-P6-066 — B_min / B_max are PreM3 bounds, not native kwargs
+
+Meridian 1.8.0 has no named `B_min` / `B_max`. PreM3 compiles a spend-box center plus `spend_constraint_*` when that encoding is valid, then hard-checks the result total. Otherwise it refuses.
+
+## ADR-P6-067 — Financial value is never fabricated
+
+Target ROI/mROI and contribution-value modes require governed `revenue_per_kpi` or margin. Missing unit value → `FINANCIAL_VALUE_ASSUMPTION_REQUIRED`. PreM3 reports cost per incremental KPI rather than inventing ROMI.
+
+## ADR-P6-068 — Advanced amount payloads stay out of Firestore, logs, and public schema
+
+Constraint/assumption arrays, budget vectors, and recommended rows are `CUSTOMER_AMOUNT_TRANSIENT`. Schema export publishes refs and readiness only. Amount HTTP is `private, no-store`. Worker request JSON cannot carry amount keys.
+
+## ADR-P6-069 — Unsupported channels stay on the portfolio under an explicit policy
+
+Missing evidence is not zero. Policies are `HOLD_BASELINE`, `RESERVE_EXPERIMENT_AMOUNT`, `EXCLUDE_FROM_OPTIMIZER_BUT_KEEP_PORTFOLIO`, and `APPROVED_PROXY_WITH_REVIEW`. Missing funnel weights are `FUNNEL_MAPPING_REQUIRED`.
+
 ## Additional freeze notes
 
 - `PlanningChannelAllocation.amount` is pre-P6 compatibility, not value authority (see source-authority doc).

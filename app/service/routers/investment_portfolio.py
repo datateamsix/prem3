@@ -2,23 +2,45 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
 
 from app.control_plane.models import Workspace
 from app.core.tenancy import require_tenant
+from app.investment_optimization.advanced_service import AdvancedOptimizationService
 from app.investment_optimization.contracts import (
+    ConstraintAuthorityRecord,
+    FlightingAssumption,
+    FutureScenarioAssumptions,
+    GroupConstraint,
+    LockedLineConstraint,
     MappingOverride,
+    MediaUnitCostAssumption,
+    MoneyBounds,
+    MovementConstraint,
+    OptimizationConstraintSet,
     OptimizationReadinessReceipt,
+    PortfolioLineConstraint,
     PortfolioModelMapping,
+    ReserveConstraint,
     ScenarioArtifact,
+    UnitValueAssumption,
+    WeightedGroupConstraint,
 )
 from app.investment_optimization.enums import (
+    AssumptionAuthority,
+    ConstraintAuthority,
+    ConstraintFamily,
     MappingAuthority,
     MappingCardinalityPolicy,
+    MediaUnitCostKind,
+    OptimizationBudgetMode,
+    OptimizationObjectiveMode,
     ProposalDecision,
     UnmappedVariableTreatment,
+    UnsupportedChannelPolicy,
 )
 from app.investment_optimization.mapping import reject_forbidden_authority
 from app.investment_optimization.proposal import ProposalGovernanceService
@@ -32,6 +54,7 @@ from app.investment_planning.contracts import (
 )
 from app.investment_planning.enums import AmountKind, PortfolioCoverageState
 from app.investment_planning.errors import PlanningError
+from app.investment_planning.fingerprint import metadata_fingerprint
 from app.investment_planning.portfolio import (
     remaining_amount,
     rollup_by_dimension,
@@ -42,6 +65,17 @@ from app.investment_planning.portfolio import (
 from app.investment_planning.service import InvestmentPlanService
 from app.service.errors import planning_error
 from app.service.investment_planning_models import (
+    AdvancedOptimizationReadinessListResponse,
+    AdvancedOptimizationReadinessResponse,
+    AssumptionSetRefListResponse,
+    AssumptionSetRefResponse,
+    ConstraintSetRefListResponse,
+    ConstraintSetRefResponse,
+    ConstraintValidationCheckResponse,
+    ConstraintValidationResponse,
+    CreateAdvancedOptimizationReadinessRequest,
+    CreateAssumptionSetRequest,
+    CreateConstraintSetRequest,
     CreateOptimizationRunRequest,
     CreatePortfolioModelMappingRequest,
     CreateProposalRequest,
@@ -323,6 +357,13 @@ def get_proposal_governance(request: Request) -> ProposalGovernanceService:
     return service
 
 
+def get_advanced_optimization_service(request: Request) -> AdvancedOptimizationService:
+    service = getattr(request.app.state, "advanced_optimization", None)
+    if service is None:
+        raise RuntimeError("Advanced optimization service is not configured.")
+    return service
+
+
 def _overrides(items: tuple[MappingOverrideRequest, ...]) -> tuple[MappingOverride, ...]:
     parsed: list[MappingOverride] = []
     for item in items:
@@ -510,6 +551,11 @@ def _run_response(run) -> OptimizationRunResponse:
         failure_class=None if run.failure_class is None else run.failure_class.value,
         retry_semantics=None if run.retry_semantics is None else run.retry_semantics.value,
         runtime_version=run.runtime_version,
+        objective_mode=None if run.objective_mode is None else run.objective_mode.value,
+        budget_mode=None if run.budget_mode is None else run.budget_mode.value,
+        constraint_set_id=run.constraint_set_id,
+        assumption_set_id=run.assumption_set_id,
+        advanced_readiness_receipt_id=run.advanced_readiness_receipt_id,
         created_at=run.created_at,
         updated_at=run.updated_at,
         completed_at=run.completed_at,
@@ -549,6 +595,28 @@ def _result_response(payload) -> OptimizationResultResponse:
         ),
         fingerprint=payload.fingerprint,
         schema_version=payload.schema_version,
+        total_baseline_spend=(
+            None
+            if payload.total_baseline_spend is None
+            else format(payload.total_baseline_spend, "f")
+        ),
+        objective_mode=None if payload.objective_mode is None else payload.objective_mode.value,
+        budget_mode=None if payload.budget_mode is None else payload.budget_mode.value,
+        target_hurdle=payload.target_hurdle,
+        assumption_set_id=payload.assumption_set_id,
+        constraint_set_id=payload.constraint_set_id,
+        binding_constraints=tuple(
+            {
+                "constraint_id": item.constraint_id,
+                "family": item.family.value,
+                "status": item.status.value,
+                "subject_line_id": item.subject_line_id,
+            }
+            for item in payload.binding_constraints
+        ),
+        model_estimated_outcome=payload.model_estimated_outcome,
+        roi=payload.roi,
+        mroi=payload.mroi,
     )
 
 
@@ -563,6 +631,19 @@ async def create_optimization_run(
             actor_id=require_tenant().user_id or "unknown",
             readiness_receipt_id=body.readiness_receipt_id,
             idempotency_key=body.idempotency_key,
+            budget_mode=(
+                None if body.budget_mode is None else OptimizationBudgetMode(body.budget_mode)
+            ),
+            objective_mode=(
+                None
+                if body.objective_mode is None
+                else OptimizationObjectiveMode(body.objective_mode)
+            ),
+            constraint_set_id=body.constraint_set_id,
+            assumption_set_id=body.assumption_set_id,
+            advanced_readiness_receipt_id=body.advanced_readiness_receipt_id,
+            target_roi=body.target_roi,
+            target_mroi=body.target_mroi,
         )
     except PlanningError as exc:
         raise planning_error(exc) from exc
@@ -606,6 +687,425 @@ async def get_optimization_result(
     except PlanningError as exc:
         raise planning_error(exc) from exc
     return _result_response(payload)
+
+
+def _authority(item) -> ConstraintAuthorityRecord:
+    body = {
+        "source": item.source,
+        "authority": item.authority,
+        "scope": item.scope,
+        "period": item.period,
+        "reason": item.reason,
+    }
+    return ConstraintAuthorityRecord(
+        source=item.source,
+        authority=ConstraintAuthority(item.authority),
+        scope=item.scope,
+        period=item.period,
+        reason=item.reason,
+        fingerprint=metadata_fingerprint(body),
+    )
+
+
+def _optional_decimal(value: str | None) -> Decimal | None:
+    return None if value is None else Decimal(value)
+
+
+def _unit_value(item) -> UnitValueAssumption:
+    return UnitValueAssumption(
+        ref_id=item.ref_id,
+        source=item.source,
+        scope=item.scope,
+        currency=item.currency,
+        time_horizon=item.time_horizon,
+        freshness=item.freshness,
+        value=Decimal(item.value),
+    )
+
+
+def _assumptions_from_request(
+    *, project_id: str, body: CreateAssumptionSetRequest
+) -> FutureScenarioAssumptions:
+    return FutureScenarioAssumptions(
+        assumption_set_id="pending",
+        project_id=project_id,
+        period_start=body.period_start,
+        period_end=body.period_end,
+        cost_per_media_unit=tuple(
+            MediaUnitCostAssumption(
+                ref_id=item.ref_id,
+                kind=MediaUnitCostKind(item.kind),
+                unit=item.unit,
+                currency=item.currency,
+                period=item.period,
+                market_id=item.market_id,
+                channel_id=item.channel_id,
+                source=item.source,
+                freshness=item.freshness,
+                value=Decimal(item.value),
+            )
+            for item in body.cost_per_media_unit
+        ),
+        flighting=tuple(
+            FlightingAssumption(
+                ref_id=item.ref_id,
+                market_id=item.market_id,
+                channel_id=item.channel_id,
+                period=item.period,
+                weight=Decimal(item.weight),
+                source=item.source,
+                authority=AssumptionAuthority(item.authority),
+            )
+            for item in body.flighting
+        ),
+        revenue_per_kpi=None if body.revenue_per_kpi is None else _unit_value(body.revenue_per_kpi),
+        contribution_margin=(
+            None if body.contribution_margin is None else _unit_value(body.contribution_margin)
+        ),
+        source_refs=body.source_refs,
+        authority=AssumptionAuthority(body.authority),
+    )
+
+
+def _constraints_from_request(
+    *, project_id: str, body: CreateConstraintSetRequest
+) -> OptimizationConstraintSet:
+    return OptimizationConstraintSet(
+        constraint_set_id="pending",
+        project_id=project_id,
+        currency=body.currency,
+        period_start=body.period_start,
+        period_end=body.period_end,
+        total_budget=_optional_decimal(body.total_budget),
+        total_budget_bounds=(
+            None
+            if body.total_budget_bounds is None
+            else MoneyBounds(
+                lower=_optional_decimal(body.total_budget_bounds.lower),
+                upper=_optional_decimal(body.total_budget_bounds.upper),
+                currency=body.total_budget_bounds.currency,
+            )
+        ),
+        line_bounds=tuple(
+            PortfolioLineConstraint(
+                constraint_id=item.constraint_id,
+                family=ConstraintFamily(item.family),
+                line_id=item.line_id,
+                market_id=item.market_id,
+                channel_id=item.channel_id,
+                period=item.period,
+                lower=_optional_decimal(item.lower),
+                upper=_optional_decimal(item.upper),
+                currency=item.currency,
+                authority=_authority(item.authority),
+            )
+            for item in body.line_bounds
+        ),
+        locked_lines=tuple(
+            LockedLineConstraint(
+                constraint_id=item.constraint_id,
+                line_id=item.line_id,
+                market_id=item.market_id,
+                channel_id=item.channel_id,
+                period=item.period,
+                baseline=Decimal(item.baseline),
+                currency=item.currency,
+                reason=item.reason,
+                authority=_authority(item.authority),
+            )
+            for item in body.locked_lines
+        ),
+        locked_line_ids=body.locked_line_ids,
+        movement_limits=tuple(
+            MovementConstraint(
+                constraint_id=item.constraint_id,
+                family=ConstraintFamily(item.family),
+                line_id=item.line_id,
+                market_id=item.market_id,
+                channel_id=item.channel_id,
+                period=item.period,
+                max_absolute_move=_optional_decimal(item.max_absolute_move),
+                max_percent_move=_optional_decimal(item.max_percent_move),
+                percent_unavailable=item.percent_unavailable,
+                currency=item.currency,
+                authority=_authority(item.authority),
+            )
+            for item in body.movement_limits
+        ),
+        market_constraints=tuple(
+            GroupConstraint(
+                constraint_id=item.constraint_id,
+                family=ConstraintFamily(item.family),
+                group_id=item.group_id,
+                member_line_ids=item.member_line_ids,
+                lower=_optional_decimal(item.lower),
+                upper=_optional_decimal(item.upper),
+                currency=item.currency,
+                period=item.period,
+                authority=_authority(item.authority),
+            )
+            for item in body.market_constraints
+        ),
+        quarter_constraints=tuple(
+            GroupConstraint(
+                constraint_id=item.constraint_id,
+                family=ConstraintFamily(item.family),
+                group_id=item.group_id,
+                member_line_ids=item.member_line_ids,
+                lower=_optional_decimal(item.lower),
+                upper=_optional_decimal(item.upper),
+                currency=item.currency,
+                period=item.period,
+                authority=_authority(item.authority),
+            )
+            for item in body.quarter_constraints
+        ),
+        funnel_constraints=tuple(
+            WeightedGroupConstraint(
+                constraint_id=item.constraint_id,
+                family=ConstraintFamily(item.family),
+                group_id=item.group_id,
+                member_weights=tuple(
+                    (line_id, Decimal(weight)) for line_id, weight in item.member_weights
+                ),
+                lower=_optional_decimal(item.lower),
+                upper=_optional_decimal(item.upper),
+                currency=item.currency,
+                period=item.period,
+                authority=_authority(item.authority),
+            )
+            for item in body.funnel_constraints
+        ),
+        experiment_reserve=(
+            None
+            if body.experiment_reserve is None
+            else ReserveConstraint(
+                constraint_id=body.experiment_reserve.constraint_id,
+                family=ConstraintFamily(body.experiment_reserve.family),
+                amount=Decimal(body.experiment_reserve.amount),
+                currency=body.experiment_reserve.currency,
+                period=body.experiment_reserve.period,
+                reason=body.experiment_reserve.reason,
+                authority=_authority(body.experiment_reserve.authority),
+            )
+        ),
+        contingency_reserve=(
+            None
+            if body.contingency_reserve is None
+            else ReserveConstraint(
+                constraint_id=body.contingency_reserve.constraint_id,
+                family=ConstraintFamily(body.contingency_reserve.family),
+                amount=Decimal(body.contingency_reserve.amount),
+                currency=body.contingency_reserve.currency,
+                period=body.contingency_reserve.period,
+                reason=body.contingency_reserve.reason,
+                authority=_authority(body.contingency_reserve.authority),
+            )
+        ),
+        unsupported_channel_policies=tuple(
+            (channel_id, UnsupportedChannelPolicy(policy))
+            for channel_id, policy in body.unsupported_channel_policies
+        ),
+    )
+
+
+def _assumption_ref_response(ref) -> AssumptionSetRefResponse:
+    return AssumptionSetRefResponse(
+        assumption_set_id=ref.assumption_set_id,
+        project_id=ref.project_id,
+        fingerprint=ref.fingerprint,
+        created_at=ref.created_at,
+    )
+
+
+def _constraint_ref_response(ref) -> ConstraintSetRefResponse:
+    return ConstraintSetRefResponse(
+        constraint_set_id=ref.constraint_set_id,
+        project_id=ref.project_id,
+        fingerprint=ref.fingerprint,
+        created_at=ref.created_at,
+    )
+
+
+def _advanced_readiness_response(receipt) -> AdvancedOptimizationReadinessResponse:
+    return AdvancedOptimizationReadinessResponse(
+        receipt_id=receipt.receipt_id,
+        project_id=receipt.project_id,
+        base_readiness_receipt_id=receipt.base_readiness_receipt_id,
+        objective_mode=receipt.objective_mode.value,
+        budget_mode=receipt.budget_mode.value,
+        assumption_set_id=receipt.assumption_set_id,
+        constraint_set_id=receipt.constraint_set_id,
+        status=receipt.status.value,
+        fingerprint=receipt.fingerprint,
+        created_at=receipt.created_at,
+    )
+
+
+async def create_assumption_set(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+    body: CreateAssumptionSetRequest,
+) -> AssumptionSetRefResponse:
+    try:
+        ref = service.create_assumption_set(
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+            assumptions=_assumptions_from_request(
+                project_id=workspace.workspace_id, body=body
+            ),
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _assumption_ref_response(ref)
+
+
+async def list_assumption_sets(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+) -> AssumptionSetRefListResponse:
+    try:
+        items = service.list_assumption_refs(project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return AssumptionSetRefListResponse(
+        items=tuple(_assumption_ref_response(item) for item in items)
+    )
+
+
+async def get_assumption_set(
+    assumption_set_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+) -> AssumptionSetRefResponse:
+    try:
+        ref = service.get_assumption_ref(
+            assumption_set_id=assumption_set_id, project_id=workspace.workspace_id
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _assumption_ref_response(ref)
+
+
+async def create_constraint_set(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+    body: CreateConstraintSetRequest,
+) -> ConstraintSetRefResponse:
+    try:
+        ref = service.create_constraint_set(
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+            constraint_set=_constraints_from_request(
+                project_id=workspace.workspace_id, body=body
+            ),
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _constraint_ref_response(ref)
+
+
+async def list_constraint_sets(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+) -> ConstraintSetRefListResponse:
+    try:
+        items = service.list_constraint_refs(project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return ConstraintSetRefListResponse(
+        items=tuple(_constraint_ref_response(item) for item in items)
+    )
+
+
+async def get_constraint_set(
+    constraint_set_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+) -> ConstraintSetRefResponse:
+    try:
+        ref = service.get_constraint_ref(
+            constraint_set_id=constraint_set_id, project_id=workspace.workspace_id
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _constraint_ref_response(ref)
+
+
+async def validate_constraint_set_endpoint(
+    constraint_set_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+) -> ConstraintValidationResponse:
+    try:
+        receipt = service.validate_constraints(
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+            constraint_set_id=constraint_set_id,
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return ConstraintValidationResponse(
+        validation_id=receipt.validation_id,
+        constraint_set_id=receipt.constraint_set_id,
+        constraint_set_fingerprint=receipt.constraint_set_fingerprint,
+        status=receipt.status.value,
+        checks=tuple(
+            ConstraintValidationCheckResponse(code=item.code, passed=item.passed)
+            for item in receipt.checks
+        ),
+        conflicting_constraint_ids=receipt.conflicting_constraint_ids,
+        fingerprint=receipt.fingerprint,
+        created_at=receipt.created_at,
+    )
+
+
+async def evaluate_advanced_optimization_readiness(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+    body: CreateAdvancedOptimizationReadinessRequest,
+) -> AdvancedOptimizationReadinessResponse:
+    try:
+        receipt = service.evaluate(
+            project_id=workspace.workspace_id,
+            actor_id=require_tenant().user_id or "unknown",
+            base_readiness_receipt_id=body.base_readiness_receipt_id,
+            objective_mode=OptimizationObjectiveMode(body.objective_mode),
+            assumption_set_id=body.assumption_set_id,
+            constraint_set_id=body.constraint_set_id,
+            target_roi=body.target_roi,
+            target_mroi=body.target_mroi,
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _advanced_readiness_response(receipt)
+
+
+async def list_advanced_optimization_readiness(
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+) -> AdvancedOptimizationReadinessListResponse:
+    try:
+        items = service.list_advanced_receipts(project_id=workspace.workspace_id)
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return AdvancedOptimizationReadinessListResponse(
+        items=tuple(_advanced_readiness_response(item) for item in items)
+    )
+
+
+async def get_advanced_optimization_readiness(
+    receipt_id: str,
+    workspace: Annotated[Workspace, Depends(authorized_planning_scope)],
+    service: Annotated[AdvancedOptimizationService, Depends(get_advanced_optimization_service)],
+) -> AdvancedOptimizationReadinessResponse:
+    try:
+        receipt = service.get_advanced_receipt(
+            receipt_id=receipt_id, project_id=workspace.workspace_id
+        )
+    except PlanningError as exc:
+        raise planning_error(exc) from exc
+    return _advanced_readiness_response(receipt)
 
 
 def _scenario_response(item: ScenarioArtifact) -> ScenarioResponse:
@@ -882,6 +1382,78 @@ canonical_portfolio_router.add_api_route(
     response_model=OptimizationReadinessResponse,
 )
 canonical_portfolio_router.add_api_route(
+    "/assumption-sets",
+    create_assumption_set,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createAssumptionSet",
+    response_model=AssumptionSetRefResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/assumption-sets",
+    list_assumption_sets,
+    methods=["GET"],
+    operation_id="listAssumptionSets",
+    response_model=AssumptionSetRefListResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/assumption-sets/{assumption_set_id}",
+    get_assumption_set,
+    methods=["GET"],
+    operation_id="getAssumptionSet",
+    response_model=AssumptionSetRefResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/constraint-sets",
+    create_constraint_set,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createConstraintSet",
+    response_model=ConstraintSetRefResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/constraint-sets",
+    list_constraint_sets,
+    methods=["GET"],
+    operation_id="listConstraintSets",
+    response_model=ConstraintSetRefListResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/constraint-sets/{constraint_set_id}",
+    get_constraint_set,
+    methods=["GET"],
+    operation_id="getConstraintSet",
+    response_model=ConstraintSetRefResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/constraint-sets/{constraint_set_id}/validate",
+    validate_constraint_set_endpoint,
+    methods=["POST"],
+    operation_id="validateConstraintSet",
+    response_model=ConstraintValidationResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/advanced-optimization-readiness",
+    evaluate_advanced_optimization_readiness,
+    methods=["POST"],
+    operation_id="evaluateAdvancedOptimizationReadiness",
+    response_model=AdvancedOptimizationReadinessResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/advanced-optimization-readiness",
+    list_advanced_optimization_readiness,
+    methods=["GET"],
+    operation_id="listAdvancedOptimizationReadiness",
+    response_model=AdvancedOptimizationReadinessListResponse,
+)
+canonical_portfolio_router.add_api_route(
+    "/advanced-optimization-readiness/{receipt_id}",
+    get_advanced_optimization_readiness,
+    methods=["GET"],
+    operation_id="getAdvancedOptimizationReadiness",
+    response_model=AdvancedOptimizationReadinessResponse,
+)
+canonical_portfolio_router.add_api_route(
     "/optimizations",
     create_optimization_run,
     methods=["POST"],
@@ -1028,6 +1600,88 @@ workspace_alias_portfolio_router.add_api_route(
     methods=["POST"],
     operation_id="evaluateOptimizationReadinessWorkspaceAlias",
     response_model=OptimizationReadinessResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/assumption-sets",
+    create_assumption_set,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createAssumptionSetWorkspaceAlias",
+    response_model=AssumptionSetRefResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/assumption-sets",
+    list_assumption_sets,
+    methods=["GET"],
+    operation_id="listAssumptionSetsWorkspaceAlias",
+    response_model=AssumptionSetRefListResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/assumption-sets/{assumption_set_id}",
+    get_assumption_set,
+    methods=["GET"],
+    operation_id="getAssumptionSetWorkspaceAlias",
+    response_model=AssumptionSetRefResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/constraint-sets",
+    create_constraint_set,
+    methods=["POST"],
+    status_code=201,
+    operation_id="createConstraintSetWorkspaceAlias",
+    response_model=ConstraintSetRefResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/constraint-sets",
+    list_constraint_sets,
+    methods=["GET"],
+    operation_id="listConstraintSetsWorkspaceAlias",
+    response_model=ConstraintSetRefListResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/constraint-sets/{constraint_set_id}",
+    get_constraint_set,
+    methods=["GET"],
+    operation_id="getConstraintSetWorkspaceAlias",
+    response_model=ConstraintSetRefResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/constraint-sets/{constraint_set_id}/validate",
+    validate_constraint_set_endpoint,
+    methods=["POST"],
+    operation_id="validateConstraintSetWorkspaceAlias",
+    response_model=ConstraintValidationResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/advanced-optimization-readiness",
+    evaluate_advanced_optimization_readiness,
+    methods=["POST"],
+    operation_id="evaluateAdvancedOptimizationReadinessWorkspaceAlias",
+    response_model=AdvancedOptimizationReadinessResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/advanced-optimization-readiness",
+    list_advanced_optimization_readiness,
+    methods=["GET"],
+    operation_id="listAdvancedOptimizationReadinessWorkspaceAlias",
+    response_model=AdvancedOptimizationReadinessListResponse,
+    include_in_schema=False,
+)
+workspace_alias_portfolio_router.add_api_route(
+    "/advanced-optimization-readiness/{receipt_id}",
+    get_advanced_optimization_readiness,
+    methods=["GET"],
+    operation_id="getAdvancedOptimizationReadinessWorkspaceAlias",
+    response_model=AdvancedOptimizationReadinessResponse,
     include_in_schema=False,
 )
 workspace_alias_portfolio_router.add_api_route(

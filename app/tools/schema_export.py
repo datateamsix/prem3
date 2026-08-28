@@ -31,6 +31,9 @@ from app.intelligence.contracts import (
     SemanticQuestion,
 )
 from app.investment_optimization.contracts import (
+    AdvancedOptimizationReadinessReceipt,
+    ConstraintSetRef,
+    ConstraintValidationReceipt,
     OptimizationInputContract,
     OptimizationProposal,
     OptimizationProposalRef,
@@ -42,6 +45,7 @@ from app.investment_optimization.contracts import (
     ProposalDecisionReceipt,
     ProposalReadinessReceipt,
     ScenarioArtifact,
+    ScenarioAssumptionSetRef,
 )
 from app.investment_planning.contracts import (
     ActualSpendSourceRef,
@@ -295,6 +299,10 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             OptimizationReadinessReceipt,
             OptimizationRun,
             OptimizationResultRef,
+            ConstraintSetRef,
+            ScenarioAssumptionSetRef,
+            ConstraintValidationReceipt,
+            AdvancedOptimizationReadinessReceipt,
             ScenarioArtifact,
             OptimizationProposal,
             ProposalReadinessReceipt,

@@ -13,6 +13,8 @@ from app.control_plane.serialization import (
     _normalize_outbound,
 )
 from app.investment_optimization.contracts import (
+    AdvancedOptimizationReadinessReceipt,
+    ConstraintSetRef,
     ModelConsumptionContract,
     OptimizationEvidenceCoverage,
     OptimizationInputContract,
@@ -25,6 +27,7 @@ from app.investment_optimization.contracts import (
     ProposalDecisionReceipt,
     ProposalReadinessReceipt,
     ScenarioArtifact,
+    ScenarioAssumptionSetRef,
 )
 from app.investment_optimization.store import (
     OptimizationMetadata,
@@ -46,6 +49,9 @@ COL_PROPOSALS = "optimization_proposals"
 COL_PROPOSAL_READY = "proposal_readiness_receipts"
 COL_DECISIONS = "proposal_decision_receipts"
 COL_DECISION_RECORDS = "planning_decision_records"
+COL_CONSTRAINT_REFS = "optimization_constraint_set_refs"
+COL_ASSUMPTION_REFS = "optimization_assumption_set_refs"
+COL_ADVANCED_RECEIPTS = "advanced_optimization_readiness_receipts"
 COL_INDEX = "investment_optimization_index"
 
 
@@ -254,6 +260,46 @@ class FirestoreOptimizationMetadataStore:
             self._put_index(
                 kind="decision_record",
                 resource_id=safe.decision_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, ConstraintSetRef):
+            if not safe.tenant_id or not safe.project_id:
+                raise PersistenceBarrierError(
+                    "ConstraintSetRef requires tenant and project identity.",
+                    code="PLANNING_PERSISTENCE_BARRIER",
+                )
+            self._workspace(safe.tenant_id, safe.project_id).collection(
+                COL_CONSTRAINT_REFS
+            ).document(safe.constraint_set_id).set(_to_document(safe))
+            self._put_index(
+                kind="constraint_ref",
+                resource_id=safe.constraint_set_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, ScenarioAssumptionSetRef):
+            if not safe.tenant_id or not safe.project_id:
+                raise PersistenceBarrierError(
+                    "ScenarioAssumptionSetRef requires tenant and project identity.",
+                    code="PLANNING_PERSISTENCE_BARRIER",
+                )
+            self._workspace(safe.tenant_id, safe.project_id).collection(
+                COL_ASSUMPTION_REFS
+            ).document(safe.assumption_set_id).set(_to_document(safe))
+            self._put_index(
+                kind="assumption_ref",
+                resource_id=safe.assumption_set_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, AdvancedOptimizationReadinessReceipt):
+            self._workspace(safe.tenant_id, safe.project_id).collection(
+                COL_ADVANCED_RECEIPTS
+            ).document(safe.receipt_id).set(_to_document(safe))
+            self._put_index(
+                kind="advanced_receipt",
+                resource_id=safe.receipt_id,
                 tenant_id=safe.tenant_id,
                 workspace_id=safe.project_id,
             )
@@ -488,4 +534,50 @@ class FirestoreOptimizationMetadataStore:
             kind="decision_record",
             resource_id=decision_id,
             collection=COL_DECISION_RECORDS,
+        )
+
+    def get_constraint_ref(self, constraint_set_id: str) -> ConstraintSetRef | None:
+        return self._load(
+            ConstraintSetRef,
+            kind="constraint_ref",
+            resource_id=constraint_set_id,
+            collection=COL_CONSTRAINT_REFS,
+        )
+
+    def list_constraint_refs(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[ConstraintSetRef, ...]:
+        docs = self._workspace(tenant_id, project_id).collection(COL_CONSTRAINT_REFS).stream()
+        return tuple(_from_document(ConstraintSetRef, doc.to_dict()) for doc in docs)
+
+    def get_assumption_ref(self, assumption_set_id: str) -> ScenarioAssumptionSetRef | None:
+        return self._load(
+            ScenarioAssumptionSetRef,
+            kind="assumption_ref",
+            resource_id=assumption_set_id,
+            collection=COL_ASSUMPTION_REFS,
+        )
+
+    def list_assumption_refs(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[ScenarioAssumptionSetRef, ...]:
+        docs = self._workspace(tenant_id, project_id).collection(COL_ASSUMPTION_REFS).stream()
+        return tuple(_from_document(ScenarioAssumptionSetRef, doc.to_dict()) for doc in docs)
+
+    def get_advanced_receipt(
+        self, receipt_id: str
+    ) -> AdvancedOptimizationReadinessReceipt | None:
+        return self._load(
+            AdvancedOptimizationReadinessReceipt,
+            kind="advanced_receipt",
+            resource_id=receipt_id,
+            collection=COL_ADVANCED_RECEIPTS,
+        )
+
+    def list_advanced_receipts(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[AdvancedOptimizationReadinessReceipt, ...]:
+        docs = self._workspace(tenant_id, project_id).collection(COL_ADVANCED_RECEIPTS).stream()
+        return tuple(
+            _from_document(AdvancedOptimizationReadinessReceipt, doc.to_dict()) for doc in docs
         )

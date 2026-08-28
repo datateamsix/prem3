@@ -7,14 +7,19 @@ from decimal import Decimal
 from typing import Any
 
 from app.investment_optimization.contracts import (
+    BindingConstraint,
     OptimizationOutcomeEstimate,
     OptimizationResultPayload,
     OptimizationResultRow,
 )
 from app.investment_optimization.enums import (
+    ADVANCED_ARTIFACT_SCHEMA_VERSION,
     ARTIFACT_SCHEMA_VERSION,
+    ConstraintFamily,
     ModelVariableOptimizationEligibility,
     OptimizationAmountKind,
+    OptimizationBudgetMode,
+    OptimizationObjectiveMode,
     OptimizationRunKind,
     OptimizerConstraintStatus,
 )
@@ -62,6 +67,28 @@ def artifact_document(payload: OptimizationResultPayload) -> dict[str, Any]:
         "currency": payload.currency,
         "fixed_budget": format(payload.fixed_budget, "f"),
         "recommended_total": format(payload.recommended_total, "f"),
+        "total_baseline_spend": None
+        if payload.total_baseline_spend is None
+        else format(payload.total_baseline_spend, "f"),
+        "objective_mode": None if payload.objective_mode is None else payload.objective_mode.value,
+        "budget_mode": None if payload.budget_mode is None else payload.budget_mode.value,
+        "target_hurdle": payload.target_hurdle,
+        "assumption_set_id": payload.assumption_set_id,
+        "assumption_set_fingerprint": payload.assumption_set_fingerprint,
+        "constraint_set_id": payload.constraint_set_id,
+        "constraint_set_fingerprint": payload.constraint_set_fingerprint,
+        "binding_constraints": [
+            {
+                "constraint_id": item.constraint_id,
+                "family": item.family.value,
+                "status": item.status.value,
+                "subject_line_id": item.subject_line_id,
+            }
+            for item in payload.binding_constraints
+        ],
+        "model_estimated_outcome": payload.model_estimated_outcome,
+        "roi": payload.roi,
+        "mroi": payload.mroi,
         "rows": [_row_payload(row) for row in payload.rows],
     }
     fingerprint = metadata_fingerprint(body)
@@ -139,6 +166,40 @@ def _payload_from_document(document: dict[str, Any]) -> OptimizationResultPayloa
         currency=str(document["currency"]),
         fixed_budget=_decimal(document["fixed_budget"], field="fixed_budget"),
         recommended_total=_decimal(document["recommended_total"], field="recommended_total"),
+        total_baseline_spend=(
+            None
+            if document.get("total_baseline_spend") is None
+            else _decimal(document["total_baseline_spend"], field="total_baseline_spend")
+        ),
+        objective_mode=(
+            None
+            if not document.get("objective_mode")
+            else OptimizationObjectiveMode(str(document["objective_mode"]))
+        ),
+        budget_mode=(
+            None
+            if not document.get("budget_mode")
+            else OptimizationBudgetMode(str(document["budget_mode"]))
+        ),
+        target_hurdle=(
+            None if document.get("target_hurdle") is None else str(document["target_hurdle"])
+        ),
+        assumption_set_id=document.get("assumption_set_id"),
+        assumption_set_fingerprint=document.get("assumption_set_fingerprint"),
+        constraint_set_id=document.get("constraint_set_id"),
+        constraint_set_fingerprint=document.get("constraint_set_fingerprint"),
+        binding_constraints=tuple(
+            BindingConstraint(
+                constraint_id=str(item["constraint_id"]),
+                family=ConstraintFamily(str(item["family"])),
+                status=OptimizerConstraintStatus(str(item["status"])),
+                subject_line_id=item.get("subject_line_id"),
+            )
+            for item in document.get("binding_constraints") or ()
+        ),
+        model_estimated_outcome=document.get("model_estimated_outcome"),
+        roi=document.get("roi"),
+        mroi=document.get("mroi"),
         rows=tuple(rows),
         fingerprint=str(document["fingerprint"]),
         schema_version=str(document["schema_version"]),
@@ -163,7 +224,8 @@ def read_back_result(
         raise ResultReadbackFailedError("Optimization result artifact is not valid JSON.") from exc
     if not isinstance(document, dict):
         raise ResultReadbackFailedError("Optimization result artifact schema is invalid.")
-    if document.get("schema_version") != ARTIFACT_SCHEMA_VERSION:
+    schema = document.get("schema_version")
+    if schema not in {ARTIFACT_SCHEMA_VERSION, ADVANCED_ARTIFACT_SCHEMA_VERSION}:
         raise ResultReadbackFailedError("Optimization result artifact schema version is invalid.")
     stored_fp = document.get("fingerprint")
     body = {key: value for key, value in document.items() if key != "fingerprint"}
@@ -180,9 +242,10 @@ def read_back_result(
         )
     recommended_total = _decimal(document.get("recommended_total"), field="recommended_total")
     fixed_budget = _decimal(document.get("fixed_budget"), field="fixed_budget")
-    target = round_money(expected_total) if expected_total is not None else fixed_budget
-    if recommended_total != target or recommended_total != fixed_budget:
-        raise ResultReadbackFailedError(
-            "Optimization result artifact total does not equal the fixed budget."
-        )
+    if schema == ARTIFACT_SCHEMA_VERSION:
+        target = round_money(expected_total) if expected_total is not None else fixed_budget
+        if recommended_total != target or recommended_total != fixed_budget:
+            raise ResultReadbackFailedError(
+                "Optimization result artifact total does not equal the fixed budget."
+            )
     return _payload_from_document(document)

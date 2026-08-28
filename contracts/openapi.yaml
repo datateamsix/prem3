@@ -20,6 +20,67 @@ components:
           type: array
       title: AcknowledgeReviewRequest
       type: object
+    AdvancedOptimizationReadinessListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AdvancedOptimizationReadinessResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: AdvancedOptimizationReadinessListResponse
+      type: object
+    AdvancedOptimizationReadinessResponse:
+      additionalProperties: false
+      properties:
+        assumption_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assumption Set Id
+        base_readiness_receipt_id:
+          title: Base Readiness Receipt Id
+          type: string
+        budget_mode:
+          title: Budget Mode
+          type: string
+        constraint_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Constraint Set Id
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        objective_mode:
+          title: Objective Mode
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        receipt_id:
+          title: Receipt Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - receipt_id
+      - project_id
+      - base_readiness_receipt_id
+      - objective_mode
+      - budget_mode
+      - status
+      - fingerprint
+      - created_at
+      title: AdvancedOptimizationReadinessResponse
+      type: object
     ApproveInvestmentPlanRequest:
       additionalProperties: false
       properties:
@@ -46,6 +107,43 @@ components:
       required:
       - plan_id
       title: ApprovePlanRequest
+      type: object
+    AssumptionSetRefListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AssumptionSetRefResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: AssumptionSetRefListResponse
+      type: object
+    AssumptionSetRefResponse:
+      additionalProperties: false
+      properties:
+        assumption_set_id:
+          title: Assumption Set Id
+          type: string
+        created_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Created At
+        fingerprint:
+          title: Fingerprint
+          type: string
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
+      required:
+      - assumption_set_id
+      - fingerprint
+      title: AssumptionSetRefResponse
       type: object
     AttentionItem:
       additionalProperties: false
@@ -785,6 +883,126 @@ components:
       - mapping_id
       title: ConfirmBudgetMappingRequest
       type: object
+    ConstraintAuthorityRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          title: Authority
+          type: string
+        period:
+          title: Period
+          type: string
+        reason:
+          title: Reason
+          type: string
+        scope:
+          title: Scope
+          type: string
+        source:
+          title: Source
+          type: string
+      required:
+      - source
+      - authority
+      - scope
+      - period
+      - reason
+      title: ConstraintAuthorityRequest
+      type: object
+    ConstraintSetRefListResponse:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ConstraintSetRefResponse'
+          title: Items
+          type: array
+      required:
+      - items
+      title: ConstraintSetRefListResponse
+      type: object
+    ConstraintSetRefResponse:
+      additionalProperties: false
+      properties:
+        constraint_set_id:
+          title: Constraint Set Id
+          type: string
+        created_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Created At
+        fingerprint:
+          title: Fingerprint
+          type: string
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
+      required:
+      - constraint_set_id
+      - fingerprint
+      title: ConstraintSetRefResponse
+      type: object
+    ConstraintValidationCheckResponse:
+      additionalProperties: false
+      properties:
+        code:
+          title: Code
+          type: string
+        passed:
+          title: Passed
+          type: boolean
+      required:
+      - code
+      - passed
+      title: ConstraintValidationCheckResponse
+      type: object
+    ConstraintValidationResponse:
+      additionalProperties: false
+      properties:
+        checks:
+          default: []
+          items:
+            $ref: '#/components/schemas/ConstraintValidationCheckResponse'
+          title: Checks
+          type: array
+        conflicting_constraint_ids:
+          default: []
+          items:
+            type: string
+          title: Conflicting Constraint Ids
+          type: array
+        constraint_set_fingerprint:
+          title: Constraint Set Fingerprint
+          type: string
+        constraint_set_id:
+          title: Constraint Set Id
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        status:
+          title: Status
+          type: string
+        validation_id:
+          title: Validation Id
+          type: string
+      required:
+      - validation_id
+      - constraint_set_id
+      - constraint_set_fingerprint
+      - status
+      - fingerprint
+      - created_at
+      title: ConstraintValidationResponse
+      type: object
     CoverageReadModel:
       additionalProperties: false
       properties:
@@ -829,6 +1047,174 @@ components:
       - assessed_at
       - generated_at
       title: CoverageReadModel
+      type: object
+    CreateAdvancedOptimizationReadinessRequest:
+      additionalProperties: false
+      properties:
+        assumption_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assumption Set Id
+        base_readiness_receipt_id:
+          title: Base Readiness Receipt Id
+          type: string
+        constraint_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Constraint Set Id
+        objective_mode:
+          title: Objective Mode
+          type: string
+        target_mroi:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Target Mroi
+        target_roi:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Target Roi
+      required:
+      - base_readiness_receipt_id
+      - objective_mode
+      title: CreateAdvancedOptimizationReadinessRequest
+      type: object
+    CreateAssumptionSetRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          default: HUMAN_CONFIRMED
+          title: Authority
+          type: string
+        contribution_margin:
+          anyOf:
+          - $ref: '#/components/schemas/UnitValueRequest'
+          - type: 'null'
+        cost_per_media_unit:
+          default: []
+          items:
+            $ref: '#/components/schemas/MediaUnitCostRequest'
+          title: Cost Per Media Unit
+          type: array
+        flighting:
+          default: []
+          items:
+            $ref: '#/components/schemas/FlightingAssumptionRequest'
+          title: Flighting
+          type: array
+        period_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Period End
+        period_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Period Start
+        revenue_per_kpi:
+          anyOf:
+          - $ref: '#/components/schemas/UnitValueRequest'
+          - type: 'null'
+        source_refs:
+          default: []
+          items:
+            type: string
+          title: Source Refs
+          type: array
+      title: CreateAssumptionSetRequest
+      type: object
+    CreateConstraintSetRequest:
+      additionalProperties: false
+      properties:
+        contingency_reserve:
+          anyOf:
+          - $ref: '#/components/schemas/ReserveConstraintRequest'
+          - type: 'null'
+        currency:
+          default: USD
+          title: Currency
+          type: string
+        experiment_reserve:
+          anyOf:
+          - $ref: '#/components/schemas/ReserveConstraintRequest'
+          - type: 'null'
+        funnel_constraints:
+          default: []
+          items:
+            $ref: '#/components/schemas/FunnelConstraintRequest'
+          title: Funnel Constraints
+          type: array
+        line_bounds:
+          default: []
+          items:
+            $ref: '#/components/schemas/LineConstraintRequest'
+          title: Line Bounds
+          type: array
+        locked_line_ids:
+          default: []
+          items:
+            type: string
+          title: Locked Line Ids
+          type: array
+        locked_lines:
+          default: []
+          items:
+            $ref: '#/components/schemas/LockedLineRequest'
+          title: Locked Lines
+          type: array
+        market_constraints:
+          default: []
+          items:
+            $ref: '#/components/schemas/GroupConstraintRequest'
+          title: Market Constraints
+          type: array
+        movement_limits:
+          default: []
+          items:
+            $ref: '#/components/schemas/MovementConstraintRequest'
+          title: Movement Limits
+          type: array
+        period_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Period End
+        period_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Period Start
+        quarter_constraints:
+          default: []
+          items:
+            $ref: '#/components/schemas/GroupConstraintRequest'
+          title: Quarter Constraints
+          type: array
+        total_budget:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Total Budget
+        total_budget_bounds:
+          anyOf:
+          - $ref: '#/components/schemas/MoneyBoundsRequest'
+          - type: 'null'
+        unsupported_channel_policies:
+          default: []
+          items:
+            maxItems: 2
+            minItems: 2
+            prefixItems:
+            - type: string
+            - type: string
+            type: array
+          title: Unsupported Channel Policies
+          type: array
+      title: CreateConstraintSetRequest
       type: object
     CreateCycleRequest:
       additionalProperties: false
@@ -999,14 +1385,49 @@ components:
     CreateOptimizationRunRequest:
       additionalProperties: false
       properties:
+        advanced_readiness_receipt_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Advanced Readiness Receipt Id
+        assumption_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assumption Set Id
+        budget_mode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Budget Mode
+        constraint_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Constraint Set Id
         idempotency_key:
           anyOf:
           - type: string
           - type: 'null'
           title: Idempotency Key
+        objective_mode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Objective Mode
         readiness_receipt_id:
           title: Readiness Receipt Id
           type: string
+        target_mroi:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Target Mroi
+        target_roi:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Target Roi
       required:
       - readiness_receipt_id
       title: CreateOptimizationRunRequest
@@ -1966,6 +2387,91 @@ components:
       - fit_plan_fingerprint
       title: FitRunResponse
       type: object
+    FlightingAssumptionRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          title: Authority
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        market_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+        period:
+          title: Period
+          type: string
+        ref_id:
+          title: Ref Id
+          type: string
+        source:
+          title: Source
+          type: string
+        weight:
+          title: Weight
+          type: string
+      required:
+      - ref_id
+      - channel_id
+      - period
+      - weight
+      - source
+      - authority
+      title: FlightingAssumptionRequest
+      type: object
+    FunnelConstraintRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/ConstraintAuthorityRequest'
+        constraint_id:
+          title: Constraint Id
+          type: string
+        currency:
+          default: USD
+          title: Currency
+          type: string
+        family:
+          title: Family
+          type: string
+        group_id:
+          title: Group Id
+          type: string
+        lower:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lower
+        member_weights:
+          default: []
+          items:
+            maxItems: 2
+            minItems: 2
+            prefixItems:
+            - type: string
+            - type: string
+            type: array
+          title: Member Weights
+          type: array
+        period:
+          title: Period
+          type: string
+        upper:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upper
+      required:
+      - constraint_id
+      - family
+      - group_id
+      - period
+      - authority
+      title: FunnelConstraintRequest
+      type: object
     GoogleConnectionListResponse:
       additionalProperties: false
       properties:
@@ -2089,6 +2595,51 @@ components:
       - passed
       - message
       title: GovernanceCheckResponse
+      type: object
+    GroupConstraintRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/ConstraintAuthorityRequest'
+        constraint_id:
+          title: Constraint Id
+          type: string
+        currency:
+          default: USD
+          title: Currency
+          type: string
+        family:
+          title: Family
+          type: string
+        group_id:
+          title: Group Id
+          type: string
+        lower:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lower
+        member_line_ids:
+          default: []
+          items:
+            type: string
+          title: Member Line Ids
+          type: array
+        period:
+          title: Period
+          type: string
+        upper:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upper
+      required:
+      - constraint_id
+      - family
+      - group_id
+      - period
+      - authority
+      title: GroupConstraintRequest
       type: object
     HTTPValidationError:
       properties:
@@ -2599,6 +3150,53 @@ components:
       - reason
       title: IterateModelRequest
       type: object
+    LineConstraintRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/ConstraintAuthorityRequest'
+        channel_id:
+          title: Channel Id
+          type: string
+        constraint_id:
+          title: Constraint Id
+          type: string
+        currency:
+          default: USD
+          title: Currency
+          type: string
+        family:
+          title: Family
+          type: string
+        line_id:
+          title: Line Id
+          type: string
+        lower:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lower
+        market_id:
+          title: Market Id
+          type: string
+        period:
+          title: Period
+          type: string
+        upper:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upper
+      required:
+      - constraint_id
+      - family
+      - line_id
+      - market_id
+      - channel_id
+      - period
+      - authority
+      title: LineConstraintRequest
+      type: object
     LoadSnapshotRequest:
       additionalProperties: false
       properties:
@@ -2609,6 +3207,47 @@ components:
       required:
       - snapshot
       title: LoadSnapshotRequest
+      type: object
+    LockedLineRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/ConstraintAuthorityRequest'
+        baseline:
+          title: Baseline
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        constraint_id:
+          title: Constraint Id
+          type: string
+        currency:
+          default: USD
+          title: Currency
+          type: string
+        line_id:
+          title: Line Id
+          type: string
+        market_id:
+          title: Market Id
+          type: string
+        period:
+          title: Period
+          type: string
+        reason:
+          title: Reason
+          type: string
+      required:
+      - constraint_id
+      - line_id
+      - market_id
+      - channel_id
+      - period
+      - baseline
+      - reason
+      - authority
+      title: LockedLineRequest
       type: object
     MMMSummaryResponse:
       additionalProperties: false
@@ -3296,6 +3935,53 @@ components:
       - updated_at
       title: MeasurementTrackSummary
       type: object
+    MediaUnitCostRequest:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        currency:
+          title: Currency
+          type: string
+        freshness:
+          title: Freshness
+          type: string
+        kind:
+          title: Kind
+          type: string
+        market_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+        period:
+          title: Period
+          type: string
+        ref_id:
+          title: Ref Id
+          type: string
+        source:
+          title: Source
+          type: string
+        unit:
+          title: Unit
+          type: string
+        value:
+          title: Value
+          type: string
+      required:
+      - ref_id
+      - kind
+      - unit
+      - currency
+      - period
+      - channel_id
+      - source
+      - freshness
+      - value
+      title: MediaUnitCostRequest
+      type: object
     MmmTrackWindowView:
       additionalProperties: false
       properties:
@@ -3396,6 +4082,76 @@ components:
       - kind
       - currency
       title: MoneyAmountResponse
+      type: object
+    MoneyBoundsRequest:
+      additionalProperties: false
+      properties:
+        currency:
+          default: USD
+          title: Currency
+          type: string
+        lower:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lower
+        upper:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upper
+      title: MoneyBoundsRequest
+      type: object
+    MovementConstraintRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/ConstraintAuthorityRequest'
+        channel_id:
+          title: Channel Id
+          type: string
+        constraint_id:
+          title: Constraint Id
+          type: string
+        currency:
+          default: USD
+          title: Currency
+          type: string
+        family:
+          title: Family
+          type: string
+        line_id:
+          title: Line Id
+          type: string
+        market_id:
+          title: Market Id
+          type: string
+        max_absolute_move:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Max Absolute Move
+        max_percent_move:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Max Percent Move
+        percent_unavailable:
+          default: false
+          title: Percent Unavailable
+          type: boolean
+        period:
+          title: Period
+          type: string
+      required:
+      - constraint_id
+      - family
+      - line_id
+      - market_id
+      - channel_id
+      - period
+      - authority
+      title: MovementConstraintRequest
       type: object
     NextAction:
       additionalProperties: false
@@ -3628,6 +4384,31 @@ components:
         amount_kind:
           title: Amount Kind
           type: string
+        assumption_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assumption Set Id
+        binding_constraints:
+          default: []
+          items:
+            additionalProperties:
+              anyOf:
+              - type: string
+              - type: 'null'
+            type: object
+          title: Binding Constraints
+          type: array
+        budget_mode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Budget Mode
+        constraint_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Constraint Set Id
         currency:
           title: Currency
           type: string
@@ -3637,6 +4418,21 @@ components:
         fixed_budget:
           title: Fixed Budget
           type: string
+        model_estimated_outcome:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Estimated Outcome
+        mroi:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Mroi
+        objective_mode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Objective Mode
         optimization_run_id:
           title: Optimization Run Id
           type: string
@@ -3646,6 +4442,11 @@ components:
         result_id:
           title: Result Id
           type: string
+        roi:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Roi
         rows:
           default: []
           items:
@@ -3658,6 +4459,16 @@ components:
         schema_version:
           title: Schema Version
           type: string
+        target_hurdle:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Hurdle
+        total_baseline_spend:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Total Baseline Spend
       required:
       - optimization_run_id
       - result_id
@@ -3744,12 +4555,32 @@ components:
     OptimizationRunResponse:
       additionalProperties: false
       properties:
+        advanced_readiness_receipt_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Advanced Readiness Receipt Id
+        assumption_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assumption Set Id
+        budget_mode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Budget Mode
         completed_at:
           anyOf:
           - format: date-time
             type: string
           - type: 'null'
           title: Completed At
+        constraint_set_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Constraint Set Id
         created_at:
           format: date-time
           title: Created At
@@ -3759,6 +4590,11 @@ components:
           - type: string
           - type: 'null'
           title: Failure Class
+        objective_mode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Objective Mode
         optimization_run_id:
           title: Optimization Run Id
           type: string
@@ -5274,6 +6110,39 @@ components:
       - candidate_id
       title: ReplaceSourceRequest
       type: object
+    ReserveConstraintRequest:
+      additionalProperties: false
+      properties:
+        amount:
+          title: Amount
+          type: string
+        authority:
+          $ref: '#/components/schemas/ConstraintAuthorityRequest'
+        constraint_id:
+          title: Constraint Id
+          type: string
+        currency:
+          default: USD
+          title: Currency
+          type: string
+        family:
+          title: Family
+          type: string
+        period:
+          title: Period
+          type: string
+        reason:
+          title: Reason
+          type: string
+      required:
+      - constraint_id
+      - family
+      - amount
+      - period
+      - reason
+      - authority
+      title: ReserveConstraintRequest
+      type: object
     ResolveDecisionRequest:
       additionalProperties: false
       properties:
@@ -5722,6 +6591,40 @@ components:
       - ongoing_source_id
       - cutoff
       title: TransitionRequest
+      type: object
+    UnitValueRequest:
+      additionalProperties: false
+      properties:
+        currency:
+          title: Currency
+          type: string
+        freshness:
+          title: Freshness
+          type: string
+        ref_id:
+          title: Ref Id
+          type: string
+        scope:
+          title: Scope
+          type: string
+        source:
+          title: Source
+          type: string
+        time_horizon:
+          title: Time Horizon
+          type: string
+        value:
+          title: Value
+          type: string
+      required:
+      - ref_id
+      - source
+      - scope
+      - currency
+      - time_horizon
+      - freshness
+      - value
+      title: UnitValueRequest
       type: object
     UpdateCycleRequest:
       additionalProperties: false
@@ -7241,6 +8144,241 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Portfolio
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/advanced-optimization-readiness:
+    get:
+      operationId: listAdvancedOptimizationReadiness
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdvancedOptimizationReadinessListResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Advanced Optimization Readiness
+      tags:
+      - investment-portfolio
+    post:
+      operationId: evaluateAdvancedOptimizationReadiness
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdvancedOptimizationReadinessRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdvancedOptimizationReadinessResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Evaluate Advanced Optimization Readiness
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/advanced-optimization-readiness/{receipt_id}:
+    get:
+      operationId: getAdvancedOptimizationReadiness
+      parameters:
+      - in: path
+        name: receipt_id
+        required: true
+        schema:
+          title: Receipt Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdvancedOptimizationReadinessResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Advanced Optimization Readiness
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/assumption-sets:
+    get:
+      operationId: listAssumptionSets
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssumptionSetRefListResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Assumption Sets
+      tags:
+      - investment-portfolio
+    post:
+      operationId: createAssumptionSet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssumptionSetRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssumptionSetRefResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Assumption Set
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/assumption-sets/{assumption_set_id}:
+    get:
+      operationId: getAssumptionSet
+      parameters:
+      - in: path
+        name: assumption_set_id
+        required: true
+        schema:
+          title: Assumption Set Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssumptionSetRefResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Assumption Set
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/constraint-sets:
+    get:
+      operationId: listConstraintSets
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintSetRefListResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Constraint Sets
+      tags:
+      - investment-portfolio
+    post:
+      operationId: createConstraintSet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConstraintSetRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintSetRefResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Constraint Set
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/constraint-sets/{constraint_set_id}:
+    get:
+      operationId: getConstraintSet
+      parameters:
+      - in: path
+        name: constraint_set_id
+        required: true
+        schema:
+          title: Constraint Set Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintSetRefResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Constraint Set
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/constraint-sets/{constraint_set_id}/validate:
+    post:
+      operationId: validateConstraintSet
+      parameters:
+      - in: path
+        name: constraint_set_id
+        required: true
+        schema:
+          title: Constraint Set Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintValidationResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Validate Constraint Set Endpoint
       tags:
       - investment-portfolio
   /v1/projects/{project_id}/investment-portfolio/model-mapping:

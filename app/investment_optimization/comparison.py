@@ -12,12 +12,14 @@ from app.investment_optimization.contracts import (
 )
 from app.investment_optimization.enums import (
     DEFAULT_PROPOSAL_LIMITATIONS,
+    FLEXIBLE_PROPOSAL_LIMITATIONS,
     MATERIAL_CHANGE_POLICY_VERSION,
     MATERIAL_CHANNEL_SHARE_THRESHOLD,
     MATERIAL_MARKET_SHARE_THRESHOLD,
     MaterialChangeFlag,
     ModelVariableOptimizationEligibility,
     OptimizationAmountKind,
+    OptimizationBudgetMode,
     ProposalLimitationCode,
 )
 from app.investment_planning.actuals import round_money
@@ -35,7 +37,9 @@ def build_comparison(
     scenario_id: str,
     payload: OptimizationResultPayload,
 ) -> ScenarioComparison:
-    total = payload.fixed_budget
+    total = payload.recommended_total
+    if payload.budget_mode is not OptimizationBudgetMode.FLEXIBLE:
+        total = payload.fixed_budget
     rows: list[ScenarioComparisonRow] = []
     for row in payload.rows:
         rec_share = _share(row.recommended, total)
@@ -61,12 +65,20 @@ def build_comparison(
         "scenario_id": scenario_id,
         "row_ids": tuple(item.model_variable_id for item in rows),
         "deltas": tuple(format(item.delta, "f") for item in rows),
+        "objective_mode": None if payload.objective_mode is None else payload.objective_mode.value,
+        "budget_mode": None if payload.budget_mode is None else payload.budget_mode.value,
+        "assumption_set_fingerprint": payload.assumption_set_fingerprint or "",
+        "constraint_set_fingerprint": payload.constraint_set_fingerprint or "",
     }
     return ScenarioComparison(
         scenario_id=scenario_id,
         currency=payload.currency,
         amount_kind=OptimizationAmountKind.MODEL_RECOMMENDED,
         rows=tuple(rows),
+        objective_mode=None if payload.objective_mode is None else payload.objective_mode.value,
+        budget_mode=None if payload.budget_mode is None else payload.budget_mode.value,
+        assumption_set_fingerprint=payload.assumption_set_fingerprint,
+        constraint_set_fingerprint=payload.constraint_set_fingerprint,
         fingerprint=metadata_fingerprint(body),
     )
 
@@ -79,7 +91,9 @@ def _material_flags(
     flags: list[MaterialChangeFlag] = []
     channel_threshold = Decimal(MATERIAL_CHANNEL_SHARE_THRESHOLD)
     market_threshold = Decimal(MATERIAL_MARKET_SHARE_THRESHOLD)
-    total = payload.fixed_budget
+    total = payload.recommended_total
+    if payload.budget_mode is not OptimizationBudgetMode.FLEXIBLE:
+        total = payload.fixed_budget
     market_delta: dict[str, Decimal] = {}
     for row in rows:
         if total > 0 and abs(row.delta) / total >= channel_threshold:
@@ -117,6 +131,8 @@ def build_change_summary(
         sorted(decreases, key=lambda item: (item.delta, item.model_variable_id))[:3]
     )
     limitations = list(DEFAULT_PROPOSAL_LIMITATIONS)
+    if payload.budget_mode is OptimizationBudgetMode.FLEXIBLE:
+        limitations = list(FLEXIBLE_PROPOSAL_LIMITATIONS)
     if any(
         row.eligibility is not ModelVariableOptimizationEligibility.OPTIMIZABLE
         for row in payload.rows

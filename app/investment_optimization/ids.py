@@ -27,6 +27,14 @@ def new_assumption_set_id() -> str:
     return _opaque("oasm")
 
 
+def new_advanced_readiness_id() -> str:
+    return _opaque("oaready")
+
+
+def new_constraint_validation_id() -> str:
+    return _opaque("ocval")
+
+
 def new_portfolio_model_mapping_id() -> str:
     return _opaque("pmap")
 

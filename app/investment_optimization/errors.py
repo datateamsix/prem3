@@ -81,6 +81,66 @@ class FlexibleBudgetNotImplementedError(OptimizationError):
     code = "FLEXIBLE_BUDGET_NOT_IMPLEMENTED"
 
 
+class FlexibleBudgetApiUnsupportedError(OptimizationError):
+    code = "FLEXIBLE_BUDGET_API_UNSUPPORTED"
+
+
+class ObjectiveNotSupportedError(OptimizationError):
+    code = "OBJECTIVE_NOT_SUPPORTED"
+
+
+class FinancialValueAssumptionRequiredError(OptimizationError):
+    code = "FINANCIAL_VALUE_ASSUMPTION_REQUIRED"
+
+
+class FutureCostAssumptionInvalidError(OptimizationError):
+    code = "FUTURE_COST_ASSUMPTION_INVALID"
+
+
+class FlightingAssumptionInvalidError(OptimizationError):
+    code = "FLIGHTING_ASSUMPTION_INVALID"
+
+
+class ConstraintSetInfeasibleError(OptimizationError):
+    code = "CONSTRAINT_SET_INFEASIBLE"
+
+    def __init__(self, message: str, *, conflicting_constraint_ids: tuple[str, ...] = ()) -> None:
+        super().__init__(message)
+        self.conflicting_constraint_ids = conflicting_constraint_ids
+
+
+class ConstraintReferenceInvalidError(OptimizationError):
+    code = "CONSTRAINT_REFERENCE_INVALID"
+
+
+class ConstraintUnitMismatchError(OptimizationError):
+    code = "CONSTRAINT_UNIT_MISMATCH"
+
+
+class AdvancedReadinessStaleError(OptimizationError):
+    code = "ADVANCED_READINESS_STALE"
+
+
+class ResultConstraintViolationError(OptimizationError):
+    code = "RESULT_CONSTRAINT_VIOLATION"
+
+
+class FunnelMappingRequiredError(OptimizationError):
+    code = "FUNNEL_MAPPING_REQUIRED"
+
+
+class ProxyApprovalRequiredError(OptimizationError):
+    code = "PROXY_APPROVAL_REQUIRED"
+
+
+class AssumptionSetNotFoundError(OptimizationError):
+    code = "ASSUMPTION_SET_NOT_FOUND"
+
+
+class ConstraintSetNotFoundError(OptimizationError):
+    code = "CONSTRAINT_SET_NOT_FOUND"
+
+
 class CrossProjectRunAccessError(OptimizationError):
     code = "CROSS_PROJECT_RUN_ACCESS"
 

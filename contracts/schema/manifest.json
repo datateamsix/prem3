@@ -193,6 +193,10 @@
         "OptimizationReadinessReceipt",
         "OptimizationRun",
         "OptimizationResultRef",
+        "ConstraintSetRef",
+        "ScenarioAssumptionSetRef",
+        "ConstraintValidationReceipt",
+        "AdvancedOptimizationReadinessReceipt",
         "ScenarioArtifact",
         "OptimizationProposal",
         "ProposalReadinessReceipt",
@@ -213,13 +217,17 @@
         "app.investment_optimization.contracts.OptimizationReadinessReceipt",
         "app.investment_optimization.contracts.OptimizationRun",
         "app.investment_optimization.contracts.OptimizationResultRef",
+        "app.investment_optimization.contracts.ConstraintSetRef",
+        "app.investment_optimization.contracts.ScenarioAssumptionSetRef",
+        "app.investment_optimization.contracts.ConstraintValidationReceipt",
+        "app.investment_optimization.contracts.AdvancedOptimizationReadinessReceipt",
         "app.investment_optimization.contracts.ScenarioArtifact",
         "app.investment_optimization.contracts.OptimizationProposal",
         "app.investment_optimization.contracts.ProposalReadinessReceipt",
         "app.investment_optimization.contracts.ProposalDecisionReceipt",
         "app.investment_optimization.contracts.PlanningDecisionRecord"
       ],
-      "sha256": "2dc39c9e438e889d484d6c2ad2cdc0c60e660fac077c9a620683b0ee610fc464"
+      "sha256": "13f0e80a8f01870b1709b464ae4b8c5338b800eef3bcf39b42c4f0c3a78aa6d1"
     }
   ],
   "hash_algorithm": "sha256",

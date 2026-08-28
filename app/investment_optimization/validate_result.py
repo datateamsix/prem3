@@ -6,13 +6,22 @@ import math
 from decimal import Decimal
 
 from app.investment_optimization.contracts import (
+    BindingConstraint,
     NativeOptimizerRawResult,
+    OptimizationConstraintSet,
     OptimizationInputContract,
     OptimizationResultRow,
     OptimizerBudgetVector,
 )
-from app.investment_optimization.enums import ModelVariableOptimizationEligibility
-from app.investment_optimization.errors import OptimizerResultInvalidError
+from app.investment_optimization.enums import (
+    ConstraintFamily,
+    ModelVariableOptimizationEligibility,
+    OptimizerConstraintStatus,
+)
+from app.investment_optimization.errors import (
+    OptimizerResultInvalidError,
+    ResultConstraintViolationError,
+)
 from app.investment_planning.actuals import round_money
 
 
@@ -66,6 +75,9 @@ def validate_reconciled_rows(
     input_contract: OptimizationInputContract,
     rows: tuple[OptimizationResultRow, ...],
     fixed_budget: Decimal,
+    min_total: Decimal | None = None,
+    max_total: Decimal | None = None,
+    require_fixed_total: bool = True,
 ) -> None:
     by_id = {row.model_variable_id: row for row in rows}
     expected = {
@@ -106,7 +118,94 @@ def validate_reconciled_rows(
             Decimal("0"),
         )
     )
-    if optimizable_total != round_money(fixed_budget):
-        raise OptimizerResultInvalidError(
-            "Recommended optimizable total must equal the fixed approved-plan budget."
+    if require_fixed_total:
+        if optimizable_total != round_money(fixed_budget):
+            raise OptimizerResultInvalidError(
+                "Recommended optimizable total must equal the fixed approved-plan budget."
+            )
+        return
+    if min_total is not None and optimizable_total < round_money(min_total):
+        raise ResultConstraintViolationError("Recommended total is below B_min.")
+    if max_total is not None and optimizable_total > round_money(max_total):
+        raise ResultConstraintViolationError("Recommended total exceeds B_max.")
+
+
+def validate_constraint_result(
+    *,
+    constraint_set: OptimizationConstraintSet,
+    rows: tuple[OptimizationResultRow, ...],
+) -> tuple[BindingConstraint, ...]:
+    by_id = {row.model_variable_id: row for row in rows}
+    bindings: list[BindingConstraint] = []
+    quantum = Decimal("0.01")
+    for bound in constraint_set.line_bounds:
+        row = by_id.get(bound.line_id)
+        if row is None:
+            continue
+        if bound.lower is not None and row.recommended < bound.lower:
+            raise ResultConstraintViolationError("LINE_MIN was violated.")
+        if bound.upper is not None and row.recommended > bound.upper:
+            raise ResultConstraintViolationError("LINE_MAX was violated.")
+        status = OptimizerConstraintStatus.WITHIN_BOUNDS
+        if bound.lower is not None and abs(row.recommended - bound.lower) <= quantum:
+            status = OptimizerConstraintStatus.AT_LOWER
+        elif bound.upper is not None and abs(row.recommended - bound.upper) <= quantum:
+            status = OptimizerConstraintStatus.AT_UPPER
+        if status is not OptimizerConstraintStatus.WITHIN_BOUNDS:
+            bindings.append(
+                BindingConstraint(
+                    constraint_id=bound.constraint_id,
+                    family=bound.family,
+                    status=status,
+                    subject_line_id=bound.line_id,
+                )
+            )
+    for locked in constraint_set.locked_lines:
+        row = by_id.get(locked.line_id)
+        if row is None:
+            continue
+        if row.recommended != round_money(locked.baseline):
+            raise ResultConstraintViolationError("LOCKED_ALLOCATION was violated.")
+        bindings.append(
+            BindingConstraint(
+                constraint_id=locked.constraint_id,
+                family=ConstraintFamily.LOCKED_ALLOCATION,
+                status=OptimizerConstraintStatus.AT_LOWER,
+                subject_line_id=locked.line_id,
+            )
         )
+    totals = {
+        market_id: Decimal("0")
+        for market_id in {row.market_id for row in rows}
+    }
+    for row in rows:
+        totals[row.market_id] = totals.get(row.market_id, Decimal("0")) + row.recommended
+    for group in constraint_set.market_constraints:
+        amount = sum(
+            (by_id[line_id].recommended for line_id in group.member_line_ids if line_id in by_id),
+            Decimal("0"),
+        )
+        if group.lower is not None and amount < group.lower:
+            raise ResultConstraintViolationError("MARKET_FLOOR was violated.")
+        if group.upper is not None and amount > group.upper:
+            raise ResultConstraintViolationError("MARKET_CEILING was violated.")
+    for group in constraint_set.quarter_constraints:
+        amount = sum(
+            (by_id[line_id].recommended for line_id in group.member_line_ids if line_id in by_id),
+            Decimal("0"),
+        )
+        if group.lower is not None and amount < group.lower:
+            raise ResultConstraintViolationError("QUARTER_FLOOR was violated.")
+        if group.upper is not None and amount > group.upper:
+            raise ResultConstraintViolationError("QUARTER_CEILING was violated.")
+    for funnel in constraint_set.funnel_constraints:
+        amount = Decimal("0")
+        for line_id, weight in funnel.member_weights:
+            if line_id not in by_id:
+                continue
+            amount += by_id[line_id].recommended * weight
+        if funnel.lower is not None and amount < funnel.lower:
+            raise ResultConstraintViolationError("FUNNEL_FLOOR was violated.")
+        if funnel.upper is not None and amount > funnel.upper:
+            raise ResultConstraintViolationError("FUNNEL_CEILING was violated.")
+    return tuple(bindings)

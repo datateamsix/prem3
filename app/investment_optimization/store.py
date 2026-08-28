@@ -8,6 +8,7 @@ from typing import Any, Protocol, runtime_checkable
 from app.investment_optimization.contracts import (
     OPTIMIZATION_AMOUNT_BEARING_MODELS,
     OPTIMIZATION_METADATA_MODELS,
+    AdvancedOptimizationReadinessReceipt,
     ConstraintSetRef,
     ModelConsumptionContract,
     OptimizationEvidenceCoverage,
@@ -37,6 +38,7 @@ OptimizationMetadata = (
     | OptimizationEvidenceCoverage
     | OptimizationInputContract
     | OptimizationReadinessReceipt
+    | AdvancedOptimizationReadinessReceipt
     | OptimizationRun
     | OptimizationResultRef
     | ScenarioArtifact
@@ -65,6 +67,24 @@ FORBIDDEN_AMOUNT_KEYS = frozenset(
         "share_change",
         "largest_increases",
         "largest_decreases",
+        "total_budget_bounds",
+        "line_bounds",
+        "locked_lines",
+        "movement_limits",
+        "market_constraints",
+        "quarter_constraints",
+        "funnel_constraints",
+        "experiment_reserve",
+        "contingency_reserve",
+        "cost_per_media_unit",
+        "flighting",
+        "contribution_margin",
+        "target_roi",
+        "target_mroi",
+        "B_min",
+        "B_max",
+        "recommended_total",
+        "total_baseline_spend",
     }
 )
 
@@ -183,6 +203,18 @@ class OptimizationMetadataStore(Protocol):
 
     def get_decision_record(self, decision_id: str) -> PlanningDecisionRecord | None: ...
 
+    def list_constraint_refs(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[ConstraintSetRef, ...]: ...
+
+    def list_assumption_refs(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[ScenarioAssumptionSetRef, ...]: ...
+
+    def list_advanced_receipts(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[AdvancedOptimizationReadinessReceipt, ...]: ...
+
 
 class InMemoryOptimizationMetadataStore:
     def __init__(self) -> None:
@@ -199,6 +231,9 @@ class InMemoryOptimizationMetadataStore:
         self._proposal_readiness: dict[str, ProposalReadinessReceipt] = {}
         self._decisions: dict[str, ProposalDecisionReceipt] = {}
         self._decision_records: dict[str, PlanningDecisionRecord] = {}
+        self._constraint_refs: dict[str, ConstraintSetRef] = {}
+        self._assumption_refs: dict[str, ScenarioAssumptionSetRef] = {}
+        self._advanced_receipts: dict[str, AdvancedOptimizationReadinessReceipt] = {}
 
     def put(self, value: OptimizationMetadata) -> OptimizationMetadata:
         safe = assert_optimization_metadata_only(value)
@@ -253,6 +288,12 @@ class InMemoryOptimizationMetadataStore:
                     code="DECISION_RECEIPT_IMMUTABLE",
                 )
             self._decision_records[safe.decision_id] = safe
+        elif isinstance(safe, ConstraintSetRef):
+            self._constraint_refs[safe.constraint_set_id] = safe
+        elif isinstance(safe, ScenarioAssumptionSetRef):
+            self._assumption_refs[safe.assumption_set_id] = safe
+        elif isinstance(safe, AdvancedOptimizationReadinessReceipt):
+            self._advanced_receipts[safe.receipt_id] = safe
         return safe
 
     def get_mapping(self, mapping_id: str) -> PortfolioModelMapping | None:
@@ -431,6 +472,44 @@ class InMemoryOptimizationMetadataStore:
 
     def get_decision_record(self, decision_id: str) -> PlanningDecisionRecord | None:
         return self._decision_records.get(decision_id)
+
+    def get_constraint_ref(self, constraint_set_id: str) -> ConstraintSetRef | None:
+        return self._constraint_refs.get(constraint_set_id)
+
+    def list_constraint_refs(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[ConstraintSetRef, ...]:
+        return tuple(
+            item
+            for item in self._constraint_refs.values()
+            if item.tenant_id == tenant_id and item.project_id == project_id
+        )
+
+    def get_assumption_ref(self, assumption_set_id: str) -> ScenarioAssumptionSetRef | None:
+        return self._assumption_refs.get(assumption_set_id)
+
+    def list_assumption_refs(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[ScenarioAssumptionSetRef, ...]:
+        return tuple(
+            item
+            for item in self._assumption_refs.values()
+            if item.tenant_id == tenant_id and item.project_id == project_id
+        )
+
+    def get_advanced_receipt(
+        self, receipt_id: str
+    ) -> AdvancedOptimizationReadinessReceipt | None:
+        return self._advanced_receipts.get(receipt_id)
+
+    def list_advanced_receipts(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[AdvancedOptimizationReadinessReceipt, ...]:
+        return tuple(
+            item
+            for item in self._advanced_receipts.values()
+            if item.tenant_id == tenant_id and item.project_id == project_id
+        )
 
     def stored_types(self) -> tuple[str, ...]:
         return tuple(type(row).__name__ for row in self._rows)

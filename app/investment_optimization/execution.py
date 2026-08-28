@@ -10,6 +10,7 @@ from app.investment_optimization.contracts import (
     PortfolioModelMapping,
 )
 from app.investment_optimization.enums import (
+    ADVANCED_POLICY_VERSION,
     EXECUTION_POLICY_VERSION,
     PINNED_MERIDIAN_RUNTIME,
     PINNED_OPTIMIZER_GTOL,
@@ -47,6 +48,28 @@ def optimizer_defaults_fingerprint() -> str:
     )
 
 
+def advanced_optimizer_defaults_fingerprint(
+    *,
+    spec_fingerprint: str,
+    budget_mode: str,
+    objective_fingerprint: str,
+    assumption_fingerprint: str = "",
+    constraint_fingerprint: str = "",
+) -> str:
+    return metadata_fingerprint(
+        {
+            "runtime": PINNED_MERIDIAN_RUNTIME,
+            "policy": ADVANCED_POLICY_VERSION,
+            "budget_mode": budget_mode,
+            "spec": spec_fingerprint,
+            "objective": objective_fingerprint,
+            "assumptions": assumption_fingerprint,
+            "constraints": constraint_fingerprint,
+            "gtol": PINNED_OPTIMIZER_GTOL,
+        }
+    )
+
+
 def execution_key(
     *,
     receipt: OptimizationReadinessReceipt,
@@ -54,6 +77,7 @@ def execution_key(
     input_contract: OptimizationInputContract,
     model_fingerprint: str,
     plan_version_fingerprint: str | None,
+    defaults: str | None = None,
 ) -> str:
     return metadata_fingerprint(
         {
@@ -63,7 +87,7 @@ def execution_key(
             "input_fingerprint": input_contract.fingerprint,
             "model_fingerprint": model_fingerprint,
             "plan_version_fingerprint": plan_version_fingerprint or "",
-            "defaults": optimizer_defaults_fingerprint(),
+            "defaults": defaults or optimizer_defaults_fingerprint(),
         }
     )
 

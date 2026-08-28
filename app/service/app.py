@@ -38,6 +38,7 @@ from app.integrations.google.vault import (
 )
 from app.investment_optimization.accepted_model import ModelingRepositoryDirectory
 from app.investment_optimization.adapter import NativeMeridianFixedBudgetAdapter
+from app.investment_optimization.advanced_service import AdvancedOptimizationService
 from app.investment_optimization.consumption import MemoryModelConsumptionSource
 from app.investment_optimization.firestore import FirestoreOptimizationMetadataStore
 from app.investment_optimization.proposal import ProposalGovernanceService
@@ -344,6 +345,12 @@ def create_app(
         artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
         optimizer=NativeMeridianFixedBudgetAdapter(),
         execute_inline=not uses_cloud_runtime(),
+    )
+    app.state.advanced_optimization = AdvancedOptimizationService(
+        repo=repo,
+        store=optimization_store,
+        object_store=upload_store or FakeObjectStore(),
+        artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
     )
     app.state.proposal_governance = ProposalGovernanceService(
         repo=repo,

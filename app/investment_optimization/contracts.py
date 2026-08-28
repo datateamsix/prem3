@@ -9,7 +9,13 @@ from typing import ClassVar, Protocol
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.investment_optimization.enums import (
+    AdvancedOptimizationReadinessStatus,
+    AssumptionAuthority,
+    AssumptionStatus,
     BudgetResolutionPath,
+    ConstraintAuthority,
+    ConstraintFamily,
+    ConstraintValidationStatus,
     DecisionRecordType,
     MappingAuthority,
     MappingCardinalityPolicy,
@@ -17,16 +23,19 @@ from app.investment_optimization.enums import (
     MappingKind,
     MarketModelCompatibility,
     MaterialChangeFlag,
+    MediaUnitCostKind,
     ModelGeoSemantics,
     ModelVariableOptimizationEligibility,
     ModelVariableRole,
     OptimizationAmountKind,
+    OptimizationBudgetMode,
     OptimizationEvidenceCoverageStatus,
     OptimizationExecutionPhase,
     OptimizationFailureClass,
     OptimizationInputStatus,
     OptimizationIssueCode,
     OptimizationObjectiveKind,
+    OptimizationObjectiveMode,
     OptimizationProposalLifecycleStatus,
     OptimizationProposalStatus,
     OptimizationReadinessCheckCode,
@@ -46,6 +55,7 @@ from app.investment_optimization.enums import (
     ScenarioType,
     SpendSemantics,
     UnmappedVariableTreatment,
+    UnsupportedChannelPolicy,
 )
 from app.investment_planning.contracts import MoneyAmount, PortfolioAllocationView
 from app.investment_planning.enums import PortfolioBaselineKind, SensitiveDataClass
@@ -100,27 +110,233 @@ class OptimizationExecutionPlan(FrozenModel):
 class ConstraintSetRef(FrozenModel):
     sensitive_data_class: ClassVar[SensitiveDataClass] = _META
     constraint_set_id: str
+    tenant_id: str | None = None
+    project_id: str | None = None
+    artifact_bucket: str | None = None
+    artifact_object_name: str | None = None
+    artifact_generation: str | None = None
+    created_at: datetime | None = None
     fingerprint: str
 
 
 class ScenarioAssumptionSetRef(FrozenModel):
     sensitive_data_class: ClassVar[SensitiveDataClass] = _META
     assumption_set_id: str
+    tenant_id: str | None = None
+    project_id: str | None = None
+    artifact_bucket: str | None = None
+    artifact_object_name: str | None = None
+    artifact_generation: str | None = None
+    created_at: datetime | None = None
     fingerprint: str
 
 
-class ConstraintSetPayload(FrozenModel):
+class MoneyBounds(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    lower: Decimal | None = None
+    upper: Decimal | None = None
+    currency: str = "USD"
+
+
+class ConstraintAuthorityRecord(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    source: str
+    authority: ConstraintAuthority
+    scope: str
+    period: str
+    reason: str
+    fingerprint: str
+
+
+class PortfolioLineConstraint(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    constraint_id: str
+    family: ConstraintFamily
+    line_id: str
+    market_id: str
+    channel_id: str
+    period: str
+    lower: Decimal | None = None
+    upper: Decimal | None = None
+    currency: str = "USD"
+    authority: ConstraintAuthorityRecord
+
+
+class LockedLineConstraint(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    constraint_id: str
+    line_id: str
+    market_id: str
+    channel_id: str
+    period: str
+    baseline: Decimal
+    currency: str = "USD"
+    reason: str
+    authority: ConstraintAuthorityRecord
+
+
+class MovementConstraint(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    constraint_id: str
+    family: ConstraintFamily
+    line_id: str
+    market_id: str
+    channel_id: str
+    period: str
+    max_absolute_move: Decimal | None = None
+    max_percent_move: Decimal | None = None
+    percent_unavailable: bool = False
+    currency: str = "USD"
+    authority: ConstraintAuthorityRecord
+
+
+class GroupConstraint(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    constraint_id: str
+    family: ConstraintFamily
+    group_id: str
+    member_line_ids: tuple[str, ...] = ()
+    lower: Decimal | None = None
+    upper: Decimal | None = None
+    currency: str = "USD"
+    period: str
+    authority: ConstraintAuthorityRecord
+
+
+class WeightedGroupConstraint(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    constraint_id: str
+    family: ConstraintFamily
+    group_id: str
+    member_weights: tuple[tuple[str, Decimal], ...] = ()
+    lower: Decimal | None = None
+    upper: Decimal | None = None
+    currency: str = "USD"
+    period: str
+    authority: ConstraintAuthorityRecord
+
+
+class AvailabilityConstraint(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    constraint_id: str
+    family: ConstraintFamily = ConstraintFamily.AVAILABILITY_WINDOW
+    line_id: str | None = None
+    market_id: str | None = None
+    channel_id: str | None = None
+    period_start: str
+    period_end: str
+    available: bool = True
+    authority: ConstraintAuthorityRecord
+
+
+class ReserveConstraint(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    constraint_id: str
+    family: ConstraintFamily
+    amount: Decimal
+    currency: str = "USD"
+    period: str
+    reason: str
+    authority: ConstraintAuthorityRecord
+
+
+class OptimizationConstraintSet(FrozenModel):
     sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
     constraint_set_id: str
+    project_id: str | None = None
+    currency: str = "USD"
+    period_start: str | None = None
+    period_end: str | None = None
     total_budget: Decimal | None = None
+    total_budget_bounds: MoneyBounds | None = None
+    line_bounds: tuple[PortfolioLineConstraint, ...] = ()
+    locked_lines: tuple[LockedLineConstraint, ...] = ()
     locked_line_ids: tuple[str, ...] = ()
+    movement_limits: tuple[MovementConstraint, ...] = ()
+    market_constraints: tuple[GroupConstraint, ...] = ()
+    quarter_constraints: tuple[GroupConstraint, ...] = ()
+    funnel_constraints: tuple[WeightedGroupConstraint, ...] = ()
+    experiment_reserve: ReserveConstraint | None = None
+    contingency_reserve: ReserveConstraint | None = None
+    availability_constraints: tuple[AvailabilityConstraint, ...] = ()
+    exposure_guardrails: tuple[str, ...] = ()
+    unsupported_channel_policies: tuple[tuple[str, UnsupportedChannelPolicy], ...] = ()
+    fingerprint: str = ""
 
 
-class ScenarioAssumptionPayload(FrozenModel):
+ConstraintSetPayload = OptimizationConstraintSet
+
+
+class MediaUnitCostAssumption(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    ref_id: str
+    kind: MediaUnitCostKind
+    unit: str
+    currency: str
+    period: str
+    market_id: str | None = None
+    channel_id: str
+    source: str
+    freshness: str
+    value: Decimal
+
+
+class FlightingAssumption(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    ref_id: str
+    market_id: str | None = None
+    channel_id: str
+    period: str
+    weight: Decimal
+    source: str
+    authority: AssumptionAuthority
+
+
+class UnitValueAssumption(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
+    ref_id: str
+    source: str
+    scope: str
+    currency: str
+    time_horizon: str
+    freshness: str
+    value: Decimal
+
+
+class FutureScenarioAssumptions(FrozenModel):
     sensitive_data_class: ClassVar[SensitiveDataClass] = _AMOUNT
     assumption_set_id: str
+    project_id: str | None = None
+    period_start: str | None = None
+    period_end: str | None = None
+    cost_per_media_unit: tuple[MediaUnitCostAssumption, ...] = ()
+    cost_per_media_unit_refs: tuple[str, ...] = ()
+    flighting: tuple[FlightingAssumption, ...] = ()
+    flighting_refs: tuple[str, ...] = ()
+    revenue_per_kpi: UnitValueAssumption | Decimal | None = None
+    revenue_per_kpi_ref: str | None = None
+    contribution_margin: UnitValueAssumption | None = None
+    contribution_margin_ref: str | None = None
+    market_availability_refs: tuple[str, ...] = ()
+    channel_availability_refs: tuple[str, ...] = ()
+    source_refs: tuple[str, ...] = ()
+    authority: AssumptionAuthority = AssumptionAuthority.HUMAN_CONFIRMED
+    status: AssumptionStatus = AssumptionStatus.PINNED
+    limitations: tuple[str, ...] = ()
     future_cpm_by_channel: tuple[tuple[str, Decimal], ...] = ()
-    revenue_per_kpi: Decimal | None = None
+    created_at: datetime | None = None
+    fingerprint: str = ""
+
+
+ScenarioAssumptionPayload = FutureScenarioAssumptions
+
+
+class BindingConstraint(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    constraint_id: str
+    family: ConstraintFamily
+    status: OptimizerConstraintStatus
+    subject_line_id: str | None = None
 
 
 class OptimizationExecutionPayload(FrozenModel):
@@ -392,6 +608,59 @@ class OptimizationReadinessReceipt(FrozenModel):
         return self
 
 
+class ConstraintValidationCheck(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    code: str
+    passed: bool
+
+
+class ConstraintValidationReceipt(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    validation_id: str
+    constraint_set_id: str
+    constraint_set_fingerprint: str
+    status: ConstraintValidationStatus
+    checks: tuple[ConstraintValidationCheck, ...] = ()
+    conflicting_constraint_ids: tuple[str, ...] = ()
+    fingerprint: str
+    created_at: datetime
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> ConstraintValidationReceipt:
+        _reject_amount_keys(self.model_dump(), owner="ConstraintValidationReceipt")
+        return self
+
+
+class AdvancedOptimizationReadinessReceipt(FrozenModel):
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    receipt_id: str
+    tenant_id: str
+    project_id: str
+    base_readiness_receipt_id: str
+    base_readiness_fingerprint: str
+    assumption_set_id: str | None = None
+    assumption_set_fingerprint: str | None = None
+    constraint_set_id: str | None = None
+    constraint_set_fingerprint: str | None = None
+    objective_mode: OptimizationObjectiveMode
+    objective_fingerprint: str
+    budget_mode: OptimizationBudgetMode
+    target_hurdle: str | None = None
+    runtime_version: str
+    optimizer_defaults_fingerprint: str
+    status: AdvancedOptimizationReadinessStatus
+    checks: tuple[OptimizationReadinessCheck, ...] = ()
+    issues: tuple[OptimizationIssue, ...] = ()
+    policy_version: str
+    fingerprint: str
+    created_at: datetime
+
+    @model_validator(mode="after")
+    def _metadata_only(self) -> AdvancedOptimizationReadinessReceipt:
+        _reject_amount_keys(self.model_dump(), owner="AdvancedOptimizationReadinessReceipt")
+        return self
+
+
 def _reject_amount_keys(dumped: dict[str, object], *, owner: str) -> None:
     for key in (
         "amounts",
@@ -433,6 +702,16 @@ class OptimizationRun(FrozenModel):
     plan_version_fingerprint: str | None = None
     runtime_version: str
     optimizer_defaults_fingerprint: str
+    constraint_set_id: str | None = None
+    constraint_set_fingerprint: str | None = None
+    assumption_set_id: str | None = None
+    assumption_set_fingerprint: str | None = None
+    objective_mode: OptimizationObjectiveMode | None = None
+    objective_fingerprint: str | None = None
+    budget_mode: OptimizationBudgetMode | None = None
+    target_hurdle: str | None = None
+    advanced_readiness_receipt_id: str | None = None
+    advanced_readiness_fingerprint: str | None = None
     worker_ref: str | None = None
     artifact_object_name: str | None = None
     artifact_generation: str | None = None
@@ -531,6 +810,18 @@ class OptimizationResultPayload(FrozenModel):
     currency: str
     fixed_budget: Decimal
     recommended_total: Decimal
+    total_baseline_spend: Decimal | None = None
+    objective_mode: OptimizationObjectiveMode | None = None
+    budget_mode: OptimizationBudgetMode | None = None
+    target_hurdle: str | None = None
+    assumption_set_id: str | None = None
+    assumption_set_fingerprint: str | None = None
+    constraint_set_id: str | None = None
+    constraint_set_fingerprint: str | None = None
+    binding_constraints: tuple[BindingConstraint, ...] = ()
+    model_estimated_outcome: str | None = None
+    roi: str | None = None
+    mroi: str | None = None
     rows: tuple[OptimizationResultRow, ...] = ()
     fingerprint: str
     schema_version: str
@@ -575,6 +866,10 @@ class ScenarioArtifact(FrozenModel):
     artifact_fingerprint: str
     created_at: datetime
     created_by: str
+    assumption_set_id: str | None = None
+    constraint_set_id: str | None = None
+    objective_mode: str | None = None
+    budget_mode: str | None = None
     fingerprint: str
 
     @model_validator(mode="after")
@@ -720,6 +1015,10 @@ class ScenarioComparison(FrozenModel):
     currency: str
     amount_kind: OptimizationAmountKind = OptimizationAmountKind.MODEL_RECOMMENDED
     rows: tuple[ScenarioComparisonRow, ...] = ()
+    objective_mode: str | None = None
+    budget_mode: str | None = None
+    assumption_set_fingerprint: str | None = None
+    constraint_set_fingerprint: str | None = None
     fingerprint: str
 
 
@@ -766,6 +1065,9 @@ OPTIMIZATION_METADATA_MODELS: tuple[type[FrozenModel], ...] = (
     OptimizationEvidenceCoverage,
     OptimizationInputContract,
     OptimizationReadinessReceipt,
+    ConstraintValidationCheck,
+    ConstraintValidationReceipt,
+    AdvancedOptimizationReadinessReceipt,
     OptimizationRun,
     OptimizationResultRef,
     ScenarioArtifact,
@@ -779,7 +1081,19 @@ OPTIMIZATION_METADATA_MODELS: tuple[type[FrozenModel], ...] = (
 
 OPTIMIZATION_AMOUNT_BEARING_MODELS: tuple[type[FrozenModel], ...] = (
     ConstraintSetPayload,
+    OptimizationConstraintSet,
     ScenarioAssumptionPayload,
+    FutureScenarioAssumptions,
+    MoneyBounds,
+    PortfolioLineConstraint,
+    LockedLineConstraint,
+    MovementConstraint,
+    GroupConstraint,
+    WeightedGroupConstraint,
+    ReserveConstraint,
+    MediaUnitCostAssumption,
+    FlightingAssumption,
+    UnitValueAssumption,
     OptimizationExecutionPayload,
     OptimizerBudgetLine,
     OptimizerBudgetVector,

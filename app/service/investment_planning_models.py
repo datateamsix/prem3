@@ -233,6 +233,13 @@ class EvaluateOptimizationReadinessRequest(ApiModel):
 class CreateOptimizationRunRequest(ApiModel):
     readiness_receipt_id: str
     idempotency_key: str | None = None
+    budget_mode: str | None = None
+    objective_mode: str | None = None
+    constraint_set_id: str | None = None
+    assumption_set_id: str | None = None
+    advanced_readiness_receipt_id: str | None = None
+    target_roi: float | None = None
+    target_mroi: float | None = None
 
 
 class OptimizationIssueResponse(ApiModel):
@@ -322,6 +329,11 @@ class OptimizationRunResponse(ApiModel):
     failure_class: str | None = None
     retry_semantics: str | None = None
     runtime_version: str
+    objective_mode: str | None = None
+    budget_mode: str | None = None
+    constraint_set_id: str | None = None
+    assumption_set_id: str | None = None
+    advanced_readiness_receipt_id: str | None = None
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None = None
@@ -354,6 +366,16 @@ class OptimizationResultResponse(ApiModel):
     currency: str
     fixed_budget: str
     recommended_total: str
+    total_baseline_spend: str | None = None
+    objective_mode: str | None = None
+    budget_mode: str | None = None
+    target_hurdle: str | None = None
+    assumption_set_id: str | None = None
+    constraint_set_id: str | None = None
+    binding_constraints: tuple[dict[str, str | None], ...] = ()
+    model_estimated_outcome: str | None = None
+    roi: str | None = None
+    mroi: str | None = None
     rows: tuple[OptimizationResultRowResponse, ...] = ()
     fingerprint: str
     schema_version: str
@@ -456,3 +478,216 @@ class PlanRevisionFromProposalResponse(ApiModel):
     source_proposal_id: str | None = None
     source_decision_receipt_id: str | None = None
     source_scenario_id: str | None = None
+
+
+class MediaUnitCostRequest(ApiModel):
+    ref_id: str
+    kind: str
+    unit: str
+    currency: str
+    period: str
+    market_id: str | None = None
+    channel_id: str
+    source: str
+    freshness: str
+    value: str
+
+
+class FlightingAssumptionRequest(ApiModel):
+    ref_id: str
+    market_id: str | None = None
+    channel_id: str
+    period: str
+    weight: str
+    source: str
+    authority: str
+
+
+class UnitValueRequest(ApiModel):
+    ref_id: str
+    source: str
+    scope: str
+    currency: str
+    time_horizon: str
+    freshness: str
+    value: str
+
+
+class CreateAssumptionSetRequest(ApiModel):
+    period_start: str | None = None
+    period_end: str | None = None
+    cost_per_media_unit: tuple[MediaUnitCostRequest, ...] = ()
+    flighting: tuple[FlightingAssumptionRequest, ...] = ()
+    revenue_per_kpi: UnitValueRequest | None = None
+    contribution_margin: UnitValueRequest | None = None
+    source_refs: tuple[str, ...] = ()
+    authority: str = "HUMAN_CONFIRMED"
+
+
+class AssumptionSetRefResponse(ApiModel):
+    assumption_set_id: str
+    project_id: str | None = None
+    fingerprint: str
+    created_at: datetime | None = None
+
+
+class AssumptionSetRefListResponse(ApiModel):
+    items: tuple[AssumptionSetRefResponse, ...]
+
+
+class ConstraintAuthorityRequest(ApiModel):
+    source: str
+    authority: str
+    scope: str
+    period: str
+    reason: str
+
+
+class MoneyBoundsRequest(ApiModel):
+    lower: str | None = None
+    upper: str | None = None
+    currency: str = "USD"
+
+
+class LineConstraintRequest(ApiModel):
+    constraint_id: str
+    family: str
+    line_id: str
+    market_id: str
+    channel_id: str
+    period: str
+    lower: str | None = None
+    upper: str | None = None
+    currency: str = "USD"
+    authority: ConstraintAuthorityRequest
+
+
+class LockedLineRequest(ApiModel):
+    constraint_id: str
+    line_id: str
+    market_id: str
+    channel_id: str
+    period: str
+    baseline: str
+    currency: str = "USD"
+    reason: str
+    authority: ConstraintAuthorityRequest
+
+
+class MovementConstraintRequest(ApiModel):
+    constraint_id: str
+    family: str
+    line_id: str
+    market_id: str
+    channel_id: str
+    period: str
+    max_absolute_move: str | None = None
+    max_percent_move: str | None = None
+    percent_unavailable: bool = False
+    currency: str = "USD"
+    authority: ConstraintAuthorityRequest
+
+
+class GroupConstraintRequest(ApiModel):
+    constraint_id: str
+    family: str
+    group_id: str
+    member_line_ids: tuple[str, ...] = ()
+    lower: str | None = None
+    upper: str | None = None
+    currency: str = "USD"
+    period: str
+    authority: ConstraintAuthorityRequest
+
+
+class FunnelConstraintRequest(ApiModel):
+    constraint_id: str
+    family: str
+    group_id: str
+    member_weights: tuple[tuple[str, str], ...] = ()
+    lower: str | None = None
+    upper: str | None = None
+    currency: str = "USD"
+    period: str
+    authority: ConstraintAuthorityRequest
+
+
+class ReserveConstraintRequest(ApiModel):
+    constraint_id: str
+    family: str
+    amount: str
+    currency: str = "USD"
+    period: str
+    reason: str
+    authority: ConstraintAuthorityRequest
+
+
+class CreateConstraintSetRequest(ApiModel):
+    currency: str = "USD"
+    period_start: str | None = None
+    period_end: str | None = None
+    total_budget: str | None = None
+    total_budget_bounds: MoneyBoundsRequest | None = None
+    line_bounds: tuple[LineConstraintRequest, ...] = ()
+    locked_lines: tuple[LockedLineRequest, ...] = ()
+    locked_line_ids: tuple[str, ...] = ()
+    movement_limits: tuple[MovementConstraintRequest, ...] = ()
+    market_constraints: tuple[GroupConstraintRequest, ...] = ()
+    quarter_constraints: tuple[GroupConstraintRequest, ...] = ()
+    funnel_constraints: tuple[FunnelConstraintRequest, ...] = ()
+    experiment_reserve: ReserveConstraintRequest | None = None
+    contingency_reserve: ReserveConstraintRequest | None = None
+    unsupported_channel_policies: tuple[tuple[str, str], ...] = ()
+
+
+class ConstraintSetRefResponse(ApiModel):
+    constraint_set_id: str
+    project_id: str | None = None
+    fingerprint: str
+    created_at: datetime | None = None
+
+
+class ConstraintSetRefListResponse(ApiModel):
+    items: tuple[ConstraintSetRefResponse, ...]
+
+
+class ConstraintValidationCheckResponse(ApiModel):
+    code: str
+    passed: bool
+
+
+class ConstraintValidationResponse(ApiModel):
+    validation_id: str
+    constraint_set_id: str
+    constraint_set_fingerprint: str
+    status: str
+    checks: tuple[ConstraintValidationCheckResponse, ...] = ()
+    conflicting_constraint_ids: tuple[str, ...] = ()
+    fingerprint: str
+    created_at: datetime
+
+
+class CreateAdvancedOptimizationReadinessRequest(ApiModel):
+    base_readiness_receipt_id: str
+    objective_mode: str
+    assumption_set_id: str | None = None
+    constraint_set_id: str | None = None
+    target_roi: float | None = None
+    target_mroi: float | None = None
+
+
+class AdvancedOptimizationReadinessResponse(ApiModel):
+    receipt_id: str
+    project_id: str
+    base_readiness_receipt_id: str
+    objective_mode: str
+    budget_mode: str
+    assumption_set_id: str | None = None
+    constraint_set_id: str | None = None
+    status: str
+    fingerprint: str
+    created_at: datetime
+
+
+class AdvancedOptimizationReadinessListResponse(ApiModel):
+    items: tuple[AdvancedOptimizationReadinessResponse, ...]

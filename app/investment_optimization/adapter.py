@@ -1,4 +1,4 @@
-"""Native Meridian BudgetOptimizer adapter. Fixed-budget only in P6-05."""
+"""Native Meridian BudgetOptimizer adapter. P6-05 fixed-budget; P6-07 adds flexible."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Protocol
 
+from app.investment_optimization.compile_native import NativeOptimizeSpec
 from app.investment_optimization.contracts import (
     NativeOptimizerChannelResult,
     NativeOptimizerRawResult,
@@ -80,13 +81,13 @@ class FixedBudgetOptimizer(Protocol):
 
 
 class NativeMeridianFixedBudgetAdapter:
-    """Production path: official Meridian BudgetOptimizer.optimize(fixed_budget=True)."""
+    """Production path: official Meridian BudgetOptimizer."""
 
-    supported_solvers = (OptimizationSolverKind.MERIDIAN_NATIVE_FIXED_BUDGET,)
-    deferred_solvers = (
+    supported_solvers = (
+        OptimizationSolverKind.MERIDIAN_NATIVE_FIXED_BUDGET,
         OptimizationSolverKind.MERIDIAN_NATIVE_FLEXIBLE_BUDGET,
-        OptimizationSolverKind.PREM3_RISK_AWARE_FRONTIER,
     )
+    deferred_solvers = (OptimizationSolverKind.PREM3_RISK_AWARE_FRONTIER,)
 
     def optimize(
         self,
@@ -132,6 +133,64 @@ class NativeMeridianFixedBudgetAdapter:
                 spend_constraint_upper=PINNED_SPEND_CONSTRAINT_UPPER,
                 gtol=PINNED_OPTIMIZER_GTOL,
             )
+            return _raw_from_optimization_results(results, vector)
+        except MeridianOptimizerApiReviewRequiredError:
+            raise
+        except ModelArtifactUnavailableError:
+            raise
+        except Exception as exc:
+            raise NativeOptimizerFailedError("Native Meridian BudgetOptimizer failed.") from exc
+
+    def optimize_flexible_budget(
+        self,
+        *,
+        model_artifact_ref: str,
+        vector: OptimizerBudgetVector,
+        spec: NativeOptimizeSpec,
+        object_store: ObjectStore | None = None,
+        artifact_bucket: str | None = None,
+    ) -> NativeOptimizerRawResult:
+        try:
+            from meridian.analysis.optimizer import BudgetOptimizer
+            from meridian.schema.serde import meridian_serde
+        except ImportError as exc:
+            raise MeridianOptimizerApiReviewRequiredError(
+                "Meridian BudgetOptimizer API is not importable in this runtime."
+            ) from exc
+
+        path = _materialize_model_path(
+            model_artifact_ref,
+            object_store=object_store,
+            artifact_bucket=artifact_bucket,
+        )
+        try:
+            model = meridian_serde.load_meridian(path)
+            kwargs: dict[str, object] = {
+                "use_posterior": spec.use_posterior,
+                "fixed_budget": spec.fixed_budget,
+                "pct_of_spend": list(spec.pct_of_spend),
+                "spend_constraint_lower": spec.spend_constraint_lower
+                if isinstance(spec.spend_constraint_lower, float)
+                else list(spec.spend_constraint_lower),
+                "spend_constraint_upper": spec.spend_constraint_upper
+                if isinstance(spec.spend_constraint_upper, float)
+                else list(spec.spend_constraint_upper),
+                "gtol": spec.gtol,
+                "use_kpi": spec.use_kpi,
+            }
+            if spec.budget is not None:
+                kwargs["budget"] = spec.budget
+            if spec.target_roi is not None:
+                kwargs["target_roi"] = spec.target_roi
+            if spec.target_mroi is not None:
+                kwargs["target_mroi"] = spec.target_mroi
+            if spec.selected_geos:
+                kwargs["selected_geos"] = list(spec.selected_geos)
+            if spec.start_date:
+                kwargs["start_date"] = spec.start_date
+            if spec.end_date:
+                kwargs["end_date"] = spec.end_date
+            results = BudgetOptimizer(model).optimize(**kwargs)
             return _raw_from_optimization_results(results, vector)
         except MeridianOptimizerApiReviewRequiredError:
             raise
