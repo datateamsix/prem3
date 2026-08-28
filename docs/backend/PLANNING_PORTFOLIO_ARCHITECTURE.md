@@ -60,7 +60,7 @@ Governed actual spend is assembled through `ActualSpendQuery`. See [PORTFOLIO_AC
 
 Governed mapping from portfolio cells to accepted MMM variables, plus a fingerprinted `OptimizationReadinessReceipt`. See [PORTFOLIO_TO_MODEL_MAPPING.md](PORTFOLIO_TO_MODEL_MAPPING.md), [OPTIMIZATION_READINESS.md](OPTIMIZATION_READINESS.md), [OPTIMIZATION_INPUT_CONTRACT.md](OPTIMIZATION_INPUT_CONTRACT.md), and [PLANNING_CAUSAL_EVIDENCE_AUTHORITY.md](PLANNING_CAUSAL_EVIDENCE_AUTHORITY.md).
 
-`OPTIMIZATION_READY` is readiness, not optimizer execution. Production BigQuery actuals remain `P6_03_PRODUCTION_ACTUALS_QUERY_PENDING`.
+`OPTIMIZATION_READY` is readiness, not optimizer execution. Production BigQuery actuals are supplied by P6-03A (`BigQueryActualSpendAdapter`); missing/unauthorized sources stay fail-closed.
 
 ## Native fixed-budget optimization (P6-05)
 

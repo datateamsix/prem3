@@ -39,5 +39,9 @@ def new_actuals_source_id() -> str:
     return _opaque("asrc")
 
 
+def new_query_receipt_id() -> str:
+    return _opaque("aqrc")
+
+
 def new_observation_id() -> str:
     return _opaque("pobs")

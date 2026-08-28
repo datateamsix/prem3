@@ -18,4 +18,4 @@ P6-03 `PortfolioEvidenceCoverage` describes measurement scope on the portfolio v
 
 ## Production actuals
 
-`P6_03_PRODUCTION_ACTUALS_QUERY_PENDING` stays fail-closed. P6-03A may land independently and must not change P6-04 contracts. Actuals never become `APPROVED_PLAN` and never satisfy V1 fixed-budget baseline by themselves.
+P6-03A production BigQuery actuals are retrieved through `BigQueryActualSpendAdapter`. P6-03A must not change P6-04 contracts. Actuals never become `APPROVED_PLAN` and never satisfy V1 fixed-budget baseline by themselves. Missing or unauthorized sources stay fail-closed.

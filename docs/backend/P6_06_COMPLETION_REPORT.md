@@ -97,7 +97,7 @@ Thin `PlanningDecisionRecord` (`DecisionRecordType.OPTIMIZATION_PROPOSAL`) store
 
 ## R. Blockers
 
-None for this mission. Human approval is not fabricated. P6-03A production actuals stay `P6_03_PRODUCTION_ACTUALS_QUERY_PENDING` / fail-closed and do not block PLAN_ONLY governance.
+None for this mission. Human approval is not fabricated. Production actuals are P6-03A and do not block PLAN_ONLY governance.
 
 ## Explicit non-goals (held)
 
@@ -111,7 +111,7 @@ TEAM 1
 - P6-01  ✅ Drive-native Investment Plan
 - P6-02  ✅ Portfolio Snapshot
 - P6-03  ✅ Actuals + Coverage + Observations
-- P6-03A ⏳ fail-closed — `P6_03_PRODUCTION_ACTUALS_QUERY_PENDING`
+- P6-03A ✅ Production BigQuery actuals (`actual_spend_bq_query/v1`)
 - P6-04  ✅ Optimization Readiness + Portfolio-to-Model Mapping
 - P6-05  ✅ Native Meridian Fixed-Budget Optimization (`411254c5ec458cc60a848866aeb2cf817b2c941c`)
 - P6-06  ✅ Scenario Artifacts + Proposal Governance (implemented on this branch; not yet committed)

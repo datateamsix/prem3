@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Any, Protocol
 from urllib.parse import urlencode
@@ -117,6 +118,17 @@ class BigQueryClient(Protocol):
 
     def query_preview(
         self, *, access_token: str, sql: str, max_rows: int = 5
+    ) -> list[dict[str, Any]]: ...
+
+    def run_bounded_query(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        sql: str,
+        parameters: dict[str, str] | None = None,
+        location: str | None = None,
+        max_rows: int = 100_000,
     ) -> list[dict[str, Any]]: ...
 
     def get_table_physical(
@@ -325,6 +337,7 @@ class FakeBigQueryClient:
         self.current_views: dict[str, str] = {}
         self.created_datasets: list[str] = []
         self.discovery_tokens: list[str] = []
+        self.last_bounded_query: dict[str, Any] | None = None
 
     def list_projects(self, *, access_token: str) -> list[dict[str, str]]:
         self.discovery_tokens.append(access_token)
@@ -416,6 +429,47 @@ class FakeBigQueryClient:
         if "select *" in sql.lower():
             raise ValueError("SELECT * is forbidden.")
         return [{"sql": sql, "row": index} for index in range(min(max_rows, 1))]
+
+    def run_bounded_query(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        sql: str,
+        parameters: dict[str, str] | None = None,
+        location: str | None = None,
+        max_rows: int = 100_000,
+    ) -> list[dict[str, Any]]:
+        self.discovery_tokens.append(access_token)
+        if "select *" in sql.lower():
+            raise ValueError("SELECT * is forbidden.")
+        params = dict(parameters or {})
+        self.last_bounded_query = {
+            "project_id": project_id,
+            "sql": sql,
+            "parameters": params,
+            "location": location,
+            "max_rows": max_rows,
+        }
+        match = re.search(r"FROM `([^`]+)`", sql)
+        if match is None:
+            raise ValueError("Compiled actual-spend SQL is missing a bounded FROM clause.")
+        key = match.group(1)
+        columns, rows = self.table_rows.get(key, ([], []))
+        del columns
+        start = params.get("start_date")
+        end = params.get("end_date")
+        filtered: list[dict[str, Any]] = []
+        for row in rows:
+            day = str(row.get("date") or "")
+            if start and day < start:
+                continue
+            if end and day > end:
+                continue
+            filtered.append(dict(row))
+            if len(filtered) >= max_rows:
+                break
+        return filtered
 
     def get_table_physical(
         self, *, access_token: str, project_id: str, dataset_id: str, table_id: str
@@ -543,6 +597,7 @@ GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
 BQ_API = "https://bigquery.googleapis.com/bigquery/v2"
+_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 class RestGoogleOAuthProvider:
@@ -882,6 +937,59 @@ class RestBigQueryClient:
             field.get("name") for field in ((payload or {}).get("schema") or {}).get("fields") or []
         ]
         for row in (payload or {}).get("rows") or []:
+            values = [cell.get("v") for cell in row.get("f") or []]
+            rows.append(
+                {
+                    str(schema[index]): values[index] if index < len(values) else None
+                    for index in range(len(schema))
+                }
+            )
+        return rows
+
+    def run_bounded_query(
+        self,
+        *,
+        access_token: str,
+        project_id: str,
+        sql: str,
+        parameters: dict[str, str] | None = None,
+        location: str | None = None,
+        max_rows: int = 100_000,
+    ) -> list[dict[str, Any]]:
+        if "select *" in sql.lower():
+            raise ValueError("SELECT * is forbidden.")
+        query_parameters = []
+        for name, value in dict(parameters or {}).items():
+            param_type = "DATE" if name.endswith("_date") or _DATE.fullmatch(value) else "STRING"
+            query_parameters.append(
+                {
+                    "name": name,
+                    "parameterType": {"type": param_type},
+                    "parameterValue": {"value": value},
+                }
+            )
+        body: dict[str, Any] = {
+            "query": sql,
+            "useLegacySql": False,
+            "maxResults": max_rows,
+            "parameterMode": "NAMED",
+            "queryParameters": query_parameters,
+        }
+        if location:
+            body["location"] = location
+        payload = _authorized_json(
+            f"{BQ_API}/projects/{project_id}/queries",
+            access_token=access_token,
+            method="POST",
+            json_body=body,
+        )
+        if payload is None:
+            raise ValueError("Bounded BigQuery query failed.")
+        rows = []
+        schema = [
+            field.get("name") for field in (payload.get("schema") or {}).get("fields") or []
+        ]
+        for row in payload.get("rows") or []:
             values = [cell.get("v") for cell in row.get("f") or []]
             rows.append(
                 {

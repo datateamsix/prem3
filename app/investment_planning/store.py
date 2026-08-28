@@ -7,6 +7,7 @@ from typing import Protocol, runtime_checkable
 from app.investment_planning.contracts import (
     AMOUNT_BEARING_MODELS,
     METADATA_MODELS,
+    ActualSpendQueryReceipt,
     ActualSpendSourceRef,
     BudgetColumnMapping,
     BudgetDriveSourceVersion,
@@ -33,6 +34,7 @@ InvestmentPlanningMetadata = (
     | PortfolioSnapshotRef
     | ExposureGuardrailRef
     | ActualSpendSourceRef
+    | ActualSpendQueryReceipt
     | PortfolioEvidenceCoverage
     | PortfolioSourceFreshness
     | PortfolioObservation
@@ -91,6 +93,7 @@ class InMemoryInvestmentPlanningMetadataStore:
         self._receipts: dict[str, InvestmentPlanValidationReceipt] = {}
         self._snapshots: dict[str, PortfolioSnapshotRef] = {}
         self._actuals_sources: dict[str, ActualSpendSourceRef] = {}
+        self._query_receipts: dict[str, ActualSpendQueryReceipt] = {}
         self._rows: list[FrozenModel] = []
 
     def put(self, value: InvestmentPlanningMetadata) -> InvestmentPlanningMetadata:
@@ -108,6 +111,8 @@ class InMemoryInvestmentPlanningMetadataStore:
             self._snapshots[safe.snapshot_id] = safe
         elif isinstance(safe, ActualSpendSourceRef):
             self._actuals_sources[safe.actuals_source_id] = safe
+        elif isinstance(safe, ActualSpendQueryReceipt):
+            self._query_receipts[safe.query_receipt_id] = safe
         return safe
 
     def get_plan(self, plan_id: str) -> InvestmentPlan | None:
@@ -164,6 +169,9 @@ class InMemoryInvestmentPlanningMetadataStore:
 
     def get_actuals_source(self, actuals_source_id: str) -> ActualSpendSourceRef | None:
         return self._actuals_sources.get(actuals_source_id)
+
+    def get_query_receipt(self, query_receipt_id: str) -> ActualSpendQueryReceipt | None:
+        return self._query_receipts.get(query_receipt_id)
 
     def stored_types(self) -> tuple[str, ...]:
         return tuple(type(row).__name__ for row in self._rows)

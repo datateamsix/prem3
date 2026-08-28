@@ -17,11 +17,9 @@ P6-03 consumes governed actual spend as execution evidence. It does not treat ac
 
 `canonical_media` is MMM model-input grain and is not portfolio actual-spend authority.
 
-Production BigQuery row fetch is not implemented:
+Production BigQuery row fetch is implemented by `BigQueryActualSpendAdapter` (`actual_spend_bq_query/v1`) behind `DataFoundationActualSpendAdapter`. See [P6_03A_PRODUCTION_BIGQUERY_ACTUALS.md](P6_03A_PRODUCTION_BIGQUERY_ACTUALS.md) and [ACTUAL_SPEND_QUERY_AUTHORITY.md](ACTUAL_SPEND_QUERY_AUTHORITY.md).
 
-`P6_03_PRODUCTION_ACTUALS_QUERY_PENDING`
-
-A governed Data Foundation `SourceBinding` without a usable row source is `ACTUALS_SOURCE_UNAVAILABLE`. The assembler must not fabricate `ACTUALS_ONLY` or `PLAN_AND_ACTUALS`.
+A missing or unready Data Foundation `SourceBinding` is `ACTUALS_SOURCE_NOT_CONFIGURED` / `PRODUCTION_ACTUALS_SOURCE_NOT_READY`. Query authorization or execution failures are `BQ_*` / `ACTUALS_SOURCE_UNAVAILABLE`. The assembler must not fabricate `ACTUALS_ONLY` or `PLAN_AND_ACTUALS`.
 
 ## Failure semantics
 

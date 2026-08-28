@@ -64,4 +64,4 @@ If `BudgetOptimizer` itself cannot be imported, stop with `MERIDIAN_OPTIMIZER_AP
 - Flexible budget / CVaR / frontier
 - P6-07 Planning min/max constraint sets
 - Drive plan mutation or proposal approval (P6-06). P6-06 now owns scenario/proposal governance and plan-revision drafts.
-- Production BigQuery actuals (`P6_03_PRODUCTION_ACTUALS_QUERY_PENDING` stays fail-closed)
+- Production BigQuery actuals (P6-03A retrieves them; they are not the fixed-budget baseline)

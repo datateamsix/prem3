@@ -36,7 +36,10 @@ def emit_portfolio_observations(
     stale_actuals: bool,
 ) -> tuple[PortfolioObservation, ...]:
     rows: list[PortfolioObservation] = []
-    if actuals_error_code == "ACTUALS_SOURCE_NOT_CONFIGURED":
+    if actuals_error_code in {
+        "ACTUALS_SOURCE_NOT_CONFIGURED",
+        "PRODUCTION_ACTUALS_SOURCE_NOT_READY",
+    }:
         rows.append(
             _observation(
                 project_id=project_id,
@@ -46,7 +49,13 @@ def emit_portfolio_observations(
                 snapshot_fingerprint=snapshot_fingerprint,
             )
         )
-    elif actuals_error_code == "ACTUALS_SOURCE_UNAVAILABLE":
+    elif actuals_error_code in {
+        "ACTUALS_SOURCE_UNAVAILABLE",
+        "BQ_AUTHORIZATION_FAILED",
+        "BQ_SOURCE_NOT_FOUND",
+        "BQ_LOCATION_MISMATCH",
+        "BQ_QUERY_FAILED",
+    }:
         rows.append(
             _observation(
                 project_id=project_id,

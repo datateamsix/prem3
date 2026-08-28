@@ -82,3 +82,35 @@ class CurrencyReviewRequiredError(PlanningError):
 
 class SourceAuthorityInvalidError(PlanningError):
     code = "SOURCE_AUTHORITY_INVALID"
+
+
+class ProductionActualsSourceNotReadyError(PlanningError):
+    code = "PRODUCTION_ACTUALS_SOURCE_NOT_READY"
+
+
+class BqAuthorizationFailedError(PlanningError):
+    code = "BQ_AUTHORIZATION_FAILED"
+
+
+class BqSourceNotFoundError(PlanningError):
+    code = "BQ_SOURCE_NOT_FOUND"
+
+
+class BqLocationMismatchError(PlanningError):
+    code = "BQ_LOCATION_MISMATCH"
+
+
+class BqQueryFailedError(PlanningError):
+    code = "BQ_QUERY_FAILED"
+
+
+class ActualsMarketMappingRequiredError(PlanningError):
+    code = "ACTUALS_MARKET_MAPPING_REQUIRED"
+
+
+class ActualsChannelMappingRequiredError(PlanningError):
+    code = "ACTUALS_CHANNEL_MAPPING_REQUIRED"
+
+
+class ActualsDuplicateGrainError(PlanningError):
+    code = "ACTUALS_DUPLICATE_GRAIN"

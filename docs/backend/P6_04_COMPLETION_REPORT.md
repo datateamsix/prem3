@@ -123,7 +123,7 @@ Do not persist amounts. Re-resolve approved totals from Drive via transient `Por
 
 ## R. Blockers
 
-`P6_03_PRODUCTION_ACTUALS_QUERY_PENDING`: production BigQuery actual-spend fetch is not implemented. P6-03A worktree does not exist. P6-04 stays fail-closed and does not redefine actuals contracts. Production consumption source is empty unless a complete contract is injected — incomplete → not ready.
+`P6_03_PRODUCTION_ACTUALS_QUERY_PENDING` was the P6-04-era fail-closed gap. P6-03A implements production fetch; P6-04 contracts are unchanged. Production consumption source is empty unless a complete contract is injected — incomplete → not ready.
 
 ## War-room checkpoint
 
@@ -132,12 +132,12 @@ P6-00  ✅ Architecture Freeze
 P6-01  ✅ Drive-native Investment Plan
 P6-02  ✅ Portfolio Snapshot
 P6-03  ✅ Actuals + Coverage + Observations
-P6-03A ⏳ pending / fail-closed — Production BQ Actuals adapter (no worktree)
+P6-03A ✅ Production BigQuery actuals (`actual_spend_bq_query/v1`) on `feature/prem3-p6-03a-production-bq-actuals`
 P6-04  ✅ Optimization Readiness + Portfolio-to-Model Mapping
 P6-05  ⏭ Native Meridian Fixed-Budget Optimization
 ```
 
 - Final committed HEAD: this P6-04 checkpoint on `feature/prem3-p6-04-optimization-readiness`
 - Uncommitted: `uv.lock` (local `uv sync`; left untracked)
-- Environment: none blocking P6-04. P6-03A production actuals remain pending.
+- Environment: none blocking P6-04. Production actuals are implemented on P6-03A; missing/unauthorized sources stay fail-closed.
 - Next executable mission: **P6-05 Native Meridian Fixed-Budget Optimization**

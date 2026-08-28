@@ -46,6 +46,7 @@ from app.investment_optimization.run_service import OptimizationRunService
 from app.investment_optimization.service import OptimizationReadinessService
 from app.investment_optimization.store import InMemoryOptimizationMetadataStore
 from app.investment_planning.actuals import DataFoundationActualSpendAdapter
+from app.investment_planning.bigquery_actuals import BigQueryActualSpendAdapter
 from app.investment_planning.errors import PlanningError
 from app.investment_planning.firestore import FirestoreInvestmentPlanningStore
 from app.investment_planning.markets import IdentityGraphMarketDirectory
@@ -289,7 +290,15 @@ def create_app(
         drive_bindings=google_services["drive"],
         business_iq=business_iq_store,
         markets=IdentityGraphMarketDirectory(identity_graph_store),
-        actuals=DataFoundationActualSpendAdapter(data_foundation_store),
+        actuals=DataFoundationActualSpendAdapter(
+            data_foundation_store,
+            rows=BigQueryActualSpendAdapter(
+                data_foundation_store,
+                bigquery=google_services["bq_client"],
+                repo=repo,
+                connections=google_services["connections"],
+            ),
+        ),
     )
     if isinstance(repo, FirestoreControlPlaneRepository):
         optimization_store = FirestoreOptimizationMetadataStore(repo.client)

@@ -13,6 +13,7 @@ from app.control_plane.serialization import (
     _normalize_outbound,
 )
 from app.investment_planning.contracts import (
+    ActualSpendQueryReceipt,
     ActualSpendSourceRef,
     BudgetColumnMapping,
     BudgetDriveSourceVersion,
@@ -35,6 +36,7 @@ COL_MAPPINGS = "budget_column_mappings"
 COL_RECEIPTS = "investment_plan_receipts"
 COL_SNAPSHOTS = "portfolio_snapshot_refs"
 COL_ACTUALS_SOURCES = "actual_spend_source_refs"
+COL_ACTUALS_QUERY_RECEIPTS = "actual_spend_query_receipts"
 COL_INDEX = "investment_planning_index"
 
 T = TypeVar("T", bound=BaseModel)
@@ -202,6 +204,16 @@ class FirestoreInvestmentPlanningStore:
                 tenant_id=safe.tenant_id,
                 workspace_id=safe.workspace_id,
             )
+        elif isinstance(safe, ActualSpendQueryReceipt):
+            self._workspace(safe.tenant_id, safe.workspace_id).collection(
+                COL_ACTUALS_QUERY_RECEIPTS
+            ).document(safe.query_receipt_id).set(_planning_to_document(safe))
+            self._put_index(
+                kind="actuals_query_receipt",
+                resource_id=safe.query_receipt_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.workspace_id,
+            )
         return safe
 
     def get_plan(self, plan_id: str) -> InvestmentPlan | None:
@@ -282,4 +294,12 @@ class FirestoreInvestmentPlanningStore:
             kind="actuals_source",
             resource_id=actuals_source_id,
             collection=COL_ACTUALS_SOURCES,
+        )
+
+    def get_query_receipt(self, query_receipt_id: str) -> ActualSpendQueryReceipt | None:
+        return self._load(
+            ActualSpendQueryReceipt,
+            kind="actuals_query_receipt",
+            resource_id=query_receipt_id,
+            collection=COL_ACTUALS_QUERY_RECEIPTS,
         )

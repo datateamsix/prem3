@@ -259,6 +259,48 @@ class ActualSpendSourceRef(FrozenModel):
         return self
 
 
+class ActualSpendQueryReceipt(FrozenModel):
+    """Metadata-only proof of a production actual-spend query. No amounts."""
+
+    sensitive_data_class: ClassVar[SensitiveDataClass] = _META
+    query_receipt_id: str
+    tenant_id: str
+    project_id: str
+    workspace_id: str
+    actuals_source_id: str
+    source_fingerprint: str
+    period: str
+    query_template_version: str
+    mapping_fingerprint: str
+    row_count: int
+    as_of_time: datetime | None = None
+    status: str
+    issues: tuple[str, ...] = ()
+    created_at: datetime
+    fingerprint: str
+
+    @model_validator(mode="after")
+    def _project_is_workspace_alias(self) -> ActualSpendQueryReceipt:
+        if self.project_id != self.workspace_id:
+            raise ValueError("project_id must equal workspace_id (Project/Workspace alias).")
+        return self
+
+    @model_validator(mode="after")
+    def _ids(self) -> ActualSpendQueryReceipt:
+        validate_resource_identifier(self.query_receipt_id, field="query_receipt_id")
+        validate_resource_identifier(self.tenant_id, field="tenant_id")
+        validate_resource_identifier(self.project_id, field="project_id")
+        return self
+
+    @model_validator(mode="after")
+    def _no_amount_fields(self) -> ActualSpendQueryReceipt:
+        payload = self.model_dump()
+        forbidden = {"amount", "spend", "allocations", "value"}
+        if forbidden.intersection(payload):
+            raise ValueError("ActualSpendQueryReceipt must not carry amount fields.")
+        return self
+
+
 class ActualSpendAllocation(FrozenModel):
     """Transient Decimal actual-spend row. Never persisted to Firestore."""
 
@@ -416,6 +458,7 @@ METADATA_MODELS: tuple[type[FrozenModel], ...] = (
     PortfolioSnapshotRef,
     ExposureGuardrailRef,
     ActualSpendSourceRef,
+    ActualSpendQueryReceipt,
     PortfolioEvidenceCoverageItem,
     PortfolioEvidenceCoverage,
     PortfolioSourceFreshness,

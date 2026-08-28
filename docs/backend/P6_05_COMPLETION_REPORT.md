@@ -75,7 +75,7 @@ Latest run `OPTIMIZATION_RUNNING` / `OPTIMIZATION_COMPLETE` after an accepted mo
 
 ## O. P6-03A
 
-`P6_03_PRODUCTION_ACTUALS_QUERY_PENDING` remains fail-closed. PLAN_ONLY fixed-budget works.
+P6-03A production fetch is implemented independently. PLAN_ONLY fixed-budget works without actuals.
 
 ## P. Tests
 
@@ -111,7 +111,7 @@ Plan revision, proposal approval, flexible budget, P6-07 min/max, CVaR, frontier
 11. Worker: sibling entrypoint; fit worker untouched.
 12. Home: running/complete overlay; accepted-model gate kept.
 13. Privacy: Firestore metadata only.
-14. P6-03A: still fail-closed.
+14. P6-03A: production fetch is implemented independently; missing/unauthorized sources stay fail-closed.
 15. Tests: required names + P6-00/P6-04 green.
 16. OpenAPI/schema exported.
 17. ADRs 037–048.

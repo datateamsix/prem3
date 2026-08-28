@@ -11,7 +11,11 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from app.data_foundation.contracts import SourceAssessment, SourceBinding
 from app.data_foundation.enums import LocationType, QualityStatus
 from app.data_foundation.store import DataFoundationStore
-from app.investment_planning.contracts import ActualSpendAllocation, ActualSpendSourceRef
+from app.investment_planning.contracts import (
+    ActualSpendAllocation,
+    ActualSpendQueryReceipt,
+    ActualSpendSourceRef,
+)
 from app.investment_planning.enums import (
     ActualsFreshnessState,
     ActualSpendAuthority,
@@ -19,11 +23,19 @@ from app.investment_planning.enums import (
     ActualSpendSourceStatus,
 )
 from app.investment_planning.errors import (
+    ActualsChannelMappingRequiredError,
+    ActualsDuplicateGrainError,
+    ActualsMarketMappingRequiredError,
     ActualsSchemaInvalidError,
     ActualsSourceNotConfiguredError,
     ActualsSourceUnavailableError,
+    BqAuthorizationFailedError,
+    BqLocationMismatchError,
+    BqQueryFailedError,
+    BqSourceNotFoundError,
     CurrencyReviewRequiredError,
     PeriodMappingRequiredError,
+    ProductionActualsSourceNotReadyError,
     UnresolvedChannelIdentityError,
     UnresolvedMarketIdentityError,
 )
@@ -116,11 +128,19 @@ class ActualSpendQueryResult:
     allocations: tuple[ActualSpendAllocation, ...]
     freshness: ActualsFreshnessState
     error_code: str | None = None
+    query_receipt: ActualSpendQueryReceipt | None = None
 
 
 @runtime_checkable
 class ActualSpendRowSource(Protocol):
-    def fetch_rows(self, source: ActualSpendSourceRef) -> tuple[RawActualSpendRow, ...]: ...
+    def fetch_rows(
+        self,
+        source: ActualSpendSourceRef,
+        *,
+        fiscal_year: int | None = None,
+        fiscal_start_month: int = 1,
+        known_market_ids: frozenset[str] | set[str] | None = None,
+    ) -> tuple[RawActualSpendRow, ...]: ...
 
 
 @runtime_checkable
@@ -144,8 +164,15 @@ class InMemoryActualSpendRowSource:
     def __init__(self, rows: tuple[RawActualSpendRow, ...] = ()) -> None:
         self._rows = rows
 
-    def fetch_rows(self, source: ActualSpendSourceRef) -> tuple[RawActualSpendRow, ...]:
-        del source
+    def fetch_rows(
+        self,
+        source: ActualSpendSourceRef,
+        *,
+        fiscal_year: int | None = None,
+        fiscal_start_month: int = 1,
+        known_market_ids: frozenset[str] | set[str] | None = None,
+    ) -> tuple[RawActualSpendRow, ...]:
+        del source, fiscal_year, fiscal_start_month, known_market_ids
         return self._rows
 
 
@@ -339,6 +366,11 @@ class DataFoundationActualSpendAdapter:
         self._store = store
         self._rows = rows
 
+    @property
+    def last_receipt(self) -> ActualSpendQueryReceipt | None:
+        receipt = getattr(self._rows, "last_receipt", None)
+        return receipt if isinstance(receipt, ActualSpendQueryReceipt) else None
+
     def resolve_source(self, *, tenant_id: str, project_id: str) -> ActualSpendSourceRef | None:
         candidates = [
             binding
@@ -419,13 +451,34 @@ class DataFoundationActualSpendAdapter:
                 code="ACTUALS_SCHEMA_INVALID",
             )
         if self._rows is None:
-            raise ActualsSourceUnavailableError(
-                "Governed actual-spend source could not be queried. "
-                f"{P6_03_PRODUCTION_ACTUALS_QUERY_PENDING}.",
-                code="ACTUALS_SOURCE_UNAVAILABLE",
+            raise ProductionActualsSourceNotReadyError(
+                "Governed actual-spend source is not ready for production query.",
+                code="PRODUCTION_ACTUALS_SOURCE_NOT_READY",
             )
         try:
-            raw = self._rows.fetch_rows(source)
+            raw = self._rows.fetch_rows(
+                source,
+                fiscal_year=fiscal_year,
+                fiscal_start_month=fiscal_start_month,
+                known_market_ids=known_market_ids,
+            )
+        except (
+            ProductionActualsSourceNotReadyError,
+            BqAuthorizationFailedError,
+            BqSourceNotFoundError,
+            BqLocationMismatchError,
+            BqQueryFailedError,
+            ActualsMarketMappingRequiredError,
+            ActualsChannelMappingRequiredError,
+            ActualsDuplicateGrainError,
+            PeriodMappingRequiredError,
+            CurrencyReviewRequiredError,
+            ActualsSchemaInvalidError,
+            ActualsSourceNotConfiguredError,
+            UnresolvedMarketIdentityError,
+            UnresolvedChannelIdentityError,
+        ):
+            raise
         except Exception as exc:
             raise ActualsSourceUnavailableError(
                 "Governed actual-spend source could not be queried.",
@@ -439,6 +492,11 @@ class DataFoundationActualSpendAdapter:
             known_market_ids=known_market_ids,
             expected_currency=expected_currency,
         )
+
+
+def _adapter_receipt(adapter: ActualSpendQuery) -> ActualSpendQueryReceipt | None:
+    receipt = getattr(adapter, "last_receipt", None)
+    return receipt if isinstance(receipt, ActualSpendQueryReceipt) else None
 
 
 def query_actuals(
@@ -481,12 +539,34 @@ def query_actuals(
             known_market_ids=known_market_ids,
             expected_currency=expected_currency,
         )
+    except ProductionActualsSourceNotReadyError:
+        return ActualSpendQueryResult(
+            source=source,
+            allocations=(),
+            freshness=freshness,
+            error_code="PRODUCTION_ACTUALS_SOURCE_NOT_READY",
+            query_receipt=_adapter_receipt(adapter),
+        )
     except ActualsSourceUnavailableError:
         return ActualSpendQueryResult(
             source=source,
             allocations=(),
             freshness=freshness,
             error_code="ACTUALS_SOURCE_UNAVAILABLE",
+            query_receipt=_adapter_receipt(adapter),
+        )
+    except (
+        BqAuthorizationFailedError,
+        BqSourceNotFoundError,
+        BqLocationMismatchError,
+        BqQueryFailedError,
+    ) as exc:
+        return ActualSpendQueryResult(
+            source=source,
+            allocations=(),
+            freshness=freshness,
+            error_code=exc.code,
+            query_receipt=_adapter_receipt(adapter),
         )
     except (
         PeriodMappingRequiredError,
@@ -495,6 +575,9 @@ def query_actuals(
         UnresolvedChannelIdentityError,
         ActualsSchemaInvalidError,
         ActualsSourceNotConfiguredError,
+        ActualsMarketMappingRequiredError,
+        ActualsChannelMappingRequiredError,
+        ActualsDuplicateGrainError,
     ):
         raise
     return ActualSpendQueryResult(
@@ -502,4 +585,5 @@ def query_actuals(
         allocations=allocations,
         freshness=freshness,
         error_code=None,
+        query_receipt=_adapter_receipt(adapter),
     )

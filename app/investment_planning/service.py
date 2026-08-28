@@ -526,6 +526,8 @@ class InvestmentPlanService:
         )
         if actuals_result.source is not None and actuals_result.error_code is None:
             self._store.put(actuals_result.source)
+        if actuals_result.query_receipt is not None:
+            self._store.put(actuals_result.query_receipt)
         now = datetime.now(UTC)
         fingerprint = metadata_fingerprint(
             {

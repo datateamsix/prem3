@@ -20,7 +20,7 @@ Read-only surfaces (`app/modeling/mmm/**`, `app/modeling/mta/**`, workers, `app/
 - `ActualSpendAllocation` — transient Decimal row. Type-rejected by `assert_metadata_only`.
 - `ActualSpendQuery` port:
   - `TestOnlyActualSpendAdapter` — `SYNTHETIC` / `TEST_ONLY`; cannot be labeled customer-governed.
-  - `DataFoundationActualSpendAdapter` — existing `SourceBinding` with `date` + `market_id` + `channel_id` + `spend` + `currency` + timezone. Consumes DF freshness/quality. Query uses an injected `ActualSpendRowSource`. Production BigQuery fetch is `P6_03_PRODUCTION_ACTUALS_QUERY_PENDING`.
+  - `DataFoundationActualSpendAdapter` — existing `SourceBinding` with `date` + `market_id` + `channel_id` + `spend` + `currency` + timezone. Consumes DF freshness/quality. Production BigQuery fetch is `BigQueryActualSpendAdapter` (`actual_spend_bq_query/v1`; see P6-03A).
 
 Missing binding → `ACTUALS_SOURCE_NOT_CONFIGURED`. Query failure → `ACTUALS_SOURCE_UNAVAILABLE`. Never fabricate `PLAN_AND_ACTUALS` / `ACTUALS_ONLY`. `canonical_media` is not actual-spend authority.
 
@@ -107,4 +107,4 @@ P6-04 still owns `OPTIMIZATION_READY`, portfolio-to-model mapping, and Meridian 
 
 ## P. Blockers
 
-`P6_03_PRODUCTION_ACTUALS_QUERY_PENDING`: production BigQuery actual-spend fetch is not implemented. A governed DF binding without a usable row source is `ACTUALS_SOURCE_UNAVAILABLE` (stay `PLAN_ONLY` if a plan exists). Never fabricate `ACTUALS_ONLY` or `PLAN_AND_ACTUALS`.
+Production BigQuery actual-spend fetch is closed on P6-03A (`feature/prem3-p6-03a-production-bq-actuals`). A governed DF binding without a usable/authorized source stays fail-closed (`PRODUCTION_ACTUALS_SOURCE_NOT_READY` / `BQ_*`) and does not fabricate `ACTUALS_ONLY` or `PLAN_AND_ACTUALS`. Live customer-cloud query proof is not a P6-03 closeout gate.

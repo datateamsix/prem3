@@ -14,7 +14,7 @@ Authenticated human POST (`require_human_approver`). Service accounts cannot dis
 
 - `MMMModelVersion` / FitPlan / acceptance
 - Customer Drive plan bytes
-- Production BigQuery actuals (`P6_03_PRODUCTION_ACTUALS_QUERY_PENDING` stays fail-closed)
+- Production BigQuery actuals (P6-03A retrieves them; they are not mutated here and are not the fixed budget)
 
 ## Budget authority
 
