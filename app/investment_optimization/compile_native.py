@@ -75,9 +75,15 @@ def compile_native_spec(
     start_date = None if assumptions is None else assumptions.period_start
     end_date = None if assumptions is None else assumptions.period_end
     geos = _selected_geos(constraint_set)
+    # Native 1.8.0 `_validate_budget` rejects `budget` when `fixed_budget=False`.
+    native_budget = (
+        None
+        if budget_mode is OptimizationBudgetMode.FLEXIBLE or budget_decimal is None
+        else float_from_decimal(budget_decimal)
+    )
     spec = NativeOptimizeSpec(
         fixed_budget=budget_mode is OptimizationBudgetMode.FIXED,
-        budget=None if budget_decimal is None else float_from_decimal(budget_decimal),
+        budget=native_budget,
         pct_of_spend=shares,
         spend_constraint_lower=lower,
         spend_constraint_upper=upper,
@@ -150,29 +156,23 @@ def _spend_box(
 
     bounds = constraint_set.total_budget_bounds
     if budget_mode is OptimizationBudgetMode.FLEXIBLE and bounds is not None:
+        # Native 1.8.0 has no B_min/B_max kwarg and forbids `budget` on the
+        # flexible path. Total bounds stay PreM3 feasibility + post-validate.
+        # Channel L/U still compile against the approved mix / baseline.
         lower_total = bounds.lower if bounds.lower is not None else Decimal("0")
         upper_total = bounds.upper if bounds.upper is not None else approved * Decimal("2")
         if lower_total > upper_total:
             raise FlexibleBudgetApiUnsupportedError("B_min must not exceed B_max.")
-        midpoint = round_money((lower_total + upper_total) / Decimal("2"))
-        if midpoint <= 0:
-            raise FlexibleBudgetApiUnsupportedError(
-                "Native spend-box compilation requires a positive budget center."
-            )
-        scalar_l = float_from_decimal((upper_total - lower_total) / (lower_total + upper_total))
-        if scalar_l < 0 or scalar_l > 1:
-            raise FlexibleBudgetApiUnsupportedError(
-                "Native spend_constraint_lower must be in [0, 1]; B_min/B_max cannot be encoded."
-            )
-        scalar_u = scalar_l
+        default_l = PINNED_FLEXIBLE_SPEND_CONSTRAINT
+        default_u = PINNED_FLEXIBLE_SPEND_CONSTRAINT
         lowers, uppers = _per_channel_constraints(
             vector=vector,
             constraint_set=constraint_set,
-            budget=midpoint,
-            default_lower=scalar_l,
-            default_upper=scalar_u,
+            budget=approved,
+            default_lower=default_l,
+            default_upper=default_u,
         )
-        return midpoint, lowers, uppers
+        return approved, lowers, uppers
 
     budget = constraint_set.total_budget or approved
     default_l = (

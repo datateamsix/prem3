@@ -75,6 +75,16 @@ Required suite: **332 passed** (2026-08-27). Ruff clean. Schema/OpenAPI `--check
 
 Required P6-07 modules: `test_p6_07_assumptions.py`, `test_p6_07_constraints.py`, `test_p6_07_unsupported.py`, `test_p6_07_flexible.py`, `test_p6_07_privacy_http.py`.
 
+## Native runtime proof (follow-up)
+
+Isolated Python 3.12 interpreter with `google-meridian[schema]==1.8.0` (optimizer-worker pin family; same isolated runtime as P6-05/MMM, not the Python 3.13 ADK venv). Command:
+
+```bash
+PYTHONPATH=. .local/meridian312/Scripts/python.exe -m pytest tests/unit/investment_optimization/test_p6_07_native_meridian_runtime.py
+```
+
+`meridian.version.__version__ == 1.8.0`. Flexible kwargs omit `budget` (`_validate_budget`). Fixed path still sends `fixed_budget=True`, explicit `budget`, ±0.3, `gtol=0.0001`.
+
 ## Blockers
 
 None for the P6-07 contract. Live Meridian 1.8.0 flexible dispatch still depends on an accepted-model optimizer artifact. Exposure/CVaR remain P6-08/P6-09. P6-03A is not integrated.

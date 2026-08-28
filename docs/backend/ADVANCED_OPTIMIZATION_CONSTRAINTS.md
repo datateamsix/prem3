@@ -37,6 +37,6 @@ Percent movement at zero baseline sets `percent_unavailable` / `percent_change_u
 
 Channel min/max, locked lines, and movement compile to per-channel `spend_constraint_lower` / `spend_constraint_upper` versus the native spend-box center. Experiment reserve is subtracted from the native-optimizable total conceptually by holding reserve lines fixed on the portfolio.
 
-`B_min` / `B_max` are not native kwargs. They compile to a midpoint budget plus scalar L/U so the total box is `[B_min, B_max]` when L is in `[0, 1]`. Otherwise `FLEXIBLE_BUDGET_API_UNSUPPORTED`.
+`B_min` / `B_max` are not native kwargs. Native 1.8.0 `_validate_budget` rejects `budget` on the flexible path. Total bounds are feasibility + post-result checks. Line bounds compile to `spend_constraint_*` versus the approved mix; if `L_i` would fall outside `[0, 1]`, dispatch fails `FLEXIBLE_BUDGET_API_UNSUPPORTED`.
 
 Market / quarter / funnel group sums that cannot be expressed as `selected_geos` or a date window are feasibility-checked and post-validated. PreM3 does not write a group-sum solver.

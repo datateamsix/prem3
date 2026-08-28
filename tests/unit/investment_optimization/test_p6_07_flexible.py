@@ -63,6 +63,7 @@ def test_native_flexible_path() -> None:
     assert optimizer.specs
     spec = optimizer.specs[0]
     assert spec.fixed_budget is False
+    assert spec.budget is None
     assert spec.target_roi == 2.0
     assert spec.target_mroi is None
     payload = bound(

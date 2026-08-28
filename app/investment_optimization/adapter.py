@@ -178,7 +178,12 @@ class NativeMeridianFixedBudgetAdapter:
                 "gtol": spec.gtol,
                 "use_kpi": spec.use_kpi,
             }
-            if spec.budget is not None:
+            # Native 1.8.0 `_validate_budget`: `budget` is fixed-budget only.
+            if spec.fixed_budget:
+                if spec.budget is None:
+                    raise NativeOptimizerFailedError(
+                        "Fixed-budget native optimize requires an explicit budget."
+                    )
                 kwargs["budget"] = spec.budget
             if spec.target_roi is not None:
                 kwargs["target_roi"] = spec.target_roi

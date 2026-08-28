@@ -2,7 +2,7 @@
 
 P6-07 extends native Meridian `BudgetOptimizer` beyond fixed-budget allocation. There is no custom flexible-budget solver. Group-sum constraints that Meridian cannot encode are feasibility-checked and post-validated; they are not solved by PreM3.
 
-Pinned package: `google-meridian==1.8.0`. Source of truth for this mission: `meridian/analysis/optimizer.py` at tag `v1.8.0` (class `BudgetOptimizer.optimize` and `_validate_budget_flexibility`).
+Pinned package: `google-meridian==1.8.0`. Source of truth for this mission: `meridian/analysis/optimizer.py` at tag `v1.8.0` (class `BudgetOptimizer.optimize` and `_validate_budget`). `DataTensors` lives in `meridian.analysis.tensors`.
 
 ## Inspected `BudgetOptimizer.optimize` interface
 
@@ -36,6 +36,7 @@ BudgetOptimizer(meridian | analyzer).optimize(
 - `fixed_budget=True`: `target_roi` and `target_mroi` must be unset.
 - `fixed_budget=False`: exactly one of `target_roi` or `target_mroi` is required. Both set is invalid.
 - Native does **not** expose named `B_min` / `B_max`.
+- `_validate_budget` also forbids passing `budget` when `fixed_budget=False`. Flexible total bounds are PreM3 feasibility + post-result hard checks, not a native kwarg.
 
 ### Spend-box semantics (native)
 
@@ -48,7 +49,7 @@ upper_i = (1 + spend_constraint_upper_i) * budget * allocation_i
 
 Defaults: `0.3` for fixed budget, `1.0` for flexible (`spend_constraint_lower` must be in `[0, 1]`).
 
-PreM3 encodes `B_min`/`B_max` by choosing `budget` as the midpoint `(B_min + B_max) / 2` (or the approved total when bounds are absent) and compiling scalar `L`/`U` so the total box is `[B_min, B_max]`. Line bounds and movement limits compile to per-channel `L_i`/`U_i`. If `L_i` would fall outside `[0, 1]`, dispatch fails `FLEXIBLE_BUDGET_API_UNSUPPORTED`.
+Native flexible search does not take a total `budget`. PreM3 compiles line min/max, locks, and movement to per-channel `spend_constraint_lower`/`upper` versus the approved mix (`pct_of_spend`). `B_min`/`B_max` are not sent as kwargs; they are proven in feasibility and re-checked on the result. If a hard line bound cannot be encoded with native `L_i` in `[0, 1]`, dispatch fails `FLEXIBLE_BUDGET_API_UNSUPPORTED`.
 
 ### `new_data` / `DataTensors` (native)
 

@@ -264,7 +264,7 @@ Every hard constraint carries source, `HUMAN_CONFIRMED` | `BUSINESS_IQ_GOVERNED`
 
 ## ADR-P6-066 — B_min / B_max are PreM3 bounds, not native kwargs
 
-Meridian 1.8.0 has no named `B_min` / `B_max`. PreM3 compiles a spend-box center plus `spend_constraint_*` when that encoding is valid, then hard-checks the result total. Otherwise it refuses.
+Meridian 1.8.0 has no named `B_min` / `B_max`, and `_validate_budget` forbids the `budget` kwarg when `fixed_budget=False`. PreM3 compiles channel `spend_constraint_*` against the approved mix and hard-checks total bounds on the result. Otherwise it refuses.
 
 ## ADR-P6-067 — Financial value is never fabricated
 
