@@ -104,3 +104,11 @@ class WebhookAlreadyProcessedError(ControlPlaneError):
 
 class DatasetReparentDeniedError(ControlPlaneError):
     """Raised when a Dataset would be moved across workspace or tenant authority."""
+
+
+class MeasurementHomeConflictError(ControlPlaneError):
+    """Raised when a conflicted prem3_modeling binding is used as resource authority."""
+
+
+class TrackConfigurationImmutableError(ControlPlaneError):
+    """Raised when a consumed MeasurementTrack configuration would be rewritten."""

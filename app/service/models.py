@@ -47,11 +47,28 @@ class MeProjectCapacity(ApiModel):
     remaining_projects: int
 
 
+class MeProjectSummary(ApiModel):
+    project_id: str
+    name: str
+    status: str
+
+
+class MeEntitlementSummary(ApiModel):
+    plan_id: str
+    status: str
+    feature_summary: list[str]
+    capabilities: list[str] = Field(default_factory=list)
+
+
 class MeResponse(ApiModel):
     user: MeUser
     organization: MeOrganization
     plan: MePlan
     project_capacity: MeProjectCapacity
+    organizations: list[MeOrganization] = Field(default_factory=list)
+    current_organization: MeOrganization | None = None
+    project_summaries: list[MeProjectSummary] = Field(default_factory=list)
+    entitlement_summary: MeEntitlementSummary | None = None
 
 
 class PlanCatalogEntry(ApiModel):
@@ -78,6 +95,7 @@ class CreateWorkspaceRequest(ApiModel):
 
 class WorkspaceResponse(ApiModel):
     workspace_id: str
+    project_id: str | None = None
     name: str
     status: str
     created_at: datetime

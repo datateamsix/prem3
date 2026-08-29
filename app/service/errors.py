@@ -143,6 +143,30 @@ def project_limit_reached() -> APIError:
     )
 
 
+def measurement_home_conflict_denied() -> APIError:
+    return APIError(
+        code="MEASUREMENT_HOME_CONFLICT",
+        status=409,
+        title="Measurement Home namespace conflict",
+        detail=(
+            "A conflicted prem3_modeling Measurement Home cannot be used "
+            "as resource authority."
+        ),
+    )
+
+
+def track_configuration_immutable() -> APIError:
+    return APIError(
+        code="TRACK_CONFIGURATION_IMMUTABLE",
+        status=409,
+        title="MeasurementTrack configuration is immutable",
+        detail=(
+            "A consumed MeasurementTrack configuration cannot be rewritten. "
+            "Create a new configuration_version."
+        ),
+    )
+
+
 def billing_provider_not_configured() -> APIError:
     return APIError(
         code="BILLING_PROVIDER_NOT_CONFIGURED",

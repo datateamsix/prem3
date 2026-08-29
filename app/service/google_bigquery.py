@@ -18,6 +18,7 @@ from app.integrations.google.adapters import BigQueryClient, BigQueryTableInfo
 from app.service.entitlements import require_feature
 from app.service.errors import ProblemFieldError, resource_not_found, validation_error
 from app.service.google_oauth import GoogleConnectionService
+from app.service.measurement_home_guard import deny_conflicted_measurement_home
 
 
 class BigQueryBindingService:
@@ -35,6 +36,9 @@ class BigQueryBindingService:
     def get_binding(self, *, workspace_id: str) -> BigQueryWorkspaceBinding | None:
         require_feature(self._repo, Feature.DATA_UPLOAD)
         tenant = require_tenant()
+        deny_conflicted_measurement_home(
+            self._repo, tenant_id=tenant.tenant_id, workspace_id=workspace_id
+        )
         return self._repo.get_bigquery_binding(
             tenant_id=tenant.tenant_id, workspace_id=workspace_id
         )
@@ -82,6 +86,7 @@ class BigQueryBindingService:
         )
         if workspace is None:
             raise resource_not_found()
+        deny_conflicted_measurement_home(self._repo, workspace)
         connection = self._require_bq_connection(connection_id, write=True)
         access_token = self._connections.user_access_token(connection=connection)
         now = datetime.now(UTC)
@@ -156,6 +161,7 @@ class BigQueryBindingService:
         )
         if workspace is None:
             raise resource_not_found()
+        deny_conflicted_measurement_home(self._repo, workspace)
         connection = self._require_bq_connection(connection_id, write=False)
         return connection, self._connections.user_access_token(connection=connection)
 

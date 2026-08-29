@@ -31,6 +31,7 @@ from app.publish_execution.model_ready import (
 )
 from app.service.entitlements import require_feature
 from app.service.errors import resource_not_found
+from app.service.measurement_home_guard import deny_conflicted_measurement_home
 
 
 class PublishGovernanceService:
@@ -61,6 +62,9 @@ class PublishGovernanceService:
         )
         model_ready_verified = evidence is not None and bool(evidence.fingerprint)
         model_ready_fingerprint = None if evidence is None else evidence.fingerprint
+        deny_conflicted_measurement_home(
+            self._repo, tenant_id=tenant.tenant_id, workspace_id=workspace_id
+        )
         destinations: list[PublishDestination] = []
         drive = self._repo.get_drive_binding(
             tenant_id=tenant.tenant_id, workspace_id=workspace_id

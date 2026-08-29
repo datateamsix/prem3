@@ -113,7 +113,13 @@
         "SourceMaterializationResponse",
         "SourceMaterializationListResponse",
         "PublishExecutionResponse",
-        "PublishExecutionListResponse"
+        "PublishExecutionListResponse",
+        "ProjectResponse",
+        "CreateProjectRequest",
+        "ProjectListResponse",
+        "ProjectHomeReadModel",
+        "BusinessIqOverviewReadModel",
+        "DataFoundationOverviewReadModel"
       ],
       "python_module": "app.service.models",
       "python_qualnames": [
@@ -142,9 +148,15 @@
         "app.service.models.SourceMaterializationResponse",
         "app.service.models.SourceMaterializationListResponse",
         "app.service.models.PublishExecutionResponse",
-        "app.service.models.PublishExecutionListResponse"
+        "app.service.models.PublishExecutionListResponse",
+        "app.service.project_models.ProjectResponse",
+        "app.service.project_models.CreateProjectRequest",
+        "app.service.project_models.ProjectListResponse",
+        "app.service.project_models.ProjectHomeReadModel",
+        "app.service.project_models.BusinessIqOverviewReadModel",
+        "app.service.project_models.DataFoundationOverviewReadModel"
       ],
-      "sha256": "e8c14c8bfcda8c75ed151dd1435f19e185639d5e71b2a0282ec7979372205493"
+      "sha256": "1e56b53348ca1186011ad52deb21c1e5e3d19b9e5832a26df03d11b970345f6e"
     }
   ],
   "hash_algorithm": "sha256",

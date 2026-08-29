@@ -35,6 +35,7 @@ from app.control_plane.models import (
     GoogleConnection,
     GoogleOAuthTransaction,
     IdentityProviderOrganizationMapping,
+    MeasurementTrack,
     MembershipProjection,
     ProcessedWebhookEvent,
     StripeCustomerMapping,
@@ -58,6 +59,7 @@ from app.core.errors import (
     ProjectLimitReachedError,
     ProviderMappingConflictError,
     TenantNotFoundError,
+    TrackConfigurationImmutableError,
     WebhookAlreadyProcessedError,
     WorkspaceNotFoundError,
 )
@@ -75,6 +77,7 @@ class InMemoryControlPlaneRepository:
         self._identity_mappings: dict[str, IdentityProviderOrganizationMapping] = {}
         self._memberships: dict[str, MembershipProjection] = {}
         self._workspaces: dict[str, Workspace] = {}
+        self._tracks: dict[str, MeasurementTrack] = {}
         self._datasets: dict[str, Dataset] = {}
         self._entitlements: dict[str, EntitlementSnapshot] = {}
         self._customers: dict[str, StripeCustomerMapping] = {}
@@ -247,6 +250,123 @@ class InMemoryControlPlaneRepository:
                 }
             )
             return deepcopy(workspace)
+
+    def put_workspace(self, workspace: Workspace) -> Workspace:
+        with self._lock:
+            self._require_tenant_locked(workspace.tenant_id)
+            key = f"{workspace.tenant_id}/{workspace.workspace_id}"
+            current = self._workspaces.get(key)
+            if current is None:
+                raise WorkspaceNotFoundError("Workspace does not exist.")
+            now = datetime.now(UTC)
+            stored = workspace.model_copy(update={"updated_at": now})
+            if stored.status is not current.status:
+                return self._apply_workspace_status_locked(
+                    current, stored.status, now=now, metadata=stored
+                )
+            self._workspaces[key] = stored
+            return deepcopy(stored)
+
+    def update_workspace_status(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        status: WorkspaceStatus,
+    ) -> Workspace:
+        with self._lock:
+            current = self._require_workspace_locked(tenant_id, workspace_id)
+            return self._apply_workspace_status_locked(
+                current, status, now=datetime.now(UTC), metadata=current
+            )
+
+    def _apply_workspace_status_locked(
+        self,
+        current: Workspace,
+        status: WorkspaceStatus,
+        *,
+        now: datetime,
+        metadata: Workspace,
+    ) -> Workspace:
+        tenant = self._require_tenant_locked(current.tenant_id)
+        count = tenant.active_workspace_count
+        if current.status is WorkspaceStatus.ACTIVE and status is not WorkspaceStatus.ACTIVE:
+            count = max(0, count - 1)
+        elif current.status is not WorkspaceStatus.ACTIVE and status is WorkspaceStatus.ACTIVE:
+            entitlement = self._require_current_entitlement_locked(current.tenant_id)
+            if count >= entitlement.max_active_projects:
+                raise ProjectLimitReachedError(
+                    "Active Project capacity reached for current entitlement."
+                )
+            count += 1
+        stored = metadata.model_copy(
+            update={
+                "status": status,
+                "updated_at": now,
+                "archived_at": now if status is WorkspaceStatus.ARCHIVED else None,
+            }
+        )
+        self._workspaces[f"{current.tenant_id}/{current.workspace_id}"] = stored
+        self._tenants[current.tenant_id] = tenant.model_copy(
+            update={"active_workspace_count": count, "updated_at": now}
+        )
+        return deepcopy(stored)
+
+    def put_measurement_track(self, track: MeasurementTrack) -> MeasurementTrack:
+        with self._lock:
+            self._require_workspace_locked(track.tenant_id, track.workspace_id)
+            for other in self._tracks.values():
+                if (
+                    other.tenant_id == track.tenant_id
+                    and other.workspace_id == track.workspace_id
+                    and other.cycle_id == track.cycle_id
+                    and other.track_type is track.track_type
+                    and other.track_id != track.track_id
+                ):
+                    raise ProviderMappingConflictError(
+                        "One active track of each type is allowed per MeasurementCycle."
+                    )
+            key = f"{track.tenant_id}/{track.workspace_id}/{track.track_id}"
+            existing = self._tracks.get(key)
+            if (
+                existing is not None
+                and existing.is_consumed()
+                and existing.config != track.config
+                and existing.configuration_version == track.configuration_version
+            ):
+                raise TrackConfigurationImmutableError(
+                    "A consumed MeasurementTrack configuration cannot be rewritten."
+                )
+            self._tracks[key] = track
+            return deepcopy(track)
+
+    def get_measurement_track(
+        self, *, tenant_id: str, workspace_id: str, track_id: str
+    ) -> MeasurementTrack | None:
+        with self._lock:
+            track = self._tracks.get(f"{tenant_id}/{workspace_id}/{track_id}")
+            if track is None or track.tenant_id != tenant_id:
+                return None
+            return deepcopy(track)
+
+    def list_measurement_tracks(
+        self,
+        *,
+        tenant_id: str,
+        workspace_id: str,
+        cycle_id: str | None = None,
+    ) -> list[MeasurementTrack]:
+        with self._lock:
+            self._require_workspace_locked(tenant_id, workspace_id)
+            rows = [
+                deepcopy(track)
+                for track in self._tracks.values()
+                if track.tenant_id == tenant_id
+                and track.workspace_id == workspace_id
+                and (cycle_id is None or track.cycle_id == cycle_id)
+            ]
+            rows.sort(key=lambda item: (item.cycle_id, item.track_type.value, item.created_at))
+            return rows
 
     def list_datasets_for_workspace(
         self, *, tenant_id: str, workspace_id: str

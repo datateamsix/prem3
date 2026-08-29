@@ -96,6 +96,7 @@ from app.service.routers import (
     import_governance,
     internal_dispatch,
     materializations,
+    projects,
     publishes,
     runs,
     uploads,
@@ -267,6 +268,7 @@ def create_app(
     app.include_router(catalog.router)
     app.include_router(identity.router)
     app.include_router(workspaces.router)
+    app.include_router(projects.router)
     app.include_router(datasets.router)
     app.include_router(uploads.router)
     app.include_router(evaluations.router)
