@@ -1,11 +1,5 @@
 """prem3-api — authenticated product HTTP service.
 
-Local factory is fail-closed. Cloud runtime uses Firestore, Clerk, and Stripe
-when deployment configuration is present.
+Import ``create_app`` from ``app.service.app``. This package init stays empty so
+Cloud Run Jobs can import ``app.service.object_store`` without FastAPI.
 """
-
-from __future__ import annotations
-
-from app.service.app import create_app
-
-__all__ = ["create_app"]

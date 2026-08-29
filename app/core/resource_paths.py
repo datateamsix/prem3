@@ -62,6 +62,15 @@ def registry_overlay_prefix(tenant_id: str) -> str:
     )
 
 
+def modeling_artifact_prefix(tenant_id: str, workspace_id: str, model_version_id: str) -> str:
+    return _join_prefix(
+        ("tenant_id", tenant_id),
+        ("workspace_id", workspace_id),
+        ("literal", "modeling"),
+        ("model_version_id", model_version_id),
+    )
+
+
 def raw_upload_prefix(
     tenant_id: str,
     workspace_id: str,

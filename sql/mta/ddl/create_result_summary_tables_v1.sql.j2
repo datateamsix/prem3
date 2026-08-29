@@ -1,0 +1,126 @@
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_result_snapshots` (
+  result_snapshot_id STRING NOT NULL,
+  run_id STRING NOT NULL,
+  execution_plan_id STRING NOT NULL,
+  run_receipt_id STRING NOT NULL,
+  result_status STRING NOT NULL,
+  evidence_authority STRING NOT NULL,
+  fingerprint STRING NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_channel_results` (
+  result_snapshot_id STRING NOT NULL,
+  run_id STRING NOT NULL,
+  channel_id STRING NOT NULL,
+  channel_display_name STRING,
+  journey_presence_rate FLOAT64,
+  first_position_share FLOAT64,
+  middle_position_share FLOAT64,
+  last_position_share FLOAT64,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id, channel_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_model_comparison` (
+  result_snapshot_id STRING NOT NULL,
+  run_id STRING NOT NULL,
+  channel_id STRING NOT NULL,
+  model_type STRING NOT NULL,
+  attribution_share FLOAT64,
+  attributed_credit FLOAT64,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id, model_type, channel_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_channel_position_evidence` (
+  result_snapshot_id STRING NOT NULL,
+  run_id STRING NOT NULL,
+  channel_id STRING NOT NULL,
+  first_position_count INT64 NOT NULL,
+  middle_position_count INT64 NOT NULL,
+  last_position_count INT64 NOT NULL,
+  first_position_share FLOAT64 NOT NULL,
+  middle_position_share FLOAT64 NOT NULL,
+  last_position_share FLOAT64 NOT NULL,
+  journey_presence_count INT64 NOT NULL,
+  journey_presence_rate FLOAT64 NOT NULL,
+  policy_version STRING NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id, channel_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_model_sensitivity` (
+  result_snapshot_id STRING NOT NULL,
+  run_id STRING NOT NULL,
+  channel_id STRING NOT NULL,
+  dispersion FLOAT64,
+  sensitivity_label STRING,
+  policy_version STRING NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id, channel_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_journey_path_summary` (
+  result_snapshot_id STRING NOT NULL,
+  run_id STRING NOT NULL,
+  path_rank INT64 NOT NULL,
+  path_string STRING NOT NULL,
+  occurrences INT64 NOT NULL,
+  share_of_converting_paths FLOAT64,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_path_length_distribution` (
+  result_snapshot_id STRING NOT NULL,
+  run_id STRING NOT NULL,
+  touchpoint_count INT64 NOT NULL,
+  journey_count INT64 NOT NULL,
+  share FLOAT64 NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_time_to_conversion_distribution` (
+  result_snapshot_id STRING NOT NULL,
+  run_id STRING NOT NULL,
+  bucket_start FLOAT64 NOT NULL,
+  bucket_end FLOAT64,
+  unit STRING NOT NULL,
+  journey_count INT64 NOT NULL,
+  share FLOAT64 NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_channel_role_evidence` (
+  result_snapshot_id STRING NOT NULL,
+  run_id STRING NOT NULL,
+  channel_id STRING NOT NULL,
+  labels ARRAY<STRING>,
+  policy_version STRING NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id, channel_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_decision_intelligence_findings` (
+  brief_id STRING NOT NULL,
+  result_snapshot_id STRING NOT NULL,
+  finding_id STRING NOT NULL,
+  authority STRING NOT NULL,
+  statement STRING NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY result_snapshot_id;

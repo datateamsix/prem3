@@ -1,0 +1,36 @@
+-- Rebuild impacted conversion partitions; do not blindly append journeys.
+DELETE FROM `{{ project_id }}.{{ modeling_dataset }}.mta_journeys`
+WHERE conversion_date BETWEEN @affected_conversion_start AND @affected_conversion_end
+  AND conversion_event='{{ conversion_event }}'
+  AND lookback_window_days={{ lookback_window_days }}
+  AND channel_registry_version={{ channel_registry_version }}
+  AND channel_grouping_version={{ channel_grouping_version }};
+
+INSERT INTO `{{ project_id }}.{{ modeling_dataset }}.mta_journeys`
+SELECT
+  TO_HEX(SHA256(CONCAT(
+    C.conversion_id,'|','{{ input_config_fingerprint }}'
+  ))) AS journey_id,
+  C.subject_key,
+  C.conversion_id,
+  C.conversion_event,
+  C.conversion_ts,
+  C.conversion_date,
+  C.conversion_value,
+  ARRAY_AGG(T.canonical_channel_id ORDER BY T.touchpoint_ts) AS channels,
+  ARRAY_AGG(T.touchpoint_ts ORDER BY T.touchpoint_ts) AS touchpoint_timestamps,
+  COUNT(*) AS touchpoint_count,
+  STRING_AGG(T.canonical_channel_id,' > ' ORDER BY T.touchpoint_ts) AS path_string,
+  {{ lookback_window_days }} AS lookback_window_days,
+  {{ channel_registry_version }} AS channel_registry_version,
+  {{ channel_grouping_version }} AS channel_grouping_version,
+  '{{ input_config_fingerprint }}' AS input_config_fingerprint,
+  CURRENT_TIMESTAMP() AS refreshed_at
+FROM `{{ project_id }}.{{ modeling_dataset }}.mta_conversions` C
+JOIN `{{ project_id }}.{{ modeling_dataset }}.mta_touchpoints` T
+  ON T.subject_key=C.subject_key
+ AND T.touchpoint_ts<=C.conversion_ts
+ AND T.touchpoint_ts>=TIMESTAMP_SUB(C.conversion_ts,INTERVAL {{ lookback_window_days }} DAY)
+WHERE C.conversion_date BETWEEN @affected_conversion_start AND @affected_conversion_end
+  AND C.conversion_event='{{ conversion_event }}'
+GROUP BY C.subject_key,C.conversion_id,C.conversion_event,C.conversion_ts,C.conversion_date,C.conversion_value;

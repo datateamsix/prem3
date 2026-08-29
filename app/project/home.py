@@ -25,6 +25,7 @@ from app.data_foundation.enums import (
     SourceFoundationStatus,
 )
 from app.data_foundation.service import DataFoundationService
+from app.modeling.mmm.states import projected_track_state
 from app.project.capabilities import entitled_for_capability
 from app.project.enums import (
     DEFAULT_MMM_ENGINE,
@@ -123,6 +124,19 @@ def apply_project_fields(workspace: Workspace, updates: dict[str, Any]) -> Works
     return workspace.model_copy(update=payload)
 
 
+def _modeling_stage(modeling, workspace: Workspace, track: MeasurementTrack) -> str | None:
+    if modeling is None:
+        return None
+    current = modeling.current_for_cycle(
+        tenant_id=workspace.tenant_id,
+        project_id=workspace.workspace_id,
+        cycle_id=track.cycle_id,
+    )
+    if current is None:
+        return None
+    return projected_track_state(current.state)
+
+
 def next_action(
     action_type: NextActionType,
     *,
@@ -215,11 +229,13 @@ class ProjectHomeAssembler:
         business_iq: BusinessIqService,
         data_foundation: DataFoundationService,
         model_ready: ModelReadyEvidenceResolver | None = None,
+        modeling=None,
     ) -> None:
         self.repo = repo
         self.business_iq = business_iq
         self.data_foundation = data_foundation
         self.model_ready = model_ready
+        self.modeling = modeling
 
     def list_items(
         self, *, tenant_id: str, entitlement: EntitlementSnapshot
@@ -274,6 +290,7 @@ class ProjectHomeAssembler:
             tracks = [
                 self._track_summary(
                     track,
+                    workspace=workspace,
                     entitlement=entitlement,
                     foundation_ready=foundation_ready,
                     model_ready=model_ready if not historical else bool(track.latest_run_id),
@@ -281,7 +298,9 @@ class ProjectHomeAssembler:
                 )
                 for track in persisted
             ]
-        planning = self._planning(entitlement, False if historical else model_ready)
+        planning = self._planning(
+            entitlement, False if historical else model_ready, workspace=workspace
+        )
         attention = self._attention(workspace, biq, df, tracks, generated_at)
         return ProjectHomeReadModel(
             project=project_response(workspace),
@@ -638,6 +657,7 @@ class ProjectHomeAssembler:
         self,
         track: MeasurementTrack,
         *,
+        workspace: Workspace,
         entitlement: EntitlementSnapshot,
         foundation_ready: bool,
         model_ready: bool,
@@ -649,6 +669,7 @@ class ProjectHomeAssembler:
                 model_ready=model_ready,
                 latest_run_id=latest_run_id,
                 entitled=entitled_for_capability(entitlement, CapabilityFamily.MMM),
+                modeling_stage=_modeling_stage(self.modeling, workspace, track),
             )
             context: list[str] = []
             engine = DEFAULT_MMM_ENGINE
@@ -660,10 +681,13 @@ class ProjectHomeAssembler:
                 foundation_ready=foundation_ready,
                 ga4_dataset_id=track.config.get("ga4_dataset_id"),
                 key_event_name=track.config.get("key_event_name"),
+                channel_grouping_version=track.config.get("channel_grouping_version"),
+                mta_input_ready=str(track.input_readiness_state or "") == "MTA_INPUT_READY"
+                or str(track.config.get("domain_stage") or "") == "MTA_INPUT_READY",
             )
             engine = None
             run_id = None
-            domain_state = None
+            domain_state = track.config.get("domain_stage")
         else:
             configured = bool(
                 track.config.get("target_metric") or track.config.get("forecast_horizon")
@@ -701,8 +725,17 @@ class ProjectHomeAssembler:
         )
 
     def _planning(
-        self, entitlement: EntitlementSnapshot, model_ready: bool
+        self,
+        entitlement: EntitlementSnapshot,
+        model_ready: bool,
+        *,
+        workspace: Workspace,
     ) -> list[PlanningCapabilitySummary]:
+        accepted = False
+        if self.modeling is not None:
+            accepted = self.modeling.has_accepted_model(
+                tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+            )
         rows: list[PlanningCapabilitySummary] = []
         for capability in (
             CapabilityFamily.FORECASTING,
@@ -713,15 +746,22 @@ class ProjectHomeAssembler:
                 capability=capability,
                 entitled=entitled_for_capability(entitlement, capability),
                 model_ready=model_ready,
+                model_accepted=accepted,
             )
             reason = None
             availability_value = availability.value
             if availability is CapabilityAvailability.UNAVAILABLE_ENTITLEMENT:
                 reason = "Not included in the current plan"
-            elif capability is CapabilityFamily.SCENARIO_SIMULATION:
+            elif (
+                not accepted
+                and capability is CapabilityFamily.SCENARIO_SIMULATION
+            ):
                 availability_value = "REQUIRES_SUPPORTED_BASELINE"
                 reason = "Requires a supported measurement baseline"
-            elif capability is CapabilityFamily.BUDGET_OPTIMIZATION:
+            elif (
+                not accepted
+                and capability is CapabilityFamily.BUDGET_OPTIMIZATION
+            ):
                 availability_value = "REQUIRES_ACCEPTED_MMM_MODEL"
                 reason = "Requires an accepted MMM model"
             rows.append(

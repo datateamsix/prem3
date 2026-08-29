@@ -60,6 +60,10 @@ class MarketingChannel(FrozenModel):
     active_to: str | None = None
     lifecycle_status: ChannelLifecycle = ChannelLifecycle.DECLARED
     material: bool = True
+    # Additive M5-01A binding — profile-local channel_id stays immutable identity;
+    # registry_channel_id pins the platform Channel Registry when present.
+    registry_channel_id: str | None = None
+    channel_registry_version: int | None = None
 
 
 class BusinessFact(FrozenModel):
@@ -196,6 +200,9 @@ class BusinessProfileSnapshot(FrozenModel):
     created_at: datetime
     created_by: str
     immutable: bool = True
+    # Additive M5-01A provenance — new snapshots may pin registry version;
+    # historical snapshots omit this and remain immutable.
+    channel_registry_version: int | None = None
 
 
 class BusinessContextReadyReceipt(FrozenModel):

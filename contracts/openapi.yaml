@@ -1,5 +1,25 @@
 components:
   schemas:
+    AcceptModelRequest:
+      additionalProperties: false
+      properties:
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+      title: AcceptModelRequest
+      type: object
+    AcknowledgeReviewRequest:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            type: string
+          title: Items
+          type: array
+      title: AcknowledgeReviewRequest
+      type: object
     ApprovePlanRequest:
       additionalProperties: false
       properties:
@@ -16,6 +36,20 @@ components:
       required:
       - plan_id
       title: ApprovePlanRequest
+      type: object
+    ApproveProvisionRequest:
+      additionalProperties: false
+      properties:
+        approved:
+          default: true
+          title: Approved
+          type: boolean
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+      title: ApproveProvisionRequest
       type: object
     AttentionItem:
       additionalProperties: false
@@ -466,6 +500,32 @@ components:
           type: array
       title: BusinessProfileRequest
       type: object
+    CanonicalChannelView:
+      additionalProperties: false
+      properties:
+        channel_family_id:
+          title: Channel Family Id
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        display_name:
+          title: Display Name
+          type: string
+        mmm_allowed:
+          title: Mmm Allowed
+          type: boolean
+        mta_default:
+          title: Mta Default
+          type: boolean
+      required:
+      - channel_id
+      - display_name
+      - channel_family_id
+      - mmm_allowed
+      - mta_default
+      title: CanonicalChannelView
+      type: object
     CheckoutSessionRequest:
       additionalProperties: false
       properties:
@@ -516,6 +576,12 @@ components:
       - question
       title: ClarificationCreateRequest
       type: object
+    ComparisonMetric:
+      enum:
+      - ATTRIBUTION_SHARE
+      - ATTRIBUTED_CREDIT
+      title: ComparisonMetric
+      type: string
     CompileFoundationPlanRequest:
       additionalProperties: false
       properties:
@@ -698,6 +764,83 @@ components:
       required:
       - upload_id
       title: CreateEvaluationRequest
+      type: object
+    CreateMTARunRequest:
+      additionalProperties: false
+      description: Customer create-run body — no BQ/GCS/authority fields allowed.
+      properties:
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+      title: CreateMTARunRequest
+      type: object
+    CreateModelDesignRequest:
+      additionalProperties: false
+      properties:
+        business_profile_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Profile Snapshot Id
+        compute_profile:
+          default: CPU_TEST
+          title: Compute Profile
+          type: string
+        include_ambiguous_promotion:
+          default: false
+          title: Include Ambiguous Promotion
+          type: boolean
+        include_experiment_prior:
+          default: false
+          title: Include Experiment Prior
+          type: boolean
+        include_insufficient_controls:
+          default: false
+          title: Include Insufficient Controls
+          type: boolean
+        kpi:
+          default: revenue
+          title: Kpi
+          type: string
+        media_channels:
+          items:
+            type: string
+          title: Media Channels
+          type: array
+        model_ready_manifest_fingerprint:
+          title: Model Ready Manifest Fingerprint
+          type: string
+        model_ready_manifest_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Ready Manifest Ref
+        model_ready_run_id:
+          title: Model Ready Run Id
+          type: string
+        model_window_end:
+          title: Model Window End
+          type: string
+        model_window_start:
+          title: Model Window Start
+          type: string
+        rf_channels:
+          items:
+            type: string
+          title: Rf Channels
+          type: array
+        scope:
+          default: GEO
+          title: Scope
+          type: string
+      required:
+      - model_ready_run_id
+      - model_ready_manifest_fingerprint
+      - model_window_start
+      - model_window_end
+      title: CreateModelDesignRequest
       type: object
     CreateProjectRequest:
       additionalProperties: false
@@ -993,6 +1136,146 @@ components:
       - updated_at
       title: DatasetResponse
       type: object
+    DecisionActionRequest:
+      additionalProperties: false
+      properties:
+        chosen_value:
+          title: Chosen Value
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+      title: DecisionActionRequest
+      type: object
+    DecisionIntelligenceFinding:
+      additionalProperties: false
+      properties:
+        affected_channels:
+          default: []
+          items:
+            type: string
+          title: Affected Channels
+          type: array
+        authority:
+          $ref: '#/components/schemas/MTAFindingAuthority'
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        finding_id:
+          title: Finding Id
+          type: string
+        limitations:
+          default: []
+          items:
+            type: string
+          title: Limitations
+          type: array
+        materiality:
+          default: CONTEXTUAL
+          title: Materiality
+          type: string
+        statement:
+          title: Statement
+          type: string
+        title:
+          title: Title
+          type: string
+      required:
+      - finding_id
+      - authority
+      - title
+      - statement
+      title: DecisionIntelligenceFinding
+      type: object
+    DecisionIntelligenceRecommendation:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/MTAFindingAuthority'
+          default: RECOMMENDATION
+        counterevidence_refs:
+          default: []
+          items:
+            type: string
+          title: Counterevidence Refs
+          type: array
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        recommendation_id:
+          title: Recommendation Id
+          type: string
+        recommended_action:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Recommended Action
+        requires_human_decision:
+          default: true
+          title: Requires Human Decision
+          type: boolean
+        statement:
+          title: Statement
+          type: string
+        uncertainty:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Uncertainty
+      required:
+      - recommendation_id
+      - statement
+      title: DecisionIntelligenceRecommendation
+      type: object
+    DecisionRequirement:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/MTAFindingAuthority'
+          default: DECISION_REQUIRED
+        decision_type:
+          title: Decision Type
+          type: string
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        requirement_id:
+          title: Requirement Id
+          type: string
+        statement:
+          title: Statement
+          type: string
+      required:
+      - requirement_id
+      - decision_type
+      - statement
+      title: DecisionRequirement
+      type: object
+    DisableScheduleRequest:
+      additionalProperties: false
+      properties:
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+        resource_name:
+          title: Resource Name
+          type: string
+      required:
+      - resource_name
+      title: DisableScheduleRequest
+      type: object
     DiscoveryHintsRequest:
       additionalProperties: false
       properties:
@@ -1088,6 +1371,115 @@ components:
       required:
       - connection_id
       title: DriveBindingSetupRequest
+      type: object
+    EdaAttentionView:
+      additionalProperties: false
+      properties:
+        attention_count:
+          title: Attention Count
+          type: integer
+        error_count:
+          title: Error Count
+          type: integer
+        max_official_severity:
+          title: Max Official Severity
+          type: string
+        review_recommended:
+          title: Review Recommended
+          type: boolean
+      required:
+      - review_recommended
+      - max_official_severity
+      - attention_count
+      - error_count
+      title: EdaAttentionView
+      type: object
+    EdaLatestRunView:
+      additionalProperties: false
+      properties:
+        official_gate_outcome:
+          title: Official Gate Outcome
+          type: string
+        official_gate_status:
+          title: Official Gate Status
+          type: string
+        premodel_run_id:
+          title: Premodel Run Id
+          type: string
+      required:
+      - premodel_run_id
+      - official_gate_status
+      - official_gate_outcome
+      title: EdaLatestRunView
+      type: object
+    EdaNextActionView:
+      additionalProperties: false
+      properties:
+        action_type:
+          title: Action Type
+          type: string
+        blocking:
+          title: Blocking
+          type: boolean
+        owner:
+          title: Owner
+          type: string
+        route_hint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Route Hint
+        statement:
+          title: Statement
+          type: string
+      required:
+      - action_type
+      - statement
+      - owner
+      - blocking
+      title: EdaNextActionView
+      type: object
+    EvaluateMTAReadinessRequest:
+      additionalProperties: false
+      properties:
+        channel_grouping_approved:
+          default: false
+          title: Channel Grouping Approved
+          type: boolean
+        conversion_volume_ok:
+          default: false
+          title: Conversion Volume Ok
+          type: boolean
+        daily_shards_continuous:
+          default: true
+          title: Daily Shards Continuous
+          type: boolean
+        ga4_dataset_exists:
+          default: false
+          title: Ga4 Dataset Exists
+          type: boolean
+        key_event_present:
+          default: false
+          title: Key Event Present
+          type: boolean
+        lookback_covered:
+          default: false
+          title: Lookback Covered
+          type: boolean
+        unmapped_share_ok:
+          default: true
+          title: Unmapped Share Ok
+          type: boolean
+        user_pseudo_id_coverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: User Pseudo Id Coverage
+        uses_intraday_for_canonical:
+          default: false
+          title: Uses Intraday For Canonical
+          type: boolean
+      title: EvaluateMTAReadinessRequest
       type: object
     EvaluationExecutionView:
       additionalProperties: false
@@ -1229,6 +1621,202 @@ components:
       required:
       - plan_id
       title: ExecutePlanRequest
+      type: object
+    ExtendedEdaReadModelResponse:
+      additionalProperties: false
+      properties:
+        attention:
+          $ref: '#/components/schemas/EdaAttentionView'
+        extended_report:
+          additionalProperties: true
+          title: Extended Report
+          type: object
+        latest_run:
+          $ref: '#/components/schemas/EdaLatestRunView'
+        next_actions:
+          items:
+            $ref: '#/components/schemas/EdaNextActionView'
+          title: Next Actions
+          type: array
+        official_report:
+          $ref: '#/components/schemas/OfficialEdaReportView'
+        status:
+          title: Status
+          type: string
+      required:
+      - status
+      - extended_report
+      - official_report
+      - latest_run
+      - attention
+      title: ExtendedEdaReadModelResponse
+      type: object
+    FitEvidenceLinks:
+      additionalProperties: false
+      properties:
+        fit_approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Fit Approval Id
+        fit_plan_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Fit Plan Fingerprint
+        fit_run_id:
+          title: Fit Run Id
+          type: string
+        model_plan_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Plan Fingerprint
+        model_plan_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Plan Id
+        model_version_id:
+          title: Model Version Id
+          type: string
+      required:
+      - fit_run_id
+      - model_version_id
+      title: FitEvidenceLinks
+      type: object
+    FitNextActionView:
+      additionalProperties: false
+      properties:
+        action_type:
+          title: Action Type
+          type: string
+        blocking:
+          default: true
+          title: Blocking
+          type: boolean
+        owner:
+          default: human
+          title: Owner
+          type: string
+        route_hint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Route Hint
+        statement:
+          title: Statement
+          type: string
+      required:
+      - action_type
+      - statement
+      title: FitNextActionView
+      type: object
+    FitRunResponse:
+      additionalProperties: false
+      properties:
+        dispatch_outcome:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dispatch Outcome
+        evidence:
+          anyOf:
+          - $ref: '#/components/schemas/FitEvidenceLinks'
+          - type: 'null'
+        exception_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Exception Type
+        failure_class:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Class
+        failure_stage:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Stage
+        fit_plan_fingerprint:
+          title: Fit Plan Fingerprint
+          type: string
+        fit_run_id:
+          title: Fit Run Id
+          type: string
+        library:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Library
+        library_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Library Version
+        meridian_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Meridian Version
+        model_version_id:
+          title: Model Version Id
+          type: string
+        next_actions:
+          items:
+            $ref: '#/components/schemas/FitNextActionView'
+          title: Next Actions
+          type: array
+        official_message:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Official Message
+        prem3_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Prem3 Summary
+        python_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Python Version
+        retry_semantics:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Retry Semantics
+        runtime_mode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Runtime Mode
+        sampling_started:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Sampling Started
+        status:
+          title: Status
+          type: string
+        tensorflow_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tensorflow Version
+        worker_image_digest:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Worker Image Digest
+      required:
+      - fit_run_id
+      - model_version_id
+      - status
+      - fit_plan_fingerprint
+      title: FitRunResponse
       type: object
     GoogleConnectionListResponse:
       additionalProperties: false
@@ -1373,6 +1961,107 @@ components:
       - status
       title: HealthResponse
       type: object
+    IdentifiabilityDecisionRequest:
+      additionalProperties: false
+      properties:
+        evidence_refs:
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        rationale:
+          title: Rationale
+          type: string
+        selected_alternative:
+          title: Selected Alternative
+          type: string
+        selected_configuration:
+          additionalProperties: true
+          title: Selected Configuration
+          type: object
+      required:
+      - selected_alternative
+      - rationale
+      title: IdentifiabilityDecisionRequest
+      type: object
+    IdentifiabilityReviewResponse:
+      additionalProperties: false
+      properties:
+        alternatives:
+          items:
+            additionalProperties: true
+            type: object
+          title: Alternatives
+          type: array
+        business_context:
+          additionalProperties: true
+          title: Business Context
+          type: object
+        counter_evidence:
+          items:
+            type: string
+          title: Counter Evidence
+          type: array
+        data_evidence:
+          additionalProperties: true
+          title: Data Evidence
+          type: object
+        decision_required:
+          default: true
+          title: Decision Required
+          type: boolean
+        eda_evidence:
+          additionalProperties: true
+          title: Eda Evidence
+          type: object
+        fingerprint:
+          title: Fingerprint
+          type: string
+        human_decision:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Human Decision
+        next_actions:
+          items:
+            type: string
+          title: Next Actions
+          type: array
+        official_constraint:
+          title: Official Constraint
+          type: string
+        package_id:
+          title: Package Id
+          type: string
+        prem3_interpretation:
+          title: Prem3 Interpretation
+          type: string
+        recommendation:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Recommendation
+        selected_alternative:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Selected Alternative
+        title:
+          default: IDENTIFIABILITY REVIEW
+          title: Title
+          type: string
+      required:
+      - package_id
+      - official_constraint
+      - prem3_interpretation
+      - business_context
+      - data_evidence
+      - eda_evidence
+      - fingerprint
+      title: IdentifiabilityReviewResponse
+      type: object
     ImportReadinessReceiptResponse:
       additionalProperties: false
       properties:
@@ -1491,6 +2180,23 @@ components:
       - generated_at
       title: IntelligenceHomeSummary
       type: object
+    IterateModelRequest:
+      additionalProperties: false
+      properties:
+        reason:
+          title: Reason
+          type: string
+      required:
+      - reason
+      title: IterateModelRequest
+      type: object
+    LimitationSeverity:
+      enum:
+      - INFO
+      - ATTENTION
+      - BLOCKING
+      title: LimitationSeverity
+      type: string
     LoadSnapshotRequest:
       additionalProperties: false
       properties:
@@ -1501,6 +2207,1469 @@ components:
       required:
       - snapshot
       title: LoadSnapshotRequest
+      type: object
+    MMMSummaryResponse:
+      additionalProperties: false
+      properties:
+        cycle_id:
+          title: Cycle Id
+          type: string
+        measurement_cycle:
+          anyOf:
+          - $ref: '#/components/schemas/MeasurementCycleView'
+          - type: 'null'
+        mmm_track:
+          anyOf:
+          - $ref: '#/components/schemas/MmmTrackWindowView'
+          - type: 'null'
+        model_ready:
+          default: false
+          title: Model Ready
+          type: boolean
+        model_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Version Id
+        project_id:
+          title: Project Id
+          type: string
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+        track_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Track Id
+      required:
+      - project_id
+      - cycle_id
+      title: MMMSummaryResponse
+      type: object
+    MTAChannelDetail:
+      additionalProperties: false
+      properties:
+        channel_display_name:
+          title: Channel Display Name
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        channel_result:
+          $ref: '#/components/schemas/MTAChannelResult'
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        interpretation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Interpretation
+        limitations:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTALimitation'
+          title: Limitations
+          type: array
+        markov_removal_effect:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Markov Removal Effect
+        observed_role:
+          default: []
+          items:
+            type: string
+          title: Observed Role
+          type: array
+        position:
+          anyOf:
+          - $ref: '#/components/schemas/MTAChannelPositionEvidence'
+          - type: 'null'
+        recommended_next_actions:
+          default: []
+          items:
+            type: string
+          title: Recommended Next Actions
+          type: array
+        sensitivity:
+          anyOf:
+          - $ref: '#/components/schemas/MTAModelSensitivityEvidence'
+          - type: 'null'
+        shapley_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Shapley Share
+        top_paths_containing_channel:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTAJourneyPathEvidence'
+          title: Top Paths Containing Channel
+          type: array
+      required:
+      - channel_id
+      - channel_display_name
+      - channel_result
+      title: MTAChannelDetail
+      type: object
+    MTAChannelPositionEvidence:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        denominator:
+          default: converted_journey_count
+          title: Denominator
+          type: string
+        first_position_count:
+          title: First Position Count
+          type: integer
+        first_position_share:
+          title: First Position Share
+          type: number
+        journey_presence_count:
+          title: Journey Presence Count
+          type: integer
+        journey_presence_rate:
+          title: Journey Presence Rate
+          type: number
+        last_position_count:
+          title: Last Position Count
+          type: integer
+        last_position_share:
+          title: Last Position Share
+          type: number
+        middle_position_count:
+          title: Middle Position Count
+          type: integer
+        middle_position_share:
+          title: Middle Position Share
+          type: number
+        policy_version:
+          default: position_policy_v1
+          title: Policy Version
+          type: string
+        single_touch_policy:
+          default: FIRST_AND_LAST
+          title: Single Touch Policy
+          type: string
+      required:
+      - channel_id
+      - first_position_count
+      - middle_position_count
+      - last_position_count
+      - first_position_share
+      - middle_position_share
+      - last_position_share
+      - journey_presence_count
+      - journey_presence_rate
+      title: MTAChannelPositionEvidence
+      type: object
+    MTAChannelResult:
+      additionalProperties: false
+      properties:
+        alignment_key:
+          anyOf:
+          - $ref: '#/components/schemas/MeasurementEvidenceAlignmentKey'
+          - type: 'null'
+        channel_display_name:
+          title: Channel Display Name
+          type: string
+        channel_id:
+          title: Channel Id
+          type: string
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        first_position_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: First Position Share
+        first_touch_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: First Touch Credit
+        first_touch_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: First Touch Share
+        journey_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Journey Count
+        journey_presence_rate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Journey Presence Rate
+        last_non_direct_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Non Direct Credit
+        last_non_direct_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Non Direct Share
+        last_position_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Position Share
+        last_touch_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Touch Credit
+        last_touch_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Last Touch Share
+        limitations:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTALimitation'
+          title: Limitations
+          type: array
+        linear_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Linear Credit
+        linear_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Linear Share
+        markov_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Markov Credit
+        markov_removal_effect:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Markov Removal Effect
+        markov_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Markov Share
+        metric_availability:
+          default: []
+          items:
+            $ref: '#/components/schemas/MetricAvailabilityItem'
+          title: Metric Availability
+          type: array
+        middle_position_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Middle Position Share
+        model_credit_dispersion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Model Credit Dispersion
+        model_credit_max:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Model Credit Max
+        model_credit_min:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Model Credit Min
+        model_credit_range:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Model Credit Range
+        model_sensitivity_label:
+          anyOf:
+          - $ref: '#/components/schemas/SensitivityLabel'
+          - type: 'null'
+        position_based_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Position Based Credit
+        position_based_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Position Based Share
+        role_profile:
+          default: []
+          items:
+            type: string
+          title: Role Profile
+          type: array
+        shapley_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Shapley Credit
+        shapley_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Shapley Share
+        time_decay_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Time Decay Credit
+        time_decay_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Time Decay Share
+        touchpoint_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Touchpoint Count
+      required:
+      - channel_id
+      - channel_display_name
+      title: MTAChannelResult
+      type: object
+    MTADecisionIntelligenceBrief:
+      additionalProperties: false
+      properties:
+        brief_id:
+          title: Brief Id
+          type: string
+        counter_evidence:
+          default: []
+          items:
+            type: string
+          title: Counter Evidence
+          type: array
+        cycle_id:
+          title: Cycle Id
+          type: string
+        decision_requirements:
+          default: []
+          items:
+            $ref: '#/components/schemas/DecisionRequirement'
+          title: Decision Requirements
+          type: array
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        executive_summary:
+          title: Executive Summary
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        interpretations:
+          default: []
+          items:
+            $ref: '#/components/schemas/DecisionIntelligenceFinding'
+          title: Interpretations
+          type: array
+        knowledge_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Knowledge Version
+        limitations:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTALimitation'
+          title: Limitations
+          type: array
+        policy_version:
+          default: mta_decision_intelligence_policy_v1
+          title: Policy Version
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        recommendations:
+          default: []
+          items:
+            $ref: '#/components/schemas/DecisionIntelligenceRecommendation'
+          title: Recommendations
+          type: array
+        result_snapshot_id:
+          title: Result Snapshot Id
+          type: string
+        track_id:
+          title: Track Id
+          type: string
+        uncertainties:
+          default: []
+          items:
+            type: string
+          title: Uncertainties
+          type: array
+        verified_findings:
+          default: []
+          items:
+            $ref: '#/components/schemas/DecisionIntelligenceFinding'
+          title: Verified Findings
+          type: array
+      required:
+      - brief_id
+      - project_id
+      - cycle_id
+      - track_id
+      - result_snapshot_id
+      - executive_summary
+      - fingerprint
+      title: MTADecisionIntelligenceBrief
+      type: object
+    MTAFindingAuthority:
+      enum:
+      - VERIFIED
+      - INTERPRETATION
+      - RECOMMENDATION
+      - DECISION_REQUIRED
+      title: MTAFindingAuthority
+      type: string
+    MTAInputMode:
+      enum:
+      - RAW_JOURNEYS
+      - GROUPED_PATH_FREQUENCY
+      title: MTAInputMode
+      type: string
+    MTAJourneyPathEvidence:
+      additionalProperties: false
+      properties:
+        channels:
+          items:
+            type: string
+          title: Channels
+          type: array
+        conversion_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Conversion Count
+        conversion_value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Conversion Value
+        occurrences:
+          title: Occurrences
+          type: integer
+        path_rank:
+          title: Path Rank
+          type: integer
+        path_string:
+          title: Path String
+          type: string
+        share_of_all_paths:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Share Of All Paths
+        share_of_converting_paths:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Share Of Converting Paths
+      required:
+      - path_rank
+      - path_string
+      - channels
+      - occurrences
+      title: MTAJourneyPathEvidence
+      type: object
+    MTAJourneySummary:
+      additionalProperties: false
+      properties:
+        avg_time_to_conversion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avg Time To Conversion
+        avg_touchpoints:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avg Touchpoints
+        converted_journey_count:
+          title: Converted Journey Count
+          type: integer
+        direct_presence_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Direct Presence Share
+        identity_coverage_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Identity Coverage Summary
+        journey_count:
+          title: Journey Count
+          type: integer
+        max_touchpoints:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max Touchpoints
+        median_time_to_conversion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Median Time To Conversion
+        median_touchpoints:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Median Touchpoints
+        multi_touch_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Multi Touch Share
+        nonconverting_journey_count:
+          default: 0
+          title: Nonconverting Journey Count
+          type: integer
+        observability_status:
+          anyOf:
+          - $ref: '#/components/schemas/ObservabilityStatus'
+          - type: 'null'
+        p90_time_to_conversion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: P90 Time To Conversion
+        p90_touchpoints:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: P90 Touchpoints
+        path_length_distribution:
+          default: []
+          items:
+            $ref: '#/components/schemas/PathLengthBin'
+          title: Path Length Distribution
+          type: array
+        position_evidence:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTAChannelPositionEvidence'
+          title: Position Evidence
+          type: array
+        position_policy_version:
+          default: position_policy_v1
+          title: Position Policy Version
+          type: string
+        single_touch_policy:
+          default: FIRST_AND_LAST
+          title: Single Touch Policy
+          type: string
+        single_touch_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Single Touch Share
+        source_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Cutoff
+        time_to_conversion_distribution:
+          default: []
+          items:
+            $ref: '#/components/schemas/TimeToConversionBin'
+          title: Time To Conversion Distribution
+          type: array
+        top_paths:
+          default: []
+          items:
+            $ref: '#/components/schemas/MTAJourneyPathEvidence'
+          title: Top Paths
+          type: array
+        unique_path_count:
+          default: 0
+          title: Unique Path Count
+          type: integer
+        unique_subject_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unique Subject Count
+      required:
+      - journey_count
+      - converted_journey_count
+      title: MTAJourneySummary
+      type: object
+    MTALimitation:
+      additionalProperties: false
+      properties:
+        affected_channels:
+          default: []
+          items:
+            type: string
+          title: Affected Channels
+          type: array
+        evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Evidence Refs
+          type: array
+        limitation_type:
+          $ref: '#/components/schemas/MTALimitationType'
+        severity:
+          $ref: '#/components/schemas/LimitationSeverity'
+          default: ATTENTION
+        statement:
+          title: Statement
+          type: string
+      required:
+      - limitation_type
+      - statement
+      title: MTALimitation
+      type: object
+    MTALimitationType:
+      enum:
+      - IDENTITY_FRAGMENTATION
+      - CONSENT_OBSERVABILITY
+      - UNMAPPED_TRAFFIC
+      - HIGH_DIRECT_SHARE
+      - LOW_CONVERSION_VOLUME
+      - LOW_CHANNEL_VOLUME
+      - SHAPLEY_PATH_LIMIT
+      - MODEL_SENSITIVITY
+      - MISSING_CONVERSION_VALUE
+      - TRAFFIC_SOURCE_POLICY_FALLBACK
+      - OTHER
+      title: MTALimitationType
+      type: string
+    MTAModelComparison:
+      additionalProperties: false
+      properties:
+        channels:
+          items:
+            type: string
+          title: Channels
+          type: array
+        comparison_id:
+          title: Comparison Id
+          type: string
+        comparison_metric:
+          $ref: '#/components/schemas/ComparisonMetric'
+          default: ATTRIBUTION_SHARE
+        dispersion_policy_version:
+          default: mta_sensitivity_policy_v1
+          title: Dispersion Policy Version
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        model_parameters:
+          additionalProperties:
+            additionalProperties: true
+            type: object
+          title: Model Parameters
+          type: object
+        models:
+          items:
+            type: string
+          title: Models
+          type: array
+        rows:
+          items:
+            $ref: '#/components/schemas/MTAModelComparisonCell'
+          title: Rows
+          type: array
+        run_id:
+          title: Run Id
+          type: string
+      required:
+      - comparison_id
+      - run_id
+      - models
+      - channels
+      - rows
+      - fingerprint
+      title: MTAModelComparison
+      type: object
+    MTAModelComparisonCell:
+      additionalProperties: false
+      properties:
+        attributed_credit:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Attributed Credit
+        attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Attribution Share
+        availability:
+          $ref: '#/components/schemas/MetricAvailability'
+          default: AVAILABLE
+        channel_id:
+          title: Channel Id
+          type: string
+        model_type:
+          title: Model Type
+          type: string
+      required:
+      - channel_id
+      - model_type
+      title: MTAModelComparisonCell
+      type: object
+    MTAModelSensitivityEvidence:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        dispersion:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Dispersion
+        is_confidence_interval:
+          default: false
+          title: Is Confidence Interval
+          type: boolean
+        max_attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Max Attribution Share
+        mean_attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Mean Attribution Share
+        median_attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Median Attribution Share
+        min_attribution_share:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Min Attribution Share
+        model_count:
+          title: Model Count
+          type: integer
+        models_included:
+          default: []
+          items:
+            type: string
+          title: Models Included
+          type: array
+        policy_version:
+          default: mta_sensitivity_policy_v1
+          title: Policy Version
+          type: string
+        range:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Range
+        sensitivity_label:
+          anyOf:
+          - $ref: '#/components/schemas/SensitivityLabel'
+          - type: 'null'
+      required:
+      - channel_id
+      - model_count
+      title: MTAModelSensitivityEvidence
+      type: object
+    MTAOverviewNextActionView:
+      additionalProperties: false
+      properties:
+        action_type:
+          title: Action Type
+          type: string
+        blocking:
+          default: false
+          title: Blocking
+          type: boolean
+        owner:
+          default: server
+          title: Owner
+          type: string
+        statement:
+          title: Statement
+          type: string
+      required:
+      - action_type
+      - statement
+      title: MTAOverviewNextActionView
+      type: object
+    MTAOverviewResponse:
+      additionalProperties: false
+      properties:
+        acceptance_computed_by_server:
+          default: true
+          title: Acceptance Computed By Server
+          type: boolean
+        attention:
+          items:
+            type: string
+          title: Attention
+          type: array
+        attribution_models:
+          items:
+            type: string
+          title: Attribution Models
+          type: array
+        channel_grouping_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Grouping Version
+        channels_needing_review:
+          items:
+            type: string
+          title: Channels Needing Review
+          type: array
+        conversion_event:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Conversion Event
+        conversion_period_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Conversion Period End
+        conversion_period_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Conversion Period Start
+        current_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Result Snapshot Id
+        cycle_id:
+          title: Cycle Id
+          type: string
+        domain_stage:
+          title: Domain Stage
+          type: string
+        epistemic_label:
+          default: Observable journey attribution
+          title: Epistemic Label
+          type: string
+        foundation_ready:
+          title: Foundation Ready
+          type: boolean
+        ga4_dataset_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ga4 Dataset Id
+        ga4_property_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ga4 Property Id
+        identity_strategy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Identity Strategy
+        latest_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Result Snapshot Id
+        latest_result_state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Result State
+        lookback_window_days:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Lookback Window Days
+        model_sensitivity_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Sensitivity Summary
+        models_available:
+          items:
+            type: string
+          title: Models Available
+          type: array
+        next_action:
+          $ref: '#/components/schemas/MTAOverviewNextActionView'
+        observability_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observability Status
+        project_id:
+          title: Project Id
+          type: string
+        readiness_state:
+          title: Readiness State
+          type: string
+        settlement_policy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Settlement Policy
+        top_verified_findings:
+          items:
+            type: string
+          title: Top Verified Findings
+          type: array
+        track_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Track Id
+        user_id_coverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: User Id Coverage
+        user_pseudo_id_coverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: User Pseudo Id Coverage
+      required:
+      - project_id
+      - cycle_id
+      - domain_stage
+      - readiness_state
+      - foundation_ready
+      - next_action
+      title: MTAOverviewResponse
+      type: object
+    MTAProvisioningPlanView:
+      additionalProperties: false
+      properties:
+        channel_grouping_routine:
+          title: Channel Grouping Routine
+          type: string
+        dataset_id:
+          title: Dataset Id
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        gcp_project_id:
+          title: Gcp Project Id
+          type: string
+        plan_id:
+          title: Plan Id
+          type: string
+        ux:
+          additionalProperties: true
+          title: Ux
+          type: object
+      required:
+      - plan_id
+      - fingerprint
+      - gcp_project_id
+      - dataset_id
+      - channel_grouping_routine
+      title: MTAProvisioningPlanView
+      type: object
+    MTAProvisioningReceiptView:
+      additionalProperties: false
+      properties:
+        created:
+          items:
+            type: string
+          title: Created
+          type: array
+        plan_fingerprint:
+          title: Plan Fingerprint
+          type: string
+        plan_id:
+          title: Plan Id
+          type: string
+        receipt_id:
+          title: Receipt Id
+          type: string
+        reused:
+          items:
+            type: string
+          title: Reused
+          type: array
+        verified:
+          default: false
+          title: Verified
+          type: boolean
+      required:
+      - receipt_id
+      - plan_id
+      - plan_fingerprint
+      title: MTAProvisioningReceiptView
+      type: object
+    MTAReadinessResponse:
+      additionalProperties: false
+      properties:
+        blocking_failures:
+          items:
+            type: string
+          title: Blocking Failures
+          type: array
+        conversion_event:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Conversion Event
+        fingerprint:
+          title: Fingerprint
+          type: string
+        ga4_dataset_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ga4 Dataset Id
+        receipt_id:
+          title: Receipt Id
+          type: string
+        state:
+          title: State
+          type: string
+        warnings:
+          items:
+            type: string
+          title: Warnings
+          type: array
+      required:
+      - receipt_id
+      - state
+      - fingerprint
+      title: MTAReadinessResponse
+      type: object
+    MTAResultsNotAvailableView:
+      additionalProperties: false
+      properties:
+        detail:
+          default: No verified MTA result snapshot is available.
+          title: Detail
+          type: string
+        result_status:
+          default: NOT_AVAILABLE
+          title: Result Status
+          type: string
+      title: MTAResultsNotAvailableView
+      type: object
+    MTAResultsSnapshotView:
+      additionalProperties: false
+      properties:
+        adapter_version:
+          title: Adapter Version
+          type: string
+        channel_grouping_fingerprint:
+          title: Channel Grouping Fingerprint
+          type: string
+        channel_grouping_version:
+          title: Channel Grouping Version
+          type: string
+        channel_registry_fingerprint:
+          title: Channel Registry Fingerprint
+          type: string
+        channel_registry_version:
+          title: Channel Registry Version
+          type: integer
+        computation_authority:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Computation Authority
+        conversion_event:
+          title: Conversion Event
+          type: string
+        conversion_period_end:
+          title: Conversion Period End
+          type: string
+        conversion_period_start:
+          title: Conversion Period Start
+          type: string
+        current_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Result Snapshot Id
+        evidence_authority:
+          title: Evidence Authority
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        latest_result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Result Snapshot Id
+        limitations:
+          items:
+            additionalProperties: true
+            type: object
+          title: Limitations
+          type: array
+        models_completed:
+          items:
+            type: string
+          title: Models Completed
+          type: array
+        models_requested:
+          items:
+            type: string
+          title: Models Requested
+          type: array
+        observability_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observability Status
+        result_snapshot_id:
+          title: Result Snapshot Id
+          type: string
+        result_status:
+          title: Result Status
+          type: string
+        run_id:
+          title: Run Id
+          type: string
+        source_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Cutoff
+      required:
+      - result_snapshot_id
+      - run_id
+      - result_status
+      - evidence_authority
+      - fingerprint
+      - conversion_event
+      - conversion_period_start
+      - conversion_period_end
+      - channel_registry_version
+      - channel_registry_fingerprint
+      - channel_grouping_version
+      - channel_grouping_fingerprint
+      - adapter_version
+      title: MTAResultsSnapshotView
+      type: object
+    MTARunReceiptResponse:
+      additionalProperties: false
+      properties:
+        computation_authority:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Computation Authority
+        fingerprint:
+          title: Fingerprint
+          type: string
+        grouped_path_count:
+          default: 0
+          title: Grouped Path Count
+          type: integer
+        journey_count:
+          default: 0
+          title: Journey Count
+          type: integer
+        limitations:
+          items:
+            type: string
+          title: Limitations
+          type: array
+        readback_status:
+          title: Readback Status
+          type: string
+        receipt_id:
+          title: Receipt Id
+          type: string
+        run_id:
+          title: Run Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - receipt_id
+      - run_id
+      - status
+      - fingerprint
+      - readback_status
+      title: MTARunReceiptResponse
+      type: object
+    MTARunResponse:
+      additionalProperties: false
+      properties:
+        dispatch_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dispatch Id
+        execution_plan_id:
+          title: Execution Plan Id
+          type: string
+        proof_label:
+          default: SYNTHETIC
+          title: Proof Label
+          type: string
+        run_id:
+          title: Run Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - run_id
+      - status
+      - execution_plan_id
+      title: MTARunResponse
+      type: object
+    MTAVisualization:
+      additionalProperties: false
+      properties:
+        authority:
+          $ref: '#/components/schemas/MTAFindingAuthority'
+          default: VERIFIED
+        available:
+          default: true
+          title: Available
+          type: boolean
+        data:
+          default: []
+          items:
+            additionalProperties: true
+            type: object
+          title: Data
+          type: array
+        default_view:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Default View
+        description:
+          title: Description
+          type: string
+        filters:
+          additionalProperties: true
+          title: Filters
+          type: object
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        kind:
+          $ref: '#/components/schemas/MTAVisualizationKind'
+        source_evidence_refs:
+          default: []
+          items:
+            type: string
+          title: Source Evidence Refs
+          type: array
+        source_model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Model
+        source_result_snapshot_id:
+          title: Source Result Snapshot Id
+          type: string
+        source_run_id:
+          title: Source Run Id
+          type: string
+        title:
+          title: Title
+          type: string
+        unavailable_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unavailable Reason
+        visualization_id:
+          title: Visualization Id
+          type: string
+      required:
+      - visualization_id
+      - kind
+      - title
+      - description
+      - source_run_id
+      - source_result_snapshot_id
+      - fingerprint
+      title: MTAVisualization
+      type: object
+    MTAVisualizationKind:
+      enum:
+      - ATTRIBUTION_BY_CHANNEL_MODEL
+      - MODEL_COMPARISON_HEATMAP
+      - CHANNEL_ROLE_POSITION
+      - MARKOV_TRANSITION_MATRIX
+      - MARKOV_REMOVAL_EFFECT
+      - SHAPLEY_CONTRIBUTION
+      - TOP_CONVERSION_PATHS
+      - PATH_LENGTH_DISTRIBUTION
+      - TIME_TO_CONVERSION_DISTRIBUTION
+      - MODEL_SENSITIVITY_RANGE
+      title: MTAVisualizationKind
+      type: string
+    MarkovAttributionEvidence:
+      additionalProperties: false
+      properties:
+        availability:
+          $ref: '#/components/schemas/MetricAvailability'
+          default: AVAILABLE
+        channel_credit:
+          default: []
+          items:
+            $ref: '#/components/schemas/MarkovChannelCredit'
+          title: Channel Credit
+          type: array
+        conversion_value_as_frequency:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Conversion Value As Frequency
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        input_mode:
+          anyOf:
+          - $ref: '#/components/schemas/MTAInputMode'
+          - type: 'null'
+        removal_effect_explanation:
+          default: The modeled conversion-probability sensitivity when that channel is removed from the observed Markov journey
+            structure.
+          title: Removal Effect Explanation
+          type: string
+        removal_effects:
+          default: []
+          items:
+            maxItems: 2
+            minItems: 2
+            prefixItems:
+            - type: string
+            - type: number
+            type: array
+          title: Removal Effects
+          type: array
+        run_id:
+          title: Run Id
+          type: string
+        transition_matrix_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Transition Matrix Ref
+        transition_to_same_state:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Transition To Same State
+        transitions:
+          default: []
+          items:
+            $ref: '#/components/schemas/MarkovTransitionRow'
+          title: Transitions
+          type: array
+        unavailable_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unavailable Reason
+      required:
+      - run_id
+      - fingerprint
+      title: MarkovAttributionEvidence
+      type: object
+    MarkovChannelCredit:
+      additionalProperties: false
+      properties:
+        attributed_credit:
+          title: Attributed Credit
+          type: number
+        attribution_share:
+          title: Attribution Share
+          type: number
+        channel_id:
+          title: Channel Id
+          type: string
+        removal_effect:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Removal Effect
+      required:
+      - channel_id
+      - attributed_credit
+      - attribution_share
+      title: MarkovChannelCredit
+      type: object
+    MarkovTransitionRow:
+      additionalProperties: false
+      properties:
+        from_channel_id:
+          title: From Channel Id
+          type: string
+        to_channel_id:
+          title: To Channel Id
+          type: string
+        transition_probability:
+          title: Transition Probability
+          type: number
+      required:
+      - from_channel_id
+      - to_channel_id
+      - transition_probability
+      title: MarkovTransitionRow
       type: object
     MaterializeDatasetSourceRequest:
       additionalProperties: false
@@ -1723,6 +3892,67 @@ components:
       - updated_at
       title: MeasurementCycleSummary
       type: object
+    MeasurementCycleView:
+      additionalProperties: false
+      properties:
+        cycle_id:
+          title: Cycle Id
+          type: string
+        data_cutoff:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Cutoff
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+      required:
+      - cycle_id
+      title: MeasurementCycleView
+      type: object
+    MeasurementEvidenceAlignmentKey:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        conversion_event:
+          title: Conversion Event
+          type: string
+        market:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market
+        method:
+          $ref: '#/components/schemas/MeasurementMethod'
+          default: MTA
+        period_end:
+          title: Period End
+          type: string
+        period_start:
+          title: Period Start
+          type: string
+        result_snapshot_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Snapshot Id
+      required:
+      - channel_id
+      - conversion_event
+      - period_start
+      - period_end
+      title: MeasurementEvidenceAlignmentKey
+      type: object
+    MeasurementMethod:
+      enum:
+      - MTA
+      - MMM
+      title: MeasurementMethod
+      type: string
     MeasurementTrackListResponse:
       additionalProperties: false
       properties:
@@ -1848,6 +4078,112 @@ components:
       - updated_at
       title: MeasurementTrackSummary
       type: object
+    MetricAvailability:
+      enum:
+      - AVAILABLE
+      - NOT_RUN
+      - NOT_APPLICABLE
+      - BLOCKED_BY_PREFLIGHT
+      - UNAVAILABLE_SOURCE
+      - INVALID
+      title: MetricAvailability
+      type: string
+    MetricAvailabilityItem:
+      additionalProperties: false
+      properties:
+        metric_name:
+          title: Metric Name
+          type: string
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+        status:
+          $ref: '#/components/schemas/MetricAvailability'
+      required:
+      - metric_name
+      - status
+      title: MetricAvailabilityItem
+      type: object
+    MmmTrackWindowView:
+      additionalProperties: false
+      properties:
+        model_window_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window End
+        model_window_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window Start
+      title: MmmTrackWindowView
+      type: object
+    ModelVersionResponse:
+      additionalProperties: false
+      properties:
+        accepted:
+          title: Accepted
+          type: boolean
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        cycle_id:
+          title: Cycle Id
+          type: string
+        model_plan_fingerprint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Plan Fingerprint
+        model_ready_manifest_fingerprint:
+          title: Model Ready Manifest Fingerprint
+          type: string
+        model_version_id:
+          title: Model Version Id
+          type: string
+        model_window_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window End
+        model_window_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Window Start
+        project_id:
+          title: Project Id
+          type: string
+        state:
+          title: State
+          type: string
+        supersedes_model_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Supersedes Model Version Id
+        track_id:
+          title: Track Id
+          type: string
+        version:
+          title: Version
+          type: integer
+      required:
+      - model_version_id
+      - project_id
+      - cycle_id
+      - track_id
+      - state
+      - version
+      - model_ready_manifest_fingerprint
+      - accepted
+      - created_at
+      title: ModelVersionResponse
+      type: object
     NextAction:
       additionalProperties: false
       properties:
@@ -1879,6 +4215,42 @@ components:
       - label
       - capability
       title: NextAction
+      type: object
+    ObservabilityStatus:
+      enum:
+      - GOOD
+      - REVIEW
+      - LIMITED
+      title: ObservabilityStatus
+      type: string
+    OfficialEdaReportView:
+      additionalProperties: false
+      properties:
+        artifact_class:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Artifact Class
+        authorized_view_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorized View Url
+        content_type:
+          default: text/html
+          title: Content Type
+          type: string
+        official_report_available:
+          title: Official Report Available
+          type: boolean
+        sha256:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sha256
+      required:
+      - official_report_available
+      title: OfficialEdaReportView
       type: object
     OrganizationReadModel:
       additionalProperties: false
@@ -1915,6 +4287,22 @@ components:
       - active_project_count
       - max_active_projects
       title: OrganizationReadModel
+      type: object
+    ParameterExplanationsView:
+      additionalProperties: false
+      properties:
+        explanations:
+          additionalProperties:
+            type: string
+          title: Explanations
+          type: object
+        models:
+          items:
+            additionalProperties: true
+            type: object
+          title: Models
+          type: array
+      title: ParameterExplanationsView
       type: object
     PatchMeasurementTrackRequest:
       additionalProperties: false
@@ -1990,6 +4378,24 @@ components:
           - type: 'null'
           title: Status
       title: PatchProjectRequest
+      type: object
+    PathLengthBin:
+      additionalProperties: false
+      properties:
+        journey_count:
+          title: Journey Count
+          type: integer
+        share:
+          title: Share
+          type: number
+        touchpoint_count:
+          title: Touchpoint Count
+          type: integer
+      required:
+      - touchpoint_count
+      - journey_count
+      - share
+      title: PathLengthBin
       type: object
     PlanCatalogEntry:
       additionalProperties: false
@@ -2848,6 +5254,194 @@ components:
           title: Target Window Start
       title: ReviseCycleRequest
       type: object
+    ScheduledRefreshPlanRequest:
+      additionalProperties: false
+      properties:
+        cadence:
+          default: every 24 hours
+          title: Cadence
+          type: string
+        conversion_event:
+          default: purchase
+          title: Conversion Event
+          type: string
+        lookback_window_days:
+          default: 30
+          title: Lookback Window Days
+          type: integer
+        settlement_days:
+          default: 3
+          title: Settlement Days
+          type: integer
+        source_overlap_days:
+          default: 3
+          title: Source Overlap Days
+          type: integer
+        timezone:
+          default: America/Los_Angeles
+          title: Timezone
+          type: string
+      title: ScheduledRefreshPlanRequest
+      type: object
+    ScheduledRefreshPlanView:
+      additionalProperties: false
+      properties:
+        approval_status:
+          title: Approval Status
+          type: string
+        cadence:
+          title: Cadence
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        lookback_window_days:
+          title: Lookback Window Days
+          type: integer
+        schedule_id:
+          title: Schedule Id
+          type: string
+        timezone:
+          title: Timezone
+          type: string
+      required:
+      - schedule_id
+      - fingerprint
+      - approval_status
+      - lookback_window_days
+      - cadence
+      - timezone
+      title: ScheduledRefreshPlanView
+      type: object
+    ScheduledRefreshReceiptView:
+      additionalProperties: false
+      properties:
+        evidence_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Evidence Label
+        provisioned:
+          title: Provisioned
+          type: boolean
+        receipt_id:
+          title: Receipt Id
+          type: string
+        schedule_id:
+          title: Schedule Id
+          type: string
+        schedule_resource_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Schedule Resource Id
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        verified:
+          title: Verified
+          type: boolean
+      required:
+      - receipt_id
+      - schedule_id
+      - provisioned
+      - verified
+      title: ScheduledRefreshReceiptView
+      type: object
+    SensitivityLabel:
+      enum:
+      - LOW
+      - MODERATE
+      - HIGH
+      - VERY_HIGH
+      title: SensitivityLabel
+      type: string
+    ShapleyAttributionEvidence:
+      additionalProperties: false
+      properties:
+        availability:
+          $ref: '#/components/schemas/MetricAvailability'
+          default: NOT_RUN
+        channel_credit:
+          default: []
+          items:
+            $ref: '#/components/schemas/ShapleyChannelCredit'
+          title: Channel Credit
+          type: array
+        distinct_channel_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Distinct Channel Count
+        fingerprint:
+          title: Fingerprint
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        input_path_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Input Path Count
+        order:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Order
+        path_limit_applied:
+          default: false
+          title: Path Limit Applied
+          type: boolean
+        preflight_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Preflight Status
+        run_id:
+          title: Run Id
+          type: string
+        size:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Size
+        unavailable_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unavailable Reason
+        values_col:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Values Col
+      required:
+      - run_id
+      - fingerprint
+      title: ShapleyAttributionEvidence
+      type: object
+    ShapleyChannelCredit:
+      additionalProperties: false
+      properties:
+        channel_id:
+          title: Channel Id
+          type: string
+        shapley_credit:
+          title: Shapley Credit
+          type: number
+        shapley_share:
+          title: Shapley Share
+          type: number
+      required:
+      - channel_id
+      - shapley_credit
+      - shapley_share
+      title: ShapleyChannelCredit
+      type: object
     SourceMaterializationListResponse:
       additionalProperties: false
       properties:
@@ -3066,6 +5660,34 @@ components:
       - version_identity
       - object_type
       title: SourceObjectLineageResponse
+      type: object
+    TimeToConversionBin:
+      additionalProperties: false
+      properties:
+        bucket_end:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Bucket End
+        bucket_start:
+          title: Bucket Start
+          type: number
+        journey_count:
+          title: Journey Count
+          type: integer
+        share:
+          title: Share
+          type: number
+        unit:
+          default: days
+          title: Unit
+          type: string
+      required:
+      - bucket_start
+      - bucket_end
+      - journey_count
+      - share
+      title: TimeToConversionBin
       type: object
     TransitionRequest:
       additionalProperties: false
@@ -3374,10 +5996,11 @@ components:
       type: http
 info:
   description: Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, Google connection, import/publish
-    governance, Business IQ, and Data Foundation contracts. Clerk session tokens are verified when the identity provider is
-    configured. Creating an Evaluation returns 202 Accepted only after durable Cloud Tasks enqueue; 202 is not ADK completion
-    and not MODEL_READY. Tenant identity is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY,
-    MODEL_READY, and PUBLISH_READY are distinct deterministic states.
+    governance, Business IQ, Data Foundation, and governed MMM modeling contracts. Clerk session tokens are verified when
+    the identity provider is configured. Creating an Evaluation returns 202 Accepted only after durable Cloud Tasks enqueue;
+    202 is not ADK completion and not MODEL_READY. Posterior sampling is never autonomous and requires an exact fingerprinted
+    FitPlan approval. Tenant identity is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY,
+    MODEL_READY, MODEL_ACCEPTED, and PUBLISH_READY are distinct deterministic states.
   summary: PreM3 authenticated product API
   title: prem3-api
   version: 0.1.0
@@ -3485,6 +6108,24 @@ paths:
       summary: Get Plan Catalog
       tags:
       - catalog
+  /v1/channels:
+    get:
+      operationId: listCanonicalChannels
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CanonicalChannelView'
+                title: Response Listcanonicalchannels
+                type: array
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Canonical Channels
+      tags:
+      - mta
   /v1/integrations/google/connections:
     get:
       operationId: listGoogleConnections
@@ -3582,6 +6223,21 @@ paths:
       summary: Get Me
       tags:
       - identity
+  /v1/mta/parameter-explanations:
+    get:
+      operationId: getMtaParameterExplanations
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParameterExplanationsView'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Get Parameter Explanations
+      tags:
+      - mta
   /v1/organization:
     get:
       operationId: getOrganization
@@ -3785,6 +6441,992 @@ paths:
       summary: Get Project Cycle Coverage
       tags:
       - projects
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm:
+    get:
+      operationId: getProjectCycleMmm
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MMMSummaryResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/eda:
+    get:
+      operationId: getProjectCycleMmmEda
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedEdaReadModelResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm Eda
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/eda/official-html:
+    get:
+      operationId: getProjectCycleMmmEdaOfficialHtml
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mmm Eda Official Html
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mmm/model-design:
+    post:
+      operationId: createMmmModelDesign
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateModelDesignRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createmmmmodeldesign
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Model Design
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta:
+    get:
+      operationId: getProjectCycleMta
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAOverviewResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Cycle Mta
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/decision-brief:
+    get:
+      operationId: getProjectCycleMtaDecisionBrief
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTADecisionIntelligenceBrief'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Decision Brief
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/provisioning-plan:
+    get:
+      operationId: getMtaProvisioningPlan
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAProvisioningPlanView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Provisioning Plan
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/provisioning-plan/approve:
+    post:
+      operationId: approveMtaProvisioningPlan
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveProvisionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAProvisioningReceiptView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Approve Mta Provisioning
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/readiness:
+    post:
+      operationId: evaluateProjectCycleMtaReadiness
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateMTAReadinessRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAReadinessResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Evaluate Cycle Mta Readiness
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results:
+    get:
+      operationId: getProjectCycleMtaResults
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      - in: query
+        name: run_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Run Id
+      - in: query
+        name: models
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Models
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/MTAResultsSnapshotView'
+                - $ref: '#/components/schemas/MTAResultsNotAvailableView'
+                title: Response Getprojectcyclemtaresults
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Results
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/channels:
+    get:
+      operationId: getProjectCycleMtaResultChannels
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      - in: query
+        name: models
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Models
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MTAChannelResult'
+                title: Response Getprojectcyclemtaresultchannels
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Result Channels
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/channels/{channel_id}:
+    get:
+      operationId: getProjectCycleMtaResultChannelDetail
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: channel_id
+        required: true
+        schema:
+          title: Channel Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAChannelDetail'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Result Channel Detail
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/journeys:
+    get:
+      operationId: getProjectCycleMtaJourneySummary
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAJourneySummary'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Journey Summary
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/markov:
+    get:
+      operationId: getProjectCycleMtaMarkovResults
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkovAttributionEvidence'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Markov Results
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/model-comparison:
+    get:
+      operationId: getProjectCycleMtaModelComparison
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: models
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Models
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTAModelComparison'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Model Comparison
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/shapley:
+    get:
+      operationId: getProjectCycleMtaShapleyResults
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShapleyAttributionEvidence'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Shapley Results
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/results/visualizations:
+    get:
+      operationId: getProjectCycleMtaVisualizations
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: query
+        name: snapshot_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snapshot Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MTAVisualization'
+                title: Response Getprojectcyclemtavisualizations
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Visualizations
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/runs:
+    get:
+      operationId: listProjectCycleMtaRuns
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MTARunResponse'
+                title: Response Listprojectcyclemtaruns
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List Mta Runs
+      tags:
+      - mta
+    post:
+      operationId: createProjectCycleMtaRun
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMTARunRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTARunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Mta Run
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/runs/{run_id}:
+    get:
+      operationId: getProjectCycleMtaRun
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTARunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Run
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/runs/{run_id}/receipt:
+    get:
+      operationId: getProjectCycleMtaRunReceipt
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MTARunReceiptResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Mta Run Receipt
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/scheduled-refresh/disable:
+    post:
+      operationId: disableMtaScheduledRefresh
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisableScheduleRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledRefreshReceiptView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Disable Scheduled Refresh
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/scheduled-refresh/plan:
+    post:
+      operationId: createMtaScheduledRefreshPlan
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduledRefreshPlanRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledRefreshPlanView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Scheduled Refresh Plan
+      tags:
+      - mta
+  /v1/projects/{project_id}/cycles/{cycle_id}/mta/scheduled-refresh/provision:
+    post:
+      operationId: provisionMtaScheduledRefresh
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledRefreshReceiptView'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Provision Scheduled Refresh
+      tags:
+      - mta
   /v1/projects/{project_id}/cycles/{cycle_id}/tracks:
     get:
       operationId: listProjectTracks
@@ -3909,6 +7551,502 @@ paths:
       summary: Get Project Measurement Home
       tags:
       - projects
+  /v1/projects/{project_id}/mmm/model-decisions/{decision_id}/approve:
+    post:
+      operationId: approveMmmModelDecision
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: decision_id
+        required: true
+        schema:
+          title: Decision Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionActionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Approvemmmmodeldecision
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Approve Decision
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-decisions/{decision_id}/reject:
+    post:
+      operationId: rejectMmmModelDecision
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: decision_id
+        required: true
+        schema:
+          title: Decision Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Rejectmmmmodeldecision
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Reject Decision
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-design/{model_version_id}:
+    get:
+      operationId: getMmmModelDesign
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getmmmmodeldesign
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Model Design
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/accept:
+    post:
+      operationId: acceptMmmModel
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptModelRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Acceptmmmmodel
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Accept Model
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/fit:
+    post:
+      operationId: startMmmFit
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FitRunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Start Fit
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/fit-approval:
+    post:
+      operationId: approveMmmFit
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Approvemmmfit
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Approve Fit
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/fit-runs/{fit_run_id}:
+    get:
+      operationId: getMmmFitRun
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      - in: path
+        name: fit_run_id
+        required: true
+        schema:
+          title: Fit Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FitRunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Fit Run
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/identifiability:
+    get:
+      operationId: getMmmIdentifiabilityReview
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentifiabilityReviewResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Identifiability Review
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/identifiability/decide:
+    post:
+      operationId: recordMmmIdentifiabilityDecision
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentifiabilityDecisionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Recordmmmidentifiabilitydecision
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Record Identifiability Decision
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/iterate:
+    post:
+      operationId: iterateMmmModel
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IterateModelRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelVersionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Iterate Model
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/review:
+    get:
+      operationId: getMmmModelReview
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Getmmmmodelreview
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Review
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/review/acknowledge:
+    post:
+      operationId: acknowledgeMmmReview
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcknowledgeReviewRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Acknowledgemmmreview
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Acknowledge Review
+      tags:
+      - mmm-modeling
+  /v1/projects/{project_id}/mmm/model-versions/{model_version_id}/validate-prior:
+    post:
+      operationId: validateMmmPrior
+      parameters:
+      - in: path
+        name: project_id
+        required: true
+        schema:
+          title: Project Id
+          type: string
+      - in: path
+        name: model_version_id
+        required: true
+        schema:
+          title: Model Version Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Validatemmmprior
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Validate Prior
+      tags:
+      - mmm-modeling
   /v1/projects/{project_id}/tracks/{track_id}:
     patch:
       operationId: patchProjectTrack
@@ -4567,6 +8705,48 @@ paths:
       summary: Evaluate Ready
       tags:
       - business-iq
+  /v1/workspaces/{workspace_id}/cycles/{cycle_id}/mmm/model-design:
+    post:
+      operationId: createWorkspaceMmmModelDesign
+      parameters:
+      - in: path
+        name: cycle_id
+        required: true
+        schema:
+          title: Cycle Id
+          type: string
+      - in: path
+        name: workspace_id
+        required: true
+        schema:
+          title: Workspace Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateModelDesignRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Createworkspacemmmmodeldesign
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Workspace Create Model Design
+      tags:
+      - mmm-modeling
   /v1/workspaces/{workspace_id}/data-foundation:
     get:
       operationId: getDataFoundationOverview

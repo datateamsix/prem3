@@ -196,12 +196,33 @@ def mmm_adapter_state(
     model_ready: bool,
     latest_run_id: str | None,
     entitled: bool,
+    modeling_stage: str | None = None,
 ) -> tuple[MeasurementTrackStatus, CapabilityAvailability, str | None, NextActionType]:
     if not entitled:
         return (
             MeasurementTrackStatus.BLOCKED,
             CapabilityAvailability.UNAVAILABLE_ENTITLEMENT,
             None,
+            NextActionType.CONTINUE_MMM,
+        )
+    if modeling_stage == "MODEL_ACCEPTED":
+        return (
+            MeasurementTrackStatus.COMPLETE,
+            CapabilityAvailability.READY,
+            "MODEL_ACCEPTED",
+            NextActionType.REVIEW_MMM,
+        )
+    if modeling_stage in {
+        "DESIGNING_MODEL",
+        "AWAITING_ASSUMPTION_DECISIONS",
+        "READY_TO_FIT",
+        "FITTING_MODEL",
+        "AWAITING_MODEL_REVIEW",
+    }:
+        return (
+            MeasurementTrackStatus.RUNNING,
+            CapabilityAvailability.IN_PROGRESS,
+            modeling_stage,
             NextActionType.CONTINUE_MMM,
         )
     if model_ready:
@@ -239,6 +260,8 @@ def mta_availability(
     foundation_ready: bool,
     ga4_dataset_id: str | None,
     key_event_name: str | None,
+    mta_input_ready: bool = False,
+    channel_grouping_version: str | None = None,
 ) -> tuple[MeasurementTrackStatus, CapabilityAvailability, list[str], NextActionType]:
     context: list[str] = []
     if not entitled:
@@ -263,6 +286,18 @@ def mta_availability(
         context.append("Key event selected")
     else:
         context.append("Key event not selected")
+    if channel_grouping_version:
+        context.append(f"Channel grouping {channel_grouping_version}")
+    else:
+        context.append("Channel grouping not approved")
+    if mta_input_ready:
+        context.append("MTA_INPUT_READY")
+        return (
+            MeasurementTrackStatus.READY_TO_RUN,
+            CapabilityAvailability.IN_PROGRESS,
+            context,
+            NextActionType.OPEN_MTA,
+        )
     if not key_event_name:
         return (
             MeasurementTrackStatus.AVAILABLE_TO_CONFIGURE,
@@ -271,8 +306,8 @@ def mta_availability(
             NextActionType.SELECT_MTA_KEY_EVENT if ga4_dataset_id else NextActionType.SETUP_MTA,
         )
     return (
-        MeasurementTrackStatus.READY_TO_RUN,
-        CapabilityAvailability.IN_PROGRESS,
+        MeasurementTrackStatus.AVAILABLE_TO_CONFIGURE,
+        CapabilityAvailability.AVAILABLE_TO_CONFIGURE,
         context,
         NextActionType.OPEN_MTA,
     )
@@ -314,6 +349,7 @@ def planning_availability(
     capability: CapabilityFamily,
     entitled: bool,
     model_ready: bool,
+    model_accepted: bool = False,
 ) -> tuple[CapabilityAvailability, NextActionType]:
     if not entitled:
         return (
@@ -323,6 +359,8 @@ def planning_availability(
     if capability is CapabilityFamily.FORECASTING:
         return CapabilityAvailability.AVAILABLE_TO_CONFIGURE, NextActionType.SETUP_FORECAST
     del model_ready
+    if model_accepted:
+        return CapabilityAvailability.AVAILABLE_TO_CONFIGURE, NextActionType.RETURN_PROJECT_HOME
     if capability is CapabilityFamily.SCENARIO_SIMULATION:
         return (
             CapabilityAvailability.NEEDS_ACCEPTED_MODEL,

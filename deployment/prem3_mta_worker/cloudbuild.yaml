@@ -1,0 +1,14 @@
+substitutions:
+  _TAG: untagged
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-mta-worker:${_TAG}
+      - -f
+      - deployment/prem3_mta_worker/Dockerfile
+      - .
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/prem3-mta-worker:${_TAG}
+timeout: 1800s

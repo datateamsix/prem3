@@ -79,3 +79,39 @@ def new_publish_id() -> str:
 
 def new_track_id() -> str:
     return _opaque("trk")
+
+
+def new_model_version_id() -> str:
+    return _opaque("mver")
+
+
+def new_model_plan_id() -> str:
+    return _opaque("mplan")
+
+
+def new_decision_id() -> str:
+    return _opaque("mdec")
+
+
+def new_fit_run_id() -> str:
+    return _opaque("mfit")
+
+
+def new_approval_id() -> str:
+    return _opaque("mapv")
+
+
+def new_fit_dispatch_id() -> str:
+    return _opaque("mdsp")
+
+
+def new_eda_report_id() -> str:
+    return _opaque("edarep")
+
+
+def new_identifiability_package_id() -> str:
+    return _opaque("midp")
+
+
+def new_prefit_receipt_id() -> str:
+    return _opaque("mpfv")

@@ -1,0 +1,96 @@
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_refresh_watermark` (
+  pipeline_id STRING NOT NULL,
+  last_settled_source_date DATE,
+  last_successful_refresh_id STRING,
+  channel_registry_version INT64 NOT NULL,
+  channel_grouping_version INT64 NOT NULL,
+  input_config_fingerprint STRING NOT NULL,
+  updated_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_sessions` (
+  session_id STRING NOT NULL,
+  subject_key STRING NOT NULL,
+  session_start_ts TIMESTAMP NOT NULL,
+  session_end_ts TIMESTAMP NOT NULL,
+  source STRING,
+  medium STRING,
+  campaign STRING,
+  canonical_channel_id STRING NOT NULL,
+  traffic_source_policy STRING NOT NULL,
+  source_date DATE NOT NULL,
+  source_fingerprint STRING NOT NULL,
+  refreshed_at TIMESTAMP NOT NULL
+)
+PARTITION BY source_date
+CLUSTER BY canonical_channel_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_conversions` (
+  conversion_id STRING NOT NULL,
+  subject_key STRING NOT NULL,
+  session_id STRING,
+  conversion_event STRING NOT NULL,
+  conversion_ts TIMESTAMP NOT NULL,
+  conversion_date DATE NOT NULL,
+  transaction_id STRING,
+  conversion_value NUMERIC,
+  source_fingerprint STRING NOT NULL,
+  refreshed_at TIMESTAMP NOT NULL
+)
+PARTITION BY conversion_date
+CLUSTER BY conversion_event;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_touchpoints` (
+  touchpoint_id STRING NOT NULL,
+  subject_key STRING NOT NULL,
+  session_id STRING NOT NULL,
+  touchpoint_ts TIMESTAMP NOT NULL,
+  touchpoint_date DATE NOT NULL,
+  source STRING,
+  medium STRING,
+  campaign STRING,
+  canonical_channel_id STRING NOT NULL,
+  channel_registry_version INT64 NOT NULL,
+  channel_grouping_version INT64 NOT NULL,
+  source_fingerprint STRING NOT NULL,
+  refreshed_at TIMESTAMP NOT NULL
+)
+PARTITION BY touchpoint_date
+CLUSTER BY canonical_channel_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_journeys` (
+  journey_id STRING NOT NULL,
+  subject_key STRING NOT NULL,
+  conversion_id STRING NOT NULL,
+  conversion_event STRING NOT NULL,
+  conversion_ts TIMESTAMP NOT NULL,
+  conversion_date DATE NOT NULL,
+  conversion_value NUMERIC,
+  channels ARRAY<STRING>,
+  touchpoint_timestamps ARRAY<TIMESTAMP>,
+  touchpoint_count INT64 NOT NULL,
+  path_string STRING NOT NULL,
+  lookback_window_days INT64 NOT NULL,
+  channel_registry_version INT64 NOT NULL,
+  channel_grouping_version INT64 NOT NULL,
+  input_config_fingerprint STRING NOT NULL,
+  refreshed_at TIMESTAMP NOT NULL
+)
+PARTITION BY conversion_date
+CLUSTER BY conversion_event;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_path_frequencies` (
+  conversion_date DATE NOT NULL,
+  conversion_event STRING NOT NULL,
+  path_string STRING NOT NULL,
+  converted BOOL NOT NULL,
+  occurrences INT64 NOT NULL,
+  total_conversion_value NUMERIC,
+  lookback_window_days INT64 NOT NULL,
+  channel_registry_version INT64 NOT NULL,
+  channel_grouping_version INT64 NOT NULL,
+  input_config_fingerprint STRING NOT NULL,
+  refreshed_at TIMESTAMP NOT NULL
+)
+PARTITION BY conversion_date
+CLUSTER BY conversion_event;

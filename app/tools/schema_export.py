@@ -39,6 +39,13 @@ from app.mel.models import (
 )
 from app.response.contracts import StructuredResponse
 from app.service.errors import ProblemDetail
+from app.service.mmm_models import (
+    CreateModelDesignRequest,
+    FitRunResponse,
+    IdentifiabilityReviewResponse,
+    MMMSummaryResponse,
+    ModelVersionResponse,
+)
 from app.service.models import (
     BigQueryBindingResponse,
     BillingSessionResponse,
@@ -65,6 +72,13 @@ from app.service.models import (
     WebhookAckResponse,
     WorkspaceListResponse,
     WorkspaceResponse,
+)
+from app.service.mta_models import (
+    MTAOverviewResponse,
+    MTAReadinessResponse,
+    MTAResultsSnapshotView,
+    MTARunReceiptResponse,
+    MTARunResponse,
 )
 from app.service.project_models import (
     BusinessIqOverviewReadModel,
@@ -225,6 +239,16 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             ProjectHomeReadModel,
             BusinessIqOverviewReadModel,
             DataFoundationOverviewReadModel,
+            MMMSummaryResponse,
+            CreateModelDesignRequest,
+            ModelVersionResponse,
+            FitRunResponse,
+            IdentifiabilityReviewResponse,
+            MTAOverviewResponse,
+            MTAReadinessResponse,
+            MTARunResponse,
+            MTARunReceiptResponse,
+            MTAResultsSnapshotView,
         ),
         composition="catalog",
     ),

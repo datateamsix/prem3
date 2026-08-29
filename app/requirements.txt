@@ -3,6 +3,7 @@
 google-adk
 google-cloud-aiplatform
 google-cloud-bigquery
+google-cloud-bigquery-datatransfer
 google-cloud-run
 google-cloud-tasks
 google-cloud-storage
@@ -19,3 +20,4 @@ db-dtypes>=1.4
 pandas-gbq>=0.26
 pydantic>=2.10
 pyyaml>=6.0
+jinja2>=3.1

@@ -1,0 +1,29 @@
+MERGE `{{ project_id }}.{{ modeling_dataset }}.mta_touchpoints` T
+USING (
+  SELECT
+    TO_HEX(SHA256(CONCAT(session_id,'|',CAST(session_start_ts AS STRING)))) AS touchpoint_id,
+    subject_key, session_id, session_start_ts AS touchpoint_ts, DATE(session_start_ts) AS touchpoint_date,
+    source, medium, campaign, canonical_channel_id,
+    {{ channel_registry_version }} AS channel_registry_version,
+    {{ channel_grouping_version }} AS channel_grouping_version,
+    source_fingerprint
+  FROM `{{ project_id }}.{{ modeling_dataset }}.mta_sessions`
+  WHERE source_date BETWEEN @source_start_date AND @source_end_date
+) S
+ON T.touchpoint_id=S.touchpoint_id
+WHEN MATCHED AND T.source_fingerprint!=S.source_fingerprint THEN UPDATE SET
+  subject_key=S.subject_key, session_id=S.session_id, touchpoint_ts=S.touchpoint_ts,
+  touchpoint_date=S.touchpoint_date, source=S.source, medium=S.medium, campaign=S.campaign,
+  canonical_channel_id=S.canonical_channel_id, channel_registry_version=S.channel_registry_version,
+  channel_grouping_version=S.channel_grouping_version, source_fingerprint=S.source_fingerprint,
+  refreshed_at=CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (
+  touchpoint_id,subject_key,session_id,touchpoint_ts,touchpoint_date,source,medium,campaign,
+  canonical_channel_id,channel_registry_version,channel_grouping_version,source_fingerprint,refreshed_at
+) VALUES (
+  S.touchpoint_id,S.subject_key,S.session_id,S.touchpoint_ts,S.touchpoint_date,S.source,S.medium,S.campaign,
+  S.canonical_channel_id,S.channel_registry_version,S.channel_grouping_version,S.source_fingerprint,CURRENT_TIMESTAMP()
+)
+WHEN NOT MATCHED BY SOURCE
+  AND T.touchpoint_date BETWEEN @source_start_date AND @source_end_date
+THEN DELETE;

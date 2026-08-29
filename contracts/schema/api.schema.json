@@ -86,6 +86,809 @@
       "title": "ProblemFieldError",
       "type": "object"
     },
+    "app_service_mmm_models__CreateModelDesignRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "business_profile_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Profile Snapshot Id"
+        },
+        "compute_profile": {
+          "default": "CPU_TEST",
+          "title": "Compute Profile",
+          "type": "string"
+        },
+        "include_ambiguous_promotion": {
+          "default": false,
+          "title": "Include Ambiguous Promotion",
+          "type": "boolean"
+        },
+        "include_experiment_prior": {
+          "default": false,
+          "title": "Include Experiment Prior",
+          "type": "boolean"
+        },
+        "include_insufficient_controls": {
+          "default": false,
+          "title": "Include Insufficient Controls",
+          "type": "boolean"
+        },
+        "kpi": {
+          "default": "revenue",
+          "title": "Kpi",
+          "type": "string"
+        },
+        "media_channels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Media Channels",
+          "type": "array"
+        },
+        "model_ready_manifest_fingerprint": {
+          "title": "Model Ready Manifest Fingerprint",
+          "type": "string"
+        },
+        "model_ready_manifest_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Ready Manifest Ref"
+        },
+        "model_ready_run_id": {
+          "title": "Model Ready Run Id",
+          "type": "string"
+        },
+        "model_window_end": {
+          "title": "Model Window End",
+          "type": "string"
+        },
+        "model_window_start": {
+          "title": "Model Window Start",
+          "type": "string"
+        },
+        "rf_channels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rf Channels",
+          "type": "array"
+        },
+        "scope": {
+          "default": "GEO",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_ready_run_id",
+        "model_ready_manifest_fingerprint",
+        "model_window_start",
+        "model_window_end"
+      ],
+      "title": "CreateModelDesignRequest",
+      "type": "object"
+    },
+    "app_service_mmm_models__FitEvidenceLinks": {
+      "additionalProperties": false,
+      "properties": {
+        "fit_approval_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit Approval Id"
+        },
+        "fit_plan_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fit Plan Fingerprint"
+        },
+        "fit_run_id": {
+          "title": "Fit Run Id",
+          "type": "string"
+        },
+        "model_plan_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Plan Fingerprint"
+        },
+        "model_plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Plan Id"
+        },
+        "model_version_id": {
+          "title": "Model Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fit_run_id",
+        "model_version_id"
+      ],
+      "title": "FitEvidenceLinks",
+      "type": "object"
+    },
+    "app_service_mmm_models__FitNextActionView": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "title": "Action Type",
+          "type": "string"
+        },
+        "blocking": {
+          "default": true,
+          "title": "Blocking",
+          "type": "boolean"
+        },
+        "owner": {
+          "default": "human",
+          "title": "Owner",
+          "type": "string"
+        },
+        "route_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Route Hint"
+        },
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_type",
+        "statement"
+      ],
+      "title": "FitNextActionView",
+      "type": "object"
+    },
+    "app_service_mmm_models__FitRunResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "dispatch_outcome": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dispatch Outcome"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_mmm_models__FitEvidenceLinks"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "exception_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exception Type"
+        },
+        "failure_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Class"
+        },
+        "failure_stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Stage"
+        },
+        "fit_plan_fingerprint": {
+          "title": "Fit Plan Fingerprint",
+          "type": "string"
+        },
+        "fit_run_id": {
+          "title": "Fit Run Id",
+          "type": "string"
+        },
+        "library": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Library"
+        },
+        "library_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Library Version"
+        },
+        "meridian_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Meridian Version"
+        },
+        "model_version_id": {
+          "title": "Model Version Id",
+          "type": "string"
+        },
+        "next_actions": {
+          "items": {
+            "$ref": "#/$defs/app_service_mmm_models__FitNextActionView"
+          },
+          "title": "Next Actions",
+          "type": "array"
+        },
+        "official_message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Official Message"
+        },
+        "prem3_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prem3 Summary"
+        },
+        "python_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Python Version"
+        },
+        "retry_semantics": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry Semantics"
+        },
+        "runtime_mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runtime Mode"
+        },
+        "sampling_started": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sampling Started"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "tensorflow_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tensorflow Version"
+        },
+        "worker_image_digest": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worker Image Digest"
+        }
+      },
+      "required": [
+        "fit_run_id",
+        "model_version_id",
+        "status",
+        "fit_plan_fingerprint"
+      ],
+      "title": "FitRunResponse",
+      "type": "object"
+    },
+    "app_service_mmm_models__IdentifiabilityReviewResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "business_context": {
+          "additionalProperties": true,
+          "title": "Business Context",
+          "type": "object"
+        },
+        "counter_evidence": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Counter Evidence",
+          "type": "array"
+        },
+        "data_evidence": {
+          "additionalProperties": true,
+          "title": "Data Evidence",
+          "type": "object"
+        },
+        "decision_required": {
+          "default": true,
+          "title": "Decision Required",
+          "type": "boolean"
+        },
+        "eda_evidence": {
+          "additionalProperties": true,
+          "title": "Eda Evidence",
+          "type": "object"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "human_decision": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Human Decision"
+        },
+        "next_actions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Next Actions",
+          "type": "array"
+        },
+        "official_constraint": {
+          "title": "Official Constraint",
+          "type": "string"
+        },
+        "package_id": {
+          "title": "Package Id",
+          "type": "string"
+        },
+        "prem3_interpretation": {
+          "title": "Prem3 Interpretation",
+          "type": "string"
+        },
+        "recommendation": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendation"
+        },
+        "selected_alternative": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected Alternative"
+        },
+        "title": {
+          "default": "IDENTIFIABILITY REVIEW",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "package_id",
+        "official_constraint",
+        "prem3_interpretation",
+        "business_context",
+        "data_evidence",
+        "eda_evidence",
+        "fingerprint"
+      ],
+      "title": "IdentifiabilityReviewResponse",
+      "type": "object"
+    },
+    "app_service_mmm_models__MMMSummaryResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "cycle_id": {
+          "title": "Cycle Id",
+          "type": "string"
+        },
+        "measurement_cycle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_mmm_models__MeasurementCycleView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mmm_track": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_service_mmm_models__MmmTrackWindowView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "model_ready": {
+          "default": false,
+          "title": "Model Ready",
+          "type": "boolean"
+        },
+        "model_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Version Id"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        },
+        "track_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Track Id"
+        }
+      },
+      "required": [
+        "project_id",
+        "cycle_id"
+      ],
+      "title": "MMMSummaryResponse",
+      "type": "object"
+    },
+    "app_service_mmm_models__MeasurementCycleView": {
+      "additionalProperties": false,
+      "properties": {
+        "cycle_id": {
+          "title": "Cycle Id",
+          "type": "string"
+        },
+        "data_cutoff": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Cutoff"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        }
+      },
+      "required": [
+        "cycle_id"
+      ],
+      "title": "MeasurementCycleView",
+      "type": "object"
+    },
+    "app_service_mmm_models__MmmTrackWindowView": {
+      "additionalProperties": false,
+      "properties": {
+        "model_window_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Window End"
+        },
+        "model_window_start": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Window Start"
+        }
+      },
+      "title": "MmmTrackWindowView",
+      "type": "object"
+    },
+    "app_service_mmm_models__ModelVersionResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "cycle_id": {
+          "title": "Cycle Id",
+          "type": "string"
+        },
+        "model_plan_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Plan Fingerprint"
+        },
+        "model_ready_manifest_fingerprint": {
+          "title": "Model Ready Manifest Fingerprint",
+          "type": "string"
+        },
+        "model_version_id": {
+          "title": "Model Version Id",
+          "type": "string"
+        },
+        "model_window_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Window End"
+        },
+        "model_window_start": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Window Start"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "supersedes_model_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supersedes Model Version Id"
+        },
+        "track_id": {
+          "title": "Track Id",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "model_version_id",
+        "project_id",
+        "cycle_id",
+        "track_id",
+        "state",
+        "version",
+        "model_ready_manifest_fingerprint",
+        "accepted",
+        "created_at"
+      ],
+      "title": "ModelVersionResponse",
+      "type": "object"
+    },
     "app_service_models__BigQueryBindingResponse": {
       "additionalProperties": false,
       "properties": {
@@ -2041,6 +2844,644 @@
       "title": "WorkspaceResponse",
       "type": "object"
     },
+    "app_service_mta_models__MTAOverviewNextActionView": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "title": "Action Type",
+          "type": "string"
+        },
+        "blocking": {
+          "default": false,
+          "title": "Blocking",
+          "type": "boolean"
+        },
+        "owner": {
+          "default": "server",
+          "title": "Owner",
+          "type": "string"
+        },
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_type",
+        "statement"
+      ],
+      "title": "MTAOverviewNextActionView",
+      "type": "object"
+    },
+    "app_service_mta_models__MTAOverviewResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptance_computed_by_server": {
+          "default": true,
+          "title": "Acceptance Computed By Server",
+          "type": "boolean"
+        },
+        "attention": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Attention",
+          "type": "array"
+        },
+        "attribution_models": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Attribution Models",
+          "type": "array"
+        },
+        "channel_grouping_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Channel Grouping Version"
+        },
+        "channels_needing_review": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Channels Needing Review",
+          "type": "array"
+        },
+        "conversion_event": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversion Event"
+        },
+        "conversion_period_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversion Period End"
+        },
+        "conversion_period_start": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversion Period Start"
+        },
+        "current_result_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Result Snapshot Id"
+        },
+        "cycle_id": {
+          "title": "Cycle Id",
+          "type": "string"
+        },
+        "domain_stage": {
+          "title": "Domain Stage",
+          "type": "string"
+        },
+        "epistemic_label": {
+          "default": "Observable journey attribution",
+          "title": "Epistemic Label",
+          "type": "string"
+        },
+        "foundation_ready": {
+          "title": "Foundation Ready",
+          "type": "boolean"
+        },
+        "ga4_dataset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ga4 Dataset Id"
+        },
+        "ga4_property_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ga4 Property Id"
+        },
+        "identity_strategy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Identity Strategy"
+        },
+        "latest_result_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Result Snapshot Id"
+        },
+        "latest_result_state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Result State"
+        },
+        "lookback_window_days": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lookback Window Days"
+        },
+        "model_sensitivity_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Sensitivity Summary"
+        },
+        "models_available": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Models Available",
+          "type": "array"
+        },
+        "next_action": {
+          "$ref": "#/$defs/app_service_mta_models__MTAOverviewNextActionView"
+        },
+        "observability_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observability Status"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "readiness_state": {
+          "title": "Readiness State",
+          "type": "string"
+        },
+        "settlement_policy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Settlement Policy"
+        },
+        "top_verified_findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Top Verified Findings",
+          "type": "array"
+        },
+        "track_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Track Id"
+        },
+        "user_id_coverage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "User Id Coverage"
+        },
+        "user_pseudo_id_coverage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "User Pseudo Id Coverage"
+        }
+      },
+      "required": [
+        "project_id",
+        "cycle_id",
+        "domain_stage",
+        "readiness_state",
+        "foundation_ready",
+        "next_action"
+      ],
+      "title": "MTAOverviewResponse",
+      "type": "object"
+    },
+    "app_service_mta_models__MTAReadinessResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "blocking_failures": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Blocking Failures",
+          "type": "array"
+        },
+        "conversion_event": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversion Event"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "ga4_dataset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ga4 Dataset Id"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "state",
+        "fingerprint"
+      ],
+      "title": "MTAReadinessResponse",
+      "type": "object"
+    },
+    "app_service_mta_models__MTAResultsSnapshotView": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_version": {
+          "title": "Adapter Version",
+          "type": "string"
+        },
+        "channel_grouping_fingerprint": {
+          "title": "Channel Grouping Fingerprint",
+          "type": "string"
+        },
+        "channel_grouping_version": {
+          "title": "Channel Grouping Version",
+          "type": "string"
+        },
+        "channel_registry_fingerprint": {
+          "title": "Channel Registry Fingerprint",
+          "type": "string"
+        },
+        "channel_registry_version": {
+          "title": "Channel Registry Version",
+          "type": "integer"
+        },
+        "computation_authority": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Computation Authority"
+        },
+        "conversion_event": {
+          "title": "Conversion Event",
+          "type": "string"
+        },
+        "conversion_period_end": {
+          "title": "Conversion Period End",
+          "type": "string"
+        },
+        "conversion_period_start": {
+          "title": "Conversion Period Start",
+          "type": "string"
+        },
+        "current_result_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Result Snapshot Id"
+        },
+        "evidence_authority": {
+          "title": "Evidence Authority",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "latest_result_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Result Snapshot Id"
+        },
+        "limitations": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "models_completed": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Models Completed",
+          "type": "array"
+        },
+        "models_requested": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Models Requested",
+          "type": "array"
+        },
+        "observability_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observability Status"
+        },
+        "result_snapshot_id": {
+          "title": "Result Snapshot Id",
+          "type": "string"
+        },
+        "result_status": {
+          "title": "Result Status",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_cutoff": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Cutoff"
+        }
+      },
+      "required": [
+        "result_snapshot_id",
+        "run_id",
+        "result_status",
+        "evidence_authority",
+        "fingerprint",
+        "conversion_event",
+        "conversion_period_start",
+        "conversion_period_end",
+        "channel_registry_version",
+        "channel_registry_fingerprint",
+        "channel_grouping_version",
+        "channel_grouping_fingerprint",
+        "adapter_version"
+      ],
+      "title": "MTAResultsSnapshotView",
+      "type": "object"
+    },
+    "app_service_mta_models__MTARunReceiptResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "computation_authority": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Computation Authority"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "grouped_path_count": {
+          "default": 0,
+          "title": "Grouped Path Count",
+          "type": "integer"
+        },
+        "journey_count": {
+          "default": 0,
+          "title": "Journey Count",
+          "type": "integer"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "readback_status": {
+          "title": "Readback Status",
+          "type": "string"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "run_id",
+        "status",
+        "fingerprint",
+        "readback_status"
+      ],
+      "title": "MTARunReceiptResponse",
+      "type": "object"
+    },
+    "app_service_mta_models__MTARunResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "dispatch_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dispatch Id"
+        },
+        "execution_plan_id": {
+          "title": "Execution Plan Id",
+          "type": "string"
+        },
+        "proof_label": {
+          "default": "SYNTHETIC",
+          "title": "Proof Label",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "status",
+        "execution_plan_id"
+      ],
+      "title": "MTARunResponse",
+      "type": "object"
+    },
     "app_service_project_models__AttentionItem": {
       "additionalProperties": false,
       "properties": {
@@ -3532,6 +4973,36 @@
     },
     {
       "$ref": "#/$defs/app_service_project_models__DataFoundationOverviewReadModel"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__MMMSummaryResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__CreateModelDesignRequest"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__ModelVersionResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__FitRunResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mmm_models__IdentifiabilityReviewResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTAOverviewResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTAReadinessResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTARunResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTARunReceiptResponse"
+    },
+    {
+      "$ref": "#/$defs/app_service_mta_models__MTAResultsSnapshotView"
     }
   ],
   "title": "PreM3 prem3-api presentation contracts"

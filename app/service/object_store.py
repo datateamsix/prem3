@@ -23,6 +23,8 @@ class ObjectMetadata:
 class ObjectStore(Protocol):
     def get_object_metadata(self, *, bucket: str, object_name: str) -> ObjectMetadata | None: ...
 
+    def read_bytes(self, *, bucket: str, object_name: str) -> bytes | None: ...
+
     def write_json(
         self, *, bucket: str, object_name: str, payload: dict[str, Any]
     ) -> ObjectMetadata: ...
@@ -114,6 +116,12 @@ class FakeObjectStore:
             md5_hash=str(record.get("md5_hash") or "") or None,
         )
 
+    def read_bytes(self, *, bucket: str, object_name: str) -> bytes | None:
+        record = self.objects.get((bucket, object_name))
+        if record is None:
+            return None
+        return bytes(record["data"])
+
     def write_json(
         self, *, bucket: str, object_name: str, payload: dict[str, Any]
     ) -> ObjectMetadata:
@@ -171,6 +179,12 @@ class GcsObjectStore:
             crc32c=blob.crc32c,
             md5_hash=blob.md5_hash,
         )
+
+    def read_bytes(self, *, bucket: str, object_name: str) -> bytes | None:
+        blob = self._client_or_default().bucket(bucket).get_blob(object_name)
+        if blob is None:
+            return None
+        return bytes(blob.download_as_bytes())
 
     def write_json(
         self, *, bucket: str, object_name: str, payload: dict[str, Any]

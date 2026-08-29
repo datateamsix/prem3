@@ -119,7 +119,17 @@
         "ProjectListResponse",
         "ProjectHomeReadModel",
         "BusinessIqOverviewReadModel",
-        "DataFoundationOverviewReadModel"
+        "DataFoundationOverviewReadModel",
+        "MMMSummaryResponse",
+        "CreateModelDesignRequest",
+        "ModelVersionResponse",
+        "FitRunResponse",
+        "IdentifiabilityReviewResponse",
+        "MTAOverviewResponse",
+        "MTAReadinessResponse",
+        "MTARunResponse",
+        "MTARunReceiptResponse",
+        "MTAResultsSnapshotView"
       ],
       "python_module": "app.service.models",
       "python_qualnames": [
@@ -154,9 +164,19 @@
         "app.service.project_models.ProjectListResponse",
         "app.service.project_models.ProjectHomeReadModel",
         "app.service.project_models.BusinessIqOverviewReadModel",
-        "app.service.project_models.DataFoundationOverviewReadModel"
+        "app.service.project_models.DataFoundationOverviewReadModel",
+        "app.service.mmm_models.MMMSummaryResponse",
+        "app.service.mmm_models.CreateModelDesignRequest",
+        "app.service.mmm_models.ModelVersionResponse",
+        "app.service.mmm_models.FitRunResponse",
+        "app.service.mmm_models.IdentifiabilityReviewResponse",
+        "app.service.mta_models.MTAOverviewResponse",
+        "app.service.mta_models.MTAReadinessResponse",
+        "app.service.mta_models.MTARunResponse",
+        "app.service.mta_models.MTARunReceiptResponse",
+        "app.service.mta_models.MTAResultsSnapshotView"
       ],
-      "sha256": "1e56b53348ca1186011ad52deb21c1e5e3d19b9e5832a26df03d11b970345f6e"
+      "sha256": "77ca325652424da36d219ee5845f0ef0306fb8fba5588917d100d6b564fbb948"
     }
   ],
   "hash_algorithm": "sha256",

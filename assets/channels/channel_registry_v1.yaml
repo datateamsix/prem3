@@ -1,0 +1,33 @@
+version: 1
+contract: PREM3_CANONICAL_CHANNEL_REGISTRY
+channels:
+  - {id: direct, display_name: Direct, family_id: direct_unattributed, mta_default: true, mmm_allowed: false}
+  - {id: search_paid, display_name: Paid Search, family_id: search, mta_default: true, mmm_allowed: true}
+  - {id: search_organic, display_name: Organic Search, family_id: search, mta_default: true, mmm_allowed: true}
+  - {id: ai_search, display_name: AI Search / Answer Engines, family_id: ai_search, mta_default: true, mmm_allowed: true}
+  - {id: social_paid, display_name: Paid Social, family_id: social, mta_default: true, mmm_allowed: true}
+  - {id: social_organic, display_name: Organic Social, family_id: social, mta_default: true, mmm_allowed: true}
+  - {id: video_paid, display_name: Paid Video, family_id: video_tv, mta_default: true, mmm_allowed: true}
+  - {id: video_organic, display_name: Organic Video, family_id: video_tv, mta_default: true, mmm_allowed: true}
+  - {id: ctv_streaming, display_name: Streaming TV / CTV, family_id: video_tv, mta_default: false, mmm_allowed: true}
+  - {id: tv_linear, display_name: Linear TV, family_id: video_tv, mta_default: false, mmm_allowed: true}
+  - {id: display, display_name: Display, family_id: display_programmatic, mta_default: true, mmm_allowed: true}
+  - {id: shopping_paid, display_name: Paid Shopping, family_id: retail_commerce, mta_default: true, mmm_allowed: true}
+  - {id: shopping_organic, display_name: Organic Shopping, family_id: retail_commerce, mta_default: true, mmm_allowed: true}
+  - {id: retail_media, display_name: Retail Media, family_id: retail_commerce, mta_default: false, mmm_allowed: true}
+  - {id: email, display_name: Email, family_id: crm_owned, mta_default: true, mmm_allowed: true}
+  - {id: sms, display_name: SMS, family_id: crm_owned, mta_default: true, mmm_allowed: true}
+  - {id: mobile_push, display_name: Mobile Push, family_id: crm_owned, mta_default: true, mmm_allowed: true}
+  - {id: crm_owned, display_name: CRM / Owned, family_id: crm_owned, mta_default: false, mmm_allowed: true}
+  - {id: audio, display_name: Audio, family_id: audio, mta_default: true, mmm_allowed: true}
+  - {id: podcast, display_name: Podcast, family_id: audio, mta_default: false, mmm_allowed: true}
+  - {id: radio, display_name: Radio, family_id: audio, mta_default: false, mmm_allowed: true}
+  - {id: affiliate, display_name: Affiliate, family_id: partnerships_influence, mta_default: true, mmm_allowed: true}
+  - {id: referral, display_name: Referral, family_id: partnerships_influence, mta_default: true, mmm_allowed: false}
+  - {id: influencer, display_name: Influencer / Creator, family_id: partnerships_influence, mta_default: false, mmm_allowed: true}
+  - {id: partnership, display_name: Partnerships, family_id: partnerships_influence, mta_default: false, mmm_allowed: true}
+  - {id: ooh, display_name: Out of Home, family_id: offline_traditional, mta_default: false, mmm_allowed: true}
+  - {id: print, display_name: Print, family_id: offline_traditional, mta_default: false, mmm_allowed: true}
+  - {id: direct_mail, display_name: Direct Mail, family_id: offline_traditional, mta_default: false, mmm_allowed: true}
+  - {id: other_paid, display_name: Other Paid, family_id: other, mta_default: true, mmm_allowed: true}
+  - {id: other, display_name: Other / Unclassified, family_id: other, mta_default: true, mmm_allowed: true}
