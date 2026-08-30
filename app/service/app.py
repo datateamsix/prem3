@@ -45,6 +45,8 @@ from app.investment_optimization.proposal import ProposalGovernanceService
 from app.investment_optimization.risk.service import RiskFrontierService
 from app.investment_optimization.run_service import OptimizationRunService
 from app.investment_optimization.service import OptimizationReadinessService
+from app.investment_optimization.simulation.execution import UnavailableSimulationExecutionAdapter
+from app.investment_optimization.simulation.service import SimulationService
 from app.investment_optimization.store import InMemoryOptimizationMetadataStore
 from app.investment_planning.actuals import DataFoundationActualSpendAdapter
 from app.investment_planning.bigquery_actuals import BigQueryActualSpendAdapter
@@ -133,6 +135,7 @@ from app.service.routers import (
     publishes,
     risk_frontier,
     runs,
+    simulation,
     uploads,
     workspaces,
 )
@@ -361,6 +364,12 @@ def create_app(
         execute_inline=not uses_cloud_runtime(),
     )
     app.state.risk_frontier = RiskFrontierService(optimization_store)
+    app.state.simulation = SimulationService(
+        optimization_store,
+        adapter=UnavailableSimulationExecutionAdapter(),
+        object_store=upload_store or FakeObjectStore(),
+        artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
+    )
     app.state.advanced_optimization = AdvancedOptimizationService(
         repo=repo,
         store=optimization_store,
@@ -414,6 +423,8 @@ def create_app(
     app.include_router(exposure_risk.workspace_alias_exposure_router)
     app.include_router(risk_frontier.canonical_risk_frontier_router)
     app.include_router(risk_frontier.workspace_alias_risk_frontier_router)
+    app.include_router(simulation.canonical_simulation_router)
+    app.include_router(simulation.workspace_alias_simulation_router)
     app.include_router(materializations.router)
     app.include_router(publishes.router)
     app.include_router(mmm.router)

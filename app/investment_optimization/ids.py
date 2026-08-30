@@ -109,3 +109,43 @@ def new_parity_receipt_id() -> str:
 
 def new_feasibility_receipt_id() -> str:
     return _opaque("ofeas")
+
+
+def new_distribution_set_id() -> str:
+    return _opaque("osds")
+
+
+def new_scenario_variable_id() -> str:
+    return _opaque("osvar")
+
+
+def new_correlation_spec_id() -> str:
+    return _opaque("oscor")
+
+
+def new_simulation_policy_id() -> str:
+    return _opaque("osimpol")
+
+
+def new_simulation_run_spec_id() -> str:
+    return _opaque("ospec")
+
+
+def new_simulation_run_id() -> str:
+    return _opaque("osim")
+
+
+def new_outcome_distribution_id() -> str:
+    return _opaque("odist")
+
+
+def new_simulation_receipt_id() -> str:
+    return _opaque("osimr")
+
+
+def new_simulation_handoff_id() -> str:
+    return _opaque("ohand")
+
+
+def new_simulation_draw_id() -> str:
+    return _opaque("odraw")

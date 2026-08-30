@@ -1029,6 +1029,24 @@ components:
       - created_at
       title: ConstraintValidationResponse
       type: object
+    CorrelationSpecResponse:
+      additionalProperties: false
+      properties:
+        authority:
+          title: Authority
+          type: string
+        correlation_spec_id:
+          title: Correlation Spec Id
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+      required:
+      - correlation_spec_id
+      - authority
+      - fingerprint
+      title: CorrelationSpecResponse
+      type: object
     CoverageReadModel:
       additionalProperties: false
       properties:
@@ -1242,6 +1260,36 @@ components:
           type: array
       title: CreateConstraintSetRequest
       type: object
+    CreateCorrelationSpecRequest:
+      additionalProperties: false
+      properties:
+        authority:
+          title: Authority
+          type: string
+        matrix:
+          default: []
+          items:
+            items:
+              type: number
+            type: array
+          title: Matrix
+          type: array
+        source_refs:
+          default: []
+          items:
+            type: string
+          title: Source Refs
+          type: array
+        variable_ids:
+          items:
+            type: string
+          title: Variable Ids
+          type: array
+      required:
+      - authority
+      - variable_ids
+      title: CreateCorrelationSpecRequest
+      type: object
     CreateCycleRequest:
       additionalProperties: false
       properties:
@@ -1295,6 +1343,36 @@ components:
       required:
       - name
       title: CreateDatasetRequest
+      type: object
+    CreateDistributionSetRequest:
+      additionalProperties: false
+      properties:
+        approval_state:
+          default: APPROVED
+          title: Approval State
+          type: string
+        as_of_time:
+          title: As Of Time
+          type: string
+        effective_period:
+          title: Effective Period
+          type: string
+        source_refs:
+          default: []
+          items:
+            type: string
+          title: Source Refs
+          type: array
+        variables:
+          items:
+            $ref: '#/components/schemas/CreateScenarioVariableRequest'
+          title: Variables
+          type: array
+      required:
+      - effective_period
+      - as_of_time
+      - variables
+      title: CreateDistributionSetRequest
       type: object
     CreateEvaluationRequest:
       additionalProperties: false
@@ -1749,6 +1827,148 @@ components:
       - optimization_run_id
       title: CreateScenarioRequest
       type: object
+    CreateScenarioVariableRequest:
+      additionalProperties: false
+      properties:
+        approval_state:
+          default: APPROVED
+          title: Approval State
+          type: string
+        channel_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Id
+        family:
+          title: Family
+          type: string
+        parameters:
+          additionalProperties:
+            anyOf:
+            - type: number
+            - items:
+                type: number
+              type: array
+          title: Parameters
+          type: object
+        scope:
+          default: portfolio
+          title: Scope
+          type: string
+        semantic_type:
+          title: Semantic Type
+          type: string
+        source_authority:
+          title: Source Authority
+          type: string
+        source_refs:
+          items:
+            type: string
+          title: Source Refs
+          type: array
+        time_scope:
+          default: FY2027Q1
+          title: Time Scope
+          type: string
+        unit:
+          default: '1'
+          title: Unit
+          type: string
+      required:
+      - semantic_type
+      - family
+      - parameters
+      - source_authority
+      - source_refs
+      title: CreateScenarioVariableRequest
+      type: object
+    CreateSimulationPolicyRequest:
+      additionalProperties: false
+      properties:
+        as_of_time:
+          title: As Of Time
+          type: string
+        batch_size:
+          title: Batch Size
+          type: integer
+        candidate_set_ref:
+          items:
+            type: string
+          title: Candidate Set Ref
+          type: array
+        correlation_spec_ref:
+          title: Correlation Spec Ref
+          type: string
+        distribution_set_ref:
+          title: Distribution Set Ref
+          type: string
+        number_of_draws:
+          title: Number Of Draws
+          type: integer
+        random_seed:
+          title: Random Seed
+          type: integer
+        tail_probability:
+          default: 0.05
+          title: Tail Probability
+          type: number
+        variable_count:
+          title: Variable Count
+          type: integer
+      required:
+      - number_of_draws
+      - random_seed
+      - batch_size
+      - distribution_set_ref
+      - correlation_spec_ref
+      - candidate_set_ref
+      - as_of_time
+      - variable_count
+      title: CreateSimulationPolicyRequest
+      type: object
+    CreateSimulationRunRequest:
+      additionalProperties: false
+      properties:
+        run_spec_id:
+          title: Run Spec Id
+          type: string
+      required:
+      - run_spec_id
+      title: CreateSimulationRunRequest
+      type: object
+    CreateSimulationRunSpecRequest:
+      additionalProperties: false
+      properties:
+        baseline_ref:
+          title: Baseline Ref
+          type: string
+        exposure_risk_handoff_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Exposure Risk Handoff Ref
+        future_assumption_set_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Future Assumption Set Ref
+        model_version_ref:
+          title: Model Version Ref
+          type: string
+        policy_id:
+          title: Policy Id
+          type: string
+        posterior_artifact_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Posterior Artifact Ref
+      required:
+      - baseline_ref
+      - policy_id
+      - model_version_ref
+      title: CreateSimulationRunSpecRequest
+      type: object
     CreateUploadRequest:
       additionalProperties: false
       properties:
@@ -2019,6 +2239,24 @@ components:
           title: Only Inspect Prioritized Datasets
           type: boolean
       title: DiscoveryHintsRequest
+      type: object
+    DistributionSetResponse:
+      additionalProperties: false
+      properties:
+        approval_state:
+          title: Approval State
+          type: string
+        distribution_set_fingerprint:
+          title: Distribution Set Fingerprint
+          type: string
+        scenario_distribution_set_id:
+          title: Scenario Distribution Set Id
+          type: string
+      required:
+      - scenario_distribution_set_id
+      - distribution_set_fingerprint
+      - approval_state
+      title: DistributionSetResponse
       type: object
     DriveBindingResponse:
       additionalProperties: false
@@ -5113,6 +5351,32 @@ components:
       - max_active_projects
       title: OrganizationReadModel
       type: object
+    OutcomeDistributionResponse:
+      additionalProperties: false
+      properties:
+        candidate_portfolio_id:
+          title: Candidate Portfolio Id
+          type: string
+        distribution_artifact_ref:
+          title: Distribution Artifact Ref
+          type: string
+        mean:
+          title: Mean
+          type: number
+        median:
+          title: Median
+          type: number
+        portfolio_outcome_distribution_id:
+          title: Portfolio Outcome Distribution Id
+          type: string
+      required:
+      - portfolio_outcome_distribution_id
+      - candidate_portfolio_id
+      - mean
+      - median
+      - distribution_artifact_ref
+      title: OutcomeDistributionResponse
+      type: object
     ParityReceiptResponse:
       additionalProperties: false
       properties:
@@ -6902,6 +7166,123 @@ components:
       required:
       - risk_posture
       title: SelectFrontierRequest
+      type: object
+    SimulationHandoffResponse:
+      additionalProperties: false
+      properties:
+        as_of_time:
+          title: As Of Time
+          type: string
+        input_fingerprint:
+          title: Input Fingerprint
+          type: string
+        limitations:
+          items:
+            type: string
+          title: Limitations
+          type: array
+        simulation_evidence_handoff_id:
+          title: Simulation Evidence Handoff Id
+          type: string
+        simulation_fingerprint:
+          title: Simulation Fingerprint
+          type: string
+        simulation_run_id:
+          title: Simulation Run Id
+          type: string
+      required:
+      - simulation_evidence_handoff_id
+      - simulation_run_id
+      - as_of_time
+      - input_fingerprint
+      - simulation_fingerprint
+      - limitations
+      title: SimulationHandoffResponse
+      type: object
+    SimulationPolicyResponse:
+      additionalProperties: false
+      properties:
+        fingerprint:
+          title: Fingerprint
+          type: string
+        number_of_draws:
+          title: Number Of Draws
+          type: integer
+        policy_id:
+          title: Policy Id
+          type: string
+      required:
+      - policy_id
+      - fingerprint
+      - number_of_draws
+      title: SimulationPolicyResponse
+      type: object
+    SimulationReceiptResponse:
+      additionalProperties: false
+      properties:
+        draw_count:
+          title: Draw Count
+          type: integer
+        receipt_id:
+          title: Receipt Id
+          type: string
+        simulation_fingerprint:
+          title: Simulation Fingerprint
+          type: string
+        simulation_run_id:
+          title: Simulation Run Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - receipt_id
+      - simulation_run_id
+      - status
+      - draw_count
+      - simulation_fingerprint
+      title: SimulationReceiptResponse
+      type: object
+    SimulationRunResponse:
+      additionalProperties: false
+      properties:
+        failure_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Failure Code
+        input_fingerprint:
+          title: Input Fingerprint
+          type: string
+        simulation_run_id:
+          title: Simulation Run Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - simulation_run_id
+      - status
+      - input_fingerprint
+      title: SimulationRunResponse
+      type: object
+    SimulationRunSpecResponse:
+      additionalProperties: false
+      properties:
+        as_of_time:
+          title: As Of Time
+          type: string
+        input_fingerprint:
+          title: Input Fingerprint
+          type: string
+        simulation_run_spec_id:
+          title: Simulation Run Spec Id
+          type: string
+      required:
+      - simulation_run_spec_id
+      - input_fingerprint
+      - as_of_time
+      title: SimulationRunSpecResponse
       type: object
     SourceMaterializationListResponse:
       additionalProperties: false
@@ -9918,6 +10299,396 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Scenario Comparison
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/correlation-specs:
+    post:
+      operationId: createScenarioCorrelationSpec
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCorrelationSpecRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrelationSpecResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Correlation
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/correlation-specs/{spec_id}:
+    get:
+      operationId: getScenarioCorrelationSpec
+      parameters:
+      - in: path
+        name: spec_id
+        required: true
+        schema:
+          title: Spec Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrelationSpecResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Correlation
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/policies:
+    post:
+      operationId: createMonteCarloSimulationPolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSimulationPolicyRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationPolicyResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Policy
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/policies/{policy_id}:
+    get:
+      operationId: getMonteCarloSimulationPolicy
+      parameters:
+      - in: path
+        name: policy_id
+        required: true
+        schema:
+          title: Policy Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationPolicyResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Policy
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/run-specs:
+    post:
+      operationId: createSimulationRunSpec
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSimulationRunSpecRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationRunSpecResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Run Spec
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/run-specs/{spec_id}:
+    get:
+      operationId: getSimulationRunSpec
+      parameters:
+      - in: path
+        name: spec_id
+        required: true
+        schema:
+          title: Spec Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationRunSpecResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Run Spec
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/runs:
+    post:
+      operationId: createSimulationRun
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSimulationRunRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationRunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Run
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/runs/{run_id}:
+    get:
+      operationId: getSimulationRun
+      parameters:
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationRunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Run
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/runs/{run_id}/evidence-handoff:
+    get:
+      operationId: getSimulationEvidenceHandoff
+      parameters:
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationHandoffResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Handoff
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/runs/{run_id}/execute:
+    post:
+      operationId: executeSimulationRun
+      parameters:
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationRunResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Execute Run
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/runs/{run_id}/outcome-distributions:
+    get:
+      operationId: listPortfolioOutcomeDistributions
+      parameters:
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OutcomeDistributionResponse'
+                title: Response Listportfoliooutcomedistributions
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Distributions
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/runs/{run_id}/receipt:
+    get:
+      operationId: getMonteCarloSimulationReceipt
+      parameters:
+      - in: path
+        name: run_id
+        required: true
+        schema:
+          title: Run Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationReceiptResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Receipt
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/scenario-distribution-sets:
+    post:
+      operationId: createScenarioDistributionSet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDistributionSetRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributionSetResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Distribution Set
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/simulations/scenario-distribution-sets/{set_id}:
+    get:
+      operationId: getScenarioDistributionSet
+      parameters:
+      - in: path
+        name: set_id
+        required: true
+        schema:
+          title: Set Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributionSetResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Distribution Set
       tags:
       - investment-portfolio
   /v1/projects/{project_id}/measurement-home:

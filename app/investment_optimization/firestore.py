@@ -37,6 +37,16 @@ from app.investment_optimization.risk.models import (
     RiskEvaluationPolicy,
     RiskNeutralParityReceipt,
 )
+from app.investment_optimization.simulation.models import (
+    MonteCarloSimulationPolicy,
+    MonteCarloSimulationReceipt,
+    PortfolioOutcomeDistribution,
+    ScenarioCorrelationSpec,
+    ScenarioDistributionSet,
+    SimulationEvidenceHandoff,
+    SimulationRun,
+    SimulationRunSpec,
+)
 from app.investment_optimization.store import (
     OptimizationMetadata,
     assert_optimization_metadata_only,
@@ -66,6 +76,14 @@ COL_EVALUATIONS = "portfolio_risk_evaluations"
 COL_FRONTIERS = "marketing_investment_frontiers"
 COL_SELECTIONS = "frontier_selections"
 COL_PARITY = "risk_neutral_parity_receipts"
+COL_DIST_SETS = "scenario_distribution_sets"
+COL_CORRELATIONS = "scenario_correlation_specs"
+COL_SIM_POLICIES = "monte_carlo_simulation_policies"
+COL_RUN_SPECS = "simulation_run_specs"
+COL_SIM_RUNS = "simulation_runs"
+COL_OUTCOME_DISTS = "portfolio_outcome_distributions"
+COL_SIM_RECEIPTS = "monte_carlo_simulation_receipts"
+COL_HANDOFFS = "simulation_evidence_handoffs"
 COL_INDEX = "investment_optimization_index"
 
 
@@ -433,6 +451,126 @@ class FirestoreOptimizationMetadataStore:
                 resource_id=safe.parity_receipt_id,
                 tenant_id=safe.tenant_id,
                 workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, ScenarioDistributionSet):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_DIST_SETS).document(
+                safe.scenario_distribution_set_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="dist_set",
+                resource_id=safe.scenario_distribution_set_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, ScenarioCorrelationSpec):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_CORRELATIONS).document(
+                safe.correlation_spec_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="correlation",
+                resource_id=safe.correlation_spec_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="correlation_fp",
+                key=safe.fingerprint,
+                resource_id=safe.correlation_spec_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, MonteCarloSimulationPolicy):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_SIM_POLICIES).document(
+                safe.policy_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="sim_policy",
+                resource_id=safe.policy_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="sim_policy_fp",
+                key=safe.fingerprint,
+                resource_id=safe.policy_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, SimulationRunSpec):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_RUN_SPECS).document(
+                safe.simulation_run_spec_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="run_spec",
+                resource_id=safe.simulation_run_spec_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="run_spec_fp",
+                key=safe.input_fingerprint,
+                resource_id=safe.simulation_run_spec_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, SimulationRun):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_SIM_RUNS).document(
+                safe.simulation_run_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="sim_run",
+                resource_id=safe.simulation_run_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="sim_run_fp",
+                key=safe.input_fingerprint,
+                resource_id=safe.simulation_run_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, PortfolioOutcomeDistribution):
+            run = self.get_simulation_run(safe.simulation_run_id)
+            if run is None:
+                raise PersistenceBarrierError(
+                    "PortfolioOutcomeDistribution requires a stored simulation run.",
+                    code="PLANNING_PERSISTENCE_BARRIER",
+                )
+            self._workspace(run.tenant_id, run.project_id).collection(COL_OUTCOME_DISTS).document(
+                safe.portfolio_outcome_distribution_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="outcome_dist",
+                resource_id=safe.portfolio_outcome_distribution_id,
+                tenant_id=run.tenant_id,
+                workspace_id=run.project_id,
+            )
+        elif isinstance(safe, MonteCarloSimulationReceipt):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_SIM_RECEIPTS).document(
+                safe.receipt_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="sim_receipt",
+                resource_id=safe.receipt_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, SimulationEvidenceHandoff):
+            run = self.get_simulation_run(safe.simulation_run_id)
+            if run is None:
+                raise PersistenceBarrierError(
+                    "SimulationEvidenceHandoff requires a stored simulation run.",
+                    code="PLANNING_PERSISTENCE_BARRIER",
+                )
+            self._workspace(run.tenant_id, run.project_id).collection(COL_HANDOFFS).document(
+                safe.simulation_evidence_handoff_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="sim_handoff",
+                resource_id=safe.simulation_evidence_handoff_id,
+                tenant_id=run.tenant_id,
+                workspace_id=run.project_id,
             )
         else:
             raise PersistenceBarrierError(
@@ -816,3 +954,112 @@ class FirestoreOptimizationMetadataStore:
             resource_id=parity_receipt_id,
             collection=COL_PARITY,
         )
+
+    def get_distribution_set(self, set_id: str) -> ScenarioDistributionSet | None:
+        return self._load(
+            ScenarioDistributionSet, kind="dist_set", resource_id=set_id, collection=COL_DIST_SETS
+        )
+
+    def get_distribution_set_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, fingerprint: str
+    ) -> ScenarioDistributionSet | None:
+        docs = self._workspace(tenant_id, project_id).collection(COL_DIST_SETS).stream()
+        for doc in docs:
+            item = _from_document(ScenarioDistributionSet, doc.to_dict())
+            if item.distribution_set_fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_correlation_spec(self, spec_id: str) -> ScenarioCorrelationSpec | None:
+        return self._load(
+            ScenarioCorrelationSpec,
+            kind="correlation",
+            resource_id=spec_id,
+            collection=COL_CORRELATIONS,
+        )
+
+    def get_correlation_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> ScenarioCorrelationSpec | None:
+        snap = self._index("correlation_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_correlation_spec(str(data.get("resource_id", "")))
+
+    def get_simulation_policy(self, policy_id: str) -> MonteCarloSimulationPolicy | None:
+        return self._load(
+            MonteCarloSimulationPolicy,
+            kind="sim_policy",
+            resource_id=policy_id,
+            collection=COL_SIM_POLICIES,
+        )
+
+    def get_simulation_policy_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> MonteCarloSimulationPolicy | None:
+        snap = self._index("sim_policy_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_simulation_policy(str(data.get("resource_id", "")))
+
+    def get_run_spec(self, spec_id: str) -> SimulationRunSpec | None:
+        return self._load(
+            SimulationRunSpec, kind="run_spec", resource_id=spec_id, collection=COL_RUN_SPECS
+        )
+
+    def get_run_spec_by_fingerprint(self, *, fingerprint: str) -> SimulationRunSpec | None:
+        snap = self._index("run_spec_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_run_spec(str(data.get("resource_id", "")))
+
+    def get_simulation_run(self, simulation_run_id: str) -> SimulationRun | None:
+        return self._load(
+            SimulationRun, kind="sim_run", resource_id=simulation_run_id, collection=COL_SIM_RUNS
+        )
+
+    def get_simulation_run_by_fingerprint(self, *, fingerprint: str) -> SimulationRun | None:
+        snap = self._index("sim_run_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_simulation_run(str(data.get("resource_id", "")))
+
+    def list_outcome_distributions(
+        self, *, simulation_run_id: str
+    ) -> tuple[PortfolioOutcomeDistribution, ...]:
+        run = self.get_simulation_run(simulation_run_id)
+        if run is None:
+            return ()
+        docs = self._workspace(run.tenant_id, run.project_id).collection(COL_OUTCOME_DISTS).stream()
+        loaded = (
+            _from_document(PortfolioOutcomeDistribution, doc.to_dict()) for doc in docs
+        )
+        return tuple(item for item in loaded if item.simulation_run_id == simulation_run_id)
+
+    def get_simulation_receipt_for_run(
+        self, simulation_run_id: str
+    ) -> MonteCarloSimulationReceipt | None:
+        run = self.get_simulation_run(simulation_run_id)
+        if run is None:
+            return None
+        docs = self._workspace(run.tenant_id, run.project_id).collection(COL_SIM_RECEIPTS).stream()
+        for doc in docs:
+            item = _from_document(MonteCarloSimulationReceipt, doc.to_dict())
+            if item.simulation_run_id == simulation_run_id:
+                return item
+        return None
+
+    def get_handoff_for_run(self, simulation_run_id: str) -> SimulationEvidenceHandoff | None:
+        run = self.get_simulation_run(simulation_run_id)
+        if run is None:
+            return None
+        docs = self._workspace(run.tenant_id, run.project_id).collection(COL_HANDOFFS).stream()
+        for doc in docs:
+            item = _from_document(SimulationEvidenceHandoff, doc.to_dict())
+            if item.simulation_run_id == simulation_run_id:
+                return item
+        return None

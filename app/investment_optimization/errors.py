@@ -275,3 +275,63 @@ class FrontierSelectionNotFoundError(OptimizationError):
 
 class ParityReceiptNotFoundError(OptimizationError):
     code = "PARITY_RECEIPT_NOT_FOUND"
+
+
+class SimulationInputNotReadyError(OptimizationError):
+    code = "SIMULATION_INPUT_NOT_READY"
+
+
+class ScenarioDistributionNotGovernedError(OptimizationError):
+    code = "SCENARIO_DISTRIBUTION_NOT_GOVERNED"
+
+
+class ScenarioCorrelationInvalidError(OptimizationError):
+    code = "SCENARIO_CORRELATION_INVALID"
+
+
+class PosteriorSimulationSourceUnavailableError(OptimizationError):
+    code = "POSTERIOR_SIMULATION_SOURCE_UNAVAILABLE"
+
+
+class SimulationPolicyInvalidError(OptimizationError):
+    code = "SIMULATION_POLICY_INVALID"
+
+
+class SimulationLimitExceededError(OptimizationError):
+    code = "SIMULATION_LIMIT_EXCEEDED"
+
+
+class SimulationRuntimeUnavailableError(OptimizationError):
+    code = "SIMULATION_RUNTIME_UNAVAILABLE"
+
+
+class SimulationExecutionFailedError(OptimizationError):
+    code = "SIMULATION_EXECUTION_FAILED"
+
+
+class SimulationArtifactWriteFailedError(OptimizationError):
+    code = "SIMULATION_ARTIFACT_WRITE_FAILED"
+
+
+class SimulationFingerprintMismatchError(OptimizationError):
+    code = "SIMULATION_FINGERPRINT_MISMATCH"
+
+
+class SimulationOutputInvalidError(OptimizationError):
+    code = "SIMULATION_OUTPUT_INVALID"
+
+
+class SimulationCandidateInvalidError(OptimizationError):
+    code = "SIMULATION_CANDIDATE_INVALID"
+
+
+class SimulationInsufficientDrawsForTailError(OptimizationError):
+    code = "SIMULATION_INSUFFICIENT_DRAWS_FOR_TAIL_METRIC"
+
+
+class LiveSimulationJobProofPendingError(OptimizationError):
+    code = "LIVE_SIMULATION_JOB_PROOF_PENDING"
+
+
+class SimulationNotFoundError(OptimizationError):
+    code = "SIMULATION_NOT_FOUND"

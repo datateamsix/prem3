@@ -211,7 +211,16 @@
         "PortfolioRiskEvaluation",
         "MarketingInvestmentFrontier",
         "FrontierSelection",
-        "RiskNeutralParityReceipt"
+        "RiskNeutralParityReceipt",
+        "ScenarioVariableDistribution",
+        "ScenarioDistributionSet",
+        "ScenarioCorrelationSpec",
+        "MonteCarloSimulationPolicy",
+        "SimulationRunSpec",
+        "SimulationRun",
+        "PortfolioOutcomeDistribution",
+        "MonteCarloSimulationReceipt",
+        "SimulationEvidenceHandoff"
       ],
       "python_module": "app.investment_planning.contracts",
       "python_qualnames": [
@@ -245,9 +254,18 @@
         "app.investment_optimization.risk.models.PortfolioRiskEvaluation",
         "app.investment_optimization.risk.models.MarketingInvestmentFrontier",
         "app.investment_optimization.risk.models.FrontierSelection",
-        "app.investment_optimization.risk.models.RiskNeutralParityReceipt"
+        "app.investment_optimization.risk.models.RiskNeutralParityReceipt",
+        "app.investment_optimization.simulation.models.ScenarioVariableDistribution",
+        "app.investment_optimization.simulation.models.ScenarioDistributionSet",
+        "app.investment_optimization.simulation.models.ScenarioCorrelationSpec",
+        "app.investment_optimization.simulation.models.MonteCarloSimulationPolicy",
+        "app.investment_optimization.simulation.models.SimulationRunSpec",
+        "app.investment_optimization.simulation.models.SimulationRun",
+        "app.investment_optimization.simulation.models.PortfolioOutcomeDistribution",
+        "app.investment_optimization.simulation.models.MonteCarloSimulationReceipt",
+        "app.investment_optimization.simulation.models.SimulationEvidenceHandoff"
       ],
-      "sha256": "e709a40647de55fedd96a97efb7257956a8f3525c88a887a982aa649da2a15e2"
+      "sha256": "56ffe0d9643c88c0d879148d1946faafdcb26da9968090d9e93df91d930e41de"
     }
   ],
   "hash_algorithm": "sha256",

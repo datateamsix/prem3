@@ -37,6 +37,18 @@ from app.investment_optimization.risk.models import (
     RiskEvaluationPolicy,
     RiskNeutralParityReceipt,
 )
+from app.investment_optimization.simulation.models import (
+    SIMULATION_AMOUNT_BEARING_MODELS,
+    SIMULATION_METADATA_MODELS,
+    MonteCarloSimulationPolicy,
+    MonteCarloSimulationReceipt,
+    PortfolioOutcomeDistribution,
+    ScenarioCorrelationSpec,
+    ScenarioDistributionSet,
+    SimulationEvidenceHandoff,
+    SimulationRun,
+    SimulationRunSpec,
+)
 from app.investment_planning.errors import PersistenceBarrierError
 
 OptimizationMetadata = (
@@ -64,6 +76,14 @@ OptimizationMetadata = (
     | MarketingInvestmentFrontier
     | FrontierSelection
     | RiskNeutralParityReceipt
+    | ScenarioDistributionSet
+    | ScenarioCorrelationSpec
+    | MonteCarloSimulationPolicy
+    | SimulationRunSpec
+    | SimulationRun
+    | PortfolioOutcomeDistribution
+    | MonteCarloSimulationReceipt
+    | SimulationEvidenceHandoff
 )
 
 FORBIDDEN_AMOUNT_KEYS = frozenset(
@@ -127,13 +147,21 @@ def _walk_forbidden(value: Any) -> None:
 
 
 def assert_optimization_metadata_only(value: object) -> OptimizationMetadata:
-    if isinstance(value, OPTIMIZATION_AMOUNT_BEARING_MODELS + RISK_AMOUNT_BEARING_MODELS):
+    if isinstance(
+        value,
+        OPTIMIZATION_AMOUNT_BEARING_MODELS
+        + RISK_AMOUNT_BEARING_MODELS
+        + SIMULATION_AMOUNT_BEARING_MODELS,
+    ):
         raise PersistenceBarrierError(
             f"{type(value).__name__} is CUSTOMER_AMOUNT_TRANSIENT and cannot be "
             "persisted to the Planning control plane.",
             code="PLANNING_PERSISTENCE_BARRIER",
         )
-    if not isinstance(value, OPTIMIZATION_METADATA_MODELS + RISK_METADATA_MODELS):
+    if not isinstance(
+        value,
+        OPTIMIZATION_METADATA_MODELS + RISK_METADATA_MODELS + SIMULATION_METADATA_MODELS,
+    ):
         raise PersistenceBarrierError(
             f"{type(value).__name__} is not an optimization metadata contract.",
             code="PLANNING_PERSISTENCE_BARRIER",
@@ -269,6 +297,42 @@ class OptimizationMetadataStore(Protocol):
 
     def get_parity_receipt(self, parity_receipt_id: str) -> RiskNeutralParityReceipt | None: ...
 
+    def get_distribution_set(self, set_id: str) -> ScenarioDistributionSet | None: ...
+
+    def get_distribution_set_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, fingerprint: str
+    ) -> ScenarioDistributionSet | None: ...
+
+    def get_correlation_spec(self, spec_id: str) -> ScenarioCorrelationSpec | None: ...
+
+    def get_correlation_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> ScenarioCorrelationSpec | None: ...
+
+    def get_simulation_policy(self, policy_id: str) -> MonteCarloSimulationPolicy | None: ...
+
+    def get_simulation_policy_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> MonteCarloSimulationPolicy | None: ...
+
+    def get_run_spec(self, spec_id: str) -> SimulationRunSpec | None: ...
+
+    def get_run_spec_by_fingerprint(self, *, fingerprint: str) -> SimulationRunSpec | None: ...
+
+    def get_simulation_run(self, simulation_run_id: str) -> SimulationRun | None: ...
+
+    def get_simulation_run_by_fingerprint(self, *, fingerprint: str) -> SimulationRun | None: ...
+
+    def list_outcome_distributions(
+        self, *, simulation_run_id: str
+    ) -> tuple[PortfolioOutcomeDistribution, ...]: ...
+
+    def get_simulation_receipt_for_run(
+        self, simulation_run_id: str
+    ) -> MonteCarloSimulationReceipt | None: ...
+
+    def get_handoff_for_run(self, simulation_run_id: str) -> SimulationEvidenceHandoff | None: ...
+
 
 class InMemoryOptimizationMetadataStore:
     def __init__(self) -> None:
@@ -294,6 +358,14 @@ class InMemoryOptimizationMetadataStore:
         self._frontiers: dict[str, MarketingInvestmentFrontier] = {}
         self._selections: dict[str, FrontierSelection] = {}
         self._parity: dict[str, RiskNeutralParityReceipt] = {}
+        self._distribution_sets: dict[str, ScenarioDistributionSet] = {}
+        self._correlations: dict[str, ScenarioCorrelationSpec] = {}
+        self._simulation_policies: dict[str, MonteCarloSimulationPolicy] = {}
+        self._run_specs: dict[str, SimulationRunSpec] = {}
+        self._simulation_runs: dict[str, SimulationRun] = {}
+        self._outcome_distributions: dict[str, PortfolioOutcomeDistribution] = {}
+        self._simulation_receipts: dict[str, MonteCarloSimulationReceipt] = {}
+        self._handoffs: dict[str, SimulationEvidenceHandoff] = {}
 
     def put(self, value: OptimizationMetadata) -> OptimizationMetadata:
         safe = assert_optimization_metadata_only(value)
@@ -366,6 +438,22 @@ class InMemoryOptimizationMetadataStore:
             self._selections[safe.selection_id] = safe
         elif isinstance(safe, RiskNeutralParityReceipt):
             self._parity[safe.parity_receipt_id] = safe
+        elif isinstance(safe, ScenarioDistributionSet):
+            self._distribution_sets[safe.scenario_distribution_set_id] = safe
+        elif isinstance(safe, ScenarioCorrelationSpec):
+            self._correlations[safe.correlation_spec_id] = safe
+        elif isinstance(safe, MonteCarloSimulationPolicy):
+            self._simulation_policies[safe.policy_id] = safe
+        elif isinstance(safe, SimulationRunSpec):
+            self._run_specs[safe.simulation_run_spec_id] = safe
+        elif isinstance(safe, SimulationRun):
+            self._simulation_runs[safe.simulation_run_id] = safe
+        elif isinstance(safe, PortfolioOutcomeDistribution):
+            self._outcome_distributions[safe.portfolio_outcome_distribution_id] = safe
+        elif isinstance(safe, MonteCarloSimulationReceipt):
+            self._simulation_receipts[safe.receipt_id] = safe
+        elif isinstance(safe, SimulationEvidenceHandoff):
+            self._handoffs[safe.simulation_evidence_handoff_id] = safe
         return safe
 
     def get_mapping(self, mapping_id: str) -> PortfolioModelMapping | None:
@@ -663,3 +751,81 @@ class InMemoryOptimizationMetadataStore:
 
     def get_parity_receipt(self, parity_receipt_id: str) -> RiskNeutralParityReceipt | None:
         return self._parity.get(parity_receipt_id)
+
+    def get_distribution_set(self, set_id: str) -> ScenarioDistributionSet | None:
+        return self._distribution_sets.get(set_id)
+
+    def get_distribution_set_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, fingerprint: str
+    ) -> ScenarioDistributionSet | None:
+        for item in self._distribution_sets.values():
+            if (
+                item.tenant_id == tenant_id
+                and item.project_id == project_id
+                and item.distribution_set_fingerprint == fingerprint
+            ):
+                return item
+        return None
+
+    def get_correlation_spec(self, spec_id: str) -> ScenarioCorrelationSpec | None:
+        return self._correlations.get(spec_id)
+
+    def get_correlation_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> ScenarioCorrelationSpec | None:
+        for item in self._correlations.values():
+            if item.fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_simulation_policy(self, policy_id: str) -> MonteCarloSimulationPolicy | None:
+        return self._simulation_policies.get(policy_id)
+
+    def get_simulation_policy_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> MonteCarloSimulationPolicy | None:
+        for item in self._simulation_policies.values():
+            if item.fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_run_spec(self, spec_id: str) -> SimulationRunSpec | None:
+        return self._run_specs.get(spec_id)
+
+    def get_run_spec_by_fingerprint(self, *, fingerprint: str) -> SimulationRunSpec | None:
+        for item in self._run_specs.values():
+            if item.input_fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_simulation_run(self, simulation_run_id: str) -> SimulationRun | None:
+        return self._simulation_runs.get(simulation_run_id)
+
+    def get_simulation_run_by_fingerprint(self, *, fingerprint: str) -> SimulationRun | None:
+        for item in self._simulation_runs.values():
+            if item.input_fingerprint == fingerprint:
+                return item
+        return None
+
+    def list_outcome_distributions(
+        self, *, simulation_run_id: str
+    ) -> tuple[PortfolioOutcomeDistribution, ...]:
+        return tuple(
+            item
+            for item in self._outcome_distributions.values()
+            if item.simulation_run_id == simulation_run_id
+        )
+
+    def get_simulation_receipt_for_run(
+        self, simulation_run_id: str
+    ) -> MonteCarloSimulationReceipt | None:
+        for item in self._simulation_receipts.values():
+            if item.simulation_run_id == simulation_run_id:
+                return item
+        return None
+
+    def get_handoff_for_run(self, simulation_run_id: str) -> SimulationEvidenceHandoff | None:
+        for item in self._handoffs.values():
+            if item.simulation_run_id == simulation_run_id:
+                return item
+        return None

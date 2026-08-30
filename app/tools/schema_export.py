@@ -55,6 +55,17 @@ from app.investment_optimization.risk.models import (
     RiskEvaluationPolicy,
     RiskNeutralParityReceipt,
 )
+from app.investment_optimization.simulation.models import (
+    MonteCarloSimulationPolicy,
+    MonteCarloSimulationReceipt,
+    PortfolioOutcomeDistribution,
+    ScenarioCorrelationSpec,
+    ScenarioDistributionSet,
+    ScenarioVariableDistribution,
+    SimulationEvidenceHandoff,
+    SimulationRun,
+    SimulationRunSpec,
+)
 from app.investment_planning.contracts import (
     ActualSpendSourceRef,
     BudgetDriveSourceVersion,
@@ -330,6 +341,15 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             MarketingInvestmentFrontier,
             FrontierSelection,
             RiskNeutralParityReceipt,
+            ScenarioVariableDistribution,
+            ScenarioDistributionSet,
+            ScenarioCorrelationSpec,
+            MonteCarloSimulationPolicy,
+            SimulationRunSpec,
+            SimulationRun,
+            PortfolioOutcomeDistribution,
+            MonteCarloSimulationReceipt,
+            SimulationEvidenceHandoff,
         ),
         composition="catalog",
     ),

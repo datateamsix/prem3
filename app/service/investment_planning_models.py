@@ -845,3 +845,112 @@ class ParityReceiptResponse(ApiModel):
     native_allocation_fingerprint: str
     selected_allocation_fingerprint: str
     fingerprint: str
+
+
+class CreateScenarioVariableRequest(ApiModel):
+    semantic_type: str
+    family: str
+    parameters: dict[str, float | list[float]]
+    source_authority: str
+    source_refs: tuple[str, ...]
+    unit: str = "1"
+    scope: str = "portfolio"
+    time_scope: str = "FY2027Q1"
+    channel_id: str | None = None
+    approval_state: str = "APPROVED"
+
+
+class CreateDistributionSetRequest(ApiModel):
+    effective_period: str
+    as_of_time: str
+    variables: tuple[CreateScenarioVariableRequest, ...]
+    approval_state: str = "APPROVED"
+    source_refs: tuple[str, ...] = ()
+
+
+class DistributionSetResponse(ApiModel):
+    scenario_distribution_set_id: str
+    distribution_set_fingerprint: str
+    approval_state: str
+
+
+class CreateCorrelationSpecRequest(ApiModel):
+    authority: str
+    variable_ids: tuple[str, ...]
+    matrix: tuple[tuple[float, ...], ...] = ()
+    source_refs: tuple[str, ...] = ()
+
+
+class CorrelationSpecResponse(ApiModel):
+    correlation_spec_id: str
+    authority: str
+    fingerprint: str
+
+
+class CreateSimulationPolicyRequest(ApiModel):
+    number_of_draws: int
+    random_seed: int
+    batch_size: int
+    distribution_set_ref: str
+    correlation_spec_ref: str
+    candidate_set_ref: tuple[str, ...]
+    as_of_time: str
+    variable_count: int
+    tail_probability: float = 0.05
+
+
+class SimulationPolicyResponse(ApiModel):
+    policy_id: str
+    fingerprint: str
+    number_of_draws: int
+
+
+class CreateSimulationRunSpecRequest(ApiModel):
+    baseline_ref: str
+    policy_id: str
+    model_version_ref: str
+    posterior_artifact_ref: str | None = None
+    future_assumption_set_ref: str | None = None
+    exposure_risk_handoff_ref: str | None = None
+
+
+class SimulationRunSpecResponse(ApiModel):
+    simulation_run_spec_id: str
+    input_fingerprint: str
+    as_of_time: str
+
+
+class CreateSimulationRunRequest(ApiModel):
+    run_spec_id: str
+
+
+class SimulationRunResponse(ApiModel):
+    simulation_run_id: str
+    status: str
+    input_fingerprint: str
+    failure_code: str | None = None
+
+
+class SimulationReceiptResponse(ApiModel):
+    receipt_id: str
+    simulation_run_id: str
+    status: str
+    draw_count: int
+    simulation_fingerprint: str
+
+
+class OutcomeDistributionResponse(ApiModel):
+    portfolio_outcome_distribution_id: str
+    candidate_portfolio_id: str
+    mean: float
+    median: float
+    distribution_artifact_ref: str
+
+
+class SimulationHandoffResponse(ApiModel):
+    simulation_evidence_handoff_id: str
+    simulation_run_id: str
+    as_of_time: str
+    input_fingerprint: str
+    simulation_fingerprint: str
+    limitations: tuple[str, ...]

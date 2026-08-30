@@ -342,6 +342,42 @@ Schema `p6-09/v1`. Firestore stores IDs, refs, fingerprints, statuses, and scala
 
 Optional `ScenarioArtifact` refs (`risk_frontier_id`, `frontier_selection_id`, `parity_receipt_id`, `risk_evaluation_policy_id`) are metadata only. `create_scenario_from_frontier_selection` still requires the selected candidate’s native `optimization_run_id` and then the existing proposal path. Human approval remains `ScenarioArtifact` → `OptimizationProposal`. Proposal `APPROVED` is not `APPROVED_PLAN`. P6-09 does not rewrite Drive plan bytes. Role C exposure evidence stays a review limitation and is never compiled into LINE_MIN/MAX.
 
+## ADR-P6-086 — Simulation evaluates candidates; it does not allocate
+
+P6-09A is a fingerprinted Monte Carlo layer over already-feasible P6-09 candidates. Native Meridian remains the only optimizer. `PREM3_RISK_AWARE_FRONTIER` stays a deferred stub. Simulation never invents allocations, never mutates an approved plan, and never replaces `BudgetOptimizer`.
+
+## ADR-P6-087 — Every scenario variable requires explicit distribution authority
+
+A `ScenarioVariableDistribution` is governed only when family, parameters, `source_authority`, `source_refs`, and `approval_state` are pinned. Missing authority is `SCENARIO_DISTRIBUTION_NOT_GOVERNED`. There is no silent default, latest-state substitution, or invented empirical window. Domain bounds reject out-of-range draws unless the policy records truncation.
+
+## ADR-P6-088 — Correlation is fail-closed; joint sampling is Iman–Conover
+
+V1 authorities are `INDEPENDENT`, `EMPIRICAL_CORRELATION`, and `USER_APPROVED_CORRELATION`. `MODEL_DERIVED` fails closed unless a pinned artifact exists. Approved matrices must be square, symmetric, unit-diagonal, in `[-1, 1]`, and positive semidefinite. Invalid matrices are not repaired (`SCENARIO_CORRELATION_INVALID`). Joint sampling reorders independent marginals with Iman–Conover rank correlation via a Cholesky factor of the approved matrix. This is not a generalized copula framework.
+
+## ADR-P6-089 — RNG is a parent seed plus spawned batch seeds
+
+Sampling uses `numpy.random.Generator` / `PCG64` / `SeedSequence`. The parent seed is pinned on the policy. `batch_seed` is spawned from `(parent_seed, batch_index)` so batch schedule cannot change results. Same seed and inputs yield the same draws; FastAPI never owns the N-draw loop.
+
+## ADR-P6-090 — HTTP dispatches; the engine runs in a job adapter
+
+`POST .../runs/{id}/execute` is 202 and calls `SimulationExecutionAdapter.dispatch(simulation_run_id)` only. Production `create_app` wires `UnavailableSimulationExecutionAdapter`. `LocalSimulationExecutionAdapter` is test/explicit-local only. Missing live Cloud Run proof is `LIVE_SIMULATION_JOB_PROOF_PENDING`. Job JSON may carry the run id, never amount or authority keys.
+
+## ADR-P6-091 — Draws and amounts stay on GCS; Firestore stores metadata
+
+Schema `p6-09a/v1`. Firestore stores IDs, refs, fingerprints, statuses, draw counts, seed, and engine version. `SimulationDrawArtifact` Parquet lives on the object store (`CUSTOMER_AMOUNT_TRANSIENT`) and is not a public planning schema root. HTTP is `Cache-Control: private, no-store`. Clients cannot submit draws, outcomes, quantiles, correlation results, P(improvement), tail losses, or simulation fingerprints.
+
+## ADR-P6-092 — P6-09 CVaR and P(improvement) remain canonical
+
+P6-09A summaries call existing `conditional_value_at_risk` and `probability_improvement`. Frontier, posture, and `RiskFrontierService.evaluate` signatures are unchanged. A completed run’s Parquet is mapped to `(candidate_draws, baseline_draws)` by `p6_09_bridge.py`. Missing in-memory draws still yield `POSTERIOR_RISK_UNAVAILABLE`. Too few draws for the requested tail probability is `SIMULATION_INSUFFICIENT_DRAWS_FOR_TAIL_METRIC`.
+
+## ADR-P6-093 — P6-10 consumes only SimulationEvidenceHandoff
+
+The serialized handoff is refs, fingerprints, engine version, limitations, and `as_of_time`. It contains no raw arrays and imports no P6-10 types. Team 2 may attach `simulation_evidence_handoff_ref` later. This is the only convergence seam.
+
+## ADR-P6-094 — as_of_time is the historical-backtesting seam
+
+Distribution sets and run specs pin `effective_period` plus `as_of_time`. V1 does not implement full historical backtesting. Future backtests must reuse this temporal authority rather than substituting latest state.
+
 ## Additional freeze notes
 
 - `PlanningChannelAllocation.amount` is pre-P6 compatibility, not value authority (see source-authority doc).
