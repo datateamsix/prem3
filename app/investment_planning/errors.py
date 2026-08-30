@@ -114,3 +114,39 @@ class ActualsChannelMappingRequiredError(PlanningError):
 
 class ActualsDuplicateGrainError(PlanningError):
     code = "ACTUALS_DUPLICATE_GRAIN"
+
+
+class ExposureSourceNotReadyError(PlanningError):
+    code = "EXPOSURE_SOURCE_NOT_READY"
+
+
+class ExposureMetricNotComparableError(PlanningError):
+    code = "EXPOSURE_METRIC_NOT_COMPARABLE"
+
+
+class ExposureDataStaleError(PlanningError):
+    code = "EXPOSURE_DATA_STALE"
+
+
+class ExposureCoverageInsufficientError(PlanningError):
+    code = "EXPOSURE_COVERAGE_INSUFFICIENT"
+
+
+class ExposureEntityMappingRequiredError(PlanningError):
+    code = "EXPOSURE_ENTITY_MAPPING_REQUIRED"
+
+
+class ExposureModelInputUnsupportedError(PlanningError):
+    code = "EXPOSURE_MODEL_INPUT_UNSUPPORTED"
+
+
+class ExposureHardConstraintUnsupportedError(PlanningError):
+    code = "EXPOSURE_HARD_CONSTRAINT_UNSUPPORTED"
+
+
+class SpendQualityRelationshipRequiredError(PlanningError):
+    code = "SPEND_QUALITY_RELATIONSHIP_REQUIRED"
+
+
+class ExposureGuardrailReviewRequiredError(PlanningError):
+    code = "EXPOSURE_GUARDRAIL_REVIEW_REQUIRED"

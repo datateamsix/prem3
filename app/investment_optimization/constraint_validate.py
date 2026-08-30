@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from app.investment_optimization.constraints import constraint_set_fingerprint, pin_constraint_set
+from app.investment_optimization.constraints import (
+    accept_qualified_constraint_set,
+    constraint_set_fingerprint,
+)
 from app.investment_optimization.contracts import (
     ConstraintValidationCheck,
     ConstraintValidationReceipt,
@@ -35,7 +38,7 @@ def validate_constraint_set(
     period_end: str | None = None,
     created_at: datetime,
 ) -> ConstraintValidationReceipt:
-    pinned = pin_constraint_set(constraint_set)
+    pinned = accept_qualified_constraint_set(constraint_set)
     checks: list[ConstraintValidationCheck] = []
     try:
         _assert_canonical_refs(pinned, lines)

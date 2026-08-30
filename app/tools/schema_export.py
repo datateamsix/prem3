@@ -55,6 +55,10 @@ from app.investment_planning.contracts import (
     PortfolioSnapshotRef,
     PortfolioView,
 )
+from app.investment_planning.exposure_evidence import DeliveryHealthEvidence
+from app.investment_planning.exposure_guardrails import ExposureGuardrailQualificationReceipt
+from app.investment_planning.exposure_handoff import ExposureRiskHandoff
+from app.investment_planning.exposure_profile import PortfolioExposureCoverage
 from app.mel.models import (
     ExperienceApplication,
     ExperienceEpisode,
@@ -308,6 +312,10 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             ProposalReadinessReceipt,
             ProposalDecisionReceipt,
             PlanningDecisionRecord,
+            DeliveryHealthEvidence,
+            PortfolioExposureCoverage,
+            ExposureGuardrailQualificationReceipt,
+            ExposureRiskHandoff,
         ),
         composition="catalog",
     ),

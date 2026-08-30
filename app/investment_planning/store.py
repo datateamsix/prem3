@@ -5,8 +5,12 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from app.investment_planning.contracts import (
-    AMOUNT_BEARING_MODELS,
-    METADATA_MODELS,
+    AMOUNT_BEARING_MODELS as BASE_AMOUNT_BEARING_MODELS,
+)
+from app.investment_planning.contracts import (
+    METADATA_MODELS as BASE_METADATA_MODELS,
+)
+from app.investment_planning.contracts import (
     ActualSpendQueryReceipt,
     ActualSpendSourceRef,
     BudgetColumnMapping,
@@ -23,6 +27,38 @@ from app.investment_planning.contracts import (
     PortfolioSourceFreshness,
 )
 from app.investment_planning.errors import PersistenceBarrierError
+from app.investment_planning.exposure_evidence import DeliveryHealthEvidence, ExposureRiskPolicy
+from app.investment_planning.exposure_guardrails import (
+    ExposureGuardrail,
+    ExposureGuardrailQualificationReceipt,
+)
+from app.investment_planning.exposure_handoff import ExposureRiskHandoff
+from app.investment_planning.exposure_metrics import ExposureMetricDefinition
+from app.investment_planning.exposure_observations import ExposureMetricObservation
+from app.investment_planning.exposure_profile import (
+    ExposureCoverageItem,
+    PortfolioExposureCoverage,
+    PortfolioExposureRiskProfile,
+)
+from app.investment_planning.exposure_scenarios import ExposureRiskScenario
+
+METADATA_MODELS: tuple[type[FrozenModel], ...] = (
+    *BASE_METADATA_MODELS,
+    ExposureMetricDefinition,
+    ExposureRiskPolicy,
+    DeliveryHealthEvidence,
+    ExposureCoverageItem,
+    PortfolioExposureCoverage,
+    PortfolioExposureRiskProfile,
+    ExposureGuardrail,
+    ExposureGuardrailQualificationReceipt,
+    ExposureRiskScenario,
+    ExposureRiskHandoff,
+)
+AMOUNT_BEARING_MODELS: tuple[type[FrozenModel], ...] = (
+    *BASE_AMOUNT_BEARING_MODELS,
+    ExposureMetricObservation,
+)
 
 InvestmentPlanningMetadata = (
     InvestmentPlan
@@ -38,6 +74,15 @@ InvestmentPlanningMetadata = (
     | PortfolioEvidenceCoverage
     | PortfolioSourceFreshness
     | PortfolioObservation
+    | ExposureMetricDefinition
+    | ExposureRiskPolicy
+    | DeliveryHealthEvidence
+    | PortfolioExposureCoverage
+    | PortfolioExposureRiskProfile
+    | ExposureGuardrail
+    | ExposureGuardrailQualificationReceipt
+    | ExposureRiskScenario
+    | ExposureRiskHandoff
 )
 
 

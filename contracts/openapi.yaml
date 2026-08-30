@@ -1282,6 +1282,40 @@ components:
       - upload_id
       title: CreateEvaluationRequest
       type: object
+    CreateExposureScenarioRequest:
+      additionalProperties: false
+      properties:
+        delta_kind:
+          title: Delta Kind
+          type: string
+        delta_ref:
+          title: Delta Ref
+          type: string
+        metric_id:
+          title: Metric Id
+          type: string
+        period:
+          title: Period
+          type: string
+        rationale:
+          title: Rationale
+          type: string
+        scope:
+          default: portfolio
+          title: Scope
+          type: string
+        source_rationale:
+          title: Source Rationale
+          type: string
+      required:
+      - period
+      - source_rationale
+      - metric_id
+      - delta_kind
+      - delta_ref
+      - rationale
+      title: CreateExposureScenarioRequest
+      type: object
     CreateInvestmentPlanRequest:
       additionalProperties: false
       properties:
@@ -2190,6 +2224,181 @@ components:
       required:
       - plan_id
       title: ExecutePlanRequest
+      type: object
+    ExposureCoverageItemResponse:
+      additionalProperties: false
+      properties:
+        dimension:
+          title: Dimension
+          type: string
+        expected_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Expected Count
+        observed_count:
+          title: Observed Count
+          type: integer
+        status:
+          title: Status
+          type: string
+      required:
+      - dimension
+      - status
+      - observed_count
+      title: ExposureCoverageItemResponse
+      type: object
+    ExposureCoverageResponse:
+      additionalProperties: false
+      properties:
+        fingerprint:
+          title: Fingerprint
+          type: string
+        items:
+          items:
+            $ref: '#/components/schemas/ExposureCoverageItemResponse'
+          title: Items
+          type: array
+        overall_status:
+          title: Overall Status
+          type: string
+        period:
+          title: Period
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        source_ready:
+          title: Source Ready
+          type: boolean
+      required:
+      - project_id
+      - period
+      - overall_status
+      - items
+      - fingerprint
+      - source_ready
+      title: ExposureCoverageResponse
+      type: object
+    ExposureGuardrailResponse:
+      additionalProperties: false
+      properties:
+        assigned_role:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assigned Role
+        fingerprint:
+          title: Fingerprint
+          type: string
+        guardrail_id:
+          title: Guardrail Id
+          type: string
+        issues:
+          default: []
+          items:
+            type: string
+          title: Issues
+          type: array
+        metric_id:
+          title: Metric Id
+          type: string
+        role:
+          title: Role
+          type: string
+      required:
+      - guardrail_id
+      - metric_id
+      - role
+      - fingerprint
+      title: ExposureGuardrailResponse
+      type: object
+    ExposureRiskProfileResponse:
+      additionalProperties: false
+      properties:
+        channel_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Id
+        coverage:
+          $ref: '#/components/schemas/ExposureCoverageResponse'
+        fingerprint:
+          title: Fingerprint
+          type: string
+        limitations:
+          default: []
+          items:
+            type: string
+          title: Limitations
+          type: array
+        market_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+        period:
+          title: Period
+          type: string
+        profile_id:
+          title: Profile Id
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        risk_flags:
+          default: []
+          items:
+            type: string
+          title: Risk Flags
+          type: array
+        role_eligibility:
+          default: []
+          items:
+            type: string
+          title: Role Eligibility
+          type: array
+        source_ready:
+          title: Source Ready
+          type: boolean
+      required:
+      - profile_id
+      - project_id
+      - period
+      - coverage
+      - fingerprint
+      - source_ready
+      title: ExposureRiskProfileResponse
+      type: object
+    ExposureScenarioResponse:
+      additionalProperties: false
+      properties:
+        fingerprint:
+          title: Fingerprint
+          type: string
+        period:
+          title: Period
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        scenario_id:
+          title: Scenario Id
+          type: string
+        scope:
+          title: Scope
+          type: string
+        source_rationale:
+          title: Source Rationale
+          type: string
+      required:
+      - scenario_id
+      - project_id
+      - period
+      - scope
+      - source_rationale
+      - fingerprint
+      title: ExposureScenarioResponse
       type: object
     ExtendedEdaReadModelResponse:
       additionalProperties: false
@@ -5975,6 +6184,34 @@ components:
       - identity
       title: PublishedArtifactResponse
       type: object
+    QualifyExposureGuardrailRequest:
+      additionalProperties: false
+      properties:
+        channel_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel Id
+        market_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market Id
+        metric_id:
+          title: Metric Id
+          type: string
+        period:
+          default: FY2027Q1
+          title: Period
+          type: string
+        role:
+          title: Role
+          type: string
+      required:
+      - metric_id
+      - role
+      title: QualifyExposureGuardrailRequest
+      type: object
     QuarterlyPortfolioResponse:
       additionalProperties: false
       properties:
@@ -8379,6 +8616,171 @@ paths:
       security:
       - HTTPBearer: []
       summary: Validate Constraint Set Endpoint
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/exposure-risk:
+    get:
+      operationId: getExposureRisk
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExposureRiskProfileResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Get Exposure Risk
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/exposure-risk/channels/{channel_id}:
+    get:
+      operationId: getExposureRiskChannel
+      parameters:
+      - in: path
+        name: channel_id
+        required: true
+        schema:
+          title: Channel Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExposureRiskProfileResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Exposure Channel
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/exposure-risk/coverage:
+    get:
+      operationId: getExposureCoverage
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExposureCoverageResponse'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Get Exposure Coverage
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/exposure-risk/guardrails:
+    get:
+      operationId: listExposureGuardrails
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExposureGuardrailResponse'
+                title: Response Listexposureguardrails
+                type: array
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: List Exposure Guardrails
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/exposure-risk/guardrails/{guardrail_id}/qualify:
+    post:
+      operationId: qualifyExposureGuardrail
+      parameters:
+      - in: path
+        name: guardrail_id
+        required: true
+        schema:
+          title: Guardrail Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualifyExposureGuardrailRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExposureGuardrailResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Qualify Exposure Guardrail Http
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/exposure-risk/markets/{market_id}:
+    get:
+      operationId: getExposureRiskMarket
+      parameters:
+      - in: path
+        name: market_id
+        required: true
+        schema:
+          title: Market Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExposureRiskProfileResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Exposure Market
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/exposure-risk/scenarios:
+    post:
+      operationId: createExposureScenario
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExposureScenarioRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExposureScenarioResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Exposure Scenario
       tags:
       - investment-portfolio
   /v1/projects/{project_id}/investment-portfolio/model-mapping:

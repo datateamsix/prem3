@@ -2393,7 +2393,8 @@
         "SPEND_CONSTRAINT_APPLIED",
         "MODEL_SCOPE_LIMITED",
         "UNMODELED_BUDGET_FIXED",
-        "FUTURE_ASSUMPTIONS_PINNED"
+        "FUTURE_ASSUMPTIONS_PINNED",
+        "EXPOSURE_RISK_FLAGS_PRESENT"
       ],
       "title": "ProposalLimitationCode",
       "type": "string"
@@ -4287,6 +4288,411 @@
       ],
       "title": "QuarterlyPortfolioView",
       "type": "object"
+    },
+    "app_investment_planning_exposure_evidence__DeliveryHealthEvidence": {
+      "additionalProperties": false,
+      "description": "Evidence, not an optimization decision.",
+      "properties": {
+        "coverage": {
+          "$ref": "#/$defs/app_investment_planning_exposure_evidence__EvidenceCoverageStatus"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "entity_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Entity Refs",
+          "type": "array"
+        },
+        "evidence_id": {
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "flags": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_exposure_evidence__DeliveryHealthFlag"
+          },
+          "title": "Flags",
+          "type": "array"
+        },
+        "freshness": {
+          "$ref": "#/$defs/app_investment_planning_exposure_evidence__ExposureFreshnessState"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "metric_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Metric Refs",
+          "type": "array"
+        },
+        "period": {
+          "title": "Period",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "source_fingerprints": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Fingerprints",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "project_id",
+        "period",
+        "coverage",
+        "freshness",
+        "created_at",
+        "fingerprint"
+      ],
+      "title": "DeliveryHealthEvidence",
+      "type": "object"
+    },
+    "app_investment_planning_exposure_evidence__DeliveryHealthFlag": {
+      "enum": [
+        "LOW_VIEWABILITY",
+        "HIGH_IVT",
+        "LOW_IN_TARGET_RATE",
+        "LOW_UNIQUE_REACH",
+        "OVER_FREQUENCY",
+        "UNDER_FREQUENCY",
+        "HIGH_DELIVERY_CONCENTRATION",
+        "EXPOSURE_DATA_STALE",
+        "EXPOSURE_DATA_INCOMPLETE",
+        "METRIC_COMPARABILITY_REVIEW",
+        "HIGH_SPEND_LOW_QUALITY"
+      ],
+      "title": "DeliveryHealthFlag",
+      "type": "string"
+    },
+    "app_investment_planning_exposure_evidence__EvidenceCoverageStatus": {
+      "enum": [
+        "COVERED",
+        "PARTIAL",
+        "MISSING",
+        "REVIEW_REQUIRED",
+        "NOT_APPLICABLE",
+        "UNKNOWN"
+      ],
+      "title": "EvidenceCoverageStatus",
+      "type": "string"
+    },
+    "app_investment_planning_exposure_evidence__ExposureFreshnessState": {
+      "enum": [
+        "UNKNOWN",
+        "FRESH",
+        "STALE",
+        "REVIEW_REQUIRED"
+      ],
+      "title": "ExposureFreshnessState",
+      "type": "string"
+    },
+    "app_investment_planning_exposure_guardrails__ExposureGuardrailQualificationReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "assigned_role": {
+          "$ref": "#/$defs/app_investment_planning_exposure_guardrails__ExposureOptimizationRole"
+        },
+        "coverage_sufficient": {
+          "title": "Coverage Sufficient",
+          "type": "boolean"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "entity_mapping_valid": {
+          "title": "Entity Mapping Valid",
+          "type": "boolean"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "guardrail_id": {
+          "title": "Guardrail Id",
+          "type": "string"
+        },
+        "issues": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "metric_valid": {
+          "title": "Metric Valid",
+          "type": "boolean"
+        },
+        "model_input_supported": {
+          "title": "Model Input Supported",
+          "type": "boolean"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "qualification_id": {
+          "title": "Qualification Id",
+          "type": "string"
+        },
+        "requested_role": {
+          "$ref": "#/$defs/app_investment_planning_exposure_guardrails__ExposureOptimizationRole"
+        },
+        "role_supported": {
+          "title": "Role Supported",
+          "type": "boolean"
+        },
+        "source_current": {
+          "title": "Source Current",
+          "type": "boolean"
+        },
+        "spend_quality_relationship": {
+          "title": "Spend Quality Relationship",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "qualification_id",
+        "guardrail_id",
+        "project_id",
+        "requested_role",
+        "assigned_role",
+        "metric_valid",
+        "source_current",
+        "entity_mapping_valid",
+        "coverage_sufficient",
+        "role_supported",
+        "spend_quality_relationship",
+        "model_input_supported",
+        "created_at",
+        "fingerprint"
+      ],
+      "title": "ExposureGuardrailQualificationReceipt",
+      "type": "object"
+    },
+    "app_investment_planning_exposure_guardrails__ExposureOptimizationRole": {
+      "enum": [
+        "MODEL_INPUT",
+        "CONSTRAINT_OR_FEASIBILITY",
+        "SCENARIO_OR_REVIEW_GUARDRAIL"
+      ],
+      "title": "ExposureOptimizationRole",
+      "type": "string"
+    },
+    "app_investment_planning_exposure_handoff__ExposureRiskHandoff": {
+      "additionalProperties": false,
+      "description": "P6-09 input. P6-08 does not price downside risk.",
+      "properties": {
+        "coverage_fingerprint": {
+          "title": "Coverage Fingerprint",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "exposure_risk_evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Exposure Risk Evidence Refs",
+          "type": "array"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "freshness": {
+          "title": "Freshness",
+          "type": "string"
+        },
+        "handoff_id": {
+          "title": "Handoff Id",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "period": {
+          "title": "Period",
+          "type": "string"
+        },
+        "portfolio_entity_mapping": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Portfolio Entity Mapping",
+          "type": "array"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "qualified_guardrail_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Qualified Guardrail Ids",
+          "type": "array"
+        },
+        "risk_flags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Risk Flags",
+          "type": "array"
+        },
+        "scenario_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Scenario Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "handoff_id",
+        "project_id",
+        "period",
+        "exposure_risk_evidence_refs",
+        "qualified_guardrail_ids",
+        "scenario_ids",
+        "coverage_fingerprint",
+        "freshness",
+        "risk_flags",
+        "portfolio_entity_mapping",
+        "limitations",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "ExposureRiskHandoff",
+      "type": "object"
+    },
+    "app_investment_planning_exposure_profile__EvidenceCoverageStatus": {
+      "enum": [
+        "COVERED",
+        "PARTIAL",
+        "MISSING",
+        "REVIEW_REQUIRED",
+        "NOT_APPLICABLE",
+        "UNKNOWN"
+      ],
+      "title": "EvidenceCoverageStatus",
+      "type": "string"
+    },
+    "app_investment_planning_exposure_profile__ExposureCoverageDimension": {
+      "enum": [
+        "PORTFOLIO_SPEND",
+        "CHANNEL",
+        "MARKET",
+        "CAMPAIGN_PROVIDER",
+        "FRESHNESS"
+      ],
+      "title": "ExposureCoverageDimension",
+      "type": "string"
+    },
+    "app_investment_planning_exposure_profile__ExposureCoverageItem": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/app_investment_planning_exposure_profile__ExposureCoverageDimension"
+        },
+        "expected_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Count"
+        },
+        "observed_count": {
+          "title": "Observed Count",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_planning_exposure_profile__EvidenceCoverageStatus"
+        }
+      },
+      "required": [
+        "dimension",
+        "status",
+        "observed_count"
+      ],
+      "title": "ExposureCoverageItem",
+      "type": "object"
+    },
+    "app_investment_planning_exposure_profile__PortfolioExposureCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_exposure_profile__ExposureCoverageItem"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "overall_status": {
+          "$ref": "#/$defs/app_investment_planning_exposure_profile__EvidenceCoverageStatus"
+        },
+        "period": {
+          "title": "Period",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project_id",
+        "period",
+        "items",
+        "overall_status",
+        "fingerprint"
+      ],
+      "title": "PortfolioExposureCoverage",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4354,6 +4760,18 @@
     },
     {
       "$ref": "#/$defs/app_investment_optimization_contracts__PlanningDecisionRecord"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_exposure_evidence__DeliveryHealthEvidence"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_exposure_profile__PortfolioExposureCoverage"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_exposure_guardrails__ExposureGuardrailQualificationReceipt"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_exposure_handoff__ExposureRiskHandoff"
     }
   ],
   "title": "PreM3 investment planning and portfolio contracts"

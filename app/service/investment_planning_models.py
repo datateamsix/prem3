@@ -691,3 +691,69 @@ class AdvancedOptimizationReadinessResponse(ApiModel):
 
 class AdvancedOptimizationReadinessListResponse(ApiModel):
     items: tuple[AdvancedOptimizationReadinessResponse, ...]
+
+
+class ExposureCoverageItemResponse(ApiModel):
+    dimension: str
+    status: str
+    observed_count: int
+    expected_count: int | None = None
+
+
+class ExposureCoverageResponse(ApiModel):
+    project_id: str
+    period: str
+    overall_status: str
+    items: tuple[ExposureCoverageItemResponse, ...]
+    fingerprint: str
+    source_ready: bool
+
+
+class ExposureRiskProfileResponse(ApiModel):
+    profile_id: str
+    project_id: str
+    period: str
+    market_id: str | None = None
+    channel_id: str | None = None
+    risk_flags: tuple[str, ...] = ()
+    limitations: tuple[str, ...] = ()
+    role_eligibility: tuple[str, ...] = ()
+    coverage: ExposureCoverageResponse
+    fingerprint: str
+    source_ready: bool
+
+
+class ExposureGuardrailResponse(ApiModel):
+    guardrail_id: str
+    metric_id: str
+    role: str
+    assigned_role: str | None = None
+    issues: tuple[str, ...] = ()
+    fingerprint: str
+
+
+class QualifyExposureGuardrailRequest(ApiModel):
+    metric_id: str
+    role: str
+    market_id: str | None = None
+    channel_id: str | None = None
+    period: str = "FY2027Q1"
+
+
+class CreateExposureScenarioRequest(ApiModel):
+    period: str
+    scope: str = "portfolio"
+    source_rationale: str
+    metric_id: str
+    delta_kind: str
+    delta_ref: str
+    rationale: str
+
+
+class ExposureScenarioResponse(ApiModel):
+    scenario_id: str
+    project_id: str
+    period: str
+    scope: str
+    source_rationale: str
+    fingerprint: str

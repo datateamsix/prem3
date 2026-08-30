@@ -160,6 +160,21 @@ def pin_constraint_set(constraint_set: OptimizationConstraintSet) -> Optimizatio
     )
 
 
+def accept_qualified_constraint_set(
+    constraint_set: OptimizationConstraintSet,
+) -> OptimizationConstraintSet:
+    """Allow P6-08-attached guardrail IDs whose fingerprint already matches."""
+    if not constraint_set.exposure_guardrails:
+        return pin_constraint_set(constraint_set)
+    expected = constraint_set_fingerprint(constraint_set)
+    if constraint_set.fingerprint != expected:
+        raise ConstraintReferenceInvalidError(
+            "Exposure guardrails are owned by P6-08 and cannot be set in P6-07."
+        )
+    return constraint_set
+
+
+
 def iter_hard_constraints(constraint_set: OptimizationConstraintSet) -> tuple[str, ...]:
     ids: list[str] = []
     ids.extend(item.constraint_id for item in constraint_set.line_bounds)

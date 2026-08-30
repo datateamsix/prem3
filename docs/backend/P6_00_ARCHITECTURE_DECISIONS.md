@@ -278,6 +278,38 @@ Constraint/assumption arrays, budget vectors, and recommended rows are `CUSTOMER
 
 Missing evidence is not zero. Policies are `HOLD_BASELINE`, `RESERVE_EXPERIMENT_AMOUNT`, `EXCLUDE_FROM_OPTIMIZER_BUT_KEEP_PORTFOLIO`, and `APPROVED_PROXY_WITH_REVIEW`. Missing funnel weights are `FUNNEL_MAPPING_REQUIRED`.
 
+## ADR-P6-070 — Exposure metrics remain definition-specific; no universal composite score
+
+P6-08 interprets delivery/exposure as portfolio risk evidence. It does not emit `EXPOSURE_QUALITY_SCORE`, `delivery_confidence`, or any composite scalar. Named proxies (for example `human_viewable_in_target_impressions/v1`) are allowed only when components are comparable and the proxy is versioned and limitation-labeled.
+
+## ADR-P6-071 — Exposure evidence has three governed optimization roles
+
+Existing `ExposureGuardrailRole` values (`MODEL_INPUT`, `CONSTRAINT`, `SCENARIO_GUARDRAIL`, `APPROVAL_GUARDRAIL`) are retained. P6-08 maps them onto `ExposureOptimizationRole`: A `MODEL_INPUT`, B `CONSTRAINT_OR_FEASIBILITY`, C `SCENARIO_OR_REVIEW_GUARDRAIL` (scenario and approval both map to C). Qualification is a receipt. Roles are never silently promoted. P6-08 does not approve or reject proposals and does not mutate Meridian response curves.
+
+## ADR-P6-072 — Hard exposure constraints require a defensible spend-to-quality relationship
+
+Role B requires a policy-recorded spend→delivery relationship or bounded provider/capacity rule. P6-08 may then attach the qualified guardrail ID onto `OptimizationConstraintSet.exposure_guardrails`. It does not invent viewability/IVT `ConstraintFamily` values or compile observations into LINE_MIN/MAX or native `spend_constraint_*`. Client `POST` constraint-sets still fail: `pin_constraint_set` rejects caller-supplied IDs.
+
+## ADR-P6-073 — Unsupported exposure constraints remain monitoring/scenario/review guardrails
+
+If no spend-quality relationship exists, qualification assigns Role C with `SPEND_QUALITY_RELATIONSHIP_REQUIRED` / `EXPOSURE_HARD_CONSTRAINT_UNSUPPORTED`. Role A requires an accepted MMM/optimizer consumption contract; otherwise `EXPOSURE_MODEL_INPUT_UNSUPPORTED`. Role A attaches qualification refs to `FutureScenarioAssumptions.source_refs`. Role C may attach `EXPOSURE_RISK_FLAGS_PRESENT` on the proposal change summary.
+
+## ADR-P6-074 — Missing exposure evidence is not zero risk/zero quality
+
+`PortfolioExposureCoverage` reports spend/channel/market/campaign-provider/freshness. Empty observations are `MISSING`, not a passing quality rate. Stale evidence is `REVIEW_REQUIRED`. Coverage uses existing `EvidenceCoverageLabel.EXPOSURE_INTEGRITY`. P6-03A actual spend joins as execution context only; amounts are never rewritten; `HIGH_SPEND_LOW_QUALITY` is descriptive.
+
+## ADR-P6-075 — Provider metrics require explicit comparability
+
+Each catalog metric pins numerator, denominator, population, unit, grain, and provider. `assert_comparable()` fails closed across classes (viewability ≠ in-target; average frequency ≠ over-frequency share). Same-named metrics across providers are not interchangeable without an explicit mapping.
+
+## ADR-P6-076 — Campaign exposure context does not change canonical portfolio grain
+
+Canonical grain remains fiscal year × quarter × `market_id` × `channel_id`. `campaign_id` and provider are optional context, not join keys. Campaign evidence may roll to channel/market only under explicit compatible aggregation rules.
+
+## ADR-P6-077 — P6-08 measures risk evidence; P6-09 governs risk-aware selection
+
+P6-08 returns `ExposureRiskHandoff` refs (evidence, qualified guardrails, scenarios, coverage, flags). It does not compute CVaR, a delivery-confidence scalar, or frontier selection. Production fetch is fail-closed without a governed Data Foundation exposure `SourceBinding` (`EXPOSURE_SOURCE_NOT_READY`). `TestOnlyExposureObservationAdapter` is unit-test only. Observations are `CUSTOMER_AMOUNT_TRANSIENT`; Firestore stores metadata only; HTTP is `private, no-store`; no person identity.
+
 ## Additional freeze notes
 
 - `PlanningChannelAllocation.amount` is pre-P6 compatibility, not value authority (see source-authority doc).

@@ -48,6 +48,7 @@ from app.investment_optimization.store import InMemoryOptimizationMetadataStore
 from app.investment_planning.actuals import DataFoundationActualSpendAdapter
 from app.investment_planning.bigquery_actuals import BigQueryActualSpendAdapter
 from app.investment_planning.errors import PlanningError
+from app.investment_planning.exposure_service import ExposureRiskService
 from app.investment_planning.firestore import FirestoreInvestmentPlanningStore
 from app.investment_planning.markets import IdentityGraphMarketDirectory
 from app.investment_planning.service import InvestmentPlanService
@@ -114,6 +115,7 @@ from app.service.routers import (
     data_foundation,
     datasets,
     evaluations,
+    exposure_risk,
     google_integrations,
     google_oauth,
     health,
@@ -282,6 +284,7 @@ def create_app(
         planning_store = InMemoryInvestmentPlanningMetadataStore()
     app.state.identity_graph_store = identity_graph_store
     app.state.investment_planning_store = planning_store
+    app.state.exposure_risk = ExposureRiskService(planning_store)
     app.state.investment_planning = InvestmentPlanService(
         repo=repo,
         store=planning_store,
@@ -404,6 +407,8 @@ def create_app(
     app.include_router(investment_planning.workspace_alias_router)
     app.include_router(investment_portfolio.canonical_portfolio_router)
     app.include_router(investment_portfolio.workspace_alias_portfolio_router)
+    app.include_router(exposure_risk.canonical_exposure_router)
+    app.include_router(exposure_risk.workspace_alias_exposure_router)
     app.include_router(materializations.router)
     app.include_router(publishes.router)
     app.include_router(mmm.router)

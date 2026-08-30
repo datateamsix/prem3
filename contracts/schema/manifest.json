@@ -201,7 +201,11 @@
         "OptimizationProposal",
         "ProposalReadinessReceipt",
         "ProposalDecisionReceipt",
-        "PlanningDecisionRecord"
+        "PlanningDecisionRecord",
+        "DeliveryHealthEvidence",
+        "PortfolioExposureCoverage",
+        "ExposureGuardrailQualificationReceipt",
+        "ExposureRiskHandoff"
       ],
       "python_module": "app.investment_planning.contracts",
       "python_qualnames": [
@@ -225,9 +229,13 @@
         "app.investment_optimization.contracts.OptimizationProposal",
         "app.investment_optimization.contracts.ProposalReadinessReceipt",
         "app.investment_optimization.contracts.ProposalDecisionReceipt",
-        "app.investment_optimization.contracts.PlanningDecisionRecord"
+        "app.investment_optimization.contracts.PlanningDecisionRecord",
+        "app.investment_planning.exposure_evidence.DeliveryHealthEvidence",
+        "app.investment_planning.exposure_profile.PortfolioExposureCoverage",
+        "app.investment_planning.exposure_guardrails.ExposureGuardrailQualificationReceipt",
+        "app.investment_planning.exposure_handoff.ExposureRiskHandoff"
       ],
-      "sha256": "13f0e80a8f01870b1709b464ae4b8c5338b800eef3bcf39b42c4f0c3a78aa6d1"
+      "sha256": "3a47d78a2c8e0443c8cbbf4b909611eaf06978d78845200c6d178196f01eb2a6"
     }
   ],
   "hash_algorithm": "sha256",

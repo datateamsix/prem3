@@ -45,3 +45,31 @@ def new_query_receipt_id() -> str:
 
 def new_observation_id() -> str:
     return _opaque("pobs")
+
+
+def new_exposure_evidence_id() -> str:
+    return _opaque("xevd")
+
+
+def new_exposure_policy_id() -> str:
+    return _opaque("xpol")
+
+
+def new_exposure_profile_id() -> str:
+    return _opaque("xprf")
+
+
+def new_exposure_guardrail_id() -> str:
+    return _opaque("xgrd")
+
+
+def new_exposure_qualification_id() -> str:
+    return _opaque("xqrc")
+
+
+def new_exposure_scenario_id() -> str:
+    return _opaque("xscn")
+
+
+def new_exposure_handoff_id() -> str:
+    return _opaque("xhnd")

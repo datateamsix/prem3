@@ -120,6 +120,7 @@ def build_change_summary(
     proposal_id: str,
     payload: OptimizationResultPayload,
     comparison: ScenarioComparison,
+    exposure_limitation_codes: tuple[ProposalLimitationCode, ...] = (),
 ) -> ProposalChangeSummary:
     increases = [row for row in comparison.rows if row.delta > 0]
     decreases = [row for row in comparison.rows if row.delta < 0]
@@ -138,6 +139,9 @@ def build_change_summary(
         for row in payload.rows
     ):
         limitations.append(ProposalLimitationCode.UNMODELED_BUDGET_FIXED)
+    for code in exposure_limitation_codes:
+        if code not in limitations:
+            limitations.append(code)
     body = {
         "proposal_id": proposal_id,
         "changed": len(increases) + len(decreases),
