@@ -15,7 +15,7 @@ P6_08_FINAL_COMMITTED_HEAD: 59d1df2ed40e6be95d526658a8a7fe68032a26d3
 P6-09 branch: feature/prem3-p6-09-risk-aware-investment-frontier
 P6-09 worktree: C:/Users/zroda/Desktop/prem3-p6-09
 P6-09 base HEAD: 59d1df2ed40e6be95d526658a8a7fe68032a26d3
-P6_09_FINAL_COMMITTED_HEAD: (filled after commit)
+P6_09_FINAL_COMMITTED_HEAD: 68459ad561793d8e7becb021cf86a9818b151c3e
 ```
 
 Push: not done. `uv.lock` left untracked.
