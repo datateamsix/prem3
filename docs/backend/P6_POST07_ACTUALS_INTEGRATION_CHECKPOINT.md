@@ -101,9 +101,9 @@ Recorded after this document is committed:
 
 | Field | Value |
 |---|---|
-| P6_POST07_ACTUALS_INTEGRATION_READY_HEAD | *(this commit)* |
+| P6_POST07_ACTUALS_INTEGRATION_READY_HEAD | `5eaaca8eb3ca7f9b66a9ad0206e1ab4d823ef7cd` |
 | git status --short | `?? uv.lock` |
-| integration commit(s) | `a11c543` cherry-pick of P6-03A; this checkpoint doc |
+| integration commit(s) | `a11c543` cherry-pick of P6-03A; `5eaaca8` checkpoint doc |
 | pushed? | no |
 
 ## War-room
