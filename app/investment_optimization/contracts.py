@@ -870,6 +870,10 @@ class ScenarioArtifact(FrozenModel):
     constraint_set_id: str | None = None
     objective_mode: str | None = None
     budget_mode: str | None = None
+    risk_frontier_id: str | None = None
+    frontier_selection_id: str | None = None
+    parity_receipt_id: str | None = None
+    risk_evaluation_policy_id: str | None = None
     fingerprint: str
 
     @model_validator(mode="after")

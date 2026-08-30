@@ -757,3 +757,91 @@ class ExposureScenarioResponse(ApiModel):
     scope: str
     source_rationale: str
     fingerprint: str
+
+
+class CreateRiskEvaluationPolicyRequest(ApiModel):
+    objective: str
+    model_version_ref: str
+    optimization_readiness_ref: str
+    future_assumption_set_ref: str | None = None
+    constraint_set_ref: str | None = None
+    exposure_risk_handoff_ref: str | None = None
+    tail_probability: float = 0.05
+    risk_penalties_enabled: bool = True
+    minimum_candidate_count: int = 3
+
+
+class RiskEvaluationPolicyResponse(ApiModel):
+    risk_evaluation_policy_id: str
+    project_id: str
+    policy_version: str
+    objective: str
+    policy_fingerprint: str
+
+
+class CreateRiskCandidatesRequest(ApiModel):
+    risk_evaluation_policy_id: str
+    optimization_run_id: str
+    base_approved_plan_ref: str
+    input_fingerprint: str
+    native_shares: tuple[dict[str, float | str], ...]
+
+
+class CandidatePortfolioResponse(ApiModel):
+    candidate_portfolio_id: str
+    optimization_run_id: str
+    native_optimum: bool
+    candidate_fingerprint: str
+    allocation_fingerprint: str
+
+
+class CreateRiskEvaluationsRequest(ApiModel):
+    risk_evaluation_policy_id: str
+    candidate_ids: tuple[str, ...]
+    baseline_shares: tuple[dict[str, float | str], ...]
+    candidate_draws: dict[str, tuple[float, ...]] | None = None
+    baseline_draws: tuple[float, ...] | None = None
+
+
+class PortfolioRiskEvaluationResponse(ApiModel):
+    portfolio_risk_evaluation_id: str
+    candidate_portfolio_id: str
+    expected_outcome: float | None
+    lower_tail_metric: float | None
+    limitations: tuple[str, ...]
+    evaluation_fingerprint: str
+
+
+class CreateFrontierRequest(ApiModel):
+    risk_evaluation_policy_id: str
+    evaluation_ids: tuple[str, ...]
+    parity_receipt_id: str | None = None
+
+
+class FrontierResponse(ApiModel):
+    frontier_id: str
+    non_dominated_candidate_ids: tuple[str, ...]
+    readiness: str
+    fingerprint: str
+
+
+class SelectFrontierRequest(ApiModel):
+    risk_posture: str
+
+
+class FrontierSelectionResponse(ApiModel):
+    selection_id: str
+    frontier_id: str
+    selected_candidate_ref: str
+    risk_posture: str
+    state: str
+    selection_fingerprint: str
+    parity_receipt_id: str | None = None
+
+
+class ParityReceiptResponse(ApiModel):
+    parity_receipt_id: str
+    matched: bool
+    native_allocation_fingerprint: str
+    selected_allocation_fingerprint: str
+    fingerprint: str

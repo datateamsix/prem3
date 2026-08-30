@@ -734,6 +734,32 @@ components:
           type: array
       title: BusinessProfileRequest
       type: object
+    CandidatePortfolioResponse:
+      additionalProperties: false
+      properties:
+        allocation_fingerprint:
+          title: Allocation Fingerprint
+          type: string
+        candidate_fingerprint:
+          title: Candidate Fingerprint
+          type: string
+        candidate_portfolio_id:
+          title: Candidate Portfolio Id
+          type: string
+        native_optimum:
+          title: Native Optimum
+          type: boolean
+        optimization_run_id:
+          title: Optimization Run Id
+          type: string
+      required:
+      - candidate_portfolio_id
+      - optimization_run_id
+      - native_optimum
+      - candidate_fingerprint
+      - allocation_fingerprint
+      title: CandidatePortfolioResponse
+      type: object
     CheckoutSessionRequest:
       additionalProperties: false
       properties:
@@ -1316,6 +1342,27 @@ components:
       - rationale
       title: CreateExposureScenarioRequest
       type: object
+    CreateFrontierRequest:
+      additionalProperties: false
+      properties:
+        evaluation_ids:
+          items:
+            type: string
+          title: Evaluation Ids
+          type: array
+        parity_receipt_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parity Receipt Id
+        risk_evaluation_policy_id:
+          title: Risk Evaluation Policy Id
+          type: string
+      required:
+      - risk_evaluation_policy_id
+      - evaluation_ids
+      title: CreateFrontierRequest
+      type: object
     CreateInvestmentPlanRequest:
       additionalProperties: false
       properties:
@@ -1572,6 +1619,125 @@ components:
       required:
       - scenario_id
       title: CreateProposalRequest
+      type: object
+    CreateRiskCandidatesRequest:
+      additionalProperties: false
+      properties:
+        base_approved_plan_ref:
+          title: Base Approved Plan Ref
+          type: string
+        input_fingerprint:
+          title: Input Fingerprint
+          type: string
+        native_shares:
+          items:
+            additionalProperties:
+              anyOf:
+              - type: number
+              - type: string
+            type: object
+          title: Native Shares
+          type: array
+        optimization_run_id:
+          title: Optimization Run Id
+          type: string
+        risk_evaluation_policy_id:
+          title: Risk Evaluation Policy Id
+          type: string
+      required:
+      - risk_evaluation_policy_id
+      - optimization_run_id
+      - base_approved_plan_ref
+      - input_fingerprint
+      - native_shares
+      title: CreateRiskCandidatesRequest
+      type: object
+    CreateRiskEvaluationPolicyRequest:
+      additionalProperties: false
+      properties:
+        constraint_set_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Constraint Set Ref
+        exposure_risk_handoff_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Exposure Risk Handoff Ref
+        future_assumption_set_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Future Assumption Set Ref
+        minimum_candidate_count:
+          default: 3
+          title: Minimum Candidate Count
+          type: integer
+        model_version_ref:
+          title: Model Version Ref
+          type: string
+        objective:
+          title: Objective
+          type: string
+        optimization_readiness_ref:
+          title: Optimization Readiness Ref
+          type: string
+        risk_penalties_enabled:
+          default: true
+          title: Risk Penalties Enabled
+          type: boolean
+        tail_probability:
+          default: 0.05
+          title: Tail Probability
+          type: number
+      required:
+      - objective
+      - model_version_ref
+      - optimization_readiness_ref
+      title: CreateRiskEvaluationPolicyRequest
+      type: object
+    CreateRiskEvaluationsRequest:
+      additionalProperties: false
+      properties:
+        baseline_draws:
+          anyOf:
+          - items:
+              type: number
+            type: array
+          - type: 'null'
+          title: Baseline Draws
+        baseline_shares:
+          items:
+            additionalProperties:
+              anyOf:
+              - type: number
+              - type: string
+            type: object
+          title: Baseline Shares
+          type: array
+        candidate_draws:
+          anyOf:
+          - additionalProperties:
+              items:
+                type: number
+              type: array
+            type: object
+          - type: 'null'
+          title: Candidate Draws
+        candidate_ids:
+          items:
+            type: string
+          title: Candidate Ids
+          type: array
+        risk_evaluation_policy_id:
+          title: Risk Evaluation Policy Id
+          type: string
+      required:
+      - risk_evaluation_policy_id
+      - candidate_ids
+      - baseline_shares
+      title: CreateRiskEvaluationsRequest
       type: object
     CreateScenarioRequest:
       additionalProperties: false
@@ -2630,6 +2796,65 @@ components:
       - source
       - authority
       title: FlightingAssumptionRequest
+      type: object
+    FrontierResponse:
+      additionalProperties: false
+      properties:
+        fingerprint:
+          title: Fingerprint
+          type: string
+        frontier_id:
+          title: Frontier Id
+          type: string
+        non_dominated_candidate_ids:
+          items:
+            type: string
+          title: Non Dominated Candidate Ids
+          type: array
+        readiness:
+          title: Readiness
+          type: string
+      required:
+      - frontier_id
+      - non_dominated_candidate_ids
+      - readiness
+      - fingerprint
+      title: FrontierResponse
+      type: object
+    FrontierSelectionResponse:
+      additionalProperties: false
+      properties:
+        frontier_id:
+          title: Frontier Id
+          type: string
+        parity_receipt_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parity Receipt Id
+        risk_posture:
+          title: Risk Posture
+          type: string
+        selected_candidate_ref:
+          title: Selected Candidate Ref
+          type: string
+        selection_fingerprint:
+          title: Selection Fingerprint
+          type: string
+        selection_id:
+          title: Selection Id
+          type: string
+        state:
+          title: State
+          type: string
+      required:
+      - selection_id
+      - frontier_id
+      - selected_candidate_ref
+      - risk_posture
+      - state
+      - selection_fingerprint
+      title: FrontierSelectionResponse
       type: object
     FunnelConstraintRequest:
       additionalProperties: false
@@ -4888,6 +5113,32 @@ components:
       - max_active_projects
       title: OrganizationReadModel
       type: object
+    ParityReceiptResponse:
+      additionalProperties: false
+      properties:
+        fingerprint:
+          title: Fingerprint
+          type: string
+        matched:
+          title: Matched
+          type: boolean
+        native_allocation_fingerprint:
+          title: Native Allocation Fingerprint
+          type: string
+        parity_receipt_id:
+          title: Parity Receipt Id
+          type: string
+        selected_allocation_fingerprint:
+          title: Selected Allocation Fingerprint
+          type: string
+      required:
+      - parity_receipt_id
+      - matched
+      - native_allocation_fingerprint
+      - selected_allocation_fingerprint
+      - fingerprint
+      title: ParityReceiptResponse
+      type: object
     PatchMeasurementTrackRequest:
       additionalProperties: false
       properties:
@@ -5448,6 +5699,42 @@ components:
       - severity
       - message_key
       title: PortfolioObservationResponse
+      type: object
+    PortfolioRiskEvaluationResponse:
+      additionalProperties: false
+      properties:
+        candidate_portfolio_id:
+          title: Candidate Portfolio Id
+          type: string
+        evaluation_fingerprint:
+          title: Evaluation Fingerprint
+          type: string
+        expected_outcome:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Expected Outcome
+        limitations:
+          items:
+            type: string
+          title: Limitations
+          type: array
+        lower_tail_metric:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Lower Tail Metric
+        portfolio_risk_evaluation_id:
+          title: Portfolio Risk Evaluation Id
+          type: string
+      required:
+      - portfolio_risk_evaluation_id
+      - candidate_portfolio_id
+      - expected_outcome
+      - lower_tail_metric
+      - limitations
+      - evaluation_fingerprint
+      title: PortfolioRiskEvaluationResponse
       type: object
     PortfolioVarianceResponse:
       additionalProperties: false
@@ -6433,6 +6720,32 @@ components:
           title: Target Window Start
       title: ReviseCycleRequest
       type: object
+    RiskEvaluationPolicyResponse:
+      additionalProperties: false
+      properties:
+        objective:
+          title: Objective
+          type: string
+        policy_fingerprint:
+          title: Policy Fingerprint
+          type: string
+        policy_version:
+          title: Policy Version
+          type: string
+        project_id:
+          title: Project Id
+          type: string
+        risk_evaluation_policy_id:
+          title: Risk Evaluation Policy Id
+          type: string
+      required:
+      - risk_evaluation_policy_id
+      - project_id
+      - policy_version
+      - objective
+      - policy_fingerprint
+      title: RiskEvaluationPolicyResponse
+      type: object
     ScenarioComparisonResponse:
       additionalProperties: false
       properties:
@@ -6579,6 +6892,16 @@ components:
       - fingerprint
       - created_at
       title: ScenarioResponse
+      type: object
+    SelectFrontierRequest:
+      additionalProperties: false
+      properties:
+        risk_posture:
+          title: Risk Posture
+          type: string
+      required:
+      - risk_posture
+      title: SelectFrontierRequest
       type: object
     SourceMaterializationListResponse:
       additionalProperties: false
@@ -9176,6 +9499,328 @@ paths:
       security:
       - HTTPBearer: []
       summary: Submit Proposal
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/candidates:
+    post:
+      operationId: createRiskCandidates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRiskCandidatesRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CandidatePortfolioResponse'
+                title: Response Createriskcandidates
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Candidates
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/candidates/{candidate_id}:
+    get:
+      operationId: getRiskCandidate
+      parameters:
+      - in: path
+        name: candidate_id
+        required: true
+        schema:
+          title: Candidate Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidatePortfolioResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Candidate
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/evaluations:
+    post:
+      operationId: createRiskEvaluations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRiskEvaluationsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PortfolioRiskEvaluationResponse'
+                title: Response Createriskevaluations
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Evaluations
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/evaluations/{evaluation_id}:
+    get:
+      operationId: getRiskEvaluation
+      parameters:
+      - in: path
+        name: evaluation_id
+        required: true
+        schema:
+          title: Evaluation Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioRiskEvaluationResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Evaluation
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/frontiers:
+    post:
+      operationId: createRiskFrontier
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFrontierRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrontierResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Frontier
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/frontiers/{frontier_id}:
+    get:
+      operationId: getRiskFrontier
+      parameters:
+      - in: path
+        name: frontier_id
+        required: true
+        schema:
+          title: Frontier Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrontierResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Frontier
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/frontiers/{frontier_id}/select:
+    post:
+      operationId: selectRiskFrontier
+      parameters:
+      - in: path
+        name: frontier_id
+        required: true
+        schema:
+          title: Frontier Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectFrontierRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrontierSelectionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Select Frontier
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/frontiers/{frontier_id}/selections/{selection_id}:
+    get:
+      operationId: getRiskFrontierSelection
+      parameters:
+      - in: path
+        name: frontier_id
+        required: true
+        schema:
+          title: Frontier Id
+          type: string
+      - in: path
+        name: selection_id
+        required: true
+        schema:
+          title: Selection Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrontierSelectionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Selection
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/parity-receipts/{parity_id}:
+    get:
+      operationId: getRiskNeutralParityReceipt
+      parameters:
+      - in: path
+        name: parity_id
+        required: true
+        schema:
+          title: Parity Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParityReceiptResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Parity
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/risk-evaluation-policies:
+    post:
+      operationId: createRiskEvaluationPolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRiskEvaluationPolicyRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEvaluationPolicyResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Policy
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/risk-frontier/risk-evaluation-policies/{policy_id}:
+    get:
+      operationId: getRiskEvaluationPolicy
+      parameters:
+      - in: path
+        name: policy_id
+        required: true
+        schema:
+          title: Policy Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEvaluationPolicyResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Policy
       tags:
       - investment-portfolio
   /v1/projects/{project_id}/investment-portfolio/scenarios:

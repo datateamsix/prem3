@@ -101,6 +101,10 @@ class ProposalGovernanceService:
         model_path: str | None = None,
         drive_path: str | None = None,
         variable_map: object | None = None,
+        risk_frontier_id: str | None = None,
+        frontier_selection_id: str | None = None,
+        parity_receipt_id: str | None = None,
+        risk_evaluation_policy_id: str | None = None,
     ) -> ScenarioArtifact:
         reject_client_budget_authority(
             tenant_id=tenant_id,
@@ -137,11 +141,36 @@ class ProposalGovernanceService:
             actor_id=actor_id,
             object_store=self._object_store,
             artifact_bucket=self._artifact_bucket,
+            risk_frontier_id=risk_frontier_id,
+            frontier_selection_id=frontier_selection_id,
+            parity_receipt_id=parity_receipt_id,
+            risk_evaluation_policy_id=risk_evaluation_policy_id,
         )
         stored = self._store.put(scenario)
         assert isinstance(stored, ScenarioArtifact)
         _log("scenario_created", scenario_id=stored.scenario_id, run_id=run.optimization_run_id)
         return stored
+
+    def create_scenario_from_frontier_selection(
+        self,
+        *,
+        project_id: str,
+        actor_id: str,
+        optimization_run_id: str,
+        frontier_id: str,
+        selection_id: str,
+        policy_id: str,
+        parity_receipt_id: str | None = None,
+    ) -> ScenarioArtifact:
+        return self.create_scenario(
+            project_id=project_id,
+            actor_id=actor_id,
+            optimization_run_id=optimization_run_id,
+            risk_frontier_id=frontier_id,
+            frontier_selection_id=selection_id,
+            parity_receipt_id=parity_receipt_id,
+            risk_evaluation_policy_id=policy_id,
+        )
 
     def list_scenarios(self, *, project_id: str) -> tuple[ScenarioArtifact, ...]:
         require_feature(self._repo, Feature.BUDGET_OPTIMIZATION)

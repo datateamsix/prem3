@@ -310,6 +310,38 @@ Canonical grain remains fiscal year × quarter × `market_id` × `channel_id`. `
 
 P6-08 returns `ExposureRiskHandoff` refs (evidence, qualified guardrails, scenarios, coverage, flags). It does not compute CVaR, a delivery-confidence scalar, or frontier selection. Production fetch is fail-closed without a governed Data Foundation exposure `SourceBinding` (`EXPOSURE_SOURCE_NOT_READY`). `TestOnlyExposureObservationAdapter` is unit-test only. Observations are `CUSTOMER_AMOUNT_TRANSIENT`; Firestore stores metadata only; HTTP is `private, no-store`; no person identity.
 
+## ADR-P6-078 — Native Meridian remains the only optimizer; P6-09 evaluates neighbors
+
+`PREM3_RISK_AWARE_FRONTIER` stays a deferred solver stub. P6-09 does not replace `BudgetOptimizer`. Candidate 0 is the native recommended allocation. Neighbors are deterministic feasible share reallocations. Risk-neutral `EXPECTED_OUTCOME` selection must match that native allocation fingerprint (`RiskNeutralParityReceipt`) or fail `RISK_NEUTRAL_PARITY_FAILED` with no authoritative selection. This is not “better than Meridian.”
+
+## ADR-P6-079 — Candidate generation authority is the native run plus pinned policy
+
+Every `CandidatePortfolio` records generation authority (`native_run:{optimization_run_id}`), the input fingerprint, allocation fingerprint, feasibility receipt, model/assumption/constraint refs, and the base approved-plan ref. V1 policy is only `NATIVE_OPTIMUM_PLUS_FEASIBLE_NEIGHBORS`. Random portfolios are forbidden. Failures are `CANDIDATE_GENERATION_FAILED`, `CANDIDATE_INFEASIBLE`, or `INSUFFICIENT_FRONTIER_CANDIDATES`.
+
+## ADR-P6-080 — Risk taxonomy is explicit; there is no universal portfolio risk score
+
+Named classes are `POSTERIOR`, `SCENARIO`, `EXPOSURE_DELIVERY`, `MODEL`, `DATA`, `CONCENTRATION`, `EXECUTION`, and `OPTIMIZATION`. Forbidden: `PORTFOLIO_RISK_SCORE`, `MARKETING_RISK_SCORE`, `DELIVERY_CONFIDENCE`, `INVESTMENT_CONFIDENCE_SCORE`. Missing evidence is a typed limitation or failure code, never a zero.
+
+## ADR-P6-081 — Discrete CVaR is expected shortfall of baseline-minus-candidate loss
+
+`loss = baseline_outcome - candidate_outcome`. VaR is the start of the upper tail at index `ceil(alpha * n) - 1` on losses sorted worst-first. CVaR is `E[L | L >= VaR_alpha(L)]`. The label CVaR is refused unless that definition is used. `PREM3_CVAR` is not a hidden composite score. Absent posterior draws → `POSTERIOR_RISK_UNAVAILABLE`.
+
+## ADR-P6-082 — Dominance membership is policy-fingerprinted Pareto non-dominance
+
+`dominance_policy` lists comparable dimensions and `MAXIMIZE` / `MINIMIZE` sense. A dominates B iff A is no worse on every declared dimension and strictly better on one. Candidate fingerprint is a deterministic tie-break for *ordering* only, not for membership. The frontier records all evaluated IDs, `dominated_by` lineage, and the policy fingerprint.
+
+## ADR-P6-083 — Three postures select from the same frontier via declared policy fields
+
+`EXPECTED_OUTCOME` maximizes expected outcome among non-dominated ready candidates. `CONSERVATIVE` minimizes downside-tail among non-dominated candidates at or above `conservative_expected_floor_ratio` of the best expected outcome. `BALANCED` applies the policy’s stored `balanced_keys`. Selection state is only `MODEL_RECOMMENDED`. Hidden weight vectors are forbidden.
+
+## ADR-P6-084 — Risk artifacts persist as metadata; draws and amounts stay off Firestore
+
+Schema `p6-09/v1`. Firestore stores IDs, refs, fingerprints, statuses, and scalar summaries that are not budget/revenue arrays (probabilities, HHI, L1, flags). Candidate allocation amounts and posterior draw tables are GCS / in-memory artifacts (`CUSTOMER_AMOUNT_TRANSIENT`). HTTP is `Cache-Control: private, no-store`. Clients cannot submit CVaR, HHI, dominance, frontier membership, or selected outcomes.
+
+## ADR-P6-085 — Frontier selection enters P6-06 governance; it does not mint APPROVED_PLAN
+
+Optional `ScenarioArtifact` refs (`risk_frontier_id`, `frontier_selection_id`, `parity_receipt_id`, `risk_evaluation_policy_id`) are metadata only. `create_scenario_from_frontier_selection` still requires the selected candidate’s native `optimization_run_id` and then the existing proposal path. Human approval remains `ScenarioArtifact` → `OptimizationProposal`. Proposal `APPROVED` is not `APPROVED_PLAN`. P6-09 does not rewrite Drive plan bytes. Role C exposure evidence stays a review limitation and is never compiled into LINE_MIN/MAX.
+
 ## Additional freeze notes
 
 - `PlanningChannelAllocation.amount` is pre-P6 compatibility, not value authority (see source-authority doc).

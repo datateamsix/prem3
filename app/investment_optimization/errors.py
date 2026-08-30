@@ -203,3 +203,75 @@ class CrossProjectProposalAccessError(OptimizationError):
 
 class CrossTenantProposalAccessError(OptimizationError):
     code = "CROSS_TENANT_PROPOSAL_ACCESS"
+
+
+class RiskNeutralParityFailedError(OptimizationError):
+    code = "RISK_NEUTRAL_PARITY_FAILED"
+
+
+class RiskPolicyInvalidError(OptimizationError):
+    code = "RISK_POLICY_INVALID"
+
+
+class RiskInputNotReadyError(OptimizationError):
+    code = "RISK_INPUT_NOT_READY"
+
+
+class PosteriorRiskUnavailableError(OptimizationError):
+    code = "POSTERIOR_RISK_UNAVAILABLE"
+
+
+class ScenarioRiskUnavailableError(OptimizationError):
+    code = "SCENARIO_RISK_UNAVAILABLE"
+
+
+class ExposureRiskNotQualifiedError(OptimizationError):
+    code = "EXPOSURE_RISK_NOT_QUALIFIED"
+
+
+class CandidateGenerationFailedError(OptimizationError):
+    code = "CANDIDATE_GENERATION_FAILED"
+
+
+class CandidateInfeasibleError(OptimizationError):
+    code = "CANDIDATE_INFEASIBLE"
+
+
+class InsufficientFrontierCandidatesError(OptimizationError):
+    code = "INSUFFICIENT_FRONTIER_CANDIDATES"
+
+
+class FrontierDominancePolicyInvalidError(OptimizationError):
+    code = "FRONTIER_DOMINANCE_POLICY_INVALID"
+
+
+class FrontierSelectionNotAllowedError(OptimizationError):
+    code = "FRONTIER_SELECTION_NOT_ALLOWED"
+
+
+class RiskArtifactFingerprintMismatchError(OptimizationError):
+    code = "RISK_ARTIFACT_FINGERPRINT_MISMATCH"
+
+
+class RiskPolicyNotFoundError(OptimizationError):
+    code = "RISK_POLICY_NOT_FOUND"
+
+
+class CandidateNotFoundError(OptimizationError):
+    code = "CANDIDATE_NOT_FOUND"
+
+
+class RiskEvaluationNotFoundError(OptimizationError):
+    code = "RISK_EVALUATION_NOT_FOUND"
+
+
+class FrontierNotFoundError(OptimizationError):
+    code = "FRONTIER_NOT_FOUND"
+
+
+class FrontierSelectionNotFoundError(OptimizationError):
+    code = "FRONTIER_SELECTION_NOT_FOUND"
+
+
+class ParityReceiptNotFoundError(OptimizationError):
+    code = "PARITY_RECEIPT_NOT_FOUND"

@@ -29,6 +29,14 @@ from app.investment_optimization.contracts import (
     ScenarioArtifact,
     ScenarioAssumptionSetRef,
 )
+from app.investment_optimization.risk.models import (
+    CandidatePortfolio,
+    FrontierSelection,
+    MarketingInvestmentFrontier,
+    PortfolioRiskEvaluation,
+    RiskEvaluationPolicy,
+    RiskNeutralParityReceipt,
+)
 from app.investment_optimization.store import (
     OptimizationMetadata,
     assert_optimization_metadata_only,
@@ -52,6 +60,12 @@ COL_DECISION_RECORDS = "planning_decision_records"
 COL_CONSTRAINT_REFS = "optimization_constraint_set_refs"
 COL_ASSUMPTION_REFS = "optimization_assumption_set_refs"
 COL_ADVANCED_RECEIPTS = "advanced_optimization_readiness_receipts"
+COL_RISK_POLICIES = "risk_evaluation_policies"
+COL_CANDIDATES = "candidate_portfolios"
+COL_EVALUATIONS = "portfolio_risk_evaluations"
+COL_FRONTIERS = "marketing_investment_frontiers"
+COL_SELECTIONS = "frontier_selections"
+COL_PARITY = "risk_neutral_parity_receipts"
 COL_INDEX = "investment_optimization_index"
 
 
@@ -101,6 +115,23 @@ class FirestoreOptimizationMetadataStore:
     ) -> None:
         self._index(kind, resource_id).set(
             {"tenant_id": tenant_id, "workspace_id": workspace_id}
+        )
+
+    def _put_lookup(
+        self,
+        *,
+        kind: str,
+        key: str,
+        resource_id: str,
+        tenant_id: str,
+        workspace_id: str,
+    ) -> None:
+        self._index(kind, key).set(
+            {
+                "tenant_id": tenant_id,
+                "workspace_id": workspace_id,
+                "resource_id": resource_id,
+            }
         )
 
     def _load[T: BaseModel](
@@ -300,6 +331,106 @@ class FirestoreOptimizationMetadataStore:
             self._put_index(
                 kind="advanced_receipt",
                 resource_id=safe.receipt_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, RiskEvaluationPolicy):
+            self._workspace(safe.tenant_id, safe.project_id).collection(
+                COL_RISK_POLICIES
+            ).document(safe.risk_evaluation_policy_id).set(_to_document(safe))
+            self._put_index(
+                kind="risk_policy",
+                resource_id=safe.risk_evaluation_policy_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, CandidatePortfolio):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_CANDIDATES).document(
+                safe.candidate_portfolio_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="candidate",
+                resource_id=safe.candidate_portfolio_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, PortfolioRiskEvaluation):
+            policy = self.get_risk_policy(safe.risk_evaluation_policy_ref)
+            if policy is None:
+                raise PersistenceBarrierError(
+                    "PortfolioRiskEvaluation requires a stored policy.",
+                    code="PLANNING_PERSISTENCE_BARRIER",
+                )
+            self._workspace(policy.tenant_id, policy.project_id).collection(
+                COL_EVALUATIONS
+            ).document(safe.portfolio_risk_evaluation_id).set(_to_document(safe))
+            self._put_index(
+                kind="risk_evaluation",
+                resource_id=safe.portfolio_risk_evaluation_id,
+                tenant_id=policy.tenant_id,
+                workspace_id=policy.project_id,
+            )
+            self._put_lookup(
+                kind="risk_evaluation_candidate",
+                key=safe.candidate_portfolio_id,
+                resource_id=safe.portfolio_risk_evaluation_id,
+                tenant_id=policy.tenant_id,
+                workspace_id=policy.project_id,
+            )
+            self._put_lookup(
+                kind="risk_evaluation_fp",
+                key=safe.evaluation_fingerprint,
+                resource_id=safe.portfolio_risk_evaluation_id,
+                tenant_id=policy.tenant_id,
+                workspace_id=policy.project_id,
+            )
+        elif isinstance(safe, MarketingInvestmentFrontier):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_FRONTIERS).document(
+                safe.frontier_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="frontier",
+                resource_id=safe.frontier_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="frontier_fp",
+                key=safe.fingerprint,
+                resource_id=safe.frontier_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, FrontierSelection):
+            frontier = self.get_frontier(safe.frontier_id)
+            if frontier is None:
+                raise PersistenceBarrierError(
+                    "FrontierSelection requires a stored frontier.",
+                    code="PLANNING_PERSISTENCE_BARRIER",
+                )
+            self._workspace(frontier.tenant_id, frontier.project_id).collection(
+                COL_SELECTIONS
+            ).document(safe.selection_id).set(_to_document(safe))
+            self._put_index(
+                kind="frontier_selection",
+                resource_id=safe.selection_id,
+                tenant_id=frontier.tenant_id,
+                workspace_id=frontier.project_id,
+            )
+            self._put_lookup(
+                kind="selection_fp",
+                key=safe.selection_fingerprint,
+                resource_id=safe.selection_id,
+                tenant_id=frontier.tenant_id,
+                workspace_id=frontier.project_id,
+            )
+        elif isinstance(safe, RiskNeutralParityReceipt):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_PARITY).document(
+                safe.parity_receipt_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="parity",
+                resource_id=safe.parity_receipt_id,
                 tenant_id=safe.tenant_id,
                 workspace_id=safe.project_id,
             )
@@ -580,4 +711,108 @@ class FirestoreOptimizationMetadataStore:
         docs = self._workspace(tenant_id, project_id).collection(COL_ADVANCED_RECEIPTS).stream()
         return tuple(
             _from_document(AdvancedOptimizationReadinessReceipt, doc.to_dict()) for doc in docs
+        )
+
+    def get_risk_policy(self, policy_id: str) -> RiskEvaluationPolicy | None:
+        return self._load(
+            RiskEvaluationPolicy,
+            kind="risk_policy",
+            resource_id=policy_id,
+            collection=COL_RISK_POLICIES,
+        )
+
+    def get_risk_policy_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, policy_fingerprint: str
+    ) -> RiskEvaluationPolicy | None:
+        docs = self._workspace(tenant_id, project_id).collection(COL_RISK_POLICIES).stream()
+        for doc in docs:
+            item = _from_document(RiskEvaluationPolicy, doc.to_dict())
+            if item.policy_fingerprint == policy_fingerprint:
+                return item
+        return None
+
+    def get_candidate(self, candidate_id: str) -> CandidatePortfolio | None:
+        return self._load(
+            CandidatePortfolio,
+            kind="candidate",
+            resource_id=candidate_id,
+            collection=COL_CANDIDATES,
+        )
+
+    def get_candidate_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, candidate_fingerprint: str
+    ) -> CandidatePortfolio | None:
+        docs = self._workspace(tenant_id, project_id).collection(COL_CANDIDATES).stream()
+        for doc in docs:
+            item = _from_document(CandidatePortfolio, doc.to_dict())
+            if item.candidate_fingerprint == candidate_fingerprint:
+                return item
+        return None
+
+    def get_evaluation(self, evaluation_id: str) -> PortfolioRiskEvaluation | None:
+        return self._load(
+            PortfolioRiskEvaluation,
+            kind="risk_evaluation",
+            resource_id=evaluation_id,
+            collection=COL_EVALUATIONS,
+        )
+
+    def get_evaluation_for_candidate(
+        self, candidate_id: str
+    ) -> PortfolioRiskEvaluation | None:
+        snap = self._index("risk_evaluation_candidate", candidate_id).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_evaluation(str(data.get("resource_id", "")))
+
+    def get_evaluation_by_fingerprint(
+        self, *, evaluation_fingerprint: str
+    ) -> PortfolioRiskEvaluation | None:
+        snap = self._index("risk_evaluation_fp", evaluation_fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_evaluation(str(data.get("resource_id", "")))
+
+    def get_frontier(self, frontier_id: str) -> MarketingInvestmentFrontier | None:
+        return self._load(
+            MarketingInvestmentFrontier,
+            kind="frontier",
+            resource_id=frontier_id,
+            collection=COL_FRONTIERS,
+        )
+
+    def get_frontier_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> MarketingInvestmentFrontier | None:
+        snap = self._index("frontier_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_frontier(str(data.get("resource_id", "")))
+
+    def get_selection(self, selection_id: str) -> FrontierSelection | None:
+        return self._load(
+            FrontierSelection,
+            kind="frontier_selection",
+            resource_id=selection_id,
+            collection=COL_SELECTIONS,
+        )
+
+    def get_selection_by_fingerprint(
+        self, *, selection_fingerprint: str
+    ) -> FrontierSelection | None:
+        snap = self._index("selection_fp", selection_fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_selection(str(data.get("resource_id", "")))
+
+    def get_parity_receipt(self, parity_receipt_id: str) -> RiskNeutralParityReceipt | None:
+        return self._load(
+            RiskNeutralParityReceipt,
+            kind="parity",
+            resource_id=parity_receipt_id,
+            collection=COL_PARITY,
         )

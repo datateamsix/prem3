@@ -81,3 +81,31 @@ def new_proposal_readiness_receipt_id() -> str:
 
 def new_planning_decision_id() -> str:
     return _opaque("odec")
+
+
+def new_risk_policy_id() -> str:
+    return _opaque("orpol")
+
+
+def new_candidate_id() -> str:
+    return _opaque("ocand")
+
+
+def new_risk_evaluation_id() -> str:
+    return _opaque("oreval")
+
+
+def new_frontier_id() -> str:
+    return _opaque("ofrn")
+
+
+def new_frontier_selection_id() -> str:
+    return _opaque("osel")
+
+
+def new_parity_receipt_id() -> str:
+    return _opaque("opary")
+
+
+def new_feasibility_receipt_id() -> str:
+    return _opaque("ofeas")

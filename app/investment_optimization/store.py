@@ -26,6 +26,17 @@ from app.investment_optimization.contracts import (
     ScenarioArtifact,
     ScenarioAssumptionSetRef,
 )
+from app.investment_optimization.risk.models import (
+    RISK_AMOUNT_BEARING_MODELS,
+    RISK_METADATA_MODELS,
+    CandidatePortfolio,
+    FeasibilityReceipt,
+    FrontierSelection,
+    MarketingInvestmentFrontier,
+    PortfolioRiskEvaluation,
+    RiskEvaluationPolicy,
+    RiskNeutralParityReceipt,
+)
 from app.investment_planning.errors import PersistenceBarrierError
 
 OptimizationMetadata = (
@@ -46,6 +57,13 @@ OptimizationMetadata = (
     | ProposalReadinessReceipt
     | ProposalDecisionReceipt
     | PlanningDecisionRecord
+    | RiskEvaluationPolicy
+    | CandidatePortfolio
+    | FeasibilityReceipt
+    | PortfolioRiskEvaluation
+    | MarketingInvestmentFrontier
+    | FrontierSelection
+    | RiskNeutralParityReceipt
 )
 
 FORBIDDEN_AMOUNT_KEYS = frozenset(
@@ -109,13 +127,13 @@ def _walk_forbidden(value: Any) -> None:
 
 
 def assert_optimization_metadata_only(value: object) -> OptimizationMetadata:
-    if isinstance(value, OPTIMIZATION_AMOUNT_BEARING_MODELS):
+    if isinstance(value, OPTIMIZATION_AMOUNT_BEARING_MODELS + RISK_AMOUNT_BEARING_MODELS):
         raise PersistenceBarrierError(
             f"{type(value).__name__} is CUSTOMER_AMOUNT_TRANSIENT and cannot be "
             "persisted to the Planning control plane.",
             code="PLANNING_PERSISTENCE_BARRIER",
         )
-    if not isinstance(value, OPTIMIZATION_METADATA_MODELS):
+    if not isinstance(value, OPTIMIZATION_METADATA_MODELS + RISK_METADATA_MODELS):
         raise PersistenceBarrierError(
             f"{type(value).__name__} is not an optimization metadata contract.",
             code="PLANNING_PERSISTENCE_BARRIER",
@@ -215,6 +233,42 @@ class OptimizationMetadataStore(Protocol):
         self, *, tenant_id: str, project_id: str
     ) -> tuple[AdvancedOptimizationReadinessReceipt, ...]: ...
 
+    def get_risk_policy(self, policy_id: str) -> RiskEvaluationPolicy | None: ...
+
+    def get_risk_policy_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, policy_fingerprint: str
+    ) -> RiskEvaluationPolicy | None: ...
+
+    def get_candidate(self, candidate_id: str) -> CandidatePortfolio | None: ...
+
+    def get_candidate_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, candidate_fingerprint: str
+    ) -> CandidatePortfolio | None: ...
+
+    def get_evaluation(self, evaluation_id: str) -> PortfolioRiskEvaluation | None: ...
+
+    def get_evaluation_by_fingerprint(
+        self, *, evaluation_fingerprint: str
+    ) -> PortfolioRiskEvaluation | None: ...
+
+    def get_evaluation_for_candidate(
+        self, candidate_id: str
+    ) -> PortfolioRiskEvaluation | None: ...
+
+    def get_frontier(self, frontier_id: str) -> MarketingInvestmentFrontier | None: ...
+
+    def get_frontier_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> MarketingInvestmentFrontier | None: ...
+
+    def get_selection(self, selection_id: str) -> FrontierSelection | None: ...
+
+    def get_selection_by_fingerprint(
+        self, *, selection_fingerprint: str
+    ) -> FrontierSelection | None: ...
+
+    def get_parity_receipt(self, parity_receipt_id: str) -> RiskNeutralParityReceipt | None: ...
+
 
 class InMemoryOptimizationMetadataStore:
     def __init__(self) -> None:
@@ -234,6 +288,12 @@ class InMemoryOptimizationMetadataStore:
         self._constraint_refs: dict[str, ConstraintSetRef] = {}
         self._assumption_refs: dict[str, ScenarioAssumptionSetRef] = {}
         self._advanced_receipts: dict[str, AdvancedOptimizationReadinessReceipt] = {}
+        self._risk_policies: dict[str, RiskEvaluationPolicy] = {}
+        self._candidates: dict[str, CandidatePortfolio] = {}
+        self._evaluations: dict[str, PortfolioRiskEvaluation] = {}
+        self._frontiers: dict[str, MarketingInvestmentFrontier] = {}
+        self._selections: dict[str, FrontierSelection] = {}
+        self._parity: dict[str, RiskNeutralParityReceipt] = {}
 
     def put(self, value: OptimizationMetadata) -> OptimizationMetadata:
         safe = assert_optimization_metadata_only(value)
@@ -294,6 +354,18 @@ class InMemoryOptimizationMetadataStore:
             self._assumption_refs[safe.assumption_set_id] = safe
         elif isinstance(safe, AdvancedOptimizationReadinessReceipt):
             self._advanced_receipts[safe.receipt_id] = safe
+        elif isinstance(safe, RiskEvaluationPolicy):
+            self._risk_policies[safe.risk_evaluation_policy_id] = safe
+        elif isinstance(safe, CandidatePortfolio):
+            self._candidates[safe.candidate_portfolio_id] = safe
+        elif isinstance(safe, PortfolioRiskEvaluation):
+            self._evaluations[safe.portfolio_risk_evaluation_id] = safe
+        elif isinstance(safe, MarketingInvestmentFrontier):
+            self._frontiers[safe.frontier_id] = safe
+        elif isinstance(safe, FrontierSelection):
+            self._selections[safe.selection_id] = safe
+        elif isinstance(safe, RiskNeutralParityReceipt):
+            self._parity[safe.parity_receipt_id] = safe
         return safe
 
     def get_mapping(self, mapping_id: str) -> PortfolioModelMapping | None:
@@ -513,3 +585,81 @@ class InMemoryOptimizationMetadataStore:
 
     def stored_types(self) -> tuple[str, ...]:
         return tuple(type(row).__name__ for row in self._rows)
+
+    def get_risk_policy(self, policy_id: str) -> RiskEvaluationPolicy | None:
+        return self._risk_policies.get(policy_id)
+
+    def get_risk_policy_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, policy_fingerprint: str
+    ) -> RiskEvaluationPolicy | None:
+        for item in self._risk_policies.values():
+            if (
+                item.tenant_id == tenant_id
+                and item.project_id == project_id
+                and item.policy_fingerprint == policy_fingerprint
+            ):
+                return item
+        return None
+
+    def get_candidate(self, candidate_id: str) -> CandidatePortfolio | None:
+        return self._candidates.get(candidate_id)
+
+    def get_candidate_by_fingerprint(
+        self, *, tenant_id: str, project_id: str, candidate_fingerprint: str
+    ) -> CandidatePortfolio | None:
+        for item in self._candidates.values():
+            if (
+                item.tenant_id == tenant_id
+                and item.project_id == project_id
+                and item.candidate_fingerprint == candidate_fingerprint
+            ):
+                return item
+        return None
+
+    def get_evaluation(self, evaluation_id: str) -> PortfolioRiskEvaluation | None:
+        return self._evaluations.get(evaluation_id)
+
+    def get_evaluation_by_fingerprint(
+        self, *, evaluation_fingerprint: str
+    ) -> PortfolioRiskEvaluation | None:
+        for item in self._evaluations.values():
+            if item.evaluation_fingerprint == evaluation_fingerprint:
+                return item
+        return None
+
+    def get_evaluation_for_candidate(
+        self, candidate_id: str
+    ) -> PortfolioRiskEvaluation | None:
+        matches = [
+            item
+            for item in self._evaluations.values()
+            if item.candidate_portfolio_id == candidate_id
+        ]
+        if not matches:
+            return None
+        return max(matches, key=lambda item: item.created_at)
+
+    def get_frontier(self, frontier_id: str) -> MarketingInvestmentFrontier | None:
+        return self._frontiers.get(frontier_id)
+
+    def get_frontier_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> MarketingInvestmentFrontier | None:
+        for item in self._frontiers.values():
+            if item.fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_selection(self, selection_id: str) -> FrontierSelection | None:
+        return self._selections.get(selection_id)
+
+    def get_selection_by_fingerprint(
+        self, *, selection_fingerprint: str
+    ) -> FrontierSelection | None:
+        for item in self._selections.values():
+            if item.selection_fingerprint == selection_fingerprint:
+                return item
+        return None
+
+    def get_parity_receipt(self, parity_receipt_id: str) -> RiskNeutralParityReceipt | None:
+        return self._parity.get(parity_receipt_id)

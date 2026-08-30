@@ -484,7 +484,19 @@
         "CONSTRAINT_REFERENCE_INVALID",
         "CONSTRAINT_UNIT_MISMATCH",
         "ADVANCED_READINESS_STALE",
-        "RESULT_CONSTRAINT_VIOLATION"
+        "RESULT_CONSTRAINT_VIOLATION",
+        "RISK_NEUTRAL_PARITY_FAILED",
+        "RISK_POLICY_INVALID",
+        "RISK_INPUT_NOT_READY",
+        "POSTERIOR_RISK_UNAVAILABLE",
+        "SCENARIO_RISK_UNAVAILABLE",
+        "EXPOSURE_RISK_NOT_QUALIFIED",
+        "CANDIDATE_GENERATION_FAILED",
+        "CANDIDATE_INFEASIBLE",
+        "INSUFFICIENT_FRONTIER_CANDIDATES",
+        "FRONTIER_DOMINANCE_POLICY_INVALID",
+        "FRONTIER_SELECTION_NOT_ALLOWED",
+        "RISK_ARTIFACT_FINGERPRINT_MISMATCH"
       ],
       "title": "OptimizationFailureClass",
       "type": "string"
@@ -2589,6 +2601,18 @@
           "title": "Fingerprint",
           "type": "string"
         },
+        "frontier_selection_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frontier Selection Id"
+        },
         "objective_mode": {
           "anyOf": [
             {
@@ -2609,6 +2633,18 @@
           "title": "Optimization Run Id",
           "type": "string"
         },
+        "parity_receipt_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parity Receipt Id"
+        },
         "period": {
           "title": "Period",
           "type": "string"
@@ -2620,6 +2656,30 @@
         "recommendation_fingerprint": {
           "title": "Recommendation Fingerprint",
           "type": "string"
+        },
+        "risk_evaluation_policy_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Risk Evaluation Policy Id"
+        },
+        "risk_frontier_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Risk Frontier Id"
         },
         "scenario_id": {
           "title": "Scenario Id",
@@ -2836,6 +2896,891 @@
       ],
       "title": "UnmappedVariableTreatment",
       "type": "string"
+    },
+    "app_investment_optimization_risk_models__CandidateGenerationPolicy": {
+      "enum": [
+        "NATIVE_OPTIMUM_PLUS_FEASIBLE_NEIGHBORS"
+      ],
+      "title": "CandidateGenerationPolicy",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__CandidatePortfolio": {
+      "additionalProperties": false,
+      "properties": {
+        "allocation_fingerprint": {
+          "title": "Allocation Fingerprint",
+          "type": "string"
+        },
+        "assumption_set_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assumption Set Ref"
+        },
+        "base_approved_plan_ref": {
+          "title": "Base Approved Plan Ref",
+          "type": "string"
+        },
+        "candidate_fingerprint": {
+          "title": "Candidate Fingerprint",
+          "type": "string"
+        },
+        "candidate_portfolio_id": {
+          "title": "Candidate Portfolio Id",
+          "type": "string"
+        },
+        "constraint_set_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraint Set Ref"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "feasibility_receipt_id": {
+          "title": "Feasibility Receipt Id",
+          "type": "string"
+        },
+        "generation_authority": {
+          "title": "Generation Authority",
+          "type": "string"
+        },
+        "input_fingerprint": {
+          "title": "Input Fingerprint",
+          "type": "string"
+        },
+        "model_version_ref": {
+          "title": "Model Version Ref",
+          "type": "string"
+        },
+        "native_optimum": {
+          "default": false,
+          "title": "Native Optimum",
+          "type": "boolean"
+        },
+        "optimization_run_id": {
+          "title": "Optimization Run Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_portfolio_id",
+        "tenant_id",
+        "project_id",
+        "base_approved_plan_ref",
+        "optimization_run_id",
+        "generation_authority",
+        "model_version_ref",
+        "feasibility_receipt_id",
+        "allocation_fingerprint",
+        "input_fingerprint",
+        "candidate_fingerprint",
+        "created_at"
+      ],
+      "title": "CandidatePortfolio",
+      "type": "object"
+    },
+    "app_investment_optimization_risk_models__ConcentrationDimension": {
+      "enum": [
+        "CHANNEL",
+        "MARKET",
+        "PROVIDER"
+      ],
+      "title": "ConcentrationDimension",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__ConcentrationMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__ConcentrationDimension"
+        },
+        "hhi": {
+          "title": "Hhi",
+          "type": "number"
+        },
+        "top_1_share": {
+          "title": "Top 1 Share",
+          "type": "number"
+        },
+        "top_3_share": {
+          "title": "Top 3 Share",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dimension",
+        "hhi",
+        "top_1_share",
+        "top_3_share"
+      ],
+      "title": "ConcentrationMetric",
+      "type": "object"
+    },
+    "app_investment_optimization_risk_models__DominanceDimension": {
+      "additionalProperties": false,
+      "properties": {
+        "metric": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__DominanceMetric"
+        },
+        "sense": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__DominanceSense"
+        }
+      },
+      "required": [
+        "metric",
+        "sense"
+      ],
+      "title": "DominanceDimension",
+      "type": "object"
+    },
+    "app_investment_optimization_risk_models__DominanceMetric": {
+      "enum": [
+        "EXPECTED_OUTCOME",
+        "DOWNSIDE_TAIL",
+        "CONCENTRATION_HHI",
+        "STABILITY_L1"
+      ],
+      "title": "DominanceMetric",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__DominanceSense": {
+      "enum": [
+        "MAXIMIZE",
+        "MINIMIZE"
+      ],
+      "title": "DominanceSense",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__DominatedRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_portfolio_id": {
+          "title": "Candidate Portfolio Id",
+          "type": "string"
+        },
+        "dominance_dimensions": {
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_risk_models__DominanceMetric"
+          },
+          "title": "Dominance Dimensions",
+          "type": "array"
+        },
+        "dominated_by": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dominated By",
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidate_portfolio_id",
+        "dominated_by",
+        "dominance_dimensions"
+      ],
+      "title": "DominatedRecord",
+      "type": "object"
+    },
+    "app_investment_optimization_risk_models__FrontierSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "frontier_id": {
+          "title": "Frontier Id",
+          "type": "string"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "risk_posture": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__RiskPosture"
+        },
+        "selected_candidate_ref": {
+          "title": "Selected Candidate Ref",
+          "type": "string"
+        },
+        "selection_fingerprint": {
+          "title": "Selection Fingerprint",
+          "type": "string"
+        },
+        "selection_id": {
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "selection_policy": {
+          "title": "Selection Policy",
+          "type": "string"
+        },
+        "selection_rationale_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Selection Rationale Refs",
+          "type": "array"
+        },
+        "state": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__FrontierSelectionState",
+          "default": "MODEL_RECOMMENDED"
+        }
+      },
+      "required": [
+        "selection_id",
+        "frontier_id",
+        "selected_candidate_ref",
+        "risk_posture",
+        "selection_policy",
+        "selection_fingerprint",
+        "created_at"
+      ],
+      "title": "FrontierSelection",
+      "type": "object"
+    },
+    "app_investment_optimization_risk_models__FrontierSelectionState": {
+      "enum": [
+        "MODEL_RECOMMENDED"
+      ],
+      "title": "FrontierSelectionState",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__LossDefinition": {
+      "enum": [
+        "BASELINE_MINUS_CANDIDATE_OUTCOME"
+      ],
+      "title": "LossDefinition",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__MarketingInvestmentFrontier": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dominated": {
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_risk_models__DominatedRecord"
+          },
+          "title": "Dominated",
+          "type": "array"
+        },
+        "evaluated_candidate_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evaluated Candidate Ids",
+          "type": "array"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "frontier_id": {
+          "title": "Frontier Id",
+          "type": "string"
+        },
+        "non_dominated_candidate_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Non Dominated Candidate Ids",
+          "type": "array"
+        },
+        "parity_receipt_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parity Receipt Id"
+        },
+        "policy_fingerprint": {
+          "title": "Policy Fingerprint",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "readiness": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__RiskFrontierReadinessStatus"
+        },
+        "risk_evaluation_policy_id": {
+          "title": "Risk Evaluation Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": "p6-09/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "frontier_id",
+        "tenant_id",
+        "project_id",
+        "risk_evaluation_policy_id",
+        "policy_fingerprint",
+        "evaluated_candidate_ids",
+        "non_dominated_candidate_ids",
+        "dominated",
+        "readiness",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "MarketingInvestmentFrontier",
+      "type": "object"
+    },
+    "app_investment_optimization_risk_models__PortfolioRiskEvaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_portfolio_ref": {
+          "title": "Baseline Portfolio Ref",
+          "type": "string"
+        },
+        "candidate_portfolio_id": {
+          "title": "Candidate Portfolio Id",
+          "type": "string"
+        },
+        "concentration_metrics": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_risk_models__ConcentrationMetric"
+          },
+          "title": "Concentration Metrics",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "data_risk_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Data Risk Refs",
+          "type": "array"
+        },
+        "evaluation_fingerprint": {
+          "title": "Evaluation Fingerprint",
+          "type": "string"
+        },
+        "execution_risk_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Execution Risk Refs",
+          "type": "array"
+        },
+        "expected_outcome": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Outcome"
+        },
+        "exposure_delivery_risk_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Exposure Delivery Risk Refs",
+          "type": "array"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "lower_tail_metric": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Tail Metric"
+        },
+        "median_outcome": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Median Outcome"
+        },
+        "model_risk_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Model Risk Refs",
+          "type": "array"
+        },
+        "optimization_risk_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Optimization Risk Refs",
+          "type": "array"
+        },
+        "portfolio_risk_evaluation_id": {
+          "title": "Portfolio Risk Evaluation Id",
+          "type": "string"
+        },
+        "posterior_risk_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Posterior Risk Refs",
+          "type": "array"
+        },
+        "probability_improvement": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Probability Improvement"
+        },
+        "risk_evaluation_policy_ref": {
+          "title": "Risk Evaluation Policy Ref",
+          "type": "string"
+        },
+        "scenario_risk_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Scenario Risk Refs",
+          "type": "array"
+        },
+        "stability_metrics": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_risk_models__StabilityMetric"
+          },
+          "title": "Stability Metrics",
+          "type": "array"
+        }
+      },
+      "required": [
+        "portfolio_risk_evaluation_id",
+        "candidate_portfolio_id",
+        "baseline_portfolio_ref",
+        "risk_evaluation_policy_ref",
+        "evaluation_fingerprint",
+        "created_at"
+      ],
+      "title": "PortfolioRiskEvaluation",
+      "type": "object"
+    },
+    "app_investment_optimization_risk_models__RiskBaselineKind": {
+      "enum": [
+        "APPROVED_PLAN",
+        "ACTUAL_YTD",
+        "FORECAST_AT_COMPLETION",
+        "TRANSIENT_SCENARIO"
+      ],
+      "title": "RiskBaselineKind",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__RiskEvaluationPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "balanced_keys": {
+          "default": [
+            "EXPECTED_OUTCOME",
+            "DOWNSIDE_TAIL",
+            "CONCENTRATION_HHI",
+            "STABILITY_L1"
+          ],
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_risk_models__DominanceMetric"
+          },
+          "title": "Balanced Keys",
+          "type": "array"
+        },
+        "baseline_kind": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__RiskBaselineKind",
+          "default": "APPROVED_PLAN"
+        },
+        "candidate_generation_policy": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__CandidateGenerationPolicy",
+          "default": "NATIVE_OPTIMUM_PLUS_FEASIBLE_NEIGHBORS"
+        },
+        "conservative_expected_floor_ratio": {
+          "default": 0.9,
+          "title": "Conservative Expected Floor Ratio",
+          "type": "number"
+        },
+        "constraint_set_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraint Set Ref"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dominance_policy": {
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_risk_models__DominanceDimension"
+          },
+          "title": "Dominance Policy",
+          "type": "array"
+        },
+        "evaluation_dimensions": {
+          "items": {
+            "$ref": "#/$defs/app_investment_optimization_risk_models__RiskTaxonomyClass"
+          },
+          "title": "Evaluation Dimensions",
+          "type": "array"
+        },
+        "exposure_risk_handoff_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exposure Risk Handoff Ref"
+        },
+        "future_assumption_set_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Future Assumption Set Ref"
+        },
+        "loss_definition": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__LossDefinition",
+          "default": "BASELINE_MINUS_CANDIDATE_OUTCOME"
+        },
+        "minimum_candidate_count": {
+          "default": 3,
+          "title": "Minimum Candidate Count",
+          "type": "integer"
+        },
+        "model_version_ref": {
+          "title": "Model Version Ref",
+          "type": "string"
+        },
+        "neighbor_share_delta": {
+          "default": 0.05,
+          "title": "Neighbor Share Delta",
+          "type": "number"
+        },
+        "objective": {
+          "title": "Objective",
+          "type": "string"
+        },
+        "optimization_readiness_ref": {
+          "title": "Optimization Readiness Ref",
+          "type": "string"
+        },
+        "policy_fingerprint": {
+          "title": "Policy Fingerprint",
+          "type": "string"
+        },
+        "policy_version": {
+          "default": "p6-09/v1",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "risk_evaluation_policy_id": {
+          "title": "Risk Evaluation Policy Id",
+          "type": "string"
+        },
+        "risk_penalties_enabled": {
+          "default": true,
+          "title": "Risk Penalties Enabled",
+          "type": "boolean"
+        },
+        "tail_probability": {
+          "title": "Tail Probability",
+          "type": "number"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "risk_evaluation_policy_id",
+        "project_id",
+        "tenant_id",
+        "objective",
+        "model_version_ref",
+        "optimization_readiness_ref",
+        "evaluation_dimensions",
+        "tail_probability",
+        "dominance_policy",
+        "policy_fingerprint",
+        "created_at"
+      ],
+      "title": "RiskEvaluationPolicy",
+      "type": "object"
+    },
+    "app_investment_optimization_risk_models__RiskFrontierReadinessStatus": {
+      "enum": [
+        "NOT_READY",
+        "RISK_FRONTIER_READY",
+        "REVIEW_REQUIRED"
+      ],
+      "title": "RiskFrontierReadinessStatus",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__RiskNeutralParityReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_plan_ref": {
+          "title": "Approved Plan Ref",
+          "type": "string"
+        },
+        "assumption_set_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assumption Set Ref"
+        },
+        "constraint_set_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraint Set Ref"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "matched": {
+          "title": "Matched",
+          "type": "boolean"
+        },
+        "model_version_ref": {
+          "title": "Model Version Ref",
+          "type": "string"
+        },
+        "native_allocation_fingerprint": {
+          "title": "Native Allocation Fingerprint",
+          "type": "string"
+        },
+        "native_optimization_run_id": {
+          "title": "Native Optimization Run Id",
+          "type": "string"
+        },
+        "objective": {
+          "title": "Objective",
+          "type": "string"
+        },
+        "optimization_readiness_ref": {
+          "title": "Optimization Readiness Ref",
+          "type": "string"
+        },
+        "parity_receipt_id": {
+          "title": "Parity Receipt Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "selected_allocation_fingerprint": {
+          "title": "Selected Allocation Fingerprint",
+          "type": "string"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "parity_receipt_id",
+        "project_id",
+        "tenant_id",
+        "native_optimization_run_id",
+        "native_allocation_fingerprint",
+        "selected_allocation_fingerprint",
+        "approved_plan_ref",
+        "objective",
+        "model_version_ref",
+        "optimization_readiness_ref",
+        "matched",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "RiskNeutralParityReceipt",
+      "type": "object"
+    },
+    "app_investment_optimization_risk_models__RiskPosture": {
+      "enum": [
+        "EXPECTED_OUTCOME",
+        "BALANCED",
+        "CONSERVATIVE"
+      ],
+      "title": "RiskPosture",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__RiskTaxonomyClass": {
+      "enum": [
+        "POSTERIOR",
+        "SCENARIO",
+        "EXPOSURE_DELIVERY",
+        "MODEL",
+        "DATA",
+        "CONCENTRATION",
+        "EXECUTION",
+        "OPTIMIZATION"
+      ],
+      "title": "RiskTaxonomyClass",
+      "type": "string"
+    },
+    "app_investment_optimization_risk_models__StabilityMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_kind": {
+          "$ref": "#/$defs/app_investment_optimization_risk_models__RiskBaselineKind"
+        },
+        "l1_share_distance": {
+          "title": "L1 Share Distance",
+          "type": "number"
+        },
+        "max_absolute_line_movement": {
+          "title": "Max Absolute Line Movement",
+          "type": "number"
+        },
+        "max_percent_line_movement": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Percent Line Movement"
+        }
+      },
+      "required": [
+        "baseline_kind",
+        "l1_share_distance",
+        "max_absolute_line_movement"
+      ],
+      "title": "StabilityMetric",
+      "type": "object"
     },
     "app_investment_planning_contracts__ActualSpendAuthority": {
       "enum": [
@@ -4772,6 +5717,24 @@
     },
     {
       "$ref": "#/$defs/app_investment_planning_exposure_handoff__ExposureRiskHandoff"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_risk_models__RiskEvaluationPolicy"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_risk_models__CandidatePortfolio"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_risk_models__PortfolioRiskEvaluation"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_risk_models__MarketingInvestmentFrontier"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_risk_models__FrontierSelection"
+    },
+    {
+      "$ref": "#/$defs/app_investment_optimization_risk_models__RiskNeutralParityReceipt"
     }
   ],
   "title": "PreM3 investment planning and portfolio contracts"

@@ -47,6 +47,14 @@ from app.investment_optimization.contracts import (
     ScenarioArtifact,
     ScenarioAssumptionSetRef,
 )
+from app.investment_optimization.risk.models import (
+    CandidatePortfolio,
+    FrontierSelection,
+    MarketingInvestmentFrontier,
+    PortfolioRiskEvaluation,
+    RiskEvaluationPolicy,
+    RiskNeutralParityReceipt,
+)
 from app.investment_planning.contracts import (
     ActualSpendSourceRef,
     BudgetDriveSourceVersion,
@@ -316,6 +324,12 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             PortfolioExposureCoverage,
             ExposureGuardrailQualificationReceipt,
             ExposureRiskHandoff,
+            RiskEvaluationPolicy,
+            CandidatePortfolio,
+            PortfolioRiskEvaluation,
+            MarketingInvestmentFrontier,
+            FrontierSelection,
+            RiskNeutralParityReceipt,
         ),
         composition="catalog",
     ),

@@ -205,7 +205,13 @@
         "DeliveryHealthEvidence",
         "PortfolioExposureCoverage",
         "ExposureGuardrailQualificationReceipt",
-        "ExposureRiskHandoff"
+        "ExposureRiskHandoff",
+        "RiskEvaluationPolicy",
+        "CandidatePortfolio",
+        "PortfolioRiskEvaluation",
+        "MarketingInvestmentFrontier",
+        "FrontierSelection",
+        "RiskNeutralParityReceipt"
       ],
       "python_module": "app.investment_planning.contracts",
       "python_qualnames": [
@@ -233,9 +239,15 @@
         "app.investment_planning.exposure_evidence.DeliveryHealthEvidence",
         "app.investment_planning.exposure_profile.PortfolioExposureCoverage",
         "app.investment_planning.exposure_guardrails.ExposureGuardrailQualificationReceipt",
-        "app.investment_planning.exposure_handoff.ExposureRiskHandoff"
+        "app.investment_planning.exposure_handoff.ExposureRiskHandoff",
+        "app.investment_optimization.risk.models.RiskEvaluationPolicy",
+        "app.investment_optimization.risk.models.CandidatePortfolio",
+        "app.investment_optimization.risk.models.PortfolioRiskEvaluation",
+        "app.investment_optimization.risk.models.MarketingInvestmentFrontier",
+        "app.investment_optimization.risk.models.FrontierSelection",
+        "app.investment_optimization.risk.models.RiskNeutralParityReceipt"
       ],
-      "sha256": "3a47d78a2c8e0443c8cbbf4b909611eaf06978d78845200c6d178196f01eb2a6"
+      "sha256": "e709a40647de55fedd96a97efb7257956a8f3525c88a887a982aa649da2a15e2"
     }
   ],
   "hash_algorithm": "sha256",

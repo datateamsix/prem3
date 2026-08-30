@@ -42,6 +42,7 @@ from app.investment_optimization.advanced_service import AdvancedOptimizationSer
 from app.investment_optimization.consumption import MemoryModelConsumptionSource
 from app.investment_optimization.firestore import FirestoreOptimizationMetadataStore
 from app.investment_optimization.proposal import ProposalGovernanceService
+from app.investment_optimization.risk.service import RiskFrontierService
 from app.investment_optimization.run_service import OptimizationRunService
 from app.investment_optimization.service import OptimizationReadinessService
 from app.investment_optimization.store import InMemoryOptimizationMetadataStore
@@ -130,6 +131,7 @@ from app.service.routers import (
     mta,
     projects,
     publishes,
+    risk_frontier,
     runs,
     uploads,
     workspaces,
@@ -358,6 +360,7 @@ def create_app(
         optimizer=NativeMeridianFixedBudgetAdapter(),
         execute_inline=not uses_cloud_runtime(),
     )
+    app.state.risk_frontier = RiskFrontierService(optimization_store)
     app.state.advanced_optimization = AdvancedOptimizationService(
         repo=repo,
         store=optimization_store,
@@ -409,6 +412,8 @@ def create_app(
     app.include_router(investment_portfolio.workspace_alias_portfolio_router)
     app.include_router(exposure_risk.canonical_exposure_router)
     app.include_router(exposure_risk.workspace_alias_exposure_router)
+    app.include_router(risk_frontier.canonical_risk_frontier_router)
+    app.include_router(risk_frontier.workspace_alias_risk_frontier_router)
     app.include_router(materializations.router)
     app.include_router(publishes.router)
     app.include_router(mmm.router)

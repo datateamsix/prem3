@@ -122,6 +122,10 @@ def build_scenario_artifact(
     actor_id: str,
     object_store: ObjectStore,
     artifact_bucket: str,
+    risk_frontier_id: str | None = None,
+    frontier_selection_id: str | None = None,
+    parity_receipt_id: str | None = None,
+    risk_evaluation_policy_id: str | None = None,
 ) -> ScenarioArtifact:
     require_completed_run(run)
     scenario_id = new_scenario_id()
@@ -146,6 +150,10 @@ def build_scenario_artifact(
         "constraint_set_id": run.constraint_set_id or "",
         "objective_mode": None if payload.objective_mode is None else payload.objective_mode.value,
         "budget_mode": None if payload.budget_mode is None else payload.budget_mode.value,
+        "risk_frontier_id": risk_frontier_id or "",
+        "frontier_selection_id": frontier_selection_id or "",
+        "parity_receipt_id": parity_receipt_id or "",
+        "risk_evaluation_policy_id": risk_evaluation_policy_id or "",
     }
     now = datetime.now(UTC)
     return ScenarioArtifact(
@@ -174,6 +182,10 @@ def build_scenario_artifact(
         constraint_set_id=run.constraint_set_id,
         objective_mode=None if payload.objective_mode is None else payload.objective_mode.value,
         budget_mode=None if payload.budget_mode is None else payload.budget_mode.value,
+        risk_frontier_id=risk_frontier_id,
+        frontier_selection_id=frontier_selection_id,
+        parity_receipt_id=parity_receipt_id,
+        risk_evaluation_policy_id=risk_evaluation_policy_id,
         fingerprint=metadata_fingerprint(metadata),
     )
 
