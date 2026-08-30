@@ -1218,6 +1218,16 @@ class FirestoreOptimizationMetadataStore:
                 return item
         return None
 
+    def get_simulation_evidence_handoff(
+        self, handoff_id: str
+    ) -> SimulationEvidenceHandoff | None:
+        return self._load(
+            SimulationEvidenceHandoff,
+            kind="sim_handoff",
+            resource_id=handoff_id,
+            collection=COL_HANDOFFS,
+        )
+
     def get_investment_decision(self, decision_id: str) -> InvestmentDecisionRecord | None:
         return self._load(
             InvestmentDecisionRecord,

@@ -380,6 +380,35 @@ components:
       - drive_file_id
       title: BindDriveBudgetSourceRequest
       type: object
+    BindInvestmentDecisionRequest:
+      additionalProperties: false
+      properties:
+        decided_portfolio_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Decided Portfolio Ref
+        frontier_selection_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Frontier Selection Id
+        planning_decision_record_id:
+          title: Planning Decision Record Id
+          type: string
+        proposal_decision_receipt_id:
+          title: Proposal Decision Receipt Id
+          type: string
+        recommended_portfolio_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Recommended Portfolio Ref
+      required:
+      - proposal_decision_receipt_id
+      - planning_decision_record_id
+      title: BindInvestmentDecisionRequest
+      type: object
     BindSourceRequest:
       additionalProperties: false
       properties:
@@ -1386,6 +1415,42 @@ components:
       - upload_id
       title: CreateEvaluationRequest
       type: object
+    CreateExecutionAdherenceRequest:
+      additionalProperties: false
+      properties:
+        actual:
+          additionalProperties:
+            anyOf:
+            - type: number
+            - type: 'null'
+          title: Actual
+          type: object
+        actual_spend_source_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Actual Spend Source Ref
+        approved_plan_ref:
+          title: Approved Plan Ref
+          type: string
+        exposure_handoff_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Exposure Handoff Ref
+        planned:
+          additionalProperties:
+            anyOf:
+            - type: number
+            - type: 'null'
+          title: Planned
+          type: object
+      required:
+      - approved_plan_ref
+      - planned
+      - actual
+      title: CreateExecutionAdherenceRequest
+      type: object
     CreateExposureScenarioRequest:
       additionalProperties: false
       properties:
@@ -1463,6 +1528,16 @@ components:
       - name
       - fiscal_year
       title: CreateInvestmentPlanRequest
+      type: object
+    CreateLearningReceiptRequest:
+      additionalProperties: false
+      properties:
+        recommendation_outcome_receipt_id:
+          title: Recommendation Outcome Receipt Id
+          type: string
+      required:
+      - recommendation_outcome_receipt_id
+      title: CreateLearningReceiptRequest
       type: object
     CreateMTARunRequest:
       additionalProperties: false
@@ -1591,6 +1666,114 @@ components:
       - readiness_receipt_id
       title: CreateOptimizationRunRequest
       type: object
+    CreateOutcomeObservationRequest:
+      additionalProperties: false
+      properties:
+        approved_plan_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approved Plan Ref
+        as_of_time:
+          title: As Of Time
+          type: string
+        decision_as_of_time:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Decision As Of Time
+        investment_decision_ref:
+          title: Investment Decision Ref
+          type: string
+        observation_window_end:
+          title: Observation Window End
+          type: string
+        observation_window_start:
+          title: Observation Window Start
+          type: string
+        observed_value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Observed Value
+        outcome_metric_id:
+          title: Outcome Metric Id
+          type: string
+        outcome_unit:
+          title: Outcome Unit
+          type: string
+        semantic_type:
+          title: Semantic Type
+          type: string
+        source_authority:
+          title: Source Authority
+          type: string
+        source_refs:
+          items:
+            type: string
+          title: Source Refs
+          type: array
+        supersedes_observation_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Supersedes Observation Id
+      required:
+      - investment_decision_ref
+      - outcome_metric_id
+      - outcome_unit
+      - semantic_type
+      - observation_window_start
+      - observation_window_end
+      - as_of_time
+      - source_authority
+      - source_refs
+      title: CreateOutcomeObservationRequest
+      type: object
+    CreateOutcomeReceiptRequest:
+      additionalProperties: false
+      properties:
+        approved_plan_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approved Plan Ref
+        execution_adherence_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Execution Adherence Id
+        investment_decision_id:
+          title: Investment Decision Id
+          type: string
+        outcome_not_observed:
+          default: false
+          title: Outcome Not Observed
+          type: boolean
+        outcome_observation_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Outcome Observation Id
+        prediction_error_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Prediction Error Id
+        prediction_evidence_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Prediction Evidence Id
+        recommendation_adherence_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Recommendation Adherence Id
+      required:
+      - investment_decision_id
+      title: CreateOutcomeReceiptRequest
+      type: object
     CreatePortfolioModelMappingRequest:
       additionalProperties: false
       properties:
@@ -1611,6 +1794,63 @@ components:
       required:
       - portfolio_snapshot_id
       title: CreatePortfolioModelMappingRequest
+      type: object
+    CreatePredictionErrorRequest:
+      additionalProperties: false
+      properties:
+        outcome_observation_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Outcome Observation Id
+        prediction_evidence_id:
+          title: Prediction Evidence Id
+          type: string
+      required:
+      - prediction_evidence_id
+      title: CreatePredictionErrorRequest
+      type: object
+    CreatePredictionEvidenceRequest:
+      additionalProperties: false
+      properties:
+        decision_as_of_time:
+          title: Decision As Of Time
+          type: string
+        frontier_selection_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Frontier Selection Ref
+        portfolio_risk_evaluation_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Portfolio Risk Evaluation Ref
+        predicted_unit:
+          title: Predicted Unit
+          type: string
+        predicted_value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Predicted Value
+        prediction_evidence_as_of_time:
+          title: Prediction Evidence As Of Time
+          type: string
+        recommendation_as_of_time:
+          title: Recommendation As Of Time
+          type: string
+        simulation_evidence_handoff_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Simulation Evidence Handoff Ref
+      required:
+      - predicted_unit
+      - recommendation_as_of_time
+      - decision_as_of_time
+      - prediction_evidence_as_of_time
+      title: CreatePredictionEvidenceRequest
       type: object
     CreateProjectRequest:
       additionalProperties: false
@@ -1697,6 +1937,44 @@ components:
       required:
       - scenario_id
       title: CreateProposalRequest
+      type: object
+    CreateRecommendationAdherenceRequest:
+      additionalProperties: false
+      properties:
+        decided_portfolio_ref:
+          title: Decided Portfolio Ref
+          type: string
+        decided_shares:
+          items:
+            additionalProperties:
+              anyOf:
+              - type: number
+              - type: string
+            type: object
+          title: Decided Shares
+          type: array
+        investment_decision_id:
+          title: Investment Decision Id
+          type: string
+        recommended_portfolio_ref:
+          title: Recommended Portfolio Ref
+          type: string
+        recommended_shares:
+          items:
+            additionalProperties:
+              anyOf:
+              - type: number
+              - type: string
+            type: object
+          title: Recommended Shares
+          type: array
+      required:
+      - investment_decision_id
+      - recommended_portfolio_ref
+      - decided_portfolio_ref
+      - recommended_shares
+      - decided_shares
+      title: CreateRecommendationAdherenceRequest
       type: object
     CreateRiskCandidatesRequest:
       additionalProperties: false
@@ -2629,6 +2907,28 @@ components:
       - plan_id
       title: ExecutePlanRequest
       type: object
+    ExecutionAdherenceResponse:
+      additionalProperties: false
+      properties:
+        adherence_class:
+          title: Adherence Class
+          type: string
+        execution_adherence_id:
+          title: Execution Adherence Id
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - execution_adherence_id
+      - status
+      - adherence_class
+      - fingerprint
+      title: ExecutionAdherenceResponse
+      type: object
     ExposureCoverageItemResponse:
       additionalProperties: false
       properties:
@@ -3551,6 +3851,28 @@ components:
       - generated_at
       title: IntelligenceHomeSummary
       type: object
+    InvestmentDecisionResponse:
+      additionalProperties: false
+      properties:
+        decision:
+          title: Decision
+          type: string
+        decision_fingerprint:
+          title: Decision Fingerprint
+          type: string
+        investment_decision_id:
+          title: Investment Decision Id
+          type: string
+        proposal_decision_receipt_id:
+          title: Proposal Decision Receipt Id
+          type: string
+      required:
+      - investment_decision_id
+      - decision
+      - proposal_decision_receipt_id
+      - decision_fingerprint
+      title: InvestmentDecisionResponse
+      type: object
     InvestmentPlanListResponse:
       additionalProperties: false
       properties:
@@ -3821,6 +4143,28 @@ components:
       required:
       - reason
       title: IterateModelRequest
+      type: object
+    LearningReceiptResponse:
+      additionalProperties: false
+      properties:
+        experience_boundary:
+          title: Experience Boundary
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        learning_candidate_type:
+          title: Learning Candidate Type
+          type: string
+        learning_receipt_id:
+          title: Learning Receipt Id
+          type: string
+      required:
+      - learning_receipt_id
+      - learning_candidate_type
+      - experience_boundary
+      - fingerprint
+      title: LearningReceiptResponse
       type: object
     LineConstraintRequest:
       additionalProperties: false
@@ -5377,6 +5721,48 @@ components:
       - distribution_artifact_ref
       title: OutcomeDistributionResponse
       type: object
+    OutcomeObservationResponse:
+      additionalProperties: false
+      properties:
+        decision_outcome_observation_id:
+          title: Decision Outcome Observation Id
+          type: string
+        observation_fingerprint:
+          title: Observation Fingerprint
+          type: string
+        semantic_type:
+          title: Semantic Type
+          type: string
+      required:
+      - decision_outcome_observation_id
+      - observation_fingerprint
+      - semantic_type
+      title: OutcomeObservationResponse
+      type: object
+    OutcomeReceiptResponse:
+      additionalProperties: false
+      properties:
+        limitations:
+          items:
+            type: string
+          title: Limitations
+          type: array
+        receipt_fingerprint:
+          title: Receipt Fingerprint
+          type: string
+        recommendation_outcome_receipt_id:
+          title: Recommendation Outcome Receipt Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - recommendation_outcome_receipt_id
+      - status
+      - receipt_fingerprint
+      - limitations
+      title: OutcomeReceiptResponse
+      type: object
     ParityReceiptResponse:
       additionalProperties: false
       properties:
@@ -6023,6 +6409,54 @@ components:
       required:
       - currency
       title: PortfolioVarianceResponse
+      type: object
+    PredictionErrorResponse:
+      additionalProperties: false
+      properties:
+        error_class:
+          title: Error Class
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        prediction_error_id:
+          title: Prediction Error Id
+          type: string
+        realized_percentile:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Realized Percentile
+        signed_error:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Signed Error
+      required:
+      - prediction_error_id
+      - error_class
+      - fingerprint
+      title: PredictionErrorResponse
+      type: object
+    PredictionEvidenceResponse:
+      additionalProperties: false
+      properties:
+        fingerprint:
+          title: Fingerprint
+          type: string
+        limitations:
+          items:
+            type: string
+          title: Limitations
+          type: array
+        prediction_evidence_id:
+          title: Prediction Evidence Id
+          type: string
+      required:
+      - prediction_evidence_id
+      - fingerprint
+      - limitations
+      title: PredictionEvidenceResponse
       type: object
     ProblemDetail:
       $defs:
@@ -6846,6 +7280,28 @@ components:
       - occurred_at
       - capability
       title: RecentChange
+      type: object
+    RecommendationAdherenceResponse:
+      additionalProperties: false
+      properties:
+        adherence_class:
+          title: Adherence Class
+          type: string
+        fingerprint:
+          title: Fingerprint
+          type: string
+        l1_distance:
+          title: L1 Distance
+          type: number
+        recommendation_adherence_id:
+          title: Recommendation Adherence Id
+          type: string
+      required:
+      - recommendation_adherence_id
+      - l1_distance
+      - adherence_class
+      - fingerprint
+      title: RecommendationAdherenceResponse
       type: object
     ReplaceSourceRequest:
       additionalProperties: false
@@ -9693,6 +10149,446 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get Optimization Result
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/decisions:
+    post:
+      operationId: bindInvestmentDecision
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindInvestmentDecisionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentDecisionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Bind Decision
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/decisions/{decision_id}:
+    get:
+      operationId: getInvestmentDecision
+      parameters:
+      - in: path
+        name: decision_id
+        required: true
+        schema:
+          title: Decision Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentDecisionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Decision
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/execution-adherence:
+    post:
+      operationId: createExecutionAdherence
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExecutionAdherenceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionAdherenceResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Execution Adherence
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/execution-adherence/{adherence_id}:
+    get:
+      operationId: getExecutionAdherence
+      parameters:
+      - in: path
+        name: adherence_id
+        required: true
+        schema:
+          title: Adherence Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionAdherenceResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Execution Adherence
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/learning-receipts:
+    post:
+      operationId: createLearningReceipt
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLearningReceiptRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningReceiptResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Learning Receipt
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/learning-receipts/{receipt_id}:
+    get:
+      operationId: getLearningReceipt
+      parameters:
+      - in: path
+        name: receipt_id
+        required: true
+        schema:
+          title: Receipt Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningReceiptResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Learning Receipt
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/outcome-observations:
+    post:
+      operationId: createOutcomeObservation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOutcomeObservationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutcomeObservationResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Observation
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/outcome-observations/{observation_id}:
+    get:
+      operationId: getOutcomeObservation
+      parameters:
+      - in: path
+        name: observation_id
+        required: true
+        schema:
+          title: Observation Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutcomeObservationResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Observation
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/prediction-errors:
+    post:
+      operationId: createPredictionError
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePredictionErrorRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionErrorResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Prediction Error
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/prediction-errors/{error_id}:
+    get:
+      operationId: getPredictionError
+      parameters:
+      - in: path
+        name: error_id
+        required: true
+        schema:
+          title: Error Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionErrorResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Prediction Error
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/prediction-evidence:
+    post:
+      operationId: createPredictionEvidence
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePredictionEvidenceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionEvidenceResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Prediction Evidence
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/prediction-evidence/{evidence_id}:
+    get:
+      operationId: getPredictionEvidence
+      parameters:
+      - in: path
+        name: evidence_id
+        required: true
+        schema:
+          title: Evidence Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionEvidenceResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Prediction Evidence
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/receipts:
+    post:
+      operationId: createOutcomeReceipt
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOutcomeReceiptRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutcomeReceiptResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Receipt
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/receipts/{receipt_id}:
+    get:
+      operationId: getOutcomeReceipt
+      parameters:
+      - in: path
+        name: receipt_id
+        required: true
+        schema:
+          title: Receipt Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutcomeReceiptResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Receipt
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/recommendation-adherence:
+    post:
+      operationId: createRecommendationAdherence
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecommendationAdherenceRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationAdherenceResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create Recommendation Adherence
+      tags:
+      - investment-portfolio
+  /v1/projects/{project_id}/investment-portfolio/outcomes/recommendation-adherence/{adherence_id}:
+    get:
+      operationId: getRecommendationAdherence
+      parameters:
+      - in: path
+        name: adherence_id
+        required: true
+        schema:
+          title: Adherence Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationAdherenceResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Recommendation Adherence
       tags:
       - investment-portfolio
   /v1/projects/{project_id}/investment-portfolio/proposals:

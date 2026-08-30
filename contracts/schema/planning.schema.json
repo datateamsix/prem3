@@ -6635,6 +6635,1187 @@
       ],
       "title": "PortfolioExposureCoverage",
       "type": "object"
+    },
+    "app_investment_planning_outcomes_models__AdherenceClass": {
+      "enum": [
+        "MATCH",
+        "MODIFIED",
+        "INCOMPLETE",
+        "NOT_COMPUTABLE"
+      ],
+      "title": "AdherenceClass",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__DecisionOutcomeLearningReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "adherence_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_investment_planning_outcomes_models__AdherenceClass"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "experience_boundary": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__ExperienceBoundary",
+          "default": "LOCAL_ONLY"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "issue_type": {
+          "title": "Issue Type",
+          "type": "string"
+        },
+        "learning_candidate_type": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__LearningCandidateType"
+        },
+        "learning_receipt_id": {
+          "title": "Learning Receipt Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "default": "p6-10/v1",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "prediction_error_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/app_investment_planning_outcomes_models__PredictionErrorClass"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "recommendation_outcome_receipt_ref": {
+          "title": "Recommendation Outcome Receipt Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "learning_receipt_id",
+        "project_id",
+        "recommendation_outcome_receipt_ref",
+        "issue_type",
+        "evidence_refs",
+        "learning_candidate_type",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "DecisionOutcomeLearningReceipt",
+      "type": "object"
+    },
+    "app_investment_planning_outcomes_models__DecisionOutcomeObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_plan_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved Plan Ref"
+        },
+        "as_of_time": {
+          "format": "date-time",
+          "title": "As Of Time",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decision_outcome_observation_id": {
+          "title": "Decision Outcome Observation Id",
+          "type": "string"
+        },
+        "investment_decision_ref": {
+          "title": "Investment Decision Ref",
+          "type": "string"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "measurement_cycle_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measurement Cycle Ref"
+        },
+        "observation_fingerprint": {
+          "title": "Observation Fingerprint",
+          "type": "string"
+        },
+        "observation_window_end": {
+          "format": "date-time",
+          "title": "Observation Window End",
+          "type": "string"
+        },
+        "observation_window_start": {
+          "format": "date-time",
+          "title": "Observation Window Start",
+          "type": "string"
+        },
+        "observed_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed Value"
+        },
+        "outcome_artifact_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outcome Artifact Ref"
+        },
+        "outcome_metric_id": {
+          "title": "Outcome Metric Id",
+          "type": "string"
+        },
+        "outcome_unit": {
+          "title": "Outcome Unit",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "semantic_type": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__OutcomeSemanticType"
+        },
+        "source_authority": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__OutcomeSourceAuthority"
+        },
+        "source_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "supersedes_observation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supersedes Observation Id"
+        }
+      },
+      "required": [
+        "decision_outcome_observation_id",
+        "project_id",
+        "investment_decision_ref",
+        "outcome_metric_id",
+        "outcome_unit",
+        "semantic_type",
+        "observation_window_start",
+        "observation_window_end",
+        "as_of_time",
+        "source_authority",
+        "source_refs",
+        "observation_fingerprint",
+        "created_at"
+      ],
+      "title": "DecisionOutcomeObservation",
+      "type": "object"
+    },
+    "app_investment_planning_outcomes_models__ErrorContributorClass": {
+      "enum": [
+        "RECOMMENDATION_DEVIATION",
+        "EXECUTION_DEVIATION",
+        "EXPOSURE_DELIVERY_DEVIATION",
+        "SCENARIO_ASSUMPTION_MISS",
+        "MODEL_PREDICTION_MISS",
+        "DATA_QUALITY_LIMITATION",
+        "OUTCOME_MEASUREMENT_LIMITATION",
+        "UNRESOLVED"
+      ],
+      "title": "ErrorContributorClass",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__ExecutionAdherence": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_spend_source_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Spend Source Ref"
+        },
+        "adherence_class": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__AdherenceClass"
+        },
+        "approved_plan_ref": {
+          "title": "Approved Plan Ref",
+          "type": "string"
+        },
+        "comparable_line_count": {
+          "title": "Comparable Line Count",
+          "type": "integer"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "execution_adherence_id": {
+          "title": "Execution Adherence Id",
+          "type": "string"
+        },
+        "exposure_handoff_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exposure Handoff Ref"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "incomplete_line_count": {
+          "title": "Incomplete Line Count",
+          "type": "integer"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__ExecutionAdherenceStatus"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_adherence_id",
+        "tenant_id",
+        "project_id",
+        "approved_plan_ref",
+        "status",
+        "adherence_class",
+        "comparable_line_count",
+        "incomplete_line_count",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "ExecutionAdherence",
+      "type": "object"
+    },
+    "app_investment_planning_outcomes_models__ExecutionAdherenceStatus": {
+      "enum": [
+        "COMPLETE",
+        "INCOMPLETE"
+      ],
+      "title": "ExecutionAdherenceStatus",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__ExperienceBoundary": {
+      "enum": [
+        "LOCAL_ONLY"
+      ],
+      "title": "ExperienceBoundary",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__InvestmentDecisionKind": {
+      "enum": [
+        "ACCEPT",
+        "ACCEPT_WITH_MODIFICATIONS",
+        "REJECT",
+        "DEFER",
+        "WITHDRAW",
+        "EXPIRED"
+      ],
+      "title": "InvestmentDecisionKind",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__InvestmentDecisionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_portfolio_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Portfolio Ref"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decided_at": {
+          "format": "date-time",
+          "title": "Decided At",
+          "type": "string"
+        },
+        "decided_by_user_id": {
+          "title": "Decided By User Id",
+          "type": "string"
+        },
+        "decided_portfolio_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decided Portfolio Ref"
+        },
+        "decision": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__InvestmentDecisionKind"
+        },
+        "decision_context_fingerprint": {
+          "title": "Decision Context Fingerprint",
+          "type": "string"
+        },
+        "decision_fingerprint": {
+          "title": "Decision Fingerprint",
+          "type": "string"
+        },
+        "decision_reason_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Reason Code"
+        },
+        "decision_reason_text_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Reason Text Ref"
+        },
+        "frontier_selection_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frontier Selection Ref"
+        },
+        "investment_decision_id": {
+          "title": "Investment Decision Id",
+          "type": "string"
+        },
+        "planning_decision_record_id": {
+          "title": "Planning Decision Record Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "proposal_decision_receipt_id": {
+          "title": "Proposal Decision Receipt Id",
+          "type": "string"
+        },
+        "proposal_ref": {
+          "title": "Proposal Ref",
+          "type": "string"
+        },
+        "recommended_portfolio_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommended Portfolio Ref"
+        },
+        "schema_version": {
+          "default": "p6-10/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "investment_decision_id",
+        "tenant_id",
+        "project_id",
+        "proposal_ref",
+        "proposal_decision_receipt_id",
+        "planning_decision_record_id",
+        "decision",
+        "decided_by_user_id",
+        "decided_at",
+        "decision_context_fingerprint",
+        "decision_fingerprint",
+        "created_at"
+      ],
+      "title": "InvestmentDecisionRecord",
+      "type": "object"
+    },
+    "app_investment_planning_outcomes_models__LearningCandidateType": {
+      "enum": [
+        "MODEL_CALIBRATION_REVIEW",
+        "SCENARIO_ASSUMPTION_REVIEW",
+        "EXPOSURE_RISK_POLICY_REVIEW",
+        "CONSTRAINT_POLICY_REVIEW",
+        "DATA_QUALITY_REVIEW",
+        "EXECUTION_FEASIBILITY_REVIEW",
+        "NO_ACTION",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "LearningCandidateType",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__OutcomeLifecycleStatus": {
+      "enum": [
+        "OPEN",
+        "AWAITING_EXECUTION",
+        "AWAITING_OUTCOME",
+        "PARTIAL",
+        "EVALUABLE",
+        "CLOSED"
+      ],
+      "title": "OutcomeLifecycleStatus",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__OutcomeSemanticType": {
+      "enum": [
+        "OBSERVED_KPI",
+        "INCREMENTAL_KPI",
+        "OBSERVED_REVENUE",
+        "INCREMENTAL_REVENUE",
+        "MTA_ATTRIBUTED_CONVERSIONS",
+        "CAUSAL_CONVERSIONS"
+      ],
+      "title": "OutcomeSemanticType",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__OutcomeSourceAuthority": {
+      "enum": [
+        "DATA_FOUNDATION",
+        "GOVERNED_BIGQUERY",
+        "ACCEPTED_MEASUREMENT_ARTIFACT",
+        "APPROVED_CUSTOMER_EVIDENCE"
+      ],
+      "title": "OutcomeSourceAuthority",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__PredictionErrorClass": {
+      "enum": [
+        "WITHIN_EXPECTED_RANGE",
+        "DIRECTIONAL_MISS",
+        "MAGNITUDE_MISS",
+        "NOT_COMPUTABLE"
+      ],
+      "title": "PredictionErrorClass",
+      "type": "string"
+    },
+    "app_investment_planning_outcomes_models__PredictionErrorSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_error": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Absolute Error"
+        },
+        "contributor_classes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/app_investment_planning_outcomes_models__ErrorContributorClass"
+          },
+          "title": "Contributor Classes",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "directional_correct": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Directional Correct"
+        },
+        "error_class": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__PredictionErrorClass"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "inside_expected_interval": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inside Expected Interval"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "outcome_observation_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outcome Observation Ref"
+        },
+        "percentage_error": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Percentage Error"
+        },
+        "predicted_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predicted Value"
+        },
+        "prediction_error_id": {
+          "title": "Prediction Error Id",
+          "type": "string"
+        },
+        "prediction_evidence_ref": {
+          "title": "Prediction Evidence Ref",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "realized_percentile": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Realized Percentile"
+        },
+        "realized_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Realized Value"
+        },
+        "signed_error": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Signed Error"
+        }
+      },
+      "required": [
+        "prediction_error_id",
+        "project_id",
+        "prediction_evidence_ref",
+        "error_class",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "PredictionErrorSummary",
+      "type": "object"
+    },
+    "app_investment_planning_outcomes_models__PredictionEvidenceSet": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decision_as_of_time": {
+          "format": "date-time",
+          "title": "Decision As Of Time",
+          "type": "string"
+        },
+        "exposure_risk_handoff_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exposure Risk Handoff Ref"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "frontier_selection_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frontier Selection Ref"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "native_optimization_result_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Optimization Result Ref"
+        },
+        "parity_receipt_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parity Receipt Id"
+        },
+        "portfolio_risk_evaluation_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Portfolio Risk Evaluation Ref"
+        },
+        "predicted_unit": {
+          "title": "Predicted Unit",
+          "type": "string"
+        },
+        "predicted_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predicted Value"
+        },
+        "prediction_evidence_as_of_time": {
+          "format": "date-time",
+          "title": "Prediction Evidence As Of Time",
+          "type": "string"
+        },
+        "prediction_evidence_id": {
+          "title": "Prediction Evidence Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "recommendation_as_of_time": {
+          "format": "date-time",
+          "title": "Recommendation As Of Time",
+          "type": "string"
+        },
+        "simulation_evidence_handoff_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Simulation Evidence Handoff Ref"
+        }
+      },
+      "required": [
+        "prediction_evidence_id",
+        "project_id",
+        "predicted_unit",
+        "recommendation_as_of_time",
+        "decision_as_of_time",
+        "prediction_evidence_as_of_time",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "PredictionEvidenceSet",
+      "type": "object"
+    },
+    "app_investment_planning_outcomes_models__RecommendationAdherence": {
+      "additionalProperties": false,
+      "properties": {
+        "adherence_class": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__AdherenceClass"
+        },
+        "channels_added": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Channels Added",
+          "type": "array"
+        },
+        "channels_removed": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Channels Removed",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decided_portfolio_ref": {
+          "title": "Decided Portfolio Ref",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "investment_decision_ref": {
+          "title": "Investment Decision Ref",
+          "type": "string"
+        },
+        "l1_distance": {
+          "title": "L1 Distance",
+          "type": "number"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "markets_changed": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Markets Changed",
+          "type": "array"
+        },
+        "max_absolute_line_deviation": {
+          "title": "Max Absolute Line Deviation",
+          "type": "number"
+        },
+        "max_percentage_deviation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Percentage Deviation"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "recommendation_adherence_id": {
+          "title": "Recommendation Adherence Id",
+          "type": "string"
+        },
+        "recommended_portfolio_ref": {
+          "title": "Recommended Portfolio Ref",
+          "type": "string"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recommendation_adherence_id",
+        "tenant_id",
+        "project_id",
+        "investment_decision_ref",
+        "recommended_portfolio_ref",
+        "decided_portfolio_ref",
+        "l1_distance",
+        "max_absolute_line_deviation",
+        "adherence_class",
+        "fingerprint",
+        "created_at"
+      ],
+      "title": "RecommendationAdherence",
+      "type": "object"
+    },
+    "app_investment_planning_outcomes_models__RecommendationOutcomeReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_spend_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Actual Spend Refs",
+          "type": "array"
+        },
+        "approved_plan_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved Plan Ref"
+        },
+        "closed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Closed At"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decision_ref": {
+          "title": "Decision Ref",
+          "type": "string"
+        },
+        "execution_adherence_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Adherence Ref"
+        },
+        "exposure_realization_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Exposure Realization Refs",
+          "type": "array"
+        },
+        "learning_receipt_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Learning Receipt Ref"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "prediction_error_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prediction Error Ref"
+        },
+        "prediction_evidence_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prediction Evidence Ref"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "realized_outcome_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Realized Outcome Ref"
+        },
+        "receipt_fingerprint": {
+          "title": "Receipt Fingerprint",
+          "type": "string"
+        },
+        "recommendation_adherence_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendation Adherence Ref"
+        },
+        "recommendation_outcome_receipt_id": {
+          "title": "Recommendation Outcome Receipt Id",
+          "type": "string"
+        },
+        "recommendation_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendation Ref"
+        },
+        "simulation_evidence_handoff_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Simulation Evidence Handoff Ref"
+        },
+        "status": {
+          "$ref": "#/$defs/app_investment_planning_outcomes_models__OutcomeLifecycleStatus"
+        },
+        "tenant_id": {
+          "title": "Tenant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recommendation_outcome_receipt_id",
+        "tenant_id",
+        "project_id",
+        "decision_ref",
+        "status",
+        "receipt_fingerprint",
+        "created_at"
+      ],
+      "title": "RecommendationOutcomeReceipt",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -6759,6 +7940,30 @@
     },
     {
       "$ref": "#/$defs/app_investment_optimization_simulation_models__SimulationEvidenceHandoff"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_outcomes_models__InvestmentDecisionRecord"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_outcomes_models__RecommendationAdherence"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_outcomes_models__ExecutionAdherence"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_outcomes_models__DecisionOutcomeObservation"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_outcomes_models__PredictionEvidenceSet"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_outcomes_models__PredictionErrorSummary"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_outcomes_models__RecommendationOutcomeReceipt"
+    },
+    {
+      "$ref": "#/$defs/app_investment_planning_outcomes_models__DecisionOutcomeLearningReceipt"
     }
   ],
   "title": "PreM3 investment planning and portfolio contracts"

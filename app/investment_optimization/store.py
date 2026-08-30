@@ -356,6 +356,11 @@ class OptimizationMetadataStore(Protocol):
     ) -> MonteCarloSimulationReceipt | None: ...
 
     def get_handoff_for_run(self, simulation_run_id: str) -> SimulationEvidenceHandoff | None: ...
+
+    def get_simulation_evidence_handoff(
+        self, handoff_id: str
+    ) -> SimulationEvidenceHandoff | None: ...
+
     def get_investment_decision(self, decision_id: str) -> InvestmentDecisionRecord | None: ...
 
     def get_investment_decision_by_fingerprint(
@@ -957,6 +962,11 @@ class InMemoryOptimizationMetadataStore:
             if item.simulation_run_id == simulation_run_id:
                 return item
         return None
+
+    def get_simulation_evidence_handoff(
+        self, handoff_id: str
+    ) -> SimulationEvidenceHandoff | None:
+        return self._handoffs.get(handoff_id)
 
     def get_outcome_observation(self, observation_id: str) -> DecisionOutcomeObservation | None:
         return self._observations.get(observation_id)

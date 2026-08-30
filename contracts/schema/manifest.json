@@ -220,7 +220,15 @@
         "SimulationRun",
         "PortfolioOutcomeDistribution",
         "MonteCarloSimulationReceipt",
-        "SimulationEvidenceHandoff"
+        "SimulationEvidenceHandoff",
+        "InvestmentDecisionRecord",
+        "RecommendationAdherence",
+        "ExecutionAdherence",
+        "DecisionOutcomeObservation",
+        "PredictionEvidenceSet",
+        "PredictionErrorSummary",
+        "RecommendationOutcomeReceipt",
+        "DecisionOutcomeLearningReceipt"
       ],
       "python_module": "app.investment_planning.contracts",
       "python_qualnames": [
@@ -263,9 +271,17 @@
         "app.investment_optimization.simulation.models.SimulationRun",
         "app.investment_optimization.simulation.models.PortfolioOutcomeDistribution",
         "app.investment_optimization.simulation.models.MonteCarloSimulationReceipt",
-        "app.investment_optimization.simulation.models.SimulationEvidenceHandoff"
+        "app.investment_optimization.simulation.models.SimulationEvidenceHandoff",
+        "app.investment_planning.outcomes.models.InvestmentDecisionRecord",
+        "app.investment_planning.outcomes.models.RecommendationAdherence",
+        "app.investment_planning.outcomes.models.ExecutionAdherence",
+        "app.investment_planning.outcomes.models.DecisionOutcomeObservation",
+        "app.investment_planning.outcomes.models.PredictionEvidenceSet",
+        "app.investment_planning.outcomes.models.PredictionErrorSummary",
+        "app.investment_planning.outcomes.models.RecommendationOutcomeReceipt",
+        "app.investment_planning.outcomes.models.DecisionOutcomeLearningReceipt"
       ],
-      "sha256": "56ffe0d9643c88c0d879148d1946faafdcb26da9968090d9e93df91d930e41de"
+      "sha256": "0e9297232b37f65827beb64b1b224027a5292a247c5e57c39dfe515f8d9df0a4"
     }
   ],
   "hash_algorithm": "sha256",

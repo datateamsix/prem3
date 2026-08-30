@@ -149,6 +149,8 @@ def new_simulation_handoff_id() -> str:
 
 def new_simulation_draw_id() -> str:
     return _opaque("odraw")
+
+
 def new_investment_decision_id() -> str:
     return _opaque("oidec")
 

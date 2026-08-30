@@ -196,7 +196,9 @@ class OutcomeService:
         evidence: PredictionEvidenceSet,
         observation: DecisionOutcomeObservation | None,
     ) -> PredictionErrorSummary:
-        item = compute_prediction_error(evidence=evidence, observation=observation)
+        item = compute_prediction_error(
+            evidence=evidence, observation=observation, store=self._store
+        )
         existing = self._store.get_prediction_error_by_fingerprint(fingerprint=item.fingerprint)
         if existing is not None:
             return existing

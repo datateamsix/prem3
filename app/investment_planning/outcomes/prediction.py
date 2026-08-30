@@ -12,12 +12,14 @@ from app.investment_optimization.errors import (
     SimulationEvidenceNotAvailableError,
 )
 from app.investment_optimization.ids import new_prediction_error_id, new_prediction_evidence_id
+from app.investment_optimization.store import OptimizationMetadataStore
 from app.investment_planning.fingerprint import metadata_fingerprint
 from app.investment_planning.outcomes.models import (
     DecisionOutcomeObservation,
     PredictionErrorSummary,
     PredictionEvidenceSet,
 )
+from app.investment_planning.outcomes.simulation_handoff import resolve_simulation_interval
 from app.investment_planning.outcomes.temporal import assert_temporal_order
 
 
@@ -87,8 +89,12 @@ def compute_prediction_error(
     *,
     evidence: PredictionEvidenceSet,
     observation: DecisionOutcomeObservation | None,
+    store: OptimizationMetadataStore | None = None,
 ) -> PredictionErrorSummary:
     limitations = list(evidence.limitations)
+    interval = resolve_simulation_interval(
+        evidence=evidence, observation=observation, store=store
+    )
     if evidence.simulation_evidence_handoff_ref is None:
         limitations.append("SIMULATION_EVIDENCE_NOT_AVAILABLE")
     if observation is None:
@@ -135,6 +141,9 @@ def compute_prediction_error(
         "signed": signed,
         "absolute": absolute,
     }
+    if interval.realized_percentile is not None:
+        payload["percentile"] = interval.realized_percentile
+        payload["inside"] = interval.inside_expected_interval
     return PredictionErrorSummary(
         prediction_error_id=new_prediction_error_id(),
         project_id=evidence.project_id,
@@ -146,8 +155,8 @@ def compute_prediction_error(
         absolute_error=absolute,
         percentage_error=percent,
         directional_correct=directional,
-        realized_percentile=None,
-        inside_expected_interval=None,
+        realized_percentile=interval.realized_percentile,
+        inside_expected_interval=interval.inside_expected_interval,
         error_class=error_class,
         fingerprint=metadata_fingerprint(payload),
         limitations=tuple(dict.fromkeys(limitations)),
