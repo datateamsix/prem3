@@ -149,3 +149,33 @@ def new_simulation_handoff_id() -> str:
 
 def new_simulation_draw_id() -> str:
     return _opaque("odraw")
+def new_investment_decision_id() -> str:
+    return _opaque("oidec")
+
+
+def new_recommendation_adherence_id() -> str:
+    return _opaque("oradh")
+
+
+def new_execution_adherence_id() -> str:
+    return _opaque("oeadh")
+
+
+def new_outcome_observation_id() -> str:
+    return _opaque("oobs")
+
+
+def new_prediction_evidence_id() -> str:
+    return _opaque("opred")
+
+
+def new_prediction_error_id() -> str:
+    return _opaque("oerr")
+
+
+def new_outcome_receipt_id() -> str:
+    return _opaque("orcpt")
+
+
+def new_learning_receipt_id() -> str:
+    return _opaque("olearn")

@@ -52,6 +52,16 @@ from app.investment_optimization.store import (
     assert_optimization_metadata_only,
 )
 from app.investment_planning.errors import PersistenceBarrierError
+from app.investment_planning.outcomes.models import (
+    DecisionOutcomeLearningReceipt,
+    DecisionOutcomeObservation,
+    ExecutionAdherence,
+    InvestmentDecisionRecord,
+    PredictionErrorSummary,
+    PredictionEvidenceSet,
+    RecommendationAdherence,
+    RecommendationOutcomeReceipt,
+)
 
 COLLECTION_TENANTS = "tenants"
 COLLECTION_WORKSPACES = "workspaces"
@@ -84,6 +94,14 @@ COL_SIM_RUNS = "simulation_runs"
 COL_OUTCOME_DISTS = "portfolio_outcome_distributions"
 COL_SIM_RECEIPTS = "monte_carlo_simulation_receipts"
 COL_HANDOFFS = "simulation_evidence_handoffs"
+COL_INV_DECISIONS = "investment_decision_records"
+COL_REC_ADHERENCE = "recommendation_adherence"
+COL_EXEC_ADHERENCE = "execution_adherence"
+COL_OBSERVATIONS = "decision_outcome_observations"
+COL_PRED_EVIDENCE = "prediction_evidence_sets"
+COL_PRED_ERRORS = "prediction_error_summaries"
+COL_OUTCOME_RECEIPTS = "recommendation_outcome_receipts"
+COL_LEARNING = "decision_outcome_learning_receipts"
 COL_INDEX = "investment_optimization_index"
 
 
@@ -571,6 +589,142 @@ class FirestoreOptimizationMetadataStore:
                 resource_id=safe.simulation_evidence_handoff_id,
                 tenant_id=run.tenant_id,
                 workspace_id=run.project_id,
+            )
+        elif isinstance(safe, InvestmentDecisionRecord):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_INV_DECISIONS).document(
+                safe.investment_decision_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="inv_decision",
+                resource_id=safe.investment_decision_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="inv_decision_fp",
+                key=safe.decision_fingerprint,
+                resource_id=safe.investment_decision_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, RecommendationAdherence):
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_REC_ADHERENCE).document(
+                safe.recommendation_adherence_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="rec_adh",
+                resource_id=safe.recommendation_adherence_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="rec_adh_fp",
+                key=safe.fingerprint,
+                resource_id=safe.recommendation_adherence_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, ExecutionAdherence):
+            self._workspace(safe.tenant_id, safe.project_id).collection(
+                COL_EXEC_ADHERENCE
+            ).document(safe.execution_adherence_id).set(_to_document(safe))
+            self._put_index(
+                kind="exec_adh",
+                resource_id=safe.execution_adherence_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="exec_adh_fp",
+                key=safe.fingerprint,
+                resource_id=safe.execution_adherence_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, DecisionOutcomeObservation):
+            self._workspace(safe.project_id, safe.project_id).collection(COL_OBSERVATIONS).document(
+                safe.decision_outcome_observation_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="outcome_obs",
+                resource_id=safe.decision_outcome_observation_id,
+                tenant_id=safe.project_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="outcome_obs_fp",
+                key=safe.observation_fingerprint,
+                resource_id=safe.decision_outcome_observation_id,
+                tenant_id=safe.project_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, PredictionEvidenceSet):
+            self._workspace(safe.project_id, safe.project_id).collection(
+                COL_PRED_EVIDENCE
+            ).document(safe.prediction_evidence_id).set(_to_document(safe))
+            self._put_index(
+                kind="pred_ev",
+                resource_id=safe.prediction_evidence_id,
+                tenant_id=safe.project_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="pred_ev_fp",
+                key=safe.fingerprint,
+                resource_id=safe.prediction_evidence_id,
+                tenant_id=safe.project_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, PredictionErrorSummary):
+            self._workspace(safe.project_id, safe.project_id).collection(COL_PRED_ERRORS).document(
+                safe.prediction_error_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="pred_err",
+                resource_id=safe.prediction_error_id,
+                tenant_id=safe.project_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="pred_err_fp",
+                key=safe.fingerprint,
+                resource_id=safe.prediction_error_id,
+                tenant_id=safe.project_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, RecommendationOutcomeReceipt):
+            self._workspace(safe.tenant_id, safe.project_id).collection(
+                COL_OUTCOME_RECEIPTS
+            ).document(safe.recommendation_outcome_receipt_id).set(_to_document(safe))
+            self._put_index(
+                kind="out_rcp",
+                resource_id=safe.recommendation_outcome_receipt_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="out_rcp_fp",
+                key=safe.receipt_fingerprint,
+                resource_id=safe.recommendation_outcome_receipt_id,
+                tenant_id=safe.tenant_id,
+                workspace_id=safe.project_id,
+            )
+        elif isinstance(safe, DecisionOutcomeLearningReceipt):
+            self._workspace(safe.project_id, safe.project_id).collection(COL_LEARNING).document(
+                safe.learning_receipt_id
+            ).set(_to_document(safe))
+            self._put_index(
+                kind="learn_rcp",
+                resource_id=safe.learning_receipt_id,
+                tenant_id=safe.project_id,
+                workspace_id=safe.project_id,
+            )
+            self._put_lookup(
+                kind="learn_rcp_fp",
+                key=safe.fingerprint,
+                resource_id=safe.learning_receipt_id,
+                tenant_id=safe.project_id,
+                workspace_id=safe.project_id,
             )
         else:
             raise PersistenceBarrierError(
@@ -1063,3 +1217,139 @@ class FirestoreOptimizationMetadataStore:
             if item.simulation_run_id == simulation_run_id:
                 return item
         return None
+
+    def get_investment_decision(self, decision_id: str) -> InvestmentDecisionRecord | None:
+        return self._load(
+            InvestmentDecisionRecord,
+            kind="inv_decision",
+            resource_id=decision_id,
+            collection=COL_INV_DECISIONS,
+        )
+
+    def get_investment_decision_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> InvestmentDecisionRecord | None:
+        snap = self._index("inv_decision_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_investment_decision(str(data.get("resource_id", "")))
+
+    def get_recommendation_adherence(self, adherence_id: str) -> RecommendationAdherence | None:
+        return self._load(
+            RecommendationAdherence,
+            kind="rec_adh",
+            resource_id=adherence_id,
+            collection=COL_REC_ADHERENCE,
+        )
+
+    def get_recommendation_adherence_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> RecommendationAdherence | None:
+        snap = self._index("rec_adh_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_recommendation_adherence(str(data.get("resource_id", "")))
+
+    def get_execution_adherence(self, adherence_id: str) -> ExecutionAdherence | None:
+        return self._load(
+            ExecutionAdherence,
+            kind="exec_adh",
+            resource_id=adherence_id,
+            collection=COL_EXEC_ADHERENCE,
+        )
+
+    def get_execution_adherence_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> ExecutionAdherence | None:
+        snap = self._index("exec_adh_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_execution_adherence(str(data.get("resource_id", "")))
+
+    def get_outcome_observation(self, observation_id: str) -> DecisionOutcomeObservation | None:
+        return self._load(
+            DecisionOutcomeObservation,
+            kind="outcome_obs",
+            resource_id=observation_id,
+            collection=COL_OBSERVATIONS,
+        )
+
+    def get_outcome_observation_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> DecisionOutcomeObservation | None:
+        snap = self._index("outcome_obs_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_outcome_observation(str(data.get("resource_id", "")))
+
+    def get_prediction_evidence(self, evidence_id: str) -> PredictionEvidenceSet | None:
+        return self._load(
+            PredictionEvidenceSet,
+            kind="pred_ev",
+            resource_id=evidence_id,
+            collection=COL_PRED_EVIDENCE,
+        )
+
+    def get_prediction_evidence_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> PredictionEvidenceSet | None:
+        snap = self._index("pred_ev_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_prediction_evidence(str(data.get("resource_id", "")))
+
+    def get_prediction_error(self, error_id: str) -> PredictionErrorSummary | None:
+        return self._load(
+            PredictionErrorSummary,
+            kind="pred_err",
+            resource_id=error_id,
+            collection=COL_PRED_ERRORS,
+        )
+
+    def get_prediction_error_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> PredictionErrorSummary | None:
+        snap = self._index("pred_err_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_prediction_error(str(data.get("resource_id", "")))
+
+    def get_outcome_receipt(self, receipt_id: str) -> RecommendationOutcomeReceipt | None:
+        return self._load(
+            RecommendationOutcomeReceipt,
+            kind="out_rcp",
+            resource_id=receipt_id,
+            collection=COL_OUTCOME_RECEIPTS,
+        )
+
+    def get_outcome_receipt_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> RecommendationOutcomeReceipt | None:
+        snap = self._index("out_rcp_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_outcome_receipt(str(data.get("resource_id", "")))
+
+    def get_learning_receipt(self, receipt_id: str) -> DecisionOutcomeLearningReceipt | None:
+        return self._load(
+            DecisionOutcomeLearningReceipt,
+            kind="learn_rcp",
+            resource_id=receipt_id,
+            collection=COL_LEARNING,
+        )
+
+    def get_learning_receipt_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> DecisionOutcomeLearningReceipt | None:
+        snap = self._index("learn_rcp_fp", fingerprint).get()
+        if not snap.exists:
+            return None
+        data = snap.to_dict() or {}
+        return self.get_learning_receipt(str(data.get("resource_id", "")))

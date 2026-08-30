@@ -54,6 +54,7 @@ from app.investment_planning.errors import PlanningError
 from app.investment_planning.exposure_service import ExposureRiskService
 from app.investment_planning.firestore import FirestoreInvestmentPlanningStore
 from app.investment_planning.markets import IdentityGraphMarketDirectory
+from app.investment_planning.outcomes.service import OutcomeService
 from app.investment_planning.service import InvestmentPlanService
 from app.investment_planning.store import InMemoryInvestmentPlanningMetadataStore
 from app.materialization.canonical_gate import CanonicalFoundationSourceGate
@@ -131,6 +132,7 @@ from app.service.routers import (
     materializations,
     mmm,
     mta,
+    outcomes,
     projects,
     publishes,
     risk_frontier,
@@ -370,6 +372,7 @@ def create_app(
         object_store=upload_store or FakeObjectStore(),
         artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
     )
+    app.state.outcomes = OutcomeService(optimization_store)
     app.state.advanced_optimization = AdvancedOptimizationService(
         repo=repo,
         store=optimization_store,
@@ -425,6 +428,8 @@ def create_app(
     app.include_router(risk_frontier.workspace_alias_risk_frontier_router)
     app.include_router(simulation.canonical_simulation_router)
     app.include_router(simulation.workspace_alias_simulation_router)
+    app.include_router(outcomes.canonical_outcomes_router)
+    app.include_router(outcomes.workspace_alias_outcomes_router)
     app.include_router(materializations.router)
     app.include_router(publishes.router)
     app.include_router(mmm.router)

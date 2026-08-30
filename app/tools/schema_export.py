@@ -78,6 +78,16 @@ from app.investment_planning.exposure_evidence import DeliveryHealthEvidence
 from app.investment_planning.exposure_guardrails import ExposureGuardrailQualificationReceipt
 from app.investment_planning.exposure_handoff import ExposureRiskHandoff
 from app.investment_planning.exposure_profile import PortfolioExposureCoverage
+from app.investment_planning.outcomes.models import (
+    DecisionOutcomeLearningReceipt,
+    DecisionOutcomeObservation,
+    ExecutionAdherence,
+    InvestmentDecisionRecord,
+    PredictionErrorSummary,
+    PredictionEvidenceSet,
+    RecommendationAdherence,
+    RecommendationOutcomeReceipt,
+)
 from app.mel.models import (
     ExperienceApplication,
     ExperienceEpisode,
@@ -350,6 +360,14 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             PortfolioOutcomeDistribution,
             MonteCarloSimulationReceipt,
             SimulationEvidenceHandoff,
+            InvestmentDecisionRecord,
+            RecommendationAdherence,
+            ExecutionAdherence,
+            DecisionOutcomeObservation,
+            PredictionEvidenceSet,
+            PredictionErrorSummary,
+            RecommendationOutcomeReceipt,
+            DecisionOutcomeLearningReceipt,
         ),
         composition="catalog",
     ),

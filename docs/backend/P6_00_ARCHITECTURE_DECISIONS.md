@@ -377,6 +377,41 @@ The serialized handoff is refs, fingerprints, engine version, limitations, and `
 ## ADR-P6-094 — as_of_time is the historical-backtesting seam
 
 Distribution sets and run specs pin `effective_period` plus `as_of_time`. V1 does not implement full historical backtesting. Future backtests must reuse this temporal authority rather than substituting latest state.
+## ADR-P6-095 — Human decision remains a P6-06 act; P6-10 only classifies it
+
+`ProposalDecision` (`APPROVE` | `REJECT` | `REQUEST_REVISION` | `WITHDRAW`) is the only human-decision authority. P6-10 does not add `ACCEPT` to that enum and does not add a second `POST .../proposals/{id}/decision`. `InvestmentDecisionRecord` binds `proposal_decision_receipt_id` and `planning_decision_record_id`. Classification: matching shares → `ACCEPT`; share/lineage delta → `ACCEPT_WITH_MODIFICATIONS` (both portfolio refs kept); `REJECT` / `DEFER` / `WITHDRAW` / `EXPIRED`. Viewing a page never creates a decision. `EXPIRED` is never inferred `ACCEPT`.
+
+## ADR-P6-096 — Recommendation adherence and execution adherence are distinct
+
+Recommendation adherence compares `MODEL_RECOMMENDED` shares to the decided/approved revision using L1, max absolute line movement, and add/remove sets. It is not an opaque score. Execution adherence compares an approved plan to governed actuals. Missing or partial actuals are `EXECUTION_ADHERENCE_INCOMPLETE` / `EXECUTION_EVIDENCE_INCOMPLETE`, never zero spend. P6-08 exposure refs are metric-specific limitations, not a composite exposure score. Percentage deviation is refused when the denominator is zero.
+
+## ADR-P6-097 — Realized outcomes require governed source authority
+
+`DecisionOutcomeObservation` pins semantic type, unit, window, `as_of_time`, `source_authority`, and `source_refs`. Spend is not a business outcome. Empty sources fail `OUTCOME_SOURCE_NOT_GOVERNED`. MTA attributed conversions are not causal conversions. Corrections create a v2 observation with `supersedes_observation_id`; v1 is never rewritten.
+
+## ADR-P6-098 — Outcome evaluation is fail-closed on temporal order
+
+Prediction evidence after decision time, recommendation evidence after decision time, inverted windows, and outcome timestamps before the observation window fail `OUTCOME_EVALUATION_TEMPORAL_BOUNDARY_INVALID`. Latest-state substitution and future model versions are rejected. A generalized backtester is out of scope; only the `as_of_time` seam is encoded.
+
+## ADR-P6-099 — Prediction error is a point comparison unless a simulation handoff exists
+
+`PredictionErrorSummary` computes signed/absolute error and a percentage only when the predicted denominator is valid. Directional correctness is a structural label. `realized_percentile` and interval coverage stay `None` when `simulation_evidence_handoff_ref` is absent. Absence is `SIMULATION_EVIDENCE_NOT_AVAILABLE`, not zero uncertainty. Distribution-aware scoring is deferred to a later convergence branch. This branch does not import P6-09A modules.
+
+## ADR-P6-100 — Closure requires governed refs, not wall-clock
+
+`RecommendationOutcomeReceipt` becomes `CLOSED` only when prediction evidence exists and either a realized observation or an explicit `OUTCOME_NOT_OBSERVED` limitation is present. Time passing is not enough. Incomplete prediction stays `PARTIAL`. Prediction without outcome stays `AWAITING_OUTCOME` unless the unobserved limitation is explicit.
+
+## ADR-P6-101 — MEL learning receipts are LOCAL_ONLY structural candidates
+
+`ExperienceBoundary.LOCAL_ONLY` is the only V1 value. `DecisionOutcomeLearningReceipt` stores refs, classes, fingerprints, and policy version. Candidate types never call the optimizer, MEL `promote`, or plan revise. Human reason text stays on the P6-06 `ProposalDecisionReceipt.comment`; MEL stores `decision_reason_text_ref` only.
+
+## ADR-P6-102 — Learning create must not mutate policies, models, or plans
+
+Emitting a learning receipt is idempotent create-by-fingerprint. It does not rewrite store-held risk policies, approved plans, ModelPlans, or DOMAIN_VIEW. No silent policy mutation. UME and Advisor remain out of scope.
+
+## ADR-P6-103 — Simulation evidence is an optional opaque string on this branch
+
+`simulation_evidence_handoff_ref` is an optional artifact id. This branch does not define `SimulationEvidenceHandoff` or duplicate `p6-09a/v1` types. Resolver `SIMULATION_EVIDENCE_INVALID_FOR_PREDICTION` is documented for convergence, not implemented here. Firestore stores IDs/refs/fingerprints/statuses/classes/timestamps/non-amount scalars. Amount-bearing adherence/outcome details stay off the control plane. HTTP is `Cache-Control: private, no-store`. Clients cannot submit adherence metrics, prediction error, percentiles, classifications, or receipt fingerprints.
 
 ## Additional freeze notes
 

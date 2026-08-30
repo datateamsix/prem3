@@ -954,3 +954,127 @@ class SimulationHandoffResponse(ApiModel):
     input_fingerprint: str
     simulation_fingerprint: str
     limitations: tuple[str, ...]
+class BindInvestmentDecisionRequest(ApiModel):
+    proposal_decision_receipt_id: str
+    planning_decision_record_id: str
+    frontier_selection_id: str | None = None
+    recommended_portfolio_ref: str | None = None
+    decided_portfolio_ref: str | None = None
+
+
+class InvestmentDecisionResponse(ApiModel):
+    investment_decision_id: str
+    decision: str
+    proposal_decision_receipt_id: str
+    decision_fingerprint: str
+
+
+class CreateRecommendationAdherenceRequest(ApiModel):
+    investment_decision_id: str
+    recommended_portfolio_ref: str
+    decided_portfolio_ref: str
+    recommended_shares: tuple[dict[str, float | str], ...]
+    decided_shares: tuple[dict[str, float | str], ...]
+
+
+class RecommendationAdherenceResponse(ApiModel):
+    recommendation_adherence_id: str
+    l1_distance: float
+    adherence_class: str
+    fingerprint: str
+
+
+class CreateExecutionAdherenceRequest(ApiModel):
+    approved_plan_ref: str
+    planned: dict[str, float | None]
+    actual: dict[str, float | None]
+    actual_spend_source_ref: str | None = None
+    exposure_handoff_ref: str | None = None
+
+
+class ExecutionAdherenceResponse(ApiModel):
+    execution_adherence_id: str
+    status: str
+    adherence_class: str
+    fingerprint: str
+
+
+class CreateOutcomeObservationRequest(ApiModel):
+    investment_decision_ref: str
+    outcome_metric_id: str
+    outcome_unit: str
+    semantic_type: str
+    observation_window_start: str
+    observation_window_end: str
+    as_of_time: str
+    source_authority: str
+    source_refs: tuple[str, ...]
+    observed_value: float | None = None
+    approved_plan_ref: str | None = None
+    supersedes_observation_id: str | None = None
+    decision_as_of_time: str | None = None
+
+
+class OutcomeObservationResponse(ApiModel):
+    decision_outcome_observation_id: str
+    observation_fingerprint: str
+    semantic_type: str
+
+
+class CreatePredictionEvidenceRequest(ApiModel):
+    predicted_unit: str
+    recommendation_as_of_time: str
+    decision_as_of_time: str
+    prediction_evidence_as_of_time: str
+    predicted_value: float | None = None
+    frontier_selection_ref: str | None = None
+    portfolio_risk_evaluation_ref: str | None = None
+    simulation_evidence_handoff_ref: str | None = None
+
+
+class PredictionEvidenceResponse(ApiModel):
+    prediction_evidence_id: str
+    fingerprint: str
+    limitations: tuple[str, ...]
+
+
+class CreatePredictionErrorRequest(ApiModel):
+    prediction_evidence_id: str
+    outcome_observation_id: str | None = None
+
+
+class PredictionErrorResponse(ApiModel):
+    prediction_error_id: str
+    error_class: str
+    signed_error: float | None = None
+    realized_percentile: float | None = None
+    fingerprint: str
+
+
+class CreateOutcomeReceiptRequest(ApiModel):
+    investment_decision_id: str
+    prediction_evidence_id: str | None = None
+    outcome_observation_id: str | None = None
+    recommendation_adherence_id: str | None = None
+    execution_adherence_id: str | None = None
+    prediction_error_id: str | None = None
+    approved_plan_ref: str | None = None
+    outcome_not_observed: bool = False
+
+
+class OutcomeReceiptResponse(ApiModel):
+    recommendation_outcome_receipt_id: str
+    status: str
+    receipt_fingerprint: str
+    limitations: tuple[str, ...]
+
+
+class CreateLearningReceiptRequest(ApiModel):
+    recommendation_outcome_receipt_id: str
+
+
+class LearningReceiptResponse(ApiModel):
+    learning_receipt_id: str
+    learning_candidate_type: str
+    experience_boundary: str
+    fingerprint: str

@@ -335,3 +335,77 @@ class LiveSimulationJobProofPendingError(OptimizationError):
 
 class SimulationNotFoundError(OptimizationError):
     code = "SIMULATION_NOT_FOUND"
+class DecisionSourceNotReadyError(OptimizationError):
+    code = "DECISION_SOURCE_NOT_READY"
+
+
+class DecisionNotAuthorizedError(OptimizationError):
+    code = "DECISION_NOT_AUTHORIZED"
+
+
+class DecisionLineageInvalidError(OptimizationError):
+    code = "DECISION_LINEAGE_INVALID"
+
+
+class RecommendationAdherenceNotComputableError(OptimizationError):
+    code = "RECOMMENDATION_ADHERENCE_NOT_COMPUTABLE"
+
+
+class ExecutionEvidenceIncompleteError(OptimizationError):
+    code = "EXECUTION_EVIDENCE_INCOMPLETE"
+
+
+class ExecutionAdherenceNotComputableError(OptimizationError):
+    code = "EXECUTION_ADHERENCE_NOT_COMPUTABLE"
+
+
+class OutcomeNotObservedError(OptimizationError):
+    code = "OUTCOME_NOT_OBSERVED"
+
+
+class OutcomeSourceNotGovernedError(OptimizationError):
+    code = "OUTCOME_SOURCE_NOT_GOVERNED"
+
+
+class OutcomeUnitMismatchError(OptimizationError):
+    code = "OUTCOME_UNIT_MISMATCH"
+
+
+class OutcomeWindowInvalidError(OptimizationError):
+    code = "OUTCOME_WINDOW_INVALID"
+
+
+class PredictionEvidenceIncompleteError(OptimizationError):
+    code = "PREDICTION_EVIDENCE_INCOMPLETE"
+
+
+class PredictionErrorNotComputableError(OptimizationError):
+    code = "PREDICTION_ERROR_NOT_COMPUTABLE"
+
+
+class OutcomeEvaluationTemporalBoundaryInvalidError(OptimizationError):
+    code = "OUTCOME_EVALUATION_TEMPORAL_BOUNDARY_INVALID"
+
+
+class SimulationEvidenceNotAvailableError(OptimizationError):
+    code = "SIMULATION_EVIDENCE_NOT_AVAILABLE"
+
+
+class SimulationEvidenceInvalidForPredictionError(OptimizationError):
+    code = "SIMULATION_EVIDENCE_INVALID_FOR_PREDICTION"
+
+
+class LearningReceiptNotReadyError(OptimizationError):
+    code = "LEARNING_RECEIPT_NOT_READY"
+
+
+class LearningBoundaryViolationError(OptimizationError):
+    code = "LEARNING_BOUNDARY_VIOLATION"
+
+
+class OutcomeReceiptFingerprintMismatchError(OptimizationError):
+    code = "OUTCOME_RECEIPT_FINGERPRINT_MISMATCH"
+
+
+class OutcomeRecordNotFoundError(OptimizationError):
+    code = "OUTCOME_RECORD_NOT_FOUND"

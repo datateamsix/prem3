@@ -50,6 +50,18 @@ from app.investment_optimization.simulation.models import (
     SimulationRunSpec,
 )
 from app.investment_planning.errors import PersistenceBarrierError
+from app.investment_planning.outcomes.models import (
+    OUTCOME_AMOUNT_BEARING_MODELS,
+    OUTCOME_METADATA_MODELS,
+    DecisionOutcomeLearningReceipt,
+    DecisionOutcomeObservation,
+    ExecutionAdherence,
+    InvestmentDecisionRecord,
+    PredictionErrorSummary,
+    PredictionEvidenceSet,
+    RecommendationAdherence,
+    RecommendationOutcomeReceipt,
+)
 
 OptimizationMetadata = (
     OptimizationProposalRef
@@ -84,6 +96,14 @@ OptimizationMetadata = (
     | PortfolioOutcomeDistribution
     | MonteCarloSimulationReceipt
     | SimulationEvidenceHandoff
+    | InvestmentDecisionRecord
+    | RecommendationAdherence
+    | ExecutionAdherence
+    | DecisionOutcomeObservation
+    | PredictionEvidenceSet
+    | PredictionErrorSummary
+    | RecommendationOutcomeReceipt
+    | DecisionOutcomeLearningReceipt
 )
 
 FORBIDDEN_AMOUNT_KEYS = frozenset(
@@ -151,7 +171,8 @@ def assert_optimization_metadata_only(value: object) -> OptimizationMetadata:
         value,
         OPTIMIZATION_AMOUNT_BEARING_MODELS
         + RISK_AMOUNT_BEARING_MODELS
-        + SIMULATION_AMOUNT_BEARING_MODELS,
+        + SIMULATION_AMOUNT_BEARING_MODELS
+        + OUTCOME_AMOUNT_BEARING_MODELS,
     ):
         raise PersistenceBarrierError(
             f"{type(value).__name__} is CUSTOMER_AMOUNT_TRANSIENT and cannot be "
@@ -160,7 +181,10 @@ def assert_optimization_metadata_only(value: object) -> OptimizationMetadata:
         )
     if not isinstance(
         value,
-        OPTIMIZATION_METADATA_MODELS + RISK_METADATA_MODELS + SIMULATION_METADATA_MODELS,
+        OPTIMIZATION_METADATA_MODELS
+        + RISK_METADATA_MODELS
+        + SIMULATION_METADATA_MODELS
+        + OUTCOME_METADATA_MODELS,
     ):
         raise PersistenceBarrierError(
             f"{type(value).__name__} is not an optimization metadata contract.",
@@ -332,6 +356,53 @@ class OptimizationMetadataStore(Protocol):
     ) -> MonteCarloSimulationReceipt | None: ...
 
     def get_handoff_for_run(self, simulation_run_id: str) -> SimulationEvidenceHandoff | None: ...
+    def get_investment_decision(self, decision_id: str) -> InvestmentDecisionRecord | None: ...
+
+    def get_investment_decision_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> InvestmentDecisionRecord | None: ...
+
+    def get_recommendation_adherence(self, adherence_id: str) -> RecommendationAdherence | None: ...
+
+    def get_recommendation_adherence_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> RecommendationAdherence | None: ...
+
+    def get_execution_adherence(self, adherence_id: str) -> ExecutionAdherence | None: ...
+
+    def get_execution_adherence_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> ExecutionAdherence | None: ...
+
+    def get_outcome_observation(self, observation_id: str) -> DecisionOutcomeObservation | None: ...
+
+    def get_outcome_observation_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> DecisionOutcomeObservation | None: ...
+
+    def get_prediction_evidence(self, evidence_id: str) -> PredictionEvidenceSet | None: ...
+
+    def get_prediction_evidence_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> PredictionEvidenceSet | None: ...
+
+    def get_prediction_error(self, error_id: str) -> PredictionErrorSummary | None: ...
+
+    def get_prediction_error_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> PredictionErrorSummary | None: ...
+
+    def get_outcome_receipt(self, receipt_id: str) -> RecommendationOutcomeReceipt | None: ...
+
+    def get_outcome_receipt_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> RecommendationOutcomeReceipt | None: ...
+
+    def get_learning_receipt(self, receipt_id: str) -> DecisionOutcomeLearningReceipt | None: ...
+
+    def get_learning_receipt_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> DecisionOutcomeLearningReceipt | None: ...
 
 
 class InMemoryOptimizationMetadataStore:
@@ -366,6 +437,14 @@ class InMemoryOptimizationMetadataStore:
         self._outcome_distributions: dict[str, PortfolioOutcomeDistribution] = {}
         self._simulation_receipts: dict[str, MonteCarloSimulationReceipt] = {}
         self._handoffs: dict[str, SimulationEvidenceHandoff] = {}
+        self._investment_decisions: dict[str, InvestmentDecisionRecord] = {}
+        self._rec_adherence: dict[str, RecommendationAdherence] = {}
+        self._exec_adherence: dict[str, ExecutionAdherence] = {}
+        self._observations: dict[str, DecisionOutcomeObservation] = {}
+        self._prediction_evidence: dict[str, PredictionEvidenceSet] = {}
+        self._prediction_errors: dict[str, PredictionErrorSummary] = {}
+        self._outcome_receipts: dict[str, RecommendationOutcomeReceipt] = {}
+        self._learning_receipts: dict[str, DecisionOutcomeLearningReceipt] = {}
 
     def put(self, value: OptimizationMetadata) -> OptimizationMetadata:
         safe = assert_optimization_metadata_only(value)
@@ -454,6 +533,22 @@ class InMemoryOptimizationMetadataStore:
             self._simulation_receipts[safe.receipt_id] = safe
         elif isinstance(safe, SimulationEvidenceHandoff):
             self._handoffs[safe.simulation_evidence_handoff_id] = safe
+        elif isinstance(safe, InvestmentDecisionRecord):
+            self._investment_decisions[safe.investment_decision_id] = safe
+        elif isinstance(safe, RecommendationAdherence):
+            self._rec_adherence[safe.recommendation_adherence_id] = safe
+        elif isinstance(safe, ExecutionAdherence):
+            self._exec_adherence[safe.execution_adherence_id] = safe
+        elif isinstance(safe, DecisionOutcomeObservation):
+            self._observations[safe.decision_outcome_observation_id] = safe
+        elif isinstance(safe, PredictionEvidenceSet):
+            self._prediction_evidence[safe.prediction_evidence_id] = safe
+        elif isinstance(safe, PredictionErrorSummary):
+            self._prediction_errors[safe.prediction_error_id] = safe
+        elif isinstance(safe, RecommendationOutcomeReceipt):
+            self._outcome_receipts[safe.recommendation_outcome_receipt_id] = safe
+        elif isinstance(safe, DecisionOutcomeLearningReceipt):
+            self._learning_receipts[safe.learning_receipt_id] = safe
         return safe
 
     def get_mapping(self, mapping_id: str) -> PortfolioModelMapping | None:
@@ -778,6 +873,28 @@ class InMemoryOptimizationMetadataStore:
                 return item
         return None
 
+    def get_investment_decision(self, decision_id: str) -> InvestmentDecisionRecord | None:
+        return self._investment_decisions.get(decision_id)
+
+    def get_investment_decision_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> InvestmentDecisionRecord | None:
+        for item in self._investment_decisions.values():
+            if item.decision_fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_recommendation_adherence(self, adherence_id: str) -> RecommendationAdherence | None:
+        return self._rec_adherence.get(adherence_id)
+
+    def get_recommendation_adherence_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> RecommendationAdherence | None:
+        for item in self._rec_adherence.values():
+            if item.fingerprint == fingerprint:
+                return item
+        return None
+
     def get_simulation_policy(self, policy_id: str) -> MonteCarloSimulationPolicy | None:
         return self._simulation_policies.get(policy_id)
 
@@ -785,6 +902,17 @@ class InMemoryOptimizationMetadataStore:
         self, *, fingerprint: str
     ) -> MonteCarloSimulationPolicy | None:
         for item in self._simulation_policies.values():
+            if item.fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_execution_adherence(self, adherence_id: str) -> ExecutionAdherence | None:
+        return self._exec_adherence.get(adherence_id)
+
+    def get_execution_adherence_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> ExecutionAdherence | None:
+        for item in self._exec_adherence.values():
             if item.fingerprint == fingerprint:
                 return item
         return None
@@ -827,5 +955,60 @@ class InMemoryOptimizationMetadataStore:
     def get_handoff_for_run(self, simulation_run_id: str) -> SimulationEvidenceHandoff | None:
         for item in self._handoffs.values():
             if item.simulation_run_id == simulation_run_id:
+                return item
+        return None
+
+    def get_outcome_observation(self, observation_id: str) -> DecisionOutcomeObservation | None:
+        return self._observations.get(observation_id)
+
+    def get_outcome_observation_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> DecisionOutcomeObservation | None:
+        for item in self._observations.values():
+            if item.observation_fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_prediction_evidence(self, evidence_id: str) -> PredictionEvidenceSet | None:
+        return self._prediction_evidence.get(evidence_id)
+
+    def get_prediction_evidence_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> PredictionEvidenceSet | None:
+        for item in self._prediction_evidence.values():
+            if item.fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_prediction_error(self, error_id: str) -> PredictionErrorSummary | None:
+        return self._prediction_errors.get(error_id)
+
+    def get_prediction_error_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> PredictionErrorSummary | None:
+        for item in self._prediction_errors.values():
+            if item.fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_outcome_receipt(self, receipt_id: str) -> RecommendationOutcomeReceipt | None:
+        return self._outcome_receipts.get(receipt_id)
+
+    def get_outcome_receipt_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> RecommendationOutcomeReceipt | None:
+        for item in self._outcome_receipts.values():
+            if item.receipt_fingerprint == fingerprint:
+                return item
+        return None
+
+    def get_learning_receipt(self, receipt_id: str) -> DecisionOutcomeLearningReceipt | None:
+        return self._learning_receipts.get(receipt_id)
+
+    def get_learning_receipt_by_fingerprint(
+        self, *, fingerprint: str
+    ) -> DecisionOutcomeLearningReceipt | None:
+        for item in self._learning_receipts.values():
+            if item.fingerprint == fingerprint:
                 return item
         return None
