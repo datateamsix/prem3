@@ -1,0 +1,20 @@
+MERGE `{{ project_id }}.{{ modeling_dataset }}.mta_refresh_watermark` T
+USING (
+  SELECT
+    '{{ pipeline_id }}' AS pipeline_id,
+    @source_end_date AS last_settled_source_date,
+    '{{ refresh_id }}' AS last_successful_refresh_id,
+    {{ channel_registry_version }} AS channel_registry_version,
+    {{ channel_grouping_version }} AS channel_grouping_version,
+    '{{ input_config_fingerprint }}' AS input_config_fingerprint,
+    CURRENT_TIMESTAMP() AS updated_at
+) S
+ON T.pipeline_id=S.pipeline_id
+WHEN MATCHED THEN UPDATE SET
+  last_settled_source_date=S.last_settled_source_date,
+  last_successful_refresh_id=S.last_successful_refresh_id,
+  channel_registry_version=S.channel_registry_version,
+  channel_grouping_version=S.channel_grouping_version,
+  input_config_fingerprint=S.input_config_fingerprint,
+  updated_at=S.updated_at
+WHEN NOT MATCHED THEN INSERT ROW;

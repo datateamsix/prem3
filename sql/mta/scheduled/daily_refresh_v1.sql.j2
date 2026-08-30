@@ -1,0 +1,26 @@
+-- PreM3 managed scheduled refresh template.
+-- BigQuery scheduled queries expose @run_date / @run_time.
+DECLARE settled_end DATE DEFAULT DATE_SUB(@run_date, INTERVAL {{ settlement_days }} DAY);
+DECLARE overlap_start DATE DEFAULT DATE_SUB(settled_end, INTERVAL {{ source_overlap_days }} DAY);
+
+-- A changed source touchpoint can affect later conversions inside the lookback dependency window.
+DECLARE affected_conversion_start DATE DEFAULT overlap_start;
+DECLARE affected_conversion_end DATE DEFAULT DATE_ADD(settled_end, INTERVAL {{ lookback_window_days }} DAY);
+
+-- Clamp future conversion rebuild to today's settled analytical horizon if desired by policy:
+SET affected_conversion_end = LEAST(affected_conversion_end, settled_end);
+
+-- The backend provisioning compiler executes/includes, in order:
+-- 1. merge_sessions_v1
+-- 2. merge_conversions_v1
+-- 3. merge_touchpoints_v1
+-- 4. rebuild_journeys_v1
+-- 5. rebuild_path_frequencies_v1
+-- 6. validation queries
+-- 7. upsert_refresh_watermark_v1 ONLY after all validation passes.
+--
+-- Parameters supplied:
+-- @source_start_date = overlap_start
+-- @source_end_date = settled_end
+-- @affected_conversion_start = affected_conversion_start
+-- @affected_conversion_end = affected_conversion_end

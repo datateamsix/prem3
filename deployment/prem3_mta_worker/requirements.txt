@@ -1,0 +1,6 @@
+pydantic>=2.10
+pyyaml>=6.0
+jinja2>=3.1
+marketing-attribution-models==1.0.11
+google-cloud-firestore
+google-cloud-bigquery

@@ -1,0 +1,8 @@
+-- PreM3 MTA output validation v1 (scaffold).
+-- Full predicates land with M5-01 read-back implementation.
+-- Expects rendered params: project_id, modeling_dataset, run_id
+
+SELECT
+  'outputs_v1' AS check_id,
+  COUNT(1) AS row_count
+FROM `{{ project_id }}.{{ modeling_dataset }}.mta_attribution_channel_results_{{ run_id }}`

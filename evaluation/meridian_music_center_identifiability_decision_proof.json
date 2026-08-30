@@ -1,0 +1,102 @@
+{
+  "package_id": "midp_d88ee230883c414b91b5",
+  "fingerprint": "f7616d55f0bf868282415c11d51b27923b5b1e0ac92416ac3ba2346a58c9e47c",
+  "official_failure": {
+    "failure_class": "MODEL_SPEC_IDENTIFIABILITY_ERROR",
+    "failure_stage": "MODEL_INITIALIZATION",
+    "official_message": "The following non_media_treatments variables do not vary across geos, making a model with n_knots=n_time unidentifiable: [b'music_center_promo'].",
+    "library": "google-meridian",
+    "library_version": "1.8.0",
+    "exception_type": "ValueError"
+  },
+  "promotion_materiality": "MATERIAL",
+  "geo_promotion_evidence_status": "GEO_PROMOTION_EVIDENCE_NOT_FOUND",
+  "alternatives": [
+    {
+      "alternative_id": "A",
+      "summary": "Retain music_center_promo. Reduce time-effect knot flexibility.",
+      "keep_promotion": true,
+      "knot_strategy": "n_knots < n_time",
+      "available": true,
+      "unavailable_reason": null,
+      "potential_benefit": "Preserves promotion as an explicit modeled business treatment.",
+      "primary_risk": "Too few knots may under-represent unexplained temporal structure or shift that structure into other model effects.",
+      "requires_new_model_ready": false,
+      "data_foundation_work_required": false
+    },
+    {
+      "alternative_id": "B",
+      "summary": "Remove music_center_promo. Retain n_knots = n_time.",
+      "keep_promotion": false,
+      "knot_strategy": "n_knots = n_time",
+      "available": true,
+      "unavailable_reason": null,
+      "potential_benefit": "Retains maximum time-effect flexibility.",
+      "primary_risk": "If promotion materially affects the KPI or media allocation, its effect may be absorbed into baseline or other variables. This is not harmless variable cleanup.",
+      "requires_new_model_ready": false,
+      "data_foundation_work_required": false
+    },
+    {
+      "alternative_id": "C",
+      "summary": "Use legitimate geo-varying promotion intensity if such data exists.",
+      "keep_promotion": true,
+      "knot_strategy": "n_knots = n_time with geo-varying promotion",
+      "available": false,
+      "unavailable_reason": "Governed source inventory and ModelReady both lack a geo-varying promotion intensity measure. Alternative C is not eligible.",
+      "potential_benefit": "Separates promotion from the time effect using genuine geo variation.",
+      "primary_risk": "A new field may be a weak proxy, coverage may not span the model window, or definitions may differ by market.",
+      "requires_new_model_ready": true,
+      "data_foundation_work_required": true
+    }
+  ],
+  "prem3_recommendation": {
+    "kind": "PREM3_RECOMMENDATION",
+    "alternative_id": "A",
+    "statement": "A may be recommended for human review because Business IQ treats promotions as a material driver and no valid geo-varying promotion measure is available.",
+    "rationale": "Retain an explicit promotion effect and reduce time-effect flexibility enough for official Meridian identifiability. This is advisory only.",
+    "evidence_refs": [],
+    "approved_model_change": false
+  },
+  "counter_evidence": [
+    "Reduced time flexibility may leave residual temporal structure.",
+    "Selected knots may change attribution of temporal effects.",
+    "Promotion may remain collinear with other variables."
+  ],
+  "human_decision": {
+    "decision_type": "KNOT_STRATEGY",
+    "selected_alternative": null,
+    "selected_configuration": {
+      "A": {
+        "keep": "music_center_promo",
+        "n_knots": "<human-approved integer less than n_time>",
+        "candidate_n_knots": [
+          130
+        ]
+      },
+      "B": {
+        "remove_non_media_treatments": [
+          "music_center_promo"
+        ],
+        "limitation": "PROMOTION_NOT_EXPLICITLY_MODELED",
+        "retain_knot_strategy": "n_knots = n_time"
+      },
+      "C": {
+        "requires": "governed geo-varying promotion evidence",
+        "eligible": false,
+        "data_foundation_work_request": true
+      }
+    },
+    "rationale": "<human rationale>",
+    "evidence_refs": [
+      "frun_56d19c77ff8d4308afdd",
+      "mver_ab97dadeaf40431a",
+      "midp_d88ee230883c414b91b5"
+    ],
+    "approved_by": "<authorized human; service accounts prohibited>",
+    "approved_at": null,
+    "decision_fingerprint": null,
+    "note": "Meridian could not identify music_center_promo separately from a fully flexible time effect because the treatment does not vary across geographies."
+  },
+  "successor_model_version_created": false,
+  "note": "STOP. Human must select A, B, or C. Coding agent does not choose."
+}

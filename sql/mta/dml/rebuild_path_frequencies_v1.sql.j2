@@ -1,0 +1,24 @@
+DELETE FROM `{{ project_id }}.{{ modeling_dataset }}.mta_path_frequencies`
+WHERE conversion_date BETWEEN @affected_conversion_start AND @affected_conversion_end
+  AND conversion_event='{{ conversion_event }}'
+  AND lookback_window_days={{ lookback_window_days }}
+  AND channel_registry_version={{ channel_registry_version }}
+  AND channel_grouping_version={{ channel_grouping_version }};
+
+INSERT INTO `{{ project_id }}.{{ modeling_dataset }}.mta_path_frequencies`
+SELECT
+  conversion_date,
+  conversion_event,
+  path_string,
+  TRUE AS converted,
+  COUNT(*) AS occurrences,
+  SUM(conversion_value) AS total_conversion_value,
+  {{ lookback_window_days }} AS lookback_window_days,
+  {{ channel_registry_version }} AS channel_registry_version,
+  {{ channel_grouping_version }} AS channel_grouping_version,
+  '{{ input_config_fingerprint }}' AS input_config_fingerprint,
+  CURRENT_TIMESTAMP() AS refreshed_at
+FROM `{{ project_id }}.{{ modeling_dataset }}.mta_journeys`
+WHERE conversion_date BETWEEN @affected_conversion_start AND @affected_conversion_end
+  AND conversion_event='{{ conversion_event }}'
+GROUP BY conversion_date,conversion_event,path_string;

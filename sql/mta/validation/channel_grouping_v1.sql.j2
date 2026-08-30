@@ -1,0 +1,18 @@
+-- 1. All UDF outputs must exist in canonical registry.
+WITH observed AS (
+  SELECT DISTINCT
+    source, medium, campaign,
+    `{{ project_id }}.{{ modeling_dataset }}.channel_grouping_v{{ channel_grouping_version }}`(source,medium,campaign) AS channel_id
+  FROM `{{ project_id }}.{{ modeling_dataset }}.mta_sessions`
+  WHERE source_date BETWEEN @source_start_date AND @source_end_date
+)
+SELECT channel_id, COUNT(*) AS distinct_traffic_values
+FROM observed
+WHERE channel_id NOT IN UNNEST({{ canonical_channel_ids_array }})
+GROUP BY channel_id;
+
+-- 2. Quantify fallback share.
+SELECT
+  COUNTIF(canonical_channel_id='other') / NULLIF(COUNT(*),0) AS other_session_share
+FROM `{{ project_id }}.{{ modeling_dataset }}.mta_sessions`
+WHERE source_date BETWEEN @source_start_date AND @source_end_date;

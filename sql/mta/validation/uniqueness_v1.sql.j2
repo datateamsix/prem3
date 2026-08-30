@@ -1,0 +1,23 @@
+SELECT 'sessions' AS asset, COUNT(*) AS duplicate_groups
+FROM (
+  SELECT session_id FROM `{{ project_id }}.{{ modeling_dataset }}.mta_sessions`
+  GROUP BY session_id HAVING COUNT(*)>1
+)
+UNION ALL
+SELECT 'conversions', COUNT(*)
+FROM (
+  SELECT conversion_id FROM `{{ project_id }}.{{ modeling_dataset }}.mta_conversions`
+  GROUP BY conversion_id HAVING COUNT(*)>1
+)
+UNION ALL
+SELECT 'touchpoints', COUNT(*)
+FROM (
+  SELECT touchpoint_id FROM `{{ project_id }}.{{ modeling_dataset }}.mta_touchpoints`
+  GROUP BY touchpoint_id HAVING COUNT(*)>1
+)
+UNION ALL
+SELECT 'journeys', COUNT(*)
+FROM (
+  SELECT journey_id FROM `{{ project_id }}.{{ modeling_dataset }}.mta_journeys`
+  GROUP BY journey_id HAVING COUNT(*)>1
+);

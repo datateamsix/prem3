@@ -13,3 +13,4 @@ cryptography
 google-auth
 pydantic>=2.10
 pandas>=2.2
+pyyaml>=6.0

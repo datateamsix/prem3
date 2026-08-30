@@ -1,0 +1,64 @@
+{
+  "contract": "MTAAnalysisConfig",
+  "version": 1,
+  "fields": {
+    "conversion_event": {
+      "type": "string",
+      "required": true
+    },
+    "conversion_period_start": {
+      "type": "date",
+      "required": true
+    },
+    "conversion_period_end": {
+      "type": "date",
+      "required": true
+    },
+    "lookback_window_days": {
+      "type": "integer",
+      "required": true,
+      "default": 30,
+      "min": 1
+    },
+    "identity_strategy": {
+      "type": "enum",
+      "values": [
+        "PSEUDO_ID_ONLY",
+        "USER_ID_PREFERRED_WITH_PSEUDO_FALLBACK",
+        "USER_ID_ONLY"
+      ]
+    },
+    "sessionization_policy": {
+      "type": "string"
+    },
+    "traffic_source_policy": {
+      "type": "string"
+    },
+    "direct_treatment_policy": {
+      "type": "string"
+    },
+    "channel_registry_version": {
+      "type": "integer",
+      "required": true
+    },
+    "channel_grouping_version": {
+      "type": "integer",
+      "required": true
+    },
+    "include_nonconverting_paths": {
+      "type": "boolean",
+      "default": true
+    },
+    "conversion_value_strategy": {
+      "type": "string"
+    },
+    "models": {
+      "type": "array",
+      "items": "MTAAttributionModelConfig"
+    }
+  },
+  "ui": {
+    "model_comparison_filter": "Frontend may select/filter visible models without changing stored backend result support.",
+    "explanation_required": true
+  }
+}

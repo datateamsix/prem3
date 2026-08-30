@@ -1,0 +1,24 @@
+{
+  "skills": [
+    {
+      "name": "mta-doc-consultant",
+      "path": "mta-doc-consultant/SKILL.md",
+      "description": "Explain MTA methods, GA4 fields, identity limits, and epistemic boundary. No execution authority."
+    },
+    {
+      "name": "mta-data-building",
+      "path": "mta-data-building/SKILL.md",
+      "description": "Discover GA4, configure policies, compile BQ assets, validate MTA_INPUT_READY."
+    },
+    {
+      "name": "mta-model-building",
+      "path": "mta-model-building/SKILL.md",
+      "description": "Propose attribution models and execution plans. Typed contracts authorize."
+    },
+    {
+      "name": "mta-result-visualization",
+      "path": "mta-result-visualization/SKILL.md",
+      "description": "Load verified MTA result snapshots and generate visual evidence contracts. M5-02."
+    }
+  ]
+}

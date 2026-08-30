@@ -1,0 +1,44 @@
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_attribution_channel_results` (
+  run_id STRING NOT NULL,
+  model_type STRING NOT NULL,
+  channel_id STRING NOT NULL,
+  attributed_credit FLOAT64,
+  attribution_share FLOAT64,
+  model_parameters_fingerprint STRING NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id, model_type, channel_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_markov_transitions` (
+  run_id STRING NOT NULL,
+  from_channel_id STRING NOT NULL,
+  to_channel_id STRING NOT NULL,
+  transition_probability FLOAT64 NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_markov_removal_effects` (
+  run_id STRING NOT NULL,
+  channel_id STRING NOT NULL,
+  removal_effect FLOAT64 NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id;
+
+CREATE TABLE IF NOT EXISTS `{{ project_id }}.{{ modeling_dataset }}.mta_shapley_results` (
+  run_id STRING NOT NULL,
+  channel_id STRING NOT NULL,
+  shapley_credit FLOAT64,
+  shapley_share FLOAT64,
+  size INT64 NOT NULL,
+  order_aware BOOL NOT NULL,
+  values_col STRING NOT NULL,
+  path_limit_applied BOOL NOT NULL,
+  generated_at TIMESTAMP NOT NULL
+)
+PARTITION BY DATE(generated_at)
+CLUSTER BY run_id;

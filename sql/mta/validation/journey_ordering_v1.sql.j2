@@ -1,0 +1,6 @@
+SELECT
+  journey_id
+FROM `{{ project_id }}.{{ modeling_dataset }}.mta_journeys`,
+UNNEST(touchpoint_timestamps) AS touchpoint_ts
+WHERE touchpoint_ts > conversion_ts
+LIMIT 100;

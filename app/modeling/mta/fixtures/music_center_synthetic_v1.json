@@ -1,0 +1,33 @@
+{
+  "fixture_id": "music_center_mta_synthetic_v1",
+  "label": "SYNTHETIC_MUSIC_CENTER_ALIGNED",
+  "epistemic": "Observable journey structure for tests — not causal ground truth.",
+  "conversion_event": "purchase",
+  "channels": [
+    "Paid Social",
+    "Display",
+    "Paid Search",
+    "Organic Search",
+    "Email",
+    "Direct"
+  ],
+  "seeded_role_patterns": {
+    "Paid Social": "INTRODUCER",
+    "Display": "ASSISTER",
+    "Paid Search": "CONVERTER",
+    "Organic Search": "MULTI_ROLE",
+    "Direct": "DIRECT_CAPTURE"
+  },
+  "example_paths": [
+    ["Paid Social", "Organic Search", "Paid Search", "purchase"],
+    ["Display", "Paid Social", "Paid Search", "purchase"],
+    ["Organic Search", "Direct", "purchase"],
+    ["Email", "Paid Search", "purchase"],
+    ["Paid Social", "Display", "Organic Search", "Paid Search", "purchase"]
+  ],
+  "include_nonconverting_paths": true,
+  "identity": {
+    "user_pseudo_id_coverage": 1.0,
+    "user_id_coverage": 0.35
+  }
+}

@@ -1,0 +1,22 @@
+version: 1
+contract: PREM3_CHANNEL_GROUPING_RULESET
+fallback_channel_id: other
+rules:
+  - {id: direct, priority: 10, output_channel_id: direct}
+  - {id: shopping_paid, priority: 20, output_channel_id: shopping_paid}
+  - {id: search_paid, priority: 30, output_channel_id: search_paid}
+  - {id: social_paid, priority: 40, output_channel_id: social_paid}
+  - {id: video_paid, priority: 50, output_channel_id: video_paid}
+  - {id: display, priority: 60, output_channel_id: display}
+  - {id: other_paid, priority: 70, output_channel_id: other_paid}
+  - {id: shopping_organic, priority: 80, output_channel_id: shopping_organic}
+  - {id: social_organic, priority: 90, output_channel_id: social_organic}
+  - {id: video_organic, priority: 100, output_channel_id: video_organic}
+  - {id: ai_search, priority: 105, output_channel_id: ai_search}
+  - {id: search_organic, priority: 110, output_channel_id: search_organic}
+  - {id: email, priority: 120, output_channel_id: email}
+  - {id: affiliate, priority: 130, output_channel_id: affiliate}
+  - {id: referral, priority: 140, output_channel_id: referral}
+  - {id: audio, priority: 150, output_channel_id: audio}
+  - {id: sms, priority: 160, output_channel_id: sms}
+  - {id: mobile_push, priority: 170, output_channel_id: mobile_push}

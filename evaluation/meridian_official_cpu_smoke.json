@@ -1,0 +1,60 @@
+{
+  "cloud_build_id": "653868da-5283-4219-bba3-7bc8768fedb4",
+  "completed_at": "2026-08-24T17:04:04.449878Z",
+  "duration_seconds": 139.799062,
+  "eligible_for_customer_conclusions": false,
+  "fit_purpose": "RUNTIME_QUALIFICATION",
+  "fixture": "tiny-geo-12-weeks-2-geos-1-channel",
+  "gpu_extra": "google-meridian[and-cuda,schema]==1.8.0",
+  "label": "EXECUTION_COMPATIBILITY_ONLY",
+  "library_class": "InstalledMeridianLibrary",
+  "mcmc": {
+    "n_adapt": 8,
+    "n_burnin": 2,
+    "n_chains": 1,
+    "n_keep": 2,
+    "seed": 1
+  },
+  "meridian_version": "1.8.0",
+  "model_artifact_sha256": "f8dc32f85a7dab1607c5f921ec7f9873a1ba50df1abdce369f990013157dafe5",
+  "platform": "Linux-5.10.0-32-cloud-amd64-x86_64-with-glibc2.36",
+  "python_version": "3.12.14",
+  "reviewer": "PASS",
+  "reviewer_checks": [
+    {
+      "check_name": "ConvergenceCheck",
+      "status": "PASS",
+      "summary": "The model has likely converged, as all parameters have R-hat values < 1.2."
+    },
+    {
+      "check_name": "BaselineCheck",
+      "status": "PASS",
+      "summary": "The posterior probability that the baseline is negative is 0.00. We recommend visually inspecting the baseline time series in the Model Fit charts to confirm this."
+    },
+    {
+      "check_name": "BayesianPPPCheck",
+      "status": "FAIL",
+      "summary": "The Bayesian posterior predictive p-value is 0.00. The observed total outcome is an extreme outlier compared to the model's expected total outcomes, which suggests a systematic lack of fit. We recommend reviewing input data quality and re-examining the model specification (e.g., priors, transformations) to resolve this issue."
+    },
+    {
+      "check_name": "GoodnessOfFitCheck",
+      "status": "REVIEW",
+      "summary": "R-squared = -398.7324, MAPE = 0.6922, and wMAPE = 0.6787. A negative R-squared signals a potential conflict between your priors and the data, and it warrants investigation. If this conflict is intentional (due to an informative prior), no further action is needed. If it's unintentional, we recommend relaxing your priors to be less restrictive."
+    },
+    {
+      "check_name": "PriorPosteriorShiftCheck",
+      "status": "PASS",
+      "summary": "The model has successfully learned from the data. This is a positive sign that your data was informative."
+    }
+  ],
+  "runtime_mode": "OFFICIAL_CPU_SMOKE",
+  "sample_posterior": "PASS",
+  "sample_prior": "PASS",
+  "serde_load": "PASS",
+  "serde_save": "PASS",
+  "started_at": "2026-08-24T17:01:44.650816Z",
+  "summarizer": "PASS",
+  "tensorflow_version": "2.21.0",
+  "worker_image_digest": "sha256:e4bda7be5bb6ec92dc1576d076f7800745c0c16e071e0d74964d65dfb25a930e",
+  "worker_image_uri": "us-central1-docker.pkg.dev/modelready-m3/cloud-run-source-deploy/prem3-meridian-model-worker@sha256:e4bda7be5bb6ec92dc1576d076f7800745c0c16e071e0d74964d65dfb25a930e"
+}

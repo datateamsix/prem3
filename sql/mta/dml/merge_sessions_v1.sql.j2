@@ -1,0 +1,29 @@
+CREATE TEMP TABLE staged_sessions AS
+{{ standardized_session_select }};
+
+MERGE `{{ project_id }}.{{ modeling_dataset }}.mta_sessions` T
+USING (
+  SELECT
+    session_id, subject_key, session_start_ts, session_end_ts, source, medium, campaign,
+    `{{ project_id }}.{{ modeling_dataset }}.channel_grouping_v{{ channel_grouping_version }}`(source,medium,campaign) AS canonical_channel_id,
+    '{{ traffic_source_policy }}' AS traffic_source_policy,
+    source_date,
+    TO_HEX(SHA256(TO_JSON_STRING(STRUCT(session_id,subject_key,session_start_ts,session_end_ts,source,medium,campaign,source_date)))) AS source_fingerprint
+  FROM staged_sessions
+) S
+ON T.session_id = S.session_id
+WHEN MATCHED AND T.source_fingerprint != S.source_fingerprint THEN UPDATE SET
+  subject_key=S.subject_key, session_start_ts=S.session_start_ts, session_end_ts=S.session_end_ts,
+  source=S.source, medium=S.medium, campaign=S.campaign,
+  canonical_channel_id=S.canonical_channel_id, traffic_source_policy=S.traffic_source_policy,
+  source_date=S.source_date, source_fingerprint=S.source_fingerprint, refreshed_at=CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (
+  session_id,subject_key,session_start_ts,session_end_ts,source,medium,campaign,canonical_channel_id,
+  traffic_source_policy,source_date,source_fingerprint,refreshed_at
+) VALUES (
+  S.session_id,S.subject_key,S.session_start_ts,S.session_end_ts,S.source,S.medium,S.campaign,S.canonical_channel_id,
+  S.traffic_source_policy,S.source_date,S.source_fingerprint,CURRENT_TIMESTAMP()
+)
+WHEN NOT MATCHED BY SOURCE
+  AND T.source_date BETWEEN @source_start_date AND @source_end_date
+THEN DELETE;

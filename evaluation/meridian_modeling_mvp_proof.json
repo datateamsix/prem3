@@ -1,0 +1,613 @@
+{
+  "mission": "PreM3 Mission 3 \u2014 Meridian Modeling Runtime & Official Agent Skill Integration",
+  "lineage": {
+    "origin_main_sha": "0d72636c2b7298a29e212ac3b382a52e11933425",
+    "parent_feature_sha": "f5a0851fb095829ea7a286ed8f07d0673c35566a",
+    "mission3_base_sha": "f5a0851fb095829ea7a286ed8f07d0673c35566a",
+    "m3_00_checkpoint_sha": "e6fc551273f940571f5ce2bb371c83f7a1685506",
+    "m3_01_checkpoint_sha": "3204c3d9957560c60ae2d27bc1cf2037953123a6",
+    "m3_02_checkpoint_sha": "981642e9e64b5657c0573de97173e4d535479d7b",
+    "stacked": true,
+    "restack_required": true,
+    "restack_plan": "After PR 18 merges: fetch latest main, rebase this M3 branch onto main, verify the diff is M3-only, rerun Project Architecture + M3 tests, regenerate contracts if needed. Do not open a standalone merge PR against main while PR 18 remains the parent.",
+    "parent_branch": "feature/prem3-project-architecture-enablement",
+    "mission_branch": "feature/prem3-m3-meridian-modeling-runtime"
+  },
+  "proof_layers": {
+    "m3_00_architecture": {
+      "status": "PASS",
+      "evidence_ref": "docs/backend/MMM_MODELING_STATE_MACHINE.md"
+    },
+    "m3_01_runtime_gates": {
+      "status": "PASS",
+      "checkpoint_sha": "3204c3d9957560c60ae2d27bc1cf2037953123a6",
+      "evidence": "FitPurpose, official-only Cloud dispatch, human actor rejection, no Fake/Recording path to MODEL_ACCEPTED."
+    },
+    "m3_02_checkpoint": {
+      "status": "PASS",
+      "checkpoint_sha": "981642e9e64b5657c0573de97173e4d535479d7b",
+      "commit_message": "feat(eda): bind live Meridian HTML SHA and isolate official embed",
+      "note": "Live Meridian CPU qualification, Firestore/GCS/BQ, and M3-02A HTML trust landed together on this SHA. Working-tree leftovers PHASE1.md and two data-foundation proof JSON files remain excluded.",
+      "accepted_as": [
+        "REAL_MERIDIAN_RUNTIME_PROVEN",
+        "LIVE_FIRESTORE_PROVEN",
+        "LIVE_GCS_PROVEN",
+        "LIVE_BIGQUERY_LEDGER_PROVEN",
+        "GPU_ATTEMPTED_AND_EXTERNALLY_BLOCKED"
+      ]
+    },
+    "committed_worker_provenance": {
+      "status": "PASS",
+      "source_commit_sha": "1474db61019688dd511e9304026b4e3657294ef7",
+      "worker_image_digest": "sha256:1714b54a280bcf71e264bde435bb3438c06ccb5a94a9e001f2260520dc3782bb",
+      "note": "Committed worker after Firestore (default) encoding fix, FastAPI-free package init, and Firestore-safe analyzer metrics. Historical digest sha256:e4bda7be5bb6ec92dc1576d076f7800745c0c16e071e0d74964d65dfb25a930e remains ineligible for FINAL_MODEL."
+    },
+    "deployed_m3_api": {
+      "status": "PASS",
+      "revision": "prem3-api-00015-way",
+      "source_commit_sha": "8134d2fa2a431102000b69f31e7bbb1f8d59bfe6",
+      "image_digest": "sha256:ae441daa973a24f7d2b3822ff8c4b42b820d86a7eb39dedc6d7b85653b054159",
+      "traffic": "100%",
+      "readyz": "ready",
+      "internal_launch_route": "POST /internal/v1/mmm-fit-dispatches/{id}/launch returns 401 without OIDC, not 404"
+    },
+    "integrated_cloud_tasks_path": {
+      "status": "PASS",
+      "evidence_ref": "evaluation/meridian_integrated_dispatch_proof.json",
+      "execution": "prem3-meridian-model-worker-zpxw7",
+      "dispatch_id": "fdsp_51c2f168d893406aa91e",
+      "duplicate_enqueue": "same_task",
+      "note": "Cloud Tasks OIDC to prem3-api launch to Cloud Run Job. Direct gcloud run jobs execute does not satisfy this proof. Smoke only; not FINAL_MODEL."
+    },
+    "final_runtime": {
+      "status": "PASS",
+      "preferred": "OFFICIAL_GPU",
+      "used": "OFFICIAL_CPU",
+      "production_eligible": ["OFFICIAL_CPU", "OFFICIAL_GPU"],
+      "ineligible": ["FAKE_TEST", "OFFICIAL_CPU_SMOKE"]
+    },
+    "final_fit_purpose": {
+      "required": "FINAL_MODEL",
+      "note": "Acceptance depends on fit_purpose, not GPU."
+    },
+    "logic_proof": {
+      "status": "PASS",
+      "runtime_mode": "FAKE_TEST",
+      "evidence": "Unit state-machine, approvals, iteration, and FAKE_TEST rejection of MODEL_ACCEPTED. Explicit FakeMeridianRuntime injection only."
+    },
+    "official_cpu_smoke": {
+      "status": "PASS",
+      "runtime_mode": "OFFICIAL_CPU_SMOKE",
+      "fit_purpose": "RUNTIME_QUALIFICATION",
+      "label": "EXECUTION_COMPATIBILITY_ONLY",
+      "library_class": "InstalledMeridianLibrary",
+      "evidence_ref": "evaluation/meridian_official_cpu_smoke.json",
+      "worker_image_digest": "sha256:e4bda7be5bb6ec92dc1576d076f7800745c0c16e071e0d74964d65dfb25a930e",
+      "python_version": "3.12.14",
+      "meridian_version": "1.8.0",
+      "tensorflow_version": "2.21.0",
+      "model_artifact_sha256": "f8dc32f85a7dab1607c5f921ec7f9873a1ba50df1abdce369f990013157dafe5"
+    },
+    "worker_image": {
+      "status": "PASS",
+      "image_uri": "us-central1-docker.pkg.dev/modelready-m3/cloud-run-source-deploy/prem3-meridian-model-worker",
+      "digest": "sha256:1714b54a280bcf71e264bde435bb3438c06ccb5a94a9e001f2260520dc3782bb",
+      "source_commit_sha": "1474db61019688dd511e9304026b4e3657294ef7",
+      "cloud_build_id": "4cca36f8-fce6-42fb-a7d1-ae89dafebdcb",
+      "gpu_extra": "google-meridian[and-cuda,schema]==1.8.0",
+      "python_version": "3.12.14",
+      "meridian_version": "1.8.0",
+      "tensorflow_version": "2.21.0",
+      "note": "M3-03 committed CPU worker. Historical uncommitted digest sha256:e4bda7be5bb6ec92dc1576d076f7800745c0c16e071e0d74964d65dfb25a930e remains ineligible for FINAL_MODEL."
+    },
+    "cloud_run_deployment": {
+      "status": "PASS",
+      "job": "prem3-meridian-model-worker",
+      "region": "us-central1",
+      "service_account": "m3-runtime@modelready-m3.iam.gserviceaccount.com",
+      "cpu": "4",
+      "memory": "16Gi",
+      "gpu": null,
+      "parallelism": 1,
+      "timeout_seconds": 3600,
+      "image_digest": "sha256:1714b54a280bcf71e264bde435bb3438c06ccb5a94a9e001f2260520dc3782bb",
+      "fallback": "CPU-only after LIVE_GPU_DEPLOY_BLOCKED"
+    },
+    "cloud_runtime_qualification": {
+      "status": "PASS",
+      "runtime_mode": "OFFICIAL_CPU_SMOKE",
+      "execution_id": "prem3-meridian-model-worker-9zcs9",
+      "library_class": "InstalledMeridianLibrary",
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json",
+      "note": "Real Meridian in the deployed CPU Cloud Run Job. Not GPU proof. Not FINAL_MODEL."
+    },
+    "gpu_detection": {
+      "status": "BLOCKED",
+      "result": "LIVE_GPU_DEPLOY_BLOCKED",
+      "execution_id": "prem3-meridian-model-worker-zxl49",
+      "tensorflow_gpu_devices": [],
+      "gpu_visible": false,
+      "cuda_init": "UNKNOWN ERROR (303)",
+      "without_zonal_redundancy_error": "You do not have quota for using GPUs without zonal redundancy.",
+      "with_zonal_redundancy_error": "Currently Cloud Run jobs are unable to offer GPU enabled instances with zonal redundancy due to capacity limitations.",
+      "quota_id": "NvidiaL4GpuAllocNoZonalRedundancyPerProjectRegion",
+      "quota_increase_eligibility": "NOT_ENOUGH_USAGE_HISTORY"
+    },
+    "cloud_tasks_dispatch": {
+      "status": "BLOCKED",
+      "enqueue_idempotency": "PASS",
+      "integrated_api_path": "BLOCKED",
+      "queue": "prem3-meridian-fit-dispatch",
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json",
+      "blocker": "Live prem3-api returns HTTP 404 for POST /internal/v1/mmm-fit-dispatches/{id}/launch. M3 routes exist in source but not in the deployed Mission 10 revision. Duplicate Cloud Task names return AlreadyExists. Firestore claim_canonical_dispatch returns one dispatch_id."
+    },
+    "firestore_live": {
+      "status": "PASS",
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json",
+      "new_process_reload": true,
+      "cross_tenant_denied": true,
+      "canonical_dispatch_idempotent": true
+    },
+    "gcs_live": {
+      "status": "PASS",
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json",
+      "conflict_overwrite_rejected": true
+    },
+    "bigquery_live": {
+      "status": "PASS",
+      "dataset": "modelready-m3.prem3_modeling",
+      "history_retained": true,
+      "evidence_ref": "evaluation/meridian_cloud_runtime_qualification.json"
+    },
+    "music_center_final_fit": {
+      "status": "FAILED",
+      "result": "POSTERIOR_DID_NOT_START",
+      "integrated_dispatch": "PASS",
+      "official_runtime_reached": true,
+      "sampling_started": false,
+      "fit_outcome": "FAILED_PRE_FIT",
+      "failure_class": "MODEL_SPEC_IDENTIFIABILITY_ERROR",
+      "failure_stage": "MODEL_INITIALIZATION",
+      "model_accepted": false,
+      "next_state": "ITERATION_REQUIRED",
+      "lifecycle_state": "ITERATION_REQUIRED",
+      "fit_run_status": "FAILED_PRE_FIT",
+      "runtime_mode": "OFFICIAL_CPU",
+      "fit_purpose": "FINAL_MODEL",
+      "execution": "prem3-meridian-model-worker-bc4sk",
+      "evidence_ref": "evaluation/meridian_music_center_final_fit_proof.json",
+      "official_meridian": {
+        "library": "google-meridian",
+        "library_version": "1.8.0",
+        "exception": "ValueError",
+        "message": "The following non_media_treatments variables do not vary across geos, making a model with n_knots=n_time unidentifiable: [b'music_center_promo'].",
+        "meridian_options": [
+          "decrease n_knots below n_time",
+          "drop geo-invariant non_media_treatments"
+        ]
+      },
+      "historical_classification_choice": "A",
+      "historical_classification_note": "Canonical Music Center proof/current record is corrected. No broad Firestore migration. Live job prem3-meridian-model-worker-bc4sk may still show SERDE_ERROR in historical worker logs.",
+      "note": "Integrated Cloud Tasks path launched the approved FINAL_MODEL FitPlan. Official Meridian rejected ModelContext construction before posterior sampling. MCMC was not reduced. This is FAILED_PRE_FIT / MODEL_SPEC_IDENTIFIABILITY_ERROR, not SERDE_ERROR and not a dispatch failure. Do not treat this as an accepted model. Do not self-approve.",
+      "reason": "Official Meridian geo-invariance check blocked construct_model. This is not a 3600s timeout and not MODEL_ACCEPTED.",
+      "coverage": {
+        "earliest_time": "2024-01-01",
+        "latest_time": "2026-06-29",
+        "n_times": 131,
+        "n_geos": 4,
+        "geos": ["CA", "FL", "NY", "TX"],
+        "n_treatments": 4,
+        "n_controls": 3,
+        "source": "datasets/music_center/dataset_a/truth/expected_model_ready_weekly.csv",
+        "shared_usable_historical_coverage": "2024-01-01/2026-06-29"
+      },
+      "selected_cycle_name": "Q3 2026",
+      "selected_model_window": ["2024-01-01", "2026-06-29"],
+      "window_rationale": "Verified shared usable history. Q3 2026 Measurement Cycle 2026-07-01/2026-09-30 starts after coverage ends and is not the MMM model window."
+    },
+    "official_model_review": {
+      "status": "PASS",
+      "scope": "OFFICIAL_CPU_SMOKE only",
+      "review_source": "OFFICIAL_MERIDIAN",
+      "evidence_ref": "evaluation/meridian_official_cpu_smoke.json",
+      "note": "Tiny smoke MCMC is EXECUTION_COMPATIBILITY_ONLY. Music Center official review waits on a real FINAL_MODEL posterior."
+    },
+    "human_model_acceptance": {
+      "status": "BLOCKED",
+      "blocking_state": "ITERATION_REQUIRED",
+      "reason": "No FINAL_MODEL posterior or official review pack exists to accept. Official Meridian blocked ModelContext construction. FitApproval remains immutable historical evidence. Service accounts cannot masquerade as approved_by. Do not self-approve."
+    },
+    "m3_03b_pre_fit_failure_semantics": {
+      "status": "PASS",
+      "integrated_dispatch": "PASS",
+      "official_runtime_reached": true,
+      "sampling_started": false,
+      "fit_outcome": "FAILED_PRE_FIT",
+      "failure_class": "MODEL_SPEC_IDENTIFIABILITY_ERROR",
+      "model_accepted": false,
+      "next_state": "ITERATION_REQUIRED",
+      "retry_semantics": "NEW_MODEL_DESIGN_REQUIRED",
+      "next_action": "REVIEW_MODEL_IDENTIFIABILITY",
+      "historical_classification_choice": "A",
+      "historical_classification_note": "Safely correct only the canonical Music Center proof/current record. Do not run a broad destructive Firestore migration.",
+      "unresolved_model_design_alternatives": [
+        "A: Retain music_center_promo. Reduce time-effect knot flexibility.",
+        "B: Remove music_center_promo. Retain n_knots = n_time.",
+        "C: Use legitimate geo-varying promotion intensity if such data actually exists."
+      ]
+    },
+    "firestore_proof": {
+      "status": "PASS",
+      "fake_firestore": "PASS",
+      "live_firestore": "PASS",
+      "evidence": "FakeFirestore unit round-trip plus live control-plane reload and cross-tenant denial."
+    },
+    "bigquery_ledger_proof": {
+      "status": "PASS",
+      "environment": "InMemoryModelLedger CI twin plus live modelready-m3.prem3_modeling",
+      "live_bigquery": "PASS",
+      "evidence": "compile_*_row helpers and live DML INSERT write/read-back. Historical rows retained."
+    },
+    "official_gpu_proof": {
+      "status": "BLOCKED",
+      "runtime_mode": "OFFICIAL_GPU",
+      "result": "LIVE_GPU_DEPLOY_BLOCKED",
+      "gpu_preference": "nvidia-l4"
+    }
+  },
+  "upstream": {
+    "repository": "google/meridian",
+    "commit": "8ca83f6b2ffd0230264bc3e3e968b1f0a1c4f9d7",
+    "runtime_meridian_version": "1.8.0",
+    "license": "Apache-2.0",
+    "asset_manifest_sha256": "24d984fa3aae22f3f3db71fd61e6d3191d10aad1b856b30058bd7d266b09f57f",
+    "fetched_from_github_at_runtime": false
+  },
+  "compatibility": {
+    "compatible": true,
+    "errors": [
+      "media_effects_dist='roi' is not a ModelSpec value on 1.8.0"
+    ],
+    "warnings": [
+      "UPSTREAM_UNRELEASED: ModelContext channel inspection",
+      "UPSTREAM_UNRELEASED: Analyzer incremental outcome APIs",
+      "UPSTREAM_UNRELEASED: WeeklyOptimizationGrid",
+      "UPSTREAM_UNRELEASED: currency_code",
+      "doc-consultant public repo lacks root /docs directory",
+      "google-meridian is not installed in this process; using pinned API table"
+    ],
+    "checks": [
+      {
+        "name": "media_effects_dist_rejects_roi",
+        "class_name": "INCOMPATIBLE"
+      },
+      {
+        "name": "media_prior_type_values",
+        "class_name": "COMPATIBLE"
+      },
+      {
+        "name": "budget_optimizer_reference_only",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "scenario_planner_reference_only",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "unreleased_modelcontext",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "unreleased_analyzer",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "unreleased_weeklyoptimizationgrid",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "unreleased_currency_code",
+        "class_name": "REFERENCE_ONLY"
+      },
+      {
+        "name": "doc_consultant_missing_public_docs_tree",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_DataFrameInputDataBuilder",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_ModelSpec",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_PriorDistribution",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_Meridian",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_sample_prior",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_sample_posterior",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_MeridianEDA",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_meridian_serde_save_meridian",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_meridian_serde_load_meridian",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_reviewer_ModelReviewer",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      },
+      {
+        "name": "api_summarizer_Summarizer",
+        "class_name": "COMPATIBLE_WITH_ADAPTATION"
+      }
+    ],
+    "media_effects_dist_roi": "INCOMPATIBLE \u2014 skill template; compiler uses media_prior_type"
+  },
+  "music_center": {
+    "project": "Music Center",
+    "cycle": "Q3 2026",
+    "measurement_cycle": {
+      "name": "Q3 2026",
+      "data_cutoff": "2026-09-30"
+    },
+    "scope": "GEO",
+    "model_window": [
+      "2024-01-01",
+      "2026-06-29"
+    ],
+    "media_channels": [
+      "paid_search",
+      "shopping",
+      "paid_social"
+    ],
+    "business_profile_snapshot_id": "bprof_music_center",
+    "model_ready_manifest_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "model_plan_id": "mplan_db04f35304ee458ebff6",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "state": "AWAITING_ASSUMPTION_DECISIONS",
+    "accepted": false,
+    "production_model_accepted": false,
+    "note": "Prior M3-00 MODEL_ACCEPTED claim was FAKE_TEST logic proof only and is not official Meridian evidence."
+  },
+  "decision_ledger": [
+    {
+      "decision_id": "mdec_2db1fe6812a74a6e9fe1",
+      "decision_type": "MODEL_WINDOW",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_73f268b9009645cf826d",
+      "decision_type": "MODEL_SCOPE",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_47ca504ecc8146c29ac4",
+      "decision_type": "KPI_TYPE",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_762c2fdd31834954a85e",
+      "decision_type": "MEDIA_PRIOR_TYPE",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_1d570c46f58e4a158592",
+      "decision_type": "KNOT_STRATEGY",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_692e95f32e8f4668afb6",
+      "decision_type": "ENABLE_AKS",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_40f8c600109d4d0b9e3b",
+      "decision_type": "MAX_LAG",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_fba9ceb91856413fb02f",
+      "decision_type": "HOLDOUT",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    },
+    {
+      "decision_id": "mdec_912a2185105d4a23946c",
+      "decision_type": "MCMC_CONFIGURATION",
+      "status": "APPROVED",
+      "plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c"
+    }
+  ],
+  "prior_validation": {
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "meridian_version": "1.8.0",
+    "prior_config_fingerprint": "d5b742b80da8a8a59f4855b505cb2458541e4f83bba9d5b928f5f2fbb885ad70",
+    "n_draws": 8,
+    "seed": 1,
+    "status": "PASS",
+    "artifact_refs": [],
+    "warnings": [],
+    "generated_at": "2026-08-24T15:20:27.736032Z"
+  },
+  "fit_approval": {
+    "approval_id": "mapv_6a38f74bf94442afa3d1",
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "tenant_id": "ten_music",
+    "project_id": "prj_music_center",
+    "fit_plan_fingerprint": "3e2c92f7b6f7506f667ba1f49bb86a67adeca5b4d04fcf38a7539eb94745d350",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "approved_by": "user_music",
+    "approved_at": "2026-08-24T15:20:27.736139Z",
+    "superseded": false
+  },
+  "fit_run": {
+    "fit_run_id": "mfit_9453ac17dfae483f86c6",
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "tenant_id": "ten_music",
+    "project_id": "prj_music_center",
+    "fit_plan_fingerprint": "3e2c92f7b6f7506f667ba1f49bb86a67adeca5b4d04fcf38a7539eb94745d350",
+    "status": "SUCCEEDED",
+    "compute_profile": "CPU_TEST",
+    "python_version": "3.12",
+    "meridian_version": "1.8.0",
+    "tensorflow_version": null,
+    "worker_image_digest": "sha256:fake-cpu-test",
+    "error_code": null,
+    "created_at": "2026-08-24T15:20:27.736195Z",
+    "started_at": "2026-08-24T15:20:27.736188Z",
+    "completed_at": "2026-08-24T15:20:27.736410Z"
+  },
+  "model_artifact_manifest": {
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "fit_run_id": "mfit_9453ac17dfae483f86c6",
+    "meridian_version": "1.8.0",
+    "worker_image_digest": "sha256:fake-cpu-test",
+    "input_manifest_ref": "gs://prem3/music-center/model-ready.json",
+    "input_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "fit_plan_fingerprint": "3e2c92f7b6f7506f667ba1f49bb86a67adeca5b4d04fcf38a7539eb94745d350",
+    "binary_model_ref": "modeling/mver_a6782a1bd7004fd4aba4/meridian_model.binpb",
+    "binary_sha256": "f79a807361f8bd776143f719c58a4d6cabc1e733aa4fed7c8dacb400977579df",
+    "created_at": "2026-08-24T15:20:27.736268Z"
+  },
+  "official_health": {
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "fit_run_id": "mfit_9453ac17dfae483f86c6",
+    "reviewer_version": "meridian.model.reviewer.ModelReviewer",
+    "meridian_version": "1.8.0",
+    "overall_health_score": null,
+    "check_results": [
+      {
+        "check_name": "ConvergenceCheck",
+        "status": "PASS",
+        "summary": "Fake runtime convergence PASS."
+      },
+      {
+        "check_name": "BaselineCheck",
+        "status": "PASS",
+        "summary": "Fake runtime baseline PASS."
+      },
+      {
+        "check_name": "BayesianPPPCheck",
+        "status": "PASS",
+        "summary": "Fake runtime PPP PASS."
+      },
+      {
+        "check_name": "GoodnessOfFitCheck",
+        "status": "PASS",
+        "summary": "Fake runtime GOF PASS."
+      },
+      {
+        "check_name": "PriorPosteriorShiftCheck",
+        "status": "PASS",
+        "summary": "Fake runtime shift PASS."
+      },
+      {
+        "check_name": "ROIConsistencyCheck",
+        "status": "PASS",
+        "summary": "Fake runtime ROI PASS."
+      }
+    ],
+    "blocking_fail_count": 0,
+    "review_count": 0,
+    "health_html_ref": null,
+    "generated_at": "2026-08-24T15:20:27.736284Z"
+  },
+  "results_refs": "modeling/mver_a6782a1bd7004fd4aba4/results_summary.html",
+  "review_pack_fingerprint": "d643be3ec020af374d201e2b1ce891584371f68e06f6faacd819276760147082",
+  "acceptance_approval": {
+    "approval_id": "mapv_2da3461aecbe48a6885b",
+    "model_version_id": "mver_a6782a1bd7004fd4aba4",
+    "fit_run_id": "mfit_9453ac17dfae483f86c6",
+    "tenant_id": "ten_music",
+    "project_id": "prj_music_center",
+    "review_pack_fingerprint": "d643be3ec020af374d201e2b1ce891584371f68e06f6faacd819276760147082",
+    "model_artifact_fingerprint": "f79a807361f8bd776143f719c58a4d6cabc1e733aa4fed7c8dacb400977579df",
+    "approved_by": "user_music",
+    "approved_at": "2026-08-24T15:20:27.736472Z",
+    "decision": "ACCEPT",
+    "reason": null
+  },
+  "reproducibility": {
+    "project_id": "prj_music_center",
+    "cycle_id": "cyc_q3_2026",
+    "track_id": "trk_mmm",
+    "business_profile_snapshot_id": "bprof_music_center",
+    "model_ready_manifest_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+    "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+    "decision_ids": [
+      "mdec_2db1fe6812a74a6e9fe1",
+      "mdec_73f268b9009645cf826d",
+      "mdec_47ca504ecc8146c29ac4",
+      "mdec_762c2fdd31834954a85e",
+      "mdec_1d570c46f58e4a158592",
+      "mdec_692e95f32e8f4668afb6",
+      "mdec_40f8c600109d4d0b9e3b",
+      "mdec_fba9ceb91856413fb02f",
+      "mdec_912a2185105d4a23946c"
+    ],
+    "meridian_version": "1.8.0",
+    "external_knowledge_asset_versions": [
+      "meridian.skill.doc_consultant:1",
+      "meridian.skill.doc_consultant.documentation_map:1",
+      "meridian.skill.model_building:1",
+      "meridian.skill.model_building.model_spec_template:1",
+      "meridian.skill.result_visualization:1"
+    ],
+    "worker_image_digest": "sha256:fake-cpu-test",
+    "fit_configuration": {
+      "model_version_id": "mver_a6782a1bd7004fd4aba4",
+      "model_plan_fingerprint": "bb7387d211256689a583c875e99274e8407ba442f7bdb71f067b4c3e0925c73c",
+      "meridian_version": "1.8.0",
+      "container_image_digest": null,
+      "backend": "tensorflow",
+      "n_chains": 4,
+      "n_adapt": 500,
+      "n_burnin": 500,
+      "n_keep": 1000,
+      "seed": 1,
+      "reconstruction_batch_size": null,
+      "compute_profile": "CPU_TEST",
+      "artifact_destinations": {},
+      "input_artifact_ref": null,
+      "input_fingerprint": "mc-q3-2026-model-ready-fingerprint",
+      "created_at": "2026-08-24T15:20:27.736094Z",
+      "fingerprint": "3e2c92f7b6f7506f667ba1f49bb86a67adeca5b4d04fcf38a7539eb94745d350"
+    },
+    "model_artifact_hash": "f79a807361f8bd776143f719c58a4d6cabc1e733aa4fed7c8dacb400977579df",
+    "review_artifact_refs": [
+      "d643be3ec020af374d201e2b1ce891584371f68e06f6faacd819276760147082"
+    ],
+    "acceptance_approval_id": "mapv_2da3461aecbe48a6885b"
+  },
+  "brief_objective": "Fit a reviewed Meridian MMM for incremental paid-media contribution.",
+  "live_gpu_proof": "LIVE_GPU_DEPLOY_BLOCKED",
+  "eda_spec_promoted": false,
+  "autonomous_posterior_sampling": false
+}

@@ -22,12 +22,15 @@ dependencies = [
   "uvicorn",
   "clerk-backend-api==6.0.1",
   "stripe==15.5.0",
+  "openpyxl>=3.1",
+  "numpy>=2.0",
   "pandas>=2.2",
   "pyarrow>=18",
   "db-dtypes>=1.4",
   "pandas-gbq>=0.26",
   "pydantic>=2.10",
   "pyyaml>=6.0",
+  "jinja2>=3.1",
 ]
 
 [project.optional-dependencies]

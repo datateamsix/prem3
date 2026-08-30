@@ -1,0 +1,28 @@
+{
+  "cloud_task_name": "projects/modelready-m3/locations/us-central1/queues/prem3-meridian-fit-dispatch/tasks/prem3-mmm-fdsp_51c2f168d893406aa91e",
+  "dispatch_id": "fdsp_51c2f168d893406aa91e",
+  "duplicate_enqueue": "same_task",
+  "fit_approval_id": "fapv_b7cc24f798f940658618",
+  "fit_plan_fingerprint": "39ec74fa24337a5a447f6d1458b808dc08b6e356f5acffd67dc19787cf26657b",
+  "fit_purpose": "RUNTIME_QUALIFICATION",
+  "fit_run_id": "frun_cd40c90d2d7e45edb2a2",
+  "job": {
+    "completion_time": "2026-08-25T16:03:02.349174Z",
+    "execution": "prem3-meridian-model-worker-zpxw7",
+    "failed_count": null,
+    "status": "PASS",
+    "succeeded_count": 1
+  },
+  "launch": {
+    "cloud_run_execution_name": "prem3-meridian-model-worker-zpxw7",
+    "dispatch_status": "RUNNING",
+    "status": "PASS"
+  },
+  "launch_url": "https://prem3-api-vkcd3cbiea-uc.a.run.app/internal/v1/mmm-fit-dispatches",
+  "model_version_id": "mver_e9bb7d1a991e427f",
+  "note": "Integrated path proof. Not FINAL_MODEL. Not MODEL_ACCEPTED.",
+  "project_id": "prjm3i64a6b183062c",
+  "queue": "prem3-meridian-fit-dispatch",
+  "runtime_mode": "OFFICIAL_CPU_SMOKE",
+  "tenant_id": "tenm3i64a6b183062c"
+}

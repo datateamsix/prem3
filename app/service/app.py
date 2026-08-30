@@ -8,6 +8,8 @@ No Firestore, Clerk, or Stripe network call on import.
 
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -16,9 +18,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.business_iq.service import BusinessIqService
 from app.config import Settings, load_settings
+from app.control_plane.firestore_repo import FirestoreControlPlaneRepository
 from app.control_plane.repository import ControlPlaneRepository
 from app.data_foundation.service import DataFoundationService
 from app.data_foundation.warehouse import FoundationWarehouse
+from app.eda.repository import FirestoreExtendedEDARepository, InMemoryExtendedEDARepository
+from app.eda.service import ExtendedEDAService
 from app.integrations.google.adapters import (
     FakeBigQueryClient,
     FakeDriveClient,
@@ -31,9 +36,34 @@ from app.integrations.google.vault import (
     ControlPlaneCredentialVault,
     InMemoryCredentialVault,
 )
+from app.investment_optimization.accepted_model import ModelingRepositoryDirectory
+from app.investment_optimization.adapter import NativeMeridianFixedBudgetAdapter
+from app.investment_optimization.advanced_service import AdvancedOptimizationService
+from app.investment_optimization.consumption import MemoryModelConsumptionSource
+from app.investment_optimization.firestore import FirestoreOptimizationMetadataStore
+from app.investment_optimization.proposal import ProposalGovernanceService
+from app.investment_optimization.risk.service import RiskFrontierService
+from app.investment_optimization.run_service import OptimizationRunService
+from app.investment_optimization.service import OptimizationReadinessService
+from app.investment_optimization.simulation.execution import UnavailableSimulationExecutionAdapter
+from app.investment_optimization.simulation.service import SimulationService
+from app.investment_optimization.store import InMemoryOptimizationMetadataStore
+from app.investment_planning.actuals import DataFoundationActualSpendAdapter
+from app.investment_planning.bigquery_actuals import BigQueryActualSpendAdapter
+from app.investment_planning.errors import PlanningError
+from app.investment_planning.exposure_service import ExposureRiskService
+from app.investment_planning.firestore import FirestoreInvestmentPlanningStore
+from app.investment_planning.markets import IdentityGraphMarketDirectory
+from app.investment_planning.outcomes.service import OutcomeService
+from app.investment_planning.service import InvestmentPlanService
+from app.investment_planning.store import InMemoryInvestmentPlanningMetadataStore
 from app.materialization.canonical_gate import CanonicalFoundationSourceGate
 from app.materialization.foundation_compat import FoundationSourceGate
 from app.materialization.service import MaterializationService
+from app.modeling.mmm.dispatch import CloudTasksFitDispatcher
+from app.modeling.mmm.firestore import FirestoreModelingRepository
+from app.modeling.mmm.service import MMMModelingService
+from app.modeling.mta.service import MTAService
 from app.publish_execution.model_ready import (
     ModelReadyEvidenceResolver,
     NullModelReadyEvidenceResolver,
@@ -55,6 +85,7 @@ from app.service.errors import (
     ProblemDetail,
     ProblemFieldError,
     internal_error,
+    planning_error,
     problem_json,
     validation_error,
 )
@@ -79,7 +110,7 @@ from app.service.import_governance import ImportGovernanceService
 from app.service.middleware import RequestIdMiddleware, current_request_id
 from app.service.models import PlanCatalogResponse
 from app.service.object_store import FakeObjectStore, GcsObjectStore, ObjectStore
-from app.service.product_stores import build_product_stores
+from app.service.product_stores import build_identity_graph_store, build_product_stores
 from app.service.publish_governance import PublishGovernanceService
 from app.service.routers import (
     billing,
@@ -88,6 +119,7 @@ from app.service.routers import (
     data_foundation,
     datasets,
     evaluations,
+    exposure_risk,
     google_integrations,
     google_oauth,
     health,
@@ -95,10 +127,17 @@ from app.service.routers import (
     identity_webhooks,
     import_governance,
     internal_dispatch,
+    investment_planning,
+    investment_portfolio,
     materializations,
+    mmm,
+    mta,
+    outcomes,
     projects,
     publishes,
+    risk_frontier,
     runs,
+    simulation,
     uploads,
     workspaces,
 )
@@ -139,6 +178,9 @@ def create_app(
     google_bigquery_client=None,
     foundation_source_gate: FoundationSourceGate | None = None,
     model_ready_resolver: ModelReadyEvidenceResolver | None = None,
+    mmm_modeling: MMMModelingService | None = None,
+    mmm_fit_launcher=None,
+    extended_eda: ExtendedEDAService | None = None,
 ) -> FastAPI:
     cfg = settings or load_settings()
     assert_provider_mode_safe(cfg)
@@ -158,13 +200,15 @@ def create_app(
         summary="PreM3 authenticated product API",
         description=(
             "Presentation-safe Project, Dataset, upload, Evaluation, catalog, billing, "
-            "Google connection, import/publish governance, Business IQ, and "
-            "Data Foundation contracts. Clerk session tokens are verified when the "
-            "identity provider is configured. Creating an Evaluation returns 202 "
-            "Accepted only after durable Cloud Tasks enqueue; 202 is not ADK "
-            "completion and not MODEL_READY. Tenant identity "
-            "is never accepted from the client. IMPORT_READY, FOUNDATION_SOURCE_READY, "
-            "DATA_FOUNDATION_READY, MODEL_READY, and PUBLISH_READY are distinct "
+            "Google connection, import/publish governance, Business IQ, "
+            "Data Foundation, and governed MMM modeling contracts. Clerk session "
+            "tokens are verified when the identity provider is configured. Creating "
+            "an Evaluation returns 202 Accepted only after durable Cloud Tasks "
+            "enqueue; 202 is not ADK completion and not MODEL_READY. Posterior "
+            "sampling is never autonomous and requires an exact fingerprinted "
+            "FitPlan approval. Tenant identity is never accepted from the client. "
+            "IMPORT_READY, FOUNDATION_SOURCE_READY, DATA_FOUNDATION_READY, "
+            "MODEL_READY, MODEL_ACCEPTED, and PUBLISH_READY are distinct "
             "deterministic states."
         ),
         docs_url=None,
@@ -240,6 +284,38 @@ def create_app(
         bigquery_client=google_services["bq_client"],
         drive_client=google_services["drive_client"],
     )
+    identity_graph_store = build_identity_graph_store(repo)
+    if isinstance(repo, FirestoreControlPlaneRepository):
+        planning_store = FirestoreInvestmentPlanningStore(repo.client)
+    else:
+        planning_store = InMemoryInvestmentPlanningMetadataStore()
+    app.state.identity_graph_store = identity_graph_store
+    app.state.investment_planning_store = planning_store
+    app.state.exposure_risk = ExposureRiskService(planning_store)
+    app.state.investment_planning = InvestmentPlanService(
+        repo=repo,
+        store=planning_store,
+        drive=google_services["drive_client"],
+        connections=google_services["connections"],
+        drive_bindings=google_services["drive"],
+        business_iq=business_iq_store,
+        markets=IdentityGraphMarketDirectory(identity_graph_store),
+        actuals=DataFoundationActualSpendAdapter(
+            data_foundation_store,
+            rows=BigQueryActualSpendAdapter(
+                data_foundation_store,
+                bigquery=google_services["bq_client"],
+                repo=repo,
+                connections=google_services["connections"],
+            ),
+        ),
+    )
+    if isinstance(repo, FirestoreControlPlaneRepository):
+        optimization_store = FirestoreOptimizationMetadataStore(repo.client)
+    else:
+        optimization_store = InMemoryOptimizationMetadataStore()
+    app.state.optimization_store = optimization_store
+    app.state.optimization_consumption = MemoryModelConsumptionSource()
     if foundation_source_gate is None:
         foundation_source_gate = CanonicalFoundationSourceGate(data_foundation_store)
     upload = app.state.upload_service
@@ -262,6 +338,70 @@ def create_app(
         bigquery=google_services["bq_client"],
         model_ready=google_services["model_ready"],
     )
+    modeling, fit_launcher = _default_mmm_stack(
+        cfg,
+        repo,
+        modeling=mmm_modeling,
+        launcher=mmm_fit_launcher,
+    )
+    app.state.mmm_modeling = modeling
+    app.state.mmm_fit_launcher = fit_launcher
+    app.state.optimization_readiness = OptimizationReadinessService(
+        repo=repo,
+        store=optimization_store,
+        planning=app.state.investment_planning,
+        models=ModelingRepositoryDirectory(modeling.repo),
+        consumption=app.state.optimization_consumption,
+    )
+    upload_store = getattr(app.state.upload_service, "_store", None)
+    app.state.optimization_runs = OptimizationRunService(
+        repo=repo,
+        store=optimization_store,
+        planning=app.state.investment_planning,
+        models=ModelingRepositoryDirectory(modeling.repo),
+        consumption=app.state.optimization_consumption,
+        object_store=upload_store or FakeObjectStore(),
+        artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
+        optimizer=NativeMeridianFixedBudgetAdapter(),
+        execute_inline=not uses_cloud_runtime(),
+    )
+    app.state.risk_frontier = RiskFrontierService(optimization_store)
+    app.state.simulation = SimulationService(
+        optimization_store,
+        adapter=UnavailableSimulationExecutionAdapter(),
+        object_store=upload_store or FakeObjectStore(),
+        artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
+    )
+    app.state.outcomes = OutcomeService(optimization_store)
+    app.state.advanced_optimization = AdvancedOptimizationService(
+        repo=repo,
+        store=optimization_store,
+        object_store=upload_store or FakeObjectStore(),
+        artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
+    )
+    app.state.proposal_governance = ProposalGovernanceService(
+        repo=repo,
+        store=optimization_store,
+        runs=app.state.optimization_runs,
+        object_store=upload_store or FakeObjectStore(),
+        artifact_bucket=cfg.artifact_bucket or "prem3-test-artifacts",
+        planning=app.state.investment_planning,
+        models=ModelingRepositoryDirectory(modeling.repo),
+    )
+    app.state.mta_service = MTAService()
+    app.state.mmm_service_identity_verifier = _mmm_service_identity_verifier(cfg)
+    if extended_eda is None:
+        if uses_cloud_runtime():
+            client = getattr(repo, "client", None)
+            eda_repo = (
+                FirestoreExtendedEDARepository(client)
+                if client is not None
+                else InMemoryExtendedEDARepository()
+            )
+            extended_eda = ExtendedEDAService(eda_repo)
+        else:
+            extended_eda = ExtendedEDAService()
+    app.state.extended_eda = extended_eda
 
     app.add_middleware(RequestIdMiddleware)
     app.include_router(health.router)
@@ -278,11 +418,32 @@ def create_app(
     app.include_router(import_governance.router)
     app.include_router(business_iq.router)
     app.include_router(data_foundation.router)
+    app.include_router(investment_planning.canonical_router)
+    app.include_router(investment_planning.workspace_alias_router)
+    app.include_router(investment_portfolio.canonical_portfolio_router)
+    app.include_router(investment_portfolio.workspace_alias_portfolio_router)
+    app.include_router(exposure_risk.canonical_exposure_router)
+    app.include_router(exposure_risk.workspace_alias_exposure_router)
+    app.include_router(risk_frontier.canonical_risk_frontier_router)
+    app.include_router(risk_frontier.workspace_alias_risk_frontier_router)
+    app.include_router(simulation.canonical_simulation_router)
+    app.include_router(simulation.workspace_alias_simulation_router)
+    app.include_router(outcomes.canonical_outcomes_router)
+    app.include_router(outcomes.workspace_alias_outcomes_router)
     app.include_router(materializations.router)
     app.include_router(publishes.router)
+    app.include_router(mmm.router)
+    app.include_router(mta.router)
     app.include_router(billing.router)
     app.include_router(identity_webhooks.router)
     app.include_router(internal_dispatch.router)
+
+    @app.exception_handler(PlanningError)
+    async def planning_error_handler(request: Request, exc: PlanningError) -> JSONResponse:
+        problem = planning_error(exc).to_problem(
+            request_id=_request_id(), instance=str(request.url.path)
+        )
+        return _problem_response(problem)
 
     @app.exception_handler(APIError)
     async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
@@ -541,6 +702,76 @@ def _default_evaluation_stack(
             audience=settings.evaluation_launch_audience or "",
         ),
         job_name,
+    )
+
+
+def _mmm_service_identity_verifier(settings: Settings):
+    if not uses_cloud_runtime():
+        return FakeServiceIdentityVerifier(
+            allowed_email=settings.meridian_fit_dispatcher_sa
+            or settings.evaluation_dispatcher_sa
+            or "prem3-evaluation-dispatcher@local",
+            audience=settings.meridian_fit_launch_audience
+            or "http://localhost/internal/v1/mmm-fit-dispatches",
+        )
+    if not (
+        settings.meridian_fit_dispatcher_sa and settings.meridian_fit_launch_audience
+    ):
+        return None
+    return GoogleOidcServiceIdentityVerifier(
+        allowed_email=settings.meridian_fit_dispatcher_sa,
+        audience=settings.meridian_fit_launch_audience,
+    )
+
+
+def _default_mmm_stack(
+    settings: Settings,
+    control_plane: ControlPlaneRepository,
+    *,
+    modeling: MMMModelingService | None,
+    launcher,
+):
+    if modeling is not None:
+        return modeling, launcher or FakeEvaluationJobLauncher()
+    if not uses_cloud_runtime():
+        return MMMModelingService(), launcher or FakeEvaluationJobLauncher()
+    client = getattr(control_plane, "client", None)
+    repo = FirestoreModelingRepository(client) if client is not None else None
+    configured = bool(
+        settings.meridian_fit_dispatch_queue
+        and settings.meridian_fit_dispatcher_sa
+        and settings.meridian_fit_launch_url
+        and settings.meridian_fit_launch_audience
+    )
+    dispatcher = None
+    if configured:
+        dispatcher = CloudTasksFitDispatcher(
+            project_id=settings.project_id,
+            location=settings.cloud_region,
+            queue=settings.meridian_fit_dispatch_queue or "prem3-meridian-fit-dispatch",
+            launch_url=settings.meridian_fit_launch_url or "",
+            service_account_email=settings.meridian_fit_dispatcher_sa or "",
+            audience=settings.meridian_fit_launch_audience or "",
+        )
+    service = MMMModelingService(
+        repo,
+        dispatcher=dispatcher,
+        worker_image_digest=settings.meridian_model_worker_image,
+        source_commit_sha=os.getenv("PREM3_SOURCE_COMMIT_SHA"),
+        worker_build_id=os.getenv("PREM3_WORKER_BUILD_ID"),
+        object_store=GcsObjectStore() if settings.artifact_bucket else None,
+        artifact_bucket=settings.artifact_bucket,
+    )
+    if launcher is not None:
+        return service, launcher
+    if not configured:
+        return service, UnavailableEvaluationJobLauncher()
+    job_name = settings.meridian_model_worker_job or "prem3-meridian-model-worker"
+    return service, CloudRunEvaluationJobLauncher(
+        project_id=settings.project_id,
+        location=settings.cloud_region,
+        job_name=job_name,
+        dispatch_env_var="PREM3_MMM_FIT_DISPATCH_ID",
     )
 
 

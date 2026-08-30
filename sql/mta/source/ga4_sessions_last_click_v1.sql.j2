@@ -1,0 +1,54 @@
+-- Modern GA4 session-source policy. Exact field availability is schema-detected by backend.
+WITH e AS (
+  SELECT
+    event_date,
+    event_timestamp,
+    user_pseudo_id,
+    user_id,
+    (SELECT value.int_value FROM UNNEST(event_params) WHERE key='ga_session_id') AS ga_session_id,
+    COALESCE(
+      session_traffic_source_last_click.cross_channel_campaign.source,
+      session_traffic_source_last_click.manual_campaign.source,
+      collected_traffic_source.manual_source
+    ) AS source,
+    COALESCE(
+      session_traffic_source_last_click.cross_channel_campaign.medium,
+      session_traffic_source_last_click.manual_campaign.medium,
+      collected_traffic_source.manual_medium
+    ) AS medium,
+    COALESCE(
+      session_traffic_source_last_click.cross_channel_campaign.campaign_name,
+      session_traffic_source_last_click.manual_campaign.campaign_name,
+      collected_traffic_source.manual_campaign_name
+    ) AS campaign
+  FROM `{{ ga4_project_id }}.{{ ga4_dataset_id }}.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', @source_start_date)
+                          AND FORMAT_DATE('%Y%m%d', @source_end_date)
+),
+x AS (
+  SELECT
+    TO_HEX(SHA256(CONCAT(COALESCE(user_pseudo_id,''),'|',CAST(ga_session_id AS STRING)))) AS session_id,
+    TO_HEX(SHA256(
+      CASE '{{ identity_strategy }}'
+        WHEN 'USER_ID_ONLY' THEN COALESCE(user_id,'')
+        WHEN 'USER_ID_PREFERRED_WITH_PSEUDO_FALLBACK' THEN COALESCE(NULLIF(user_id,''),user_pseudo_id,'')
+        ELSE COALESCE(user_pseudo_id,'')
+      END
+    )) AS subject_key,
+    TIMESTAMP_MICROS(event_timestamp) AS event_ts,
+    PARSE_DATE('%Y%m%d', event_date) AS source_date,
+    source, medium, campaign
+  FROM e
+  WHERE ga_session_id IS NOT NULL
+)
+SELECT
+  session_id,
+  ARRAY_AGG(subject_key ORDER BY event_ts LIMIT 1)[OFFSET(0)] AS subject_key,
+  MIN(event_ts) AS session_start_ts,
+  MAX(event_ts) AS session_end_ts,
+  ARRAY_AGG(source IGNORE NULLS ORDER BY event_ts LIMIT 1)[SAFE_OFFSET(0)] AS source,
+  ARRAY_AGG(medium IGNORE NULLS ORDER BY event_ts LIMIT 1)[SAFE_OFFSET(0)] AS medium,
+  ARRAY_AGG(campaign IGNORE NULLS ORDER BY event_ts LIMIT 1)[SAFE_OFFSET(0)] AS campaign,
+  MIN(source_date) AS source_date
+FROM x
+GROUP BY session_id;

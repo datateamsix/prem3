@@ -30,6 +30,64 @@ from app.intelligence.contracts import (
     Prem3PreEdaFinding,
     SemanticQuestion,
 )
+from app.investment_optimization.contracts import (
+    AdvancedOptimizationReadinessReceipt,
+    ConstraintSetRef,
+    ConstraintValidationReceipt,
+    OptimizationInputContract,
+    OptimizationProposal,
+    OptimizationProposalRef,
+    OptimizationReadinessReceipt,
+    OptimizationResultRef,
+    OptimizationRun,
+    PlanningDecisionRecord,
+    PortfolioModelMapping,
+    ProposalDecisionReceipt,
+    ProposalReadinessReceipt,
+    ScenarioArtifact,
+    ScenarioAssumptionSetRef,
+)
+from app.investment_optimization.risk.models import (
+    CandidatePortfolio,
+    FrontierSelection,
+    MarketingInvestmentFrontier,
+    PortfolioRiskEvaluation,
+    RiskEvaluationPolicy,
+    RiskNeutralParityReceipt,
+)
+from app.investment_optimization.simulation.models import (
+    MonteCarloSimulationPolicy,
+    MonteCarloSimulationReceipt,
+    PortfolioOutcomeDistribution,
+    ScenarioCorrelationSpec,
+    ScenarioDistributionSet,
+    ScenarioVariableDistribution,
+    SimulationEvidenceHandoff,
+    SimulationRun,
+    SimulationRunSpec,
+)
+from app.investment_planning.contracts import (
+    ActualSpendSourceRef,
+    BudgetDriveSourceVersion,
+    InvestmentPlan,
+    InvestmentPlanValidationReceipt,
+    PortfolioSnapshotRef,
+    PortfolioView,
+)
+from app.investment_planning.exposure_evidence import DeliveryHealthEvidence
+from app.investment_planning.exposure_guardrails import ExposureGuardrailQualificationReceipt
+from app.investment_planning.exposure_handoff import ExposureRiskHandoff
+from app.investment_planning.exposure_profile import PortfolioExposureCoverage
+from app.investment_planning.outcomes.models import (
+    DecisionOutcomeLearningReceipt,
+    DecisionOutcomeObservation,
+    ExecutionAdherence,
+    InvestmentDecisionRecord,
+    PredictionErrorSummary,
+    PredictionEvidenceSet,
+    RecommendationAdherence,
+    RecommendationOutcomeReceipt,
+)
 from app.mel.models import (
     ExperienceApplication,
     ExperienceEpisode,
@@ -39,6 +97,13 @@ from app.mel.models import (
 )
 from app.response.contracts import StructuredResponse
 from app.service.errors import ProblemDetail
+from app.service.mmm_models import (
+    CreateModelDesignRequest,
+    FitRunResponse,
+    IdentifiabilityReviewResponse,
+    MMMSummaryResponse,
+    ModelVersionResponse,
+)
 from app.service.models import (
     BigQueryBindingResponse,
     BillingSessionResponse,
@@ -65,6 +130,12 @@ from app.service.models import (
     WebhookAckResponse,
     WorkspaceListResponse,
     WorkspaceResponse,
+)
+from app.service.mta_models import (
+    MTAOverviewResponse,
+    MTAReadinessResponse,
+    MTARunReceiptResponse,
+    MTARunResponse,
 )
 from app.service.project_models import (
     BusinessIqOverviewReadModel,
@@ -225,6 +296,78 @@ SCHEMA_FAMILIES: tuple[SchemaFamily, ...] = (
             ProjectHomeReadModel,
             BusinessIqOverviewReadModel,
             DataFoundationOverviewReadModel,
+            MMMSummaryResponse,
+            CreateModelDesignRequest,
+            ModelVersionResponse,
+            FitRunResponse,
+            IdentifiabilityReviewResponse,
+            MTAOverviewResponse,
+            MTAReadinessResponse,
+            MTARunResponse,
+            MTARunReceiptResponse,
+        ),
+        composition="catalog",
+    ),
+    SchemaFamily(
+        artifact="planning.schema.json",
+        family="planning",
+        title="PreM3 investment planning and portfolio contracts",
+        description=(
+            "P6-00 architecture freeze. InvestmentPlan and PortfolioSnapshotRef are "
+            "control-plane metadata. PortfolioView is CUSTOMER_AMOUNT_TRANSIENT and "
+            "must not be persisted to Firestore or PreM3 GCS. OptimizationProposalRef "
+            "is metadata; recommended amounts belong on the customer Drive artifact."
+        ),
+        python_module="app.investment_planning.contracts",
+        roots=(
+            InvestmentPlan,
+            BudgetDriveSourceVersion,
+            InvestmentPlanValidationReceipt,
+            PortfolioSnapshotRef,
+            ActualSpendSourceRef,
+            PortfolioView,
+            OptimizationProposalRef,
+            PortfolioModelMapping,
+            OptimizationInputContract,
+            OptimizationReadinessReceipt,
+            OptimizationRun,
+            OptimizationResultRef,
+            ConstraintSetRef,
+            ScenarioAssumptionSetRef,
+            ConstraintValidationReceipt,
+            AdvancedOptimizationReadinessReceipt,
+            ScenarioArtifact,
+            OptimizationProposal,
+            ProposalReadinessReceipt,
+            ProposalDecisionReceipt,
+            PlanningDecisionRecord,
+            DeliveryHealthEvidence,
+            PortfolioExposureCoverage,
+            ExposureGuardrailQualificationReceipt,
+            ExposureRiskHandoff,
+            RiskEvaluationPolicy,
+            CandidatePortfolio,
+            PortfolioRiskEvaluation,
+            MarketingInvestmentFrontier,
+            FrontierSelection,
+            RiskNeutralParityReceipt,
+            ScenarioVariableDistribution,
+            ScenarioDistributionSet,
+            ScenarioCorrelationSpec,
+            MonteCarloSimulationPolicy,
+            SimulationRunSpec,
+            SimulationRun,
+            PortfolioOutcomeDistribution,
+            MonteCarloSimulationReceipt,
+            SimulationEvidenceHandoff,
+            InvestmentDecisionRecord,
+            RecommendationAdherence,
+            ExecutionAdherence,
+            DecisionOutcomeObservation,
+            PredictionEvidenceSet,
+            PredictionErrorSummary,
+            RecommendationOutcomeReceipt,
+            DecisionOutcomeLearningReceipt,
         ),
         composition="catalog",
     ),

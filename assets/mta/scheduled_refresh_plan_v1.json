@@ -1,0 +1,23 @@
+{
+  "contract": "MTAScheduledRefreshPlan",
+  "version": 1,
+  "fields": {
+    "schedule_id": "string",
+    "enabled": "boolean",
+    "cadence": "DAILY|WEEKLY|CUSTOM",
+    "timezone": "IANA timezone",
+    "settlement_days": "integer",
+    "source_overlap_days": "integer",
+    "lookback_window_days": "integer",
+    "conversion_event": "string",
+    "channel_registry_version": "integer",
+    "channel_grouping_version": "integer",
+    "source_binding": "GA4SourceBinding",
+    "service_account": "server-owned",
+    "destination_dataset": "server-owned",
+    "approval_status": "DRAFT|AWAITING_APPROVAL|APPROVED|PROVISIONED",
+    "fingerprint": "sha256"
+  },
+  "approval_required": true,
+  "reason": "Creates recurring BigQuery processing and cost."
+}

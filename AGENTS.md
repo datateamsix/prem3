@@ -9,6 +9,7 @@ Canonical naming:
 - **PreM3 Learning Receipt** = proof of promoted experience
 - **EXPERIENCE_APPLIED** = proof validated experience changed a future run
 - **MODEL_READY** = verified pre-modeling terminal state
+- **MODEL_ACCEPTED** = a specific fingerprinted Meridian configuration was fit, reviewed, and consciously accepted
 
 Before coding, read:
 1. `README.md`
@@ -36,7 +37,8 @@ Before coding, read:
 - No silent business-semantic changes.
 - Validated model artifacts should be publishable to a versioned BigQuery table/view.
 - PreM3 may publish validated run-scoped/versioned model artifacts autonomously.
-- Posterior sampling and Meridian model fitting remain outside autonomous authority. Official pre-modeling EDA, including EDA-only `sample_prior`, is required and is not model execution.
+- Posterior sampling / model fitting is never autonomous. It may execute only after explicit human approval bound to an exact fingerprinted FitPlan. Official pre-modeling EDA, including EDA-only `sample_prior`, is required and is not model execution. The EDA ModelSpec remains `PRE_MODELING_EDA_ONLY` and is never silently promoted into the fitted model.
+- `MODEL_READY` proves the evidence is ready to model. `MODEL_ACCEPTED` proves a specific model configuration was fit, reviewed, and consciously accepted.
 - Learning is evidence-driven; do not implement uncontrolled self-modification.
 - Demo reliability is more important than feature breadth.
 - Do not add infrastructure or agents without a clear rubric/demo benefit.
@@ -94,9 +96,10 @@ Do not load every long context file into every agent prompt.
 | Frontend / product surface | `docs/context/15_FRONTEND_INTEGRATION_AND_SERVICE_SURFACE.md` |
 | Auth / billing / entitlements | `docs/context/16_AUTH_BILLING_AND_ENTITLEMENTS.md` |
 | Import / publish governance | `docs/context/17_IMPORT_AND_PUBLISH_GOVERNANCE.md` |
+| MMM modeling / Meridian fit | `docs/backend/MMM_MODELING_STATE_MACHINE.md`, `docs/backend/MERIDIAN_SKILL_INTEGRATION_ARCHITECTURE.md`, `app/modeling/` |
 | Planning engine / report compiler | `18_PLANNING_ENGINE_AND_REPORT_CONTRACT.md` once authored + `docs/context/RESPONSE_STYLE_GUIDE.md` |
 
-MEL Episode Core lives in `app/mel/`. Learning evaluation is downstream of `MODEL_READY` and must not be loaded into the isolated Meridian EDA worker.
+MEL Episode Core lives in `app/mel/`. Learning evaluation is downstream of `MODEL_READY` and must not be loaded into the isolated Meridian EDA worker. MEL may record structured modeling evidence after a fit; MEL may not alter an active ModelPlan, prior, FitPlan, or trigger a rerun.
 
 Intelligence version: `docs/context/intelligence/intelligence_version.json`.
 
@@ -110,7 +113,7 @@ The isolated Meridian EDA worker must not load product, DOMAIN_VIEW, or RESPONSE
 
 Do not turn execution agents into sales bots. Product context exists so PreM3 can answer product questions accurately, not inject marketing into every interaction.
 
-User-facing agents should use the structured response contract when a response type exists. Do not return a large unstructured text block when typed intelligence can be presented. Structured evidence remains authoritative. Gemini may summarize evidence; it may not invent numbers, owners, authority, or `MODEL_READY`.
+User-facing agents should use the structured response contract when a response type exists. Do not return a large unstructured text block when typed intelligence can be presented. Structured evidence remains authoritative. Gemini may summarize evidence; it may not invent numbers, owners, authority, `MODEL_READY`, or `MODEL_ACCEPTED`.
 
 The computational/semantic intelligence layer must not change BigQuery publication, BQ parity, the Meridian worker, official EDA behavior, the `MODEL_READY` gate, Cloud Run resource names, Eventarc, or MEL runtime. DOMAIN_VIEW is consumed, not mutated. The presentation layer consumes that intelligence; it does not recalculate it.
 

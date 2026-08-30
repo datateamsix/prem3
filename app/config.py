@@ -16,11 +16,19 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import unquote
 
 
 def _csv_env(name: str) -> tuple[str, ...]:
     raw = os.getenv(name, "")
     return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _firestore_database_from_env() -> str:
+    value = unquote(
+        (os.getenv("FIRESTORE_DATABASE") or "(default)").strip().strip('"').strip("'")
+    )
+    return value or "(default)"
 
 
 def _optional_int_env(name: str) -> int | None:
@@ -123,6 +131,16 @@ class Settings:
     evaluation_dispatcher_sa: str | None
     evaluation_launch_url: str | None
     evaluation_launch_audience: str | None
+    meridian_fit_dispatch_queue: str | None
+    meridian_model_worker_job: str | None
+    meridian_fit_dispatcher_sa: str | None
+    meridian_fit_launch_url: str | None
+    meridian_fit_launch_audience: str | None
+    meridian_model_worker_image: str | None
+    meridian_model_gpu: str | None
+    meridian_model_cpu: str | None
+    meridian_model_memory: str | None
+    meridian_model_timeout_seconds: int
 
 
 def load_settings() -> Settings:
@@ -155,7 +173,7 @@ def load_settings() -> Settings:
         eda_job_timeout_seconds=int(os.getenv("MODELREADY_EDA_JOB_TIMEOUT", "3300")),
         domain_view_registry_gs_uri=os.getenv("MODELREADY_DOMAIN_VIEW_REGISTRY_GS_URI")
         or None,
-        firestore_database=os.getenv("FIRESTORE_DATABASE", "(default)"),
+        firestore_database=_firestore_database_from_env(),
         clerk_secret_key=os.getenv("CLERK_SECRET_KEY") or None,
         clerk_publishable_key=os.getenv("CLERK_PUBLISHABLE_KEY") or None,
         clerk_webhook_signing_secret=os.getenv("CLERK_WEBHOOK_SIGNING_SECRET") or None,
@@ -202,6 +220,18 @@ def load_settings() -> Settings:
         evaluation_dispatcher_sa=os.getenv("EVALUATION_DISPATCHER_SA") or None,
         evaluation_launch_url=os.getenv("EVALUATION_LAUNCH_URL") or None,
         evaluation_launch_audience=os.getenv("EVALUATION_LAUNCH_AUDIENCE") or None,
+        meridian_fit_dispatch_queue=os.getenv("MERIDIAN_FIT_DISPATCH_QUEUE") or None,
+        meridian_model_worker_job=os.getenv("MERIDIAN_MODEL_WORKER_JOB") or None,
+        meridian_fit_dispatcher_sa=os.getenv("MERIDIAN_FIT_DISPATCHER_SA") or None,
+        meridian_fit_launch_url=os.getenv("MERIDIAN_FIT_LAUNCH_URL") or None,
+        meridian_fit_launch_audience=os.getenv("MERIDIAN_FIT_LAUNCH_AUDIENCE") or None,
+        meridian_model_worker_image=os.getenv("MERIDIAN_MODEL_WORKER_IMAGE") or None,
+        meridian_model_gpu=os.getenv("MERIDIAN_MODEL_GPU") or None,
+        meridian_model_cpu=os.getenv("MERIDIAN_MODEL_CPU") or None,
+        meridian_model_memory=os.getenv("MERIDIAN_MODEL_MEMORY") or None,
+        meridian_model_timeout_seconds=int(
+            os.getenv("MERIDIAN_MODEL_TIMEOUT_SECONDS", "3600")
+        ),
     )
 
 

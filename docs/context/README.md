@@ -28,6 +28,12 @@ Workstream documents currently synchronized:
 - `16_AUTH_BILLING_AND_ENTITLEMENTS.md`
 - `17_IMPORT_AND_PUBLISH_GOVERNANCE.md`
 
+Planning & Optimization (P6) product sources (bodies unchanged; implementation baseline override in `docs/backend/P6_SOURCE_AUTHORITY.md`):
+
+- `PREM3_INVESTMENT_PLAN_BUDGET_INGESTION_FEATURE_SPEC.md`
+- `PREM3_MARKETING_PORTFOLIO_ASSET_ALLOCATION_AND_OPTIMIZATION_SPEC.md`
+- `PREM3_PLANNING_OPTIMIZATION_BACKEND_MISSION_PLAN.md`
+
 Intelligence context (2026-08-16):
 
 - `PREM3_PRODUCT_CONTEXT.md`

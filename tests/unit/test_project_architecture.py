@@ -20,6 +20,8 @@ from app.control_plane.models import (
     MeasurementTrack,
     MeasurementTrackStatus,
     MeasurementTrackType,
+    ProjectScopeType,
+    Workspace,
     WorkspaceStatus,
 )
 from app.core.errors import (
@@ -49,6 +51,7 @@ from app.data_foundation.enums import (
 )
 from app.project.capabilities import entitled_for_capability
 from app.project.enums import CapabilityFamily
+from app.project.home import ProjectHomeAssembler
 from app.project.measurement_home import require_usable_measurement_home
 from app.project.tracks import (
     apply_track_mutation,
@@ -998,3 +1001,103 @@ def test_measurement_track_consumed_config_is_versioned() -> None:
     )
     assert len([item for item in listed if item.track_type is MeasurementTrackType.MMM]) == 1
     del client
+
+
+def test_budget_optimization_surfaces_generated_readiness_when_model_accepted() -> None:
+    class _Modeling:
+        def has_accepted_model(self, *, tenant_id: str, project_id: str) -> bool:
+            del tenant_id, project_id
+            return True
+
+    class _Optimization:
+        def latest_status(self, *, tenant_id: str, project_id: str) -> str:
+            del tenant_id, project_id
+            return "OPTIMIZATION_READY"
+
+    stamp = _now()
+    workspace = Workspace(
+        tenant_id="ten_bbbbbbbbbbbbbbbbbbbb",
+        workspace_id="wsp_cccccccccccccccccccc",
+        name="Music Center",
+        status=WorkspaceStatus.ACTIVE,
+        created_at=stamp,
+        updated_at=stamp,
+        scope_type=ProjectScopeType.BRAND,
+    )
+    entitlement = entitlement_for_plan(
+        tenant_id=workspace.tenant_id,
+        plan_id=PlanId.PORTFOLIO,
+        source=EntitlementSource.BILLING_PROVIDER,
+        now=stamp,
+    )
+    assembler = ProjectHomeAssembler.__new__(ProjectHomeAssembler)
+    assembler.modeling = _Modeling()
+    assembler.optimization = _Optimization()
+    ready_rows = assembler._planning(entitlement, True, workspace=workspace)
+    ready = {item.capability: item.availability for item in ready_rows}
+    assert ready["BUDGET_OPTIMIZATION"] == "OPTIMIZATION_READY"
+    assert ready["SCENARIO_SIMULATION"] != "REQUIRES_ACCEPTED_MMM_MODEL"
+
+    class _NoAccepted:
+        def has_accepted_model(self, *, tenant_id: str, project_id: str) -> bool:
+            del tenant_id, project_id
+            return False
+
+    assembler.modeling = _NoAccepted()
+    blocked_rows = assembler._planning(entitlement, True, workspace=workspace)
+    blocked = {item.capability: item.availability for item in blocked_rows}
+    assert blocked["BUDGET_OPTIMIZATION"] == "REQUIRES_ACCEPTED_MMM_MODEL"
+
+
+def test_budget_optimization_surfaces_running_and_complete_without_losing_accepted_gate() -> None:
+    class _Modeling:
+        def has_accepted_model(self, *, tenant_id: str, project_id: str) -> bool:
+            del tenant_id, project_id
+            return True
+
+    class _Running:
+        def latest_status(self, *, tenant_id: str, project_id: str) -> str:
+            del tenant_id, project_id
+            return "OPTIMIZATION_RUNNING"
+
+    class _Complete:
+        def latest_status(self, *, tenant_id: str, project_id: str) -> str:
+            del tenant_id, project_id
+            return "OPTIMIZATION_COMPLETE"
+
+    stamp = _now()
+    workspace = Workspace(
+        tenant_id="ten_bbbbbbbbbbbbbbbbbbbb",
+        workspace_id="wsp_cccccccccccccccccccc",
+        name="Music Center",
+        status=WorkspaceStatus.ACTIVE,
+        created_at=stamp,
+        updated_at=stamp,
+        scope_type=ProjectScopeType.BRAND,
+    )
+    entitlement = entitlement_for_plan(
+        tenant_id=workspace.tenant_id,
+        plan_id=PlanId.PORTFOLIO,
+        source=EntitlementSource.BILLING_PROVIDER,
+        now=stamp,
+    )
+    assembler = ProjectHomeAssembler.__new__(ProjectHomeAssembler)
+    assembler.modeling = _Modeling()
+    assembler.optimization = _Running()
+    running_rows = assembler._planning(entitlement, True, workspace=workspace)
+    running = {item.capability: item.availability for item in running_rows}
+    assert running["BUDGET_OPTIMIZATION"] == "OPTIMIZATION_RUNNING"
+    assembler.optimization = _Complete()
+    complete_rows = assembler._planning(entitlement, True, workspace=workspace)
+    complete = {item.capability: item.availability for item in complete_rows}
+    assert complete["BUDGET_OPTIMIZATION"] == "OPTIMIZATION_COMPLETE"
+
+    class _NoAccepted:
+        def has_accepted_model(self, *, tenant_id: str, project_id: str) -> bool:
+            del tenant_id, project_id
+            return False
+
+    assembler.modeling = _NoAccepted()
+    blocked_rows = assembler._planning(entitlement, True, workspace=workspace)
+    blocked = {item.capability: item.availability for item in blocked_rows}
+    assert blocked["BUDGET_OPTIMIZATION"] == "REQUIRES_ACCEPTED_MMM_MODEL"
