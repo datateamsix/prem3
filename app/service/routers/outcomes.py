@@ -70,8 +70,7 @@ async def authorized_outcomes_scope(
 
 def _shares(rows: tuple[dict[str, float | str], ...]) -> tuple[CandidateShare, ...]:
     return tuple(
-        CandidateShare(channel_id=str(row["channel_id"]), share=float(row["share"]))
-        for row in rows
+        CandidateShare(channel_id=str(row["channel_id"]), share=float(row["share"])) for row in rows
     )
 
 
@@ -142,9 +141,10 @@ async def get_decision(
     workspace: Annotated[Workspace, Depends(authorized_outcomes_scope)],
     decision_id: str,
 ) -> InvestmentDecisionResponse:
-    del workspace
     try:
-        item = get_outcomes_service(request).get_decision(decision_id)
+        item = get_outcomes_service(request).get_decision(
+            decision_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return InvestmentDecisionResponse(
@@ -187,9 +187,10 @@ async def get_recommendation_adherence(
     workspace: Annotated[Workspace, Depends(authorized_outcomes_scope)],
     adherence_id: str,
 ) -> RecommendationAdherenceResponse:
-    del workspace
     try:
-        item = get_outcomes_service(request).get_recommendation_adherence(adherence_id)
+        item = get_outcomes_service(request).get_recommendation_adherence(
+            adherence_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return RecommendationAdherenceResponse(
@@ -232,9 +233,10 @@ async def get_execution_adherence(
     workspace: Annotated[Workspace, Depends(authorized_outcomes_scope)],
     adherence_id: str,
 ) -> ExecutionAdherenceResponse:
-    del workspace
     try:
-        item = get_outcomes_service(request).get_execution_adherence(adherence_id)
+        item = get_outcomes_service(request).get_execution_adherence(
+            adherence_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return ExecutionAdherenceResponse(
@@ -285,9 +287,10 @@ async def get_observation(
     workspace: Annotated[Workspace, Depends(authorized_outcomes_scope)],
     observation_id: str,
 ) -> OutcomeObservationResponse:
-    del workspace
     try:
-        item = get_outcomes_service(request).get_observation(observation_id)
+        item = get_outcomes_service(request).get_observation(
+            observation_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return OutcomeObservationResponse(
@@ -330,9 +333,10 @@ async def get_prediction_evidence(
     workspace: Annotated[Workspace, Depends(authorized_outcomes_scope)],
     evidence_id: str,
 ) -> PredictionEvidenceResponse:
-    del workspace
     try:
-        item = get_outcomes_service(request).get_prediction_evidence(evidence_id)
+        item = get_outcomes_service(request).get_prediction_evidence(
+            evidence_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return PredictionEvidenceResponse(
@@ -349,10 +353,11 @@ async def create_prediction_error(
 ) -> PredictionErrorResponse:
     _reject_client_authority(body)
     service = get_outcomes_service(request)
+    scope = {"tenant_id": workspace.tenant_id, "project_id": workspace.workspace_id}
     try:
-        evidence = service.get_prediction_evidence(body.prediction_evidence_id)
+        evidence = service.get_prediction_evidence(body.prediction_evidence_id, **scope)
         observation = (
-            service.get_observation(body.outcome_observation_id)
+            service.get_observation(body.outcome_observation_id, **scope)
             if body.outcome_observation_id
             else None
         )
@@ -373,9 +378,10 @@ async def get_prediction_error(
     workspace: Annotated[Workspace, Depends(authorized_outcomes_scope)],
     error_id: str,
 ) -> PredictionErrorResponse:
-    del workspace
     try:
-        item = get_outcomes_service(request).get_prediction_error(error_id)
+        item = get_outcomes_service(request).get_prediction_error(
+            error_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return PredictionErrorResponse(
@@ -394,30 +400,31 @@ async def create_receipt(
 ) -> OutcomeReceiptResponse:
     _reject_client_authority(body)
     service = get_outcomes_service(request)
+    scope = {"tenant_id": workspace.tenant_id, "project_id": workspace.workspace_id}
     try:
-        decision = service.get_decision(body.investment_decision_id)
+        decision = service.get_decision(body.investment_decision_id, **scope)
         prediction = (
-            service.get_prediction_evidence(body.prediction_evidence_id)
+            service.get_prediction_evidence(body.prediction_evidence_id, **scope)
             if body.prediction_evidence_id
             else None
         )
         observation = (
-            service.get_observation(body.outcome_observation_id)
+            service.get_observation(body.outcome_observation_id, **scope)
             if body.outcome_observation_id
             else None
         )
         rec_adh = (
-            service.get_recommendation_adherence(body.recommendation_adherence_id)
+            service.get_recommendation_adherence(body.recommendation_adherence_id, **scope)
             if body.recommendation_adherence_id
             else None
         )
         exec_adh = (
-            service.get_execution_adherence(body.execution_adherence_id)
+            service.get_execution_adherence(body.execution_adherence_id, **scope)
             if body.execution_adherence_id
             else None
         )
         error = (
-            service.get_prediction_error(body.prediction_error_id)
+            service.get_prediction_error(body.prediction_error_id, **scope)
             if body.prediction_error_id
             else None
         )
@@ -448,9 +455,10 @@ async def get_receipt(
     workspace: Annotated[Workspace, Depends(authorized_outcomes_scope)],
     receipt_id: str,
 ) -> OutcomeReceiptResponse:
-    del workspace
     try:
-        item = get_outcomes_service(request).get_receipt(receipt_id)
+        item = get_outcomes_service(request).get_receipt(
+            receipt_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return OutcomeReceiptResponse(
@@ -468,15 +476,16 @@ async def create_learning_receipt(
 ) -> LearningReceiptResponse:
     _reject_client_authority(body)
     service = get_outcomes_service(request)
+    scope = {"tenant_id": workspace.tenant_id, "project_id": workspace.workspace_id}
     try:
-        receipt = service.get_receipt(body.recommendation_outcome_receipt_id)
+        receipt = service.get_receipt(body.recommendation_outcome_receipt_id, **scope)
         adherence = (
-            service.get_recommendation_adherence(receipt.recommendation_adherence_ref)
+            service.get_recommendation_adherence(receipt.recommendation_adherence_ref, **scope)
             if receipt.recommendation_adherence_ref
             else None
         )
         error = (
-            service.get_prediction_error(receipt.prediction_error_ref)
+            service.get_prediction_error(receipt.prediction_error_ref, **scope)
             if receipt.prediction_error_ref
             else None
         )
@@ -501,9 +510,10 @@ async def get_learning_receipt(
     workspace: Annotated[Workspace, Depends(authorized_outcomes_scope)],
     receipt_id: str,
 ) -> LearningReceiptResponse:
-    del workspace
     try:
-        item = get_outcomes_service(request).get_learning_receipt(receipt_id)
+        item = get_outcomes_service(request).get_learning_receipt(
+            receipt_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return LearningReceiptResponse(
