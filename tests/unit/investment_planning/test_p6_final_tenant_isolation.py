@@ -181,3 +181,48 @@ def test_decision_bind_allows_owning_p6_06_authority() -> None:
     )
 
     assert bound.tenant_id == TENANT
+
+
+def test_prediction_evidence_is_not_shared_across_projects() -> None:
+    # The evidence payload is built only from client-supplied refs, values and
+    # timestamps, so two projects pinning the same numbers collide on one
+    # record whose project_id belongs to whoever wrote it first.
+    service = outcome_service()
+    first = service.create_prediction_evidence(
+        project_id=PROJECT,
+        predicted_unit="revenue",
+        recommendation_as_of_time=now() - timedelta(days=1),
+        decision_as_of_time=now(),
+        prediction_evidence_as_of_time=now() - timedelta(hours=1),
+        predicted_value=100.0,
+        frontier_selection_ref="ofsel_p610selection00001",
+    )
+    second = service.create_prediction_evidence(
+        project_id=OTHER_PROJECT,
+        predicted_unit="revenue",
+        recommendation_as_of_time=now() - timedelta(days=1),
+        decision_as_of_time=now(),
+        prediction_evidence_as_of_time=now() - timedelta(hours=1),
+        predicted_value=100.0,
+        frontier_selection_ref="ofsel_p610selection00001",
+    )
+
+    assert second.prediction_evidence_id != first.prediction_evidence_id
+    assert second.project_id == OTHER_PROJECT
+
+
+def test_prediction_evidence_stays_idempotent_within_one_project() -> None:
+    service = outcome_service()
+    kwargs = {
+        "project_id": PROJECT,
+        "predicted_unit": "revenue",
+        "recommendation_as_of_time": now() - timedelta(days=1),
+        "decision_as_of_time": now(),
+        "prediction_evidence_as_of_time": now() - timedelta(hours=1),
+        "predicted_value": 100.0,
+        "frontier_selection_ref": "ofsel_p610selection00001",
+    }
+    first = service.create_prediction_evidence(**kwargs)
+    again = service.create_prediction_evidence(**kwargs)
+
+    assert again.prediction_evidence_id == first.prediction_evidence_id

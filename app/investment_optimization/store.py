@@ -68,7 +68,7 @@ OptimizationMetadata = (
     | OptimizationExecutionPlan
     | ConstraintSetRef
     | ScenarioAssumptionSetRef
-    |     ModelConsumptionContract
+    | ModelConsumptionContract
     | PortfolioModelMapping
     | OptimizationEvidenceCoverage
     | OptimizationInputContract
@@ -255,17 +255,13 @@ class OptimizationMetadataStore(Protocol):
         self, *, tenant_id: str, project_id: str
     ) -> tuple[OptimizationProposal, ...]: ...
 
-    def get_proposal_readiness(
-        self, receipt_id: str
-    ) -> ProposalReadinessReceipt | None: ...
+    def get_proposal_readiness(self, receipt_id: str) -> ProposalReadinessReceipt | None: ...
 
     def get_proposal_readiness_for_proposal(
         self, proposal_id: str
     ) -> ProposalReadinessReceipt | None: ...
 
-    def get_decision_receipt(
-        self, decision_receipt_id: str
-    ) -> ProposalDecisionReceipt | None: ...
+    def get_decision_receipt(self, decision_receipt_id: str) -> ProposalDecisionReceipt | None: ...
 
     def get_decision_receipt_for_proposal(
         self, proposal_id: str
@@ -303,9 +299,7 @@ class OptimizationMetadataStore(Protocol):
         self, *, evaluation_fingerprint: str
     ) -> PortfolioRiskEvaluation | None: ...
 
-    def get_evaluation_for_candidate(
-        self, candidate_id: str
-    ) -> PortfolioRiskEvaluation | None: ...
+    def get_evaluation_for_candidate(self, candidate_id: str) -> PortfolioRiskEvaluation | None: ...
 
     def get_frontier(self, frontier_id: str) -> MarketingInvestmentFrontier | None: ...
 
@@ -330,7 +324,7 @@ class OptimizationMetadataStore(Protocol):
     def get_correlation_spec(self, spec_id: str) -> ScenarioCorrelationSpec | None: ...
 
     def get_correlation_by_fingerprint(
-        self, *, fingerprint: str
+        self, *, tenant_id: str, project_id: str, fingerprint: str
     ) -> ScenarioCorrelationSpec | None: ...
 
     def get_simulation_policy(self, policy_id: str) -> MonteCarloSimulationPolicy | None: ...
@@ -388,7 +382,7 @@ class OptimizationMetadataStore(Protocol):
     def get_prediction_evidence(self, evidence_id: str) -> PredictionEvidenceSet | None: ...
 
     def get_prediction_evidence_by_fingerprint(
-        self, *, fingerprint: str
+        self, *, project_id: str, fingerprint: str
     ) -> PredictionEvidenceSet | None: ...
 
     def get_prediction_error(self, error_id: str) -> PredictionErrorSummary | None: ...
@@ -568,9 +562,7 @@ class InMemoryOptimizationMetadataStore:
             if item.tenant_id == tenant_id and item.project_id == project_id
         )
 
-    def latest_mapping(
-        self, *, tenant_id: str, project_id: str
-    ) -> PortfolioModelMapping | None:
+    def latest_mapping(self, *, tenant_id: str, project_id: str) -> PortfolioModelMapping | None:
         matches = self.list_mappings(tenant_id=tenant_id, project_id=project_id)
         if not matches:
             return None
@@ -591,9 +583,7 @@ class InMemoryOptimizationMetadataStore:
             return None
         return max(matches, key=lambda item: item.created_at)
 
-    def get_input_contract(
-        self, optimization_input_id: str
-    ) -> OptimizationInputContract | None:
+    def get_input_contract(self, optimization_input_id: str) -> OptimizationInputContract | None:
         return self._inputs.get(optimization_input_id)
 
     def get_coverage(self, coverage_id: str) -> OptimizationEvidenceCoverage | None:
@@ -677,9 +667,7 @@ class InMemoryOptimizationMetadataStore:
     def get_scenario(self, scenario_id: str) -> ScenarioArtifact | None:
         return self._scenarios.get(scenario_id)
 
-    def list_scenarios(
-        self, *, tenant_id: str, project_id: str
-    ) -> tuple[ScenarioArtifact, ...]:
+    def list_scenarios(self, *, tenant_id: str, project_id: str) -> tuple[ScenarioArtifact, ...]:
         matches = [
             item
             for item in self._scenarios.values()
@@ -707,25 +695,17 @@ class InMemoryOptimizationMetadataStore:
         self, proposal_id: str
     ) -> ProposalReadinessReceipt | None:
         matches = [
-            item
-            for item in self._proposal_readiness.values()
-            if item.proposal_id == proposal_id
+            item for item in self._proposal_readiness.values() if item.proposal_id == proposal_id
         ]
         if not matches:
             return None
         return max(matches, key=lambda item: item.created_at)
 
-    def get_decision_receipt(
-        self, decision_receipt_id: str
-    ) -> ProposalDecisionReceipt | None:
+    def get_decision_receipt(self, decision_receipt_id: str) -> ProposalDecisionReceipt | None:
         return self._decisions.get(decision_receipt_id)
 
-    def get_decision_receipt_for_proposal(
-        self, proposal_id: str
-    ) -> ProposalDecisionReceipt | None:
-        matches = [
-            item for item in self._decisions.values() if item.proposal_id == proposal_id
-        ]
+    def get_decision_receipt_for_proposal(self, proposal_id: str) -> ProposalDecisionReceipt | None:
+        matches = [item for item in self._decisions.values() if item.proposal_id == proposal_id]
         if not matches:
             return None
         return max(matches, key=lambda item: item.created_at)
@@ -757,9 +737,7 @@ class InMemoryOptimizationMetadataStore:
             if item.tenant_id == tenant_id and item.project_id == project_id
         )
 
-    def get_advanced_receipt(
-        self, receipt_id: str
-    ) -> AdvancedOptimizationReadinessReceipt | None:
+    def get_advanced_receipt(self, receipt_id: str) -> AdvancedOptimizationReadinessReceipt | None:
         return self._advanced_receipts.get(receipt_id)
 
     def list_advanced_receipts(
@@ -815,9 +793,7 @@ class InMemoryOptimizationMetadataStore:
                 return item
         return None
 
-    def get_evaluation_for_candidate(
-        self, candidate_id: str
-    ) -> PortfolioRiskEvaluation | None:
+    def get_evaluation_for_candidate(self, candidate_id: str) -> PortfolioRiskEvaluation | None:
         matches = [
             item
             for item in self._evaluations.values()
@@ -871,10 +847,14 @@ class InMemoryOptimizationMetadataStore:
         return self._correlations.get(spec_id)
 
     def get_correlation_by_fingerprint(
-        self, *, fingerprint: str
+        self, *, tenant_id: str, project_id: str, fingerprint: str
     ) -> ScenarioCorrelationSpec | None:
         for item in self._correlations.values():
-            if item.fingerprint == fingerprint:
+            if (
+                item.tenant_id == tenant_id
+                and item.project_id == project_id
+                and item.fingerprint == fingerprint
+            ):
                 return item
         return None
 
@@ -963,9 +943,7 @@ class InMemoryOptimizationMetadataStore:
                 return item
         return None
 
-    def get_simulation_evidence_handoff(
-        self, handoff_id: str
-    ) -> SimulationEvidenceHandoff | None:
+    def get_simulation_evidence_handoff(self, handoff_id: str) -> SimulationEvidenceHandoff | None:
         return self._handoffs.get(handoff_id)
 
     def get_outcome_observation(self, observation_id: str) -> DecisionOutcomeObservation | None:
@@ -983,10 +961,10 @@ class InMemoryOptimizationMetadataStore:
         return self._prediction_evidence.get(evidence_id)
 
     def get_prediction_evidence_by_fingerprint(
-        self, *, fingerprint: str
+        self, *, project_id: str, fingerprint: str
     ) -> PredictionEvidenceSet | None:
         for item in self._prediction_evidence.values():
-            if item.fingerprint == fingerprint:
+            if item.project_id == project_id and item.fingerprint == fingerprint:
                 return item
         return None
 

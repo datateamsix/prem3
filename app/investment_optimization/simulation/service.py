@@ -154,6 +154,11 @@ class SimulationService:
             model_derived_artifact_ref=model_derived_artifact_ref,
             fingerprint=metadata_fingerprint(
                 {
+                    # The workspace is part of the identity of the spec. Without it
+                    # an INDEPENDENT spec with no variables fingerprints to a
+                    # constant and every tenant collides on one record.
+                    "tenant_id": tenant_id,
+                    "project_id": project_id,
                     "authority": authority.value,
                     "variable_ids": list(variable_ids),
                     "matrix": [list(row) for row in matrix],
@@ -162,7 +167,9 @@ class SimulationService:
             created_at=created,
         )
         validate_correlation_spec(spec)
-        existing = self._store.get_correlation_by_fingerprint(fingerprint=spec.fingerprint)
+        existing = self._store.get_correlation_by_fingerprint(
+            tenant_id=tenant_id, project_id=project_id, fingerprint=spec.fingerprint
+        )
         if existing is not None:
             return existing
         stored = self._store.put(spec)

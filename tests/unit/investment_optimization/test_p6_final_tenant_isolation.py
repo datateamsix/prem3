@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import pytest
 
+from app.investment_optimization.enums import CorrelationAuthority
 from app.investment_optimization.errors import SimulationNotFoundError
 from tests.unit.investment_optimization.p6_09_support import PROJECT, TENANT
-from tests.unit.investment_optimization.p6_09a_support import governed_stack
+from tests.unit.investment_optimization.p6_09a_support import governed_stack, simulation_service
 
 OTHER_TENANT = "ten_p609_intruder"
 OTHER_PROJECT = "ws_p609_intruder"
@@ -122,3 +123,44 @@ def test_candidate_read_allows_owning_tenant() -> None:
 
     assert found is not None
     assert found.candidate_portfolio_id == candidates[0].candidate_portfolio_id
+
+
+def test_correlation_spec_is_not_shared_across_tenants() -> None:
+    # An INDEPENDENT spec with no variables validates and fingerprints to a
+    # constant, so an unscoped idempotency lookup hands the second tenant the
+    # first tenant's record.
+    sim = simulation_service()
+    first = sim.create_correlation_spec(
+        tenant_id=TENANT,
+        project_id=PROJECT,
+        authority=CorrelationAuthority.INDEPENDENT,
+        variable_ids=(),
+    )
+    second = sim.create_correlation_spec(
+        tenant_id=OTHER_TENANT,
+        project_id=OTHER_PROJECT,
+        authority=CorrelationAuthority.INDEPENDENT,
+        variable_ids=(),
+    )
+
+    assert second.correlation_spec_id != first.correlation_spec_id
+    assert second.tenant_id == OTHER_TENANT
+    assert second.project_id == OTHER_PROJECT
+
+
+def test_correlation_spec_stays_idempotent_within_one_tenant() -> None:
+    sim = simulation_service()
+    first = sim.create_correlation_spec(
+        tenant_id=TENANT,
+        project_id=PROJECT,
+        authority=CorrelationAuthority.INDEPENDENT,
+        variable_ids=(),
+    )
+    again = sim.create_correlation_spec(
+        tenant_id=TENANT,
+        project_id=PROJECT,
+        authority=CorrelationAuthority.INDEPENDENT,
+        variable_ids=(),
+    )
+
+    assert again.correlation_spec_id == first.correlation_spec_id

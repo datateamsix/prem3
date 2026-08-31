@@ -149,9 +149,7 @@ class FirestoreOptimizationMetadataStore:
         tenant_id: str,
         workspace_id: str,
     ) -> None:
-        self._index(kind, resource_id).set(
-            {"tenant_id": tenant_id, "workspace_id": workspace_id}
-        )
+        self._index(kind, resource_id).set({"tenant_id": tenant_id, "workspace_id": workspace_id})
 
     def _put_lookup(
         self,
@@ -371,9 +369,9 @@ class FirestoreOptimizationMetadataStore:
                 workspace_id=safe.project_id,
             )
         elif isinstance(safe, RiskEvaluationPolicy):
-            self._workspace(safe.tenant_id, safe.project_id).collection(
-                COL_RISK_POLICIES
-            ).document(safe.risk_evaluation_policy_id).set(_to_document(safe))
+            self._workspace(safe.tenant_id, safe.project_id).collection(COL_RISK_POLICIES).document(
+                safe.risk_evaluation_policy_id
+            ).set(_to_document(safe))
             self._put_index(
                 kind="risk_policy",
                 resource_id=safe.risk_evaluation_policy_id,
@@ -744,9 +742,7 @@ class FirestoreOptimizationMetadataStore:
         docs = self._workspace(tenant_id, project_id).collection(COL_MAPPINGS).stream()
         return tuple(_from_document(PortfolioModelMapping, doc.to_dict()) for doc in docs)
 
-    def latest_mapping(
-        self, *, tenant_id: str, project_id: str
-    ) -> PortfolioModelMapping | None:
+    def latest_mapping(self, *, tenant_id: str, project_id: str) -> PortfolioModelMapping | None:
         matches = self.list_mappings(tenant_id=tenant_id, project_id=project_id)
         if not matches:
             return None
@@ -764,16 +760,12 @@ class FirestoreOptimizationMetadataStore:
         self, *, tenant_id: str, project_id: str
     ) -> OptimizationReadinessReceipt | None:
         docs = self._workspace(tenant_id, project_id).collection(COL_RECEIPTS).stream()
-        matches = [
-            _from_document(OptimizationReadinessReceipt, doc.to_dict()) for doc in docs
-        ]
+        matches = [_from_document(OptimizationReadinessReceipt, doc.to_dict()) for doc in docs]
         if not matches:
             return None
         return max(matches, key=lambda item: item.created_at)
 
-    def get_input_contract(
-        self, optimization_input_id: str
-    ) -> OptimizationInputContract | None:
+    def get_input_contract(self, optimization_input_id: str) -> OptimizationInputContract | None:
         return self._load(
             OptimizationInputContract,
             kind="input",
@@ -871,9 +863,7 @@ class FirestoreOptimizationMetadataStore:
             collection=COL_SCENARIOS,
         )
 
-    def list_scenarios(
-        self, *, tenant_id: str, project_id: str
-    ) -> tuple[ScenarioArtifact, ...]:
+    def list_scenarios(self, *, tenant_id: str, project_id: str) -> tuple[ScenarioArtifact, ...]:
         docs = self._workspace(tenant_id, project_id).collection(COL_SCENARIOS).stream()
         matches = [_from_document(ScenarioArtifact, doc.to_dict()) for doc in docs]
         return tuple(sorted(matches, key=lambda item: item.created_at, reverse=True))
@@ -921,9 +911,7 @@ class FirestoreOptimizationMetadataStore:
             return None
         return max(matches, key=lambda item: item.created_at)
 
-    def get_decision_receipt(
-        self, decision_receipt_id: str
-    ) -> ProposalDecisionReceipt | None:
+    def get_decision_receipt(self, decision_receipt_id: str) -> ProposalDecisionReceipt | None:
         return self._load(
             ProposalDecisionReceipt,
             kind="decision",
@@ -931,9 +919,7 @@ class FirestoreOptimizationMetadataStore:
             collection=COL_DECISIONS,
         )
 
-    def get_decision_receipt_for_proposal(
-        self, proposal_id: str
-    ) -> ProposalDecisionReceipt | None:
+    def get_decision_receipt_for_proposal(self, proposal_id: str) -> ProposalDecisionReceipt | None:
         proposal = self.get_proposal(proposal_id)
         if proposal is None:
             return None
@@ -987,9 +973,7 @@ class FirestoreOptimizationMetadataStore:
         docs = self._workspace(tenant_id, project_id).collection(COL_ASSUMPTION_REFS).stream()
         return tuple(_from_document(ScenarioAssumptionSetRef, doc.to_dict()) for doc in docs)
 
-    def get_advanced_receipt(
-        self, receipt_id: str
-    ) -> AdvancedOptimizationReadinessReceipt | None:
+    def get_advanced_receipt(self, receipt_id: str) -> AdvancedOptimizationReadinessReceipt | None:
         return self._load(
             AdvancedOptimizationReadinessReceipt,
             kind="advanced_receipt",
@@ -1049,9 +1033,7 @@ class FirestoreOptimizationMetadataStore:
             collection=COL_EVALUATIONS,
         )
 
-    def get_evaluation_for_candidate(
-        self, candidate_id: str
-    ) -> PortfolioRiskEvaluation | None:
+    def get_evaluation_for_candidate(self, candidate_id: str) -> PortfolioRiskEvaluation | None:
         snap = self._index("risk_evaluation_candidate", candidate_id).get()
         if not snap.exists:
             return None
@@ -1133,13 +1115,16 @@ class FirestoreOptimizationMetadataStore:
         )
 
     def get_correlation_by_fingerprint(
-        self, *, fingerprint: str
+        self, *, tenant_id: str, project_id: str, fingerprint: str
     ) -> ScenarioCorrelationSpec | None:
         snap = self._index("correlation_fp", fingerprint).get()
         if not snap.exists:
             return None
         data = snap.to_dict() or {}
-        return self.get_correlation_spec(str(data.get("resource_id", "")))
+        item = self.get_correlation_spec(str(data.get("resource_id", "")))
+        if item is None or item.tenant_id != tenant_id or item.project_id != project_id:
+            return None
+        return item
 
     def get_simulation_policy(self, policy_id: str) -> MonteCarloSimulationPolicy | None:
         return self._load(
@@ -1189,9 +1174,7 @@ class FirestoreOptimizationMetadataStore:
         if run is None:
             return ()
         docs = self._workspace(run.tenant_id, run.project_id).collection(COL_OUTCOME_DISTS).stream()
-        loaded = (
-            _from_document(PortfolioOutcomeDistribution, doc.to_dict()) for doc in docs
-        )
+        loaded = (_from_document(PortfolioOutcomeDistribution, doc.to_dict()) for doc in docs)
         return tuple(item for item in loaded if item.simulation_run_id == simulation_run_id)
 
     def get_simulation_receipt_for_run(
@@ -1218,9 +1201,7 @@ class FirestoreOptimizationMetadataStore:
                 return item
         return None
 
-    def get_simulation_evidence_handoff(
-        self, handoff_id: str
-    ) -> SimulationEvidenceHandoff | None:
+    def get_simulation_evidence_handoff(self, handoff_id: str) -> SimulationEvidenceHandoff | None:
         return self._load(
             SimulationEvidenceHandoff,
             kind="sim_handoff",
@@ -1305,13 +1286,16 @@ class FirestoreOptimizationMetadataStore:
         )
 
     def get_prediction_evidence_by_fingerprint(
-        self, *, fingerprint: str
+        self, *, project_id: str, fingerprint: str
     ) -> PredictionEvidenceSet | None:
         snap = self._index("pred_ev_fp", fingerprint).get()
         if not snap.exists:
             return None
         data = snap.to_dict() or {}
-        return self.get_prediction_evidence(str(data.get("resource_id", "")))
+        item = self.get_prediction_evidence(str(data.get("resource_id", "")))
+        if item is None or item.project_id != project_id:
+            return None
+        return item
 
     def get_prediction_error(self, error_id: str) -> PredictionErrorSummary | None:
         return self._load(

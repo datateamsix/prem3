@@ -212,7 +212,9 @@ class OutcomeService:
 
     def create_prediction_evidence(self, **kwargs: object) -> PredictionEvidenceSet:
         item = pin_prediction_evidence(**kwargs)  # type: ignore[arg-type]
-        existing = self._store.get_prediction_evidence_by_fingerprint(fingerprint=item.fingerprint)
+        existing = self._store.get_prediction_evidence_by_fingerprint(
+            project_id=item.project_id, fingerprint=item.fingerprint
+        )
         if existing is not None:
             return existing
         stored = self._store.put(item)
