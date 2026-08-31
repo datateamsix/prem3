@@ -56,7 +56,7 @@ def test_metadata_has_no_draw_arrays() -> None:
         candidates=candidates,
         baseline_shares=baseline,
     )
-    dist = sim.get_distributions(run.simulation_run_id)[0]
+    dist = sim.get_distributions(run.simulation_run_id, tenant_id=TENANT, project_id=PROJECT)[0]
     dumped = dist.model_dump()
     assert "candidate_outcomes" not in dumped
     assert "baseline_outcomes" not in dumped

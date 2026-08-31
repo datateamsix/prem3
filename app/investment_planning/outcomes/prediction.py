@@ -55,6 +55,10 @@ def pin_prediction_evidence(
         limitations.append("SIMULATION_EVIDENCE_NOT_AVAILABLE")
     created = datetime.now(UTC)
     payload = {
+        # The project is part of the identity of the evidence set. Without it two
+        # projects pinning the same refs, value and timestamps collide on one
+        # record owned by whichever wrote it first.
+        "project_id": project_id,
         "selection": frontier_selection_ref or "",
         "evaluation": portfolio_risk_evaluation_ref or "",
         "parity": parity_receipt_id or "",

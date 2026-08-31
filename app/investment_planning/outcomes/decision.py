@@ -82,6 +82,8 @@ def bind_investment_decision(
         }
     )
     payload = {
+        "tenant_id": tenant_id,
+        "project_id": project_id,
         "kind": kind.value,
         "receipt": receipt.fingerprint,
         "ledger": ledger.fingerprint,

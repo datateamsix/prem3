@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Protocol
 
 from app.investment_optimization.contracts import (
     PlanningDecisionRecord,
@@ -37,6 +38,34 @@ from app.investment_planning.outcomes.receipts import close_outcome_receipt
 from app.investment_planning.outcomes.recommendation_adherence import (
     compute_recommendation_adherence,
 )
+
+
+class _ProjectScoped(Protocol):
+    @property
+    def project_id(self) -> str: ...
+
+
+class _TenantScoped(_ProjectScoped, Protocol):
+    @property
+    def tenant_id(self) -> str: ...
+
+
+def _owned[T: _TenantScoped](item: T | None, *, tenant_id: str, project_id: str, message: str) -> T:
+    """Return the record only when the caller's workspace owns it.
+
+    A record owned by another workspace is reported as not found, so the read
+    path cannot be used as an existence oracle for foreign identifiers.
+    """
+    if item is None or item.tenant_id != tenant_id or item.project_id != project_id:
+        raise OutcomeRecordNotFoundError(message)
+    return item
+
+
+def _owned_by_project[T: _ProjectScoped](item: T | None, *, project_id: str, message: str) -> T:
+    """Scope a record that carries a project but no tenant of its own."""
+    if item is None or item.project_id != project_id:
+        raise OutcomeRecordNotFoundError(message)
+    return item
 
 
 class OutcomeService:
@@ -183,7 +212,9 @@ class OutcomeService:
 
     def create_prediction_evidence(self, **kwargs: object) -> PredictionEvidenceSet:
         item = pin_prediction_evidence(**kwargs)  # type: ignore[arg-type]
-        existing = self._store.get_prediction_evidence_by_fingerprint(fingerprint=item.fingerprint)
+        existing = self._store.get_prediction_evidence_by_fingerprint(
+            project_id=item.project_id, fingerprint=item.fingerprint
+        )
         if existing is not None:
             return existing
         stored = self._store.put(item)
@@ -264,50 +295,82 @@ class OutcomeService:
         assert isinstance(stored, DecisionOutcomeLearningReceipt)
         return stored
 
-    def get_decision(self, decision_id: str) -> InvestmentDecisionRecord:
-        item = self._store.get_investment_decision(decision_id)
-        if item is None:
-            raise OutcomeRecordNotFoundError("Investment decision was not found.")
-        return item
+    def get_decision(
+        self, decision_id: str, *, tenant_id: str, project_id: str
+    ) -> InvestmentDecisionRecord:
+        return _owned(
+            self._store.get_investment_decision(decision_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Investment decision was not found.",
+        )
 
-    def get_recommendation_adherence(self, adherence_id: str) -> RecommendationAdherence:
-        item = self._store.get_recommendation_adherence(adherence_id)
-        if item is None:
-            raise OutcomeRecordNotFoundError("Recommendation adherence was not found.")
-        return item
+    def get_recommendation_adherence(
+        self, adherence_id: str, *, tenant_id: str, project_id: str
+    ) -> RecommendationAdherence:
+        return _owned(
+            self._store.get_recommendation_adherence(adherence_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Recommendation adherence was not found.",
+        )
 
-    def get_execution_adherence(self, adherence_id: str) -> ExecutionAdherence:
-        item = self._store.get_execution_adherence(adherence_id)
-        if item is None:
-            raise OutcomeRecordNotFoundError("Execution adherence was not found.")
-        return item
+    def get_execution_adherence(
+        self, adherence_id: str, *, tenant_id: str, project_id: str
+    ) -> ExecutionAdherence:
+        return _owned(
+            self._store.get_execution_adherence(adherence_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Execution adherence was not found.",
+        )
 
-    def get_observation(self, observation_id: str) -> DecisionOutcomeObservation:
-        item = self._store.get_outcome_observation(observation_id)
-        if item is None:
-            raise OutcomeRecordNotFoundError("Outcome observation was not found.")
-        return item
+    def get_observation(
+        self, observation_id: str, *, tenant_id: str, project_id: str
+    ) -> DecisionOutcomeObservation:
+        del tenant_id  # record carries a project but no tenant of its own
+        return _owned_by_project(
+            self._store.get_outcome_observation(observation_id),
+            project_id=project_id,
+            message="Outcome observation was not found.",
+        )
 
-    def get_prediction_evidence(self, evidence_id: str) -> PredictionEvidenceSet:
-        item = self._store.get_prediction_evidence(evidence_id)
-        if item is None:
-            raise OutcomeRecordNotFoundError("Prediction evidence was not found.")
-        return item
+    def get_prediction_evidence(
+        self, evidence_id: str, *, tenant_id: str, project_id: str
+    ) -> PredictionEvidenceSet:
+        del tenant_id  # record carries a project but no tenant of its own
+        return _owned_by_project(
+            self._store.get_prediction_evidence(evidence_id),
+            project_id=project_id,
+            message="Prediction evidence was not found.",
+        )
 
-    def get_prediction_error(self, error_id: str) -> PredictionErrorSummary:
-        item = self._store.get_prediction_error(error_id)
-        if item is None:
-            raise OutcomeRecordNotFoundError("Prediction error was not found.")
-        return item
+    def get_prediction_error(
+        self, error_id: str, *, tenant_id: str, project_id: str
+    ) -> PredictionErrorSummary:
+        del tenant_id  # record carries a project but no tenant of its own
+        return _owned_by_project(
+            self._store.get_prediction_error(error_id),
+            project_id=project_id,
+            message="Prediction error was not found.",
+        )
 
-    def get_receipt(self, receipt_id: str) -> RecommendationOutcomeReceipt:
-        item = self._store.get_outcome_receipt(receipt_id)
-        if item is None:
-            raise OutcomeRecordNotFoundError("Outcome receipt was not found.")
-        return item
+    def get_receipt(
+        self, receipt_id: str, *, tenant_id: str, project_id: str
+    ) -> RecommendationOutcomeReceipt:
+        return _owned(
+            self._store.get_outcome_receipt(receipt_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Outcome receipt was not found.",
+        )
 
-    def get_learning_receipt(self, receipt_id: str) -> DecisionOutcomeLearningReceipt:
-        item = self._store.get_learning_receipt(receipt_id)
-        if item is None:
-            raise OutcomeRecordNotFoundError("Learning receipt was not found.")
-        return item
+    def get_learning_receipt(
+        self, receipt_id: str, *, tenant_id: str, project_id: str
+    ) -> DecisionOutcomeLearningReceipt:
+        del tenant_id  # record carries a project but no tenant of its own
+        return _owned_by_project(
+            self._store.get_learning_receipt(receipt_id),
+            project_id=project_id,
+            message="Learning receipt was not found.",
+        )

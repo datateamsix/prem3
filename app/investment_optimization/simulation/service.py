@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Protocol
 
 from app.investment_optimization.enums import (
     CorrelationAuthority,
@@ -46,6 +47,25 @@ from app.investment_optimization.simulation.run_spec import compile_run_spec
 from app.investment_optimization.store import OptimizationMetadataStore
 from app.investment_planning.fingerprint import metadata_fingerprint
 from app.service.object_store import FakeObjectStore, ObjectStore
+
+
+class _TenantScoped(Protocol):
+    @property
+    def tenant_id(self) -> str: ...
+
+    @property
+    def project_id(self) -> str: ...
+
+
+def _owned[T: _TenantScoped](item: T | None, *, tenant_id: str, project_id: str, message: str) -> T:
+    """Return the record only when the caller's workspace owns it.
+
+    A record owned by another workspace is reported as not found, so the read
+    path cannot be used as an existence oracle for foreign identifiers.
+    """
+    if item is None or item.tenant_id != tenant_id or item.project_id != project_id:
+        raise SimulationNotFoundError(message)
+    return item
 
 
 class SimulationService:
@@ -134,6 +154,11 @@ class SimulationService:
             model_derived_artifact_ref=model_derived_artifact_ref,
             fingerprint=metadata_fingerprint(
                 {
+                    # The workspace is part of the identity of the spec. Without it
+                    # an INDEPENDENT spec with no variables fingerprints to a
+                    # constant and every tenant collides on one record.
+                    "tenant_id": tenant_id,
+                    "project_id": project_id,
                     "authority": authority.value,
                     "variable_ids": list(variable_ids),
                     "matrix": [list(row) for row in matrix],
@@ -142,7 +167,9 @@ class SimulationService:
             created_at=created,
         )
         validate_correlation_spec(spec)
-        existing = self._store.get_correlation_by_fingerprint(fingerprint=spec.fingerprint)
+        existing = self._store.get_correlation_by_fingerprint(
+            tenant_id=tenant_id, project_id=project_id, fingerprint=spec.fingerprint
+        )
         if existing is not None:
             return existing
         stored = self._store.put(spec)
@@ -199,9 +226,7 @@ class SimulationService:
                 raise SimulationCandidateInvalidError(
                     "Candidate lineage or fingerprint is invalid."
                 )
-        existing = self._store.get_simulation_run_by_fingerprint(
-            fingerprint=spec.input_fingerprint
-        )
+        existing = self._store.get_simulation_run_by_fingerprint(fingerprint=spec.input_fingerprint)
         if existing is not None:
             return existing
         created = datetime.now(UTC)
@@ -222,8 +247,8 @@ class SimulationService:
         assert isinstance(stored, SimulationRun)
         return stored
 
-    def execute(self, *, simulation_run_id: str) -> SimulationRun:
-        run = self.get_run(simulation_run_id)
+    def execute(self, *, simulation_run_id: str, tenant_id: str, project_id: str) -> SimulationRun:
+        run = self.get_run(simulation_run_id, tenant_id=tenant_id, project_id=project_id)
         if run.status is SimulationRunStatus.COMPLETE:
             return run
         running = run.model_copy(update={"status": SimulationRunStatus.RUNNING})
@@ -240,11 +265,16 @@ class SimulationService:
             stored = self._store.put(failed)
             assert isinstance(stored, SimulationRun)
             return stored
-        refreshed = self.get_run(simulation_run_id)
+        refreshed = self.get_run(simulation_run_id, tenant_id=tenant_id, project_id=project_id)
         return refreshed
 
-    def get_candidate(self, candidate_id: str) -> CandidatePortfolio | None:
-        return self._store.get_candidate(candidate_id)
+    def get_candidate(
+        self, candidate_id: str, *, tenant_id: str, project_id: str
+    ) -> CandidatePortfolio | None:
+        item = self._store.get_candidate(candidate_id)
+        if item is None or item.tenant_id != tenant_id or item.project_id != project_id:
+            return None
+        return item
 
     def execute_inline(
         self,
@@ -257,7 +287,9 @@ class SimulationService:
         candidates: tuple[CandidatePortfolio, ...],
         baseline_shares: tuple[CandidateShare, ...],
     ) -> SimulationRun:
-        run = self.get_run(simulation_run_id)
+        # The pinned spec is the workspace authority for this execution, so a run
+        # belonging to another workspace cannot be driven with a foreign spec.
+        run = self.get_run(simulation_run_id, tenant_id=spec.tenant_id, project_id=spec.project_id)
         if run.status is SimulationRunStatus.COMPLETE:
             return run
         distributions, artifacts, receipt = run_engine(
@@ -278,9 +310,7 @@ class SimulationService:
             self._store.put(distribution)
         self._receipts[receipt.receipt_id] = receipt
         self._store.put(receipt)
-        handoff = build_evidence_handoff(
-            spec=spec, receipt=receipt, distributions=distributions
-        )
+        handoff = build_evidence_handoff(spec=spec, receipt=receipt, distributions=distributions)
         self._handoffs[handoff.simulation_evidence_handoff_id] = handoff
         self._store.put(handoff)
         complete = run.model_copy(
@@ -293,49 +323,76 @@ class SimulationService:
         assert isinstance(stored, SimulationRun)
         return stored
 
-    def get_run(self, simulation_run_id: str) -> SimulationRun:
-        run = self._store.get_simulation_run(simulation_run_id)
-        if run is None:
-            raise SimulationNotFoundError("Simulation run was not found.")
-        return run
+    def get_run(self, simulation_run_id: str, *, tenant_id: str, project_id: str) -> SimulationRun:
+        return _owned(
+            self._store.get_simulation_run(simulation_run_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Simulation run was not found.",
+        )
 
-    def get_receipt(self, simulation_run_id: str) -> MonteCarloSimulationReceipt:
-        receipt = self._store.get_simulation_receipt_for_run(simulation_run_id)
-        if receipt is None:
-            raise SimulationNotFoundError("Simulation receipt was not found.")
-        return receipt
+    def get_receipt(
+        self, simulation_run_id: str, *, tenant_id: str, project_id: str
+    ) -> MonteCarloSimulationReceipt:
+        return _owned(
+            self._store.get_simulation_receipt_for_run(simulation_run_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Simulation receipt was not found.",
+        )
 
     def get_distributions(
-        self, simulation_run_id: str
+        self, simulation_run_id: str, *, tenant_id: str, project_id: str
     ) -> tuple[PortfolioOutcomeDistribution, ...]:
+        # Outcome distributions carry no workspace of their own; the owning run
+        # is the authority for who may read them.
+        self.get_run(simulation_run_id, tenant_id=tenant_id, project_id=project_id)
         return self._store.list_outcome_distributions(simulation_run_id=simulation_run_id)
 
-    def get_handoff(self, simulation_run_id: str) -> SimulationEvidenceHandoff:
+    def get_handoff(
+        self, simulation_run_id: str, *, tenant_id: str, project_id: str
+    ) -> SimulationEvidenceHandoff:
+        # The handoff carries no workspace of its own; scope it through the run.
+        self.get_run(simulation_run_id, tenant_id=tenant_id, project_id=project_id)
         handoff = self._store.get_handoff_for_run(simulation_run_id)
         if handoff is None:
             raise SimulationNotFoundError("Simulation evidence handoff was not found.")
         return handoff
 
-    def get_distribution_set(self, set_id: str) -> ScenarioDistributionSet:
-        item = self._store.get_distribution_set(set_id)
-        if item is None:
-            raise SimulationNotFoundError("Scenario distribution set was not found.")
-        return item
+    def get_distribution_set(
+        self, set_id: str, *, tenant_id: str, project_id: str
+    ) -> ScenarioDistributionSet:
+        return _owned(
+            self._store.get_distribution_set(set_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Scenario distribution set was not found.",
+        )
 
-    def get_correlation(self, spec_id: str) -> ScenarioCorrelationSpec:
-        item = self._store.get_correlation_spec(spec_id)
-        if item is None:
-            raise SimulationNotFoundError("Correlation spec was not found.")
-        return item
+    def get_correlation(
+        self, spec_id: str, *, tenant_id: str, project_id: str
+    ) -> ScenarioCorrelationSpec:
+        return _owned(
+            self._store.get_correlation_spec(spec_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Correlation spec was not found.",
+        )
 
-    def get_policy(self, policy_id: str) -> MonteCarloSimulationPolicy:
-        item = self._store.get_simulation_policy(policy_id)
-        if item is None:
-            raise SimulationNotFoundError("Simulation policy was not found.")
-        return item
+    def get_policy(
+        self, policy_id: str, *, tenant_id: str, project_id: str
+    ) -> MonteCarloSimulationPolicy:
+        return _owned(
+            self._store.get_simulation_policy(policy_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Simulation policy was not found.",
+        )
 
-    def get_run_spec(self, spec_id: str) -> SimulationRunSpec:
-        item = self._store.get_run_spec(spec_id)
-        if item is None:
-            raise SimulationNotFoundError("Simulation run spec was not found.")
-        return item
+    def get_run_spec(self, spec_id: str, *, tenant_id: str, project_id: str) -> SimulationRunSpec:
+        return _owned(
+            self._store.get_run_spec(spec_id),
+            tenant_id=tenant_id,
+            project_id=project_id,
+            message="Simulation run spec was not found.",
+        )

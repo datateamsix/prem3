@@ -48,6 +48,8 @@ def close_outcome_receipt(
         status = OutcomeLifecycleStatus.AWAITING_OUTCOME
     created = datetime.now(UTC)
     payload = {
+        "tenant_id": tenant_id,
+        "project_id": project_id,
         "decision": decision.decision_fingerprint,
         "prediction": prediction.fingerprint if prediction else "",
         "observation": observation.observation_fingerprint if observation else "",
