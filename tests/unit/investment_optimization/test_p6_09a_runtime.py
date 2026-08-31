@@ -13,6 +13,7 @@ from app.investment_optimization.errors import (
 from app.investment_optimization.simulation.p6_09_bridge import draws_for_evaluate
 from app.investment_optimization.simulation.sampling import batch_seed
 from app.investment_optimization.simulation.summaries import summarize_outcomes
+from tests.unit.investment_optimization.p6_09_support import PROJECT, TENANT
 from tests.unit.investment_optimization.p6_09a_support import governed_stack
 
 
@@ -40,7 +41,7 @@ def test_ready_running_complete_and_idempotent() -> None:
     )
     assert first.simulation_fingerprint == second.simulation_fingerprint
     assert second.simulation_run_id == first.simulation_run_id
-    receipt = sim.get_receipt(run.simulation_run_id)
+    receipt = sim.get_receipt(run.simulation_run_id, tenant_id=TENANT, project_id=PROJECT)
     assert receipt.status is SimulationRunStatus.COMPLETE
     assert receipt.draw_count == 64
     assert receipt.batch_count == 2
@@ -67,8 +68,12 @@ def test_same_seed_same_fingerprint() -> None:
         candidates=cand_b,
         baseline_shares=base_b,
     )
-    dist_a_row = sim_a.get_distributions(run_a.simulation_run_id)[0]
-    dist_b_row = sim_b.get_distributions(run_b.simulation_run_id)[0]
+    dist_a_row = sim_a.get_distributions(
+        run_a.simulation_run_id, tenant_id=TENANT, project_id=PROJECT
+    )[0]
+    dist_b_row = sim_b.get_distributions(
+        run_b.simulation_run_id, tenant_id=TENANT, project_id=PROJECT
+    )[0]
     assert dist_a_row.mean == dist_b_row.mean
     assert dist_a_row.median == dist_b_row.median
     assert dist_a_row.lower_tail_metric == dist_b_row.lower_tail_metric
@@ -103,7 +108,7 @@ def test_p6_09_bridge_loads_artifact_tuples() -> None:
         candidates=candidates,
         baseline_shares=baseline,
     )
-    dist = sim.get_distributions(run.simulation_run_id)[0]
+    dist = sim.get_distributions(run.simulation_run_id, tenant_id=TENANT, project_id=PROJECT)[0]
     candidate_draws, baseline_draws = draws_for_evaluate(
         object_store=sim._object_store,
         bucket=sim._artifact_bucket,
@@ -153,7 +158,7 @@ def test_handoff_has_temporal_authority() -> None:
         candidates=candidates,
         baseline_shares=baseline,
     )
-    handoff = sim.get_handoff(run.simulation_run_id)
+    handoff = sim.get_handoff(run.simulation_run_id, tenant_id=TENANT, project_id=PROJECT)
     dumped = handoff.model_dump()
     assert handoff.as_of_time == spec.as_of_time
     assert handoff.model_version_ref

@@ -134,9 +134,10 @@ async def get_distribution_set(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     set_id: str,
 ) -> DistributionSetResponse:
-    del workspace
     try:
-        item = get_simulation_service(request).get_distribution_set(set_id)
+        item = get_simulation_service(request).get_distribution_set(
+            set_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return DistributionSetResponse(
@@ -175,9 +176,10 @@ async def get_correlation(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     spec_id: str,
 ) -> CorrelationSpecResponse:
-    del workspace
     try:
-        spec = get_simulation_service(request).get_correlation(spec_id)
+        spec = get_simulation_service(request).get_correlation(
+            spec_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return CorrelationSpecResponse(
@@ -221,9 +223,10 @@ async def get_policy(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     policy_id: str,
 ) -> SimulationPolicyResponse:
-    del workspace
     try:
-        policy = get_simulation_service(request).get_policy(policy_id)
+        policy = get_simulation_service(request).get_policy(
+            policy_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return SimulationPolicyResponse(
@@ -240,10 +243,11 @@ async def create_run_spec(
 ) -> SimulationRunSpecResponse:
     _reject_client_authority(body)
     service = get_simulation_service(request)
+    scope = {"tenant_id": workspace.tenant_id, "project_id": workspace.workspace_id}
     try:
-        policy = service.get_policy(body.policy_id)
-        distribution = service.get_distribution_set(policy.distribution_set_ref)
-        correlation = service.get_correlation(policy.correlation_spec_ref)
+        policy = service.get_policy(body.policy_id, **scope)
+        distribution = service.get_distribution_set(policy.distribution_set_ref, **scope)
+        correlation = service.get_correlation(policy.correlation_spec_ref, **scope)
         spec = service.create_run_spec(
             tenant_id=workspace.tenant_id,
             project_id=workspace.workspace_id,
@@ -270,9 +274,10 @@ async def get_run_spec(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     spec_id: str,
 ) -> SimulationRunSpecResponse:
-    del workspace
     try:
-        spec = get_simulation_service(request).get_run_spec(spec_id)
+        spec = get_simulation_service(request).get_run_spec(
+            spec_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return SimulationRunSpecResponse(
@@ -287,15 +292,15 @@ async def create_run(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     body: CreateSimulationRunRequest,
 ) -> SimulationRunResponse:
-    del workspace
     _reject_client_authority(body)
     service = get_simulation_service(request)
+    scope = {"tenant_id": workspace.tenant_id, "project_id": workspace.workspace_id}
     try:
-        spec = service.get_run_spec(body.run_spec_id)
-        policy = service.get_policy(spec.simulation_policy_ref)
-        distribution = service.get_distribution_set(spec.scenario_distribution_set_ref)
-        correlation = service.get_correlation(spec.scenario_correlation_spec_ref)
-        candidates = tuple(service.get_candidate(item) for item in spec.candidate_set_ref)
+        spec = service.get_run_spec(body.run_spec_id, **scope)
+        policy = service.get_policy(spec.simulation_policy_ref, **scope)
+        distribution = service.get_distribution_set(spec.scenario_distribution_set_ref, **scope)
+        correlation = service.get_correlation(spec.scenario_correlation_spec_ref, **scope)
+        candidates = tuple(service.get_candidate(item, **scope) for item in spec.candidate_set_ref)
         if any(item is None for item in candidates):
             raise OptimizationError("Simulation candidate was not found.")
         run = service.create_run(
@@ -320,9 +325,10 @@ async def get_run(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     run_id: str,
 ) -> SimulationRunResponse:
-    del workspace
     try:
-        run = get_simulation_service(request).get_run(run_id)
+        run = get_simulation_service(request).get_run(
+            run_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return SimulationRunResponse(
@@ -338,9 +344,12 @@ async def execute_run(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     run_id: str,
 ) -> SimulationRunResponse:
-    del workspace
     try:
-        run = get_simulation_service(request).execute(simulation_run_id=run_id)
+        run = get_simulation_service(request).execute(
+            simulation_run_id=run_id,
+            tenant_id=workspace.tenant_id,
+            project_id=workspace.workspace_id,
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return SimulationRunResponse(
@@ -356,9 +365,10 @@ async def get_receipt(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     run_id: str,
 ) -> SimulationReceiptResponse:
-    del workspace
     try:
-        receipt = get_simulation_service(request).get_receipt(run_id)
+        receipt = get_simulation_service(request).get_receipt(
+            run_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return SimulationReceiptResponse(
@@ -375,9 +385,10 @@ async def get_distributions(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     run_id: str,
 ) -> tuple[OutcomeDistributionResponse, ...]:
-    del workspace
     try:
-        rows = get_simulation_service(request).get_distributions(run_id)
+        rows = get_simulation_service(request).get_distributions(
+            run_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return tuple(
@@ -397,9 +408,10 @@ async def get_handoff(
     workspace: Annotated[Workspace, Depends(authorized_simulation_scope)],
     run_id: str,
 ) -> SimulationHandoffResponse:
-    del workspace
     try:
-        handoff = get_simulation_service(request).get_handoff(run_id)
+        handoff = get_simulation_service(request).get_handoff(
+            run_id, tenant_id=workspace.tenant_id, project_id=workspace.workspace_id
+        )
     except OptimizationError as exc:
         raise planning_error(exc) from exc
     return SimulationHandoffResponse(
